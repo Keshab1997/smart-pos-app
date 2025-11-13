@@ -22,14 +22,17 @@ import {
     onSnapshot,
     deleteDoc,
     updateDoc,
-    addDoc 
+    addDoc,
+    Timestamp  // <<<===== পরিবর্তন ১: এখানে Timestamp ইম্পোর্ট করা হয়েছে
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // আপনার ওয়েব অ্যাপের Firebase কনফিগারেশন
 const firebaseConfig = {
-  // ⚠️ নিরাপত্তা সতর্কতা: এই কী-টি পাবলিক হয়ে গেছে। দ্রুত পরিবর্তন করুন।
+  // ⚠️ নিরাপত্তা সতর্কতা: আপনার Firebase API কী পাবলিকলি দেখা যাচ্ছে।
+  // প্রোডাকশনে যাওয়ার আগে Firebase কনসোল থেকে একটি নতুন কী জেনারেট করে এটি পরিবর্তন করুন 
+  // এবং পুরনো কী-টি ডিলিট করে দিন।
   apiKey: "AIzaSyB1fmVLCxyq8kQRULji0j7T-8c5De3X_Gk", 
   authDomain: "smart-pos-app-64ad6.firebaseapp.com",
   projectId: "smart-pos-app-64ad6",
@@ -66,5 +69,6 @@ export {
     onSnapshot,
     deleteDoc,
     updateDoc,
-    addDoc
+    addDoc,
+    Timestamp // <<<===== পরিবর্তন ২: এখানে Timestamp এক্সপোর্ট করা হয়েছে
 };

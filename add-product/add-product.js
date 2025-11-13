@@ -1,7 +1,7 @@
 // js/add-product.js
 
 // Firebase v10 SDK থেকে প্রয়োজনীয় মডিউল ইম্পোর্ট করা হচ্ছে
-import { db, collection, writeBatch, doc } from '../js/firebase-config.js';
+import { db, collection, writeBatch, doc, addDoc, Timestamp } from '../js/firebase-config.js';
 
 // --- HTML এলিমেন্টগুলোর রেফারেন্স ---
 const addRowBtn = document.getElementById('add-row-btn');
@@ -53,7 +53,6 @@ function displayBarcodes(products) {
     products.forEach(product => {
         const wrapper = document.createElement('div');
         wrapper.className = 'barcode-wrapper';
-        // --- পরিবর্তন: প্রিন্টিং-এর জন্য ডেটা অ্যাট্রিবিউট যোগ করা হয়েছে ---
         wrapper.dataset.barcode = product.id;
         wrapper.dataset.name = product.name;
         wrapper.dataset.price = product.sp;
@@ -61,7 +60,6 @@ function displayBarcodes(products) {
         wrapper.innerHTML = `
             <div class="product-info">${product.name}</div>
             <svg class="barcode-svg"></svg>
-            <!-- পরিবর্তন: কারেন্সি সিম্বল ₹ যোগ করা হয়েছে -->
             <div class="product-price">Price: ₹${product.sp.toFixed(2)}</div>
         `;
 
@@ -84,7 +82,6 @@ form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const saveButton = form.querySelector('button[type="submit"]');
 
-    // --- পরিবর্তন: বাটন ডিজেবল করা এবং টেক্সট পরিবর্তন ---
     saveButton.disabled = true;
     saveButton.textContent = 'Saving...';
 
@@ -112,7 +109,7 @@ form.addEventListener('submit', async (e) => {
     });
 
     if (!allRowsValid) {
-        showStatus('Error: Please fill all fields correctly. Prices and stock must be valid non-negative numbers.', 'error');
+        showStatus('Error: Please fill all fields correctly. Prices and stock must be non-negative numbers.', 'error');
         saveButton.disabled = false;
         saveButton.textContent = 'Save All Products';
         return;
@@ -121,25 +118,48 @@ form.addEventListener('submit', async (e) => {
     try {
         const batch = writeBatch(db);
         const productsForBarcodeDisplay = [];
+        
+        // ===== নতুন পরিবর্তন: মোট ইনভেন্টরি খরচ হিসাব করা =====
+        let totalInventoryCost = 0;
+        let productNamesForExpense = [];
+
         productsToProcess.forEach(product => {
             const newProductRef = doc(collection(db, "products"));
-            // ডকুমেন্ট আইডি'কেই বারকোড হিসেবে সেভ করা হচ্ছে
             const dataToSave = { ...product, barcode: newProductRef.id };
             batch.set(newProductRef, dataToSave);
+            
             productsForBarcodeDisplay.push({ id: newProductRef.id, name: product.name, sp: product.sp });
+            
+            // খরচ হিসাব করা
+            totalInventoryCost += product.cp * product.stock;
+            productNamesForExpense.push(`${product.name} (x${product.stock})`);
         });
 
+        // ===== নতুন পরিবর্তন: ইনভেন্টরি খরচ 'expenses' কালেকশনে যোগ করা =====
+        if (totalInventoryCost > 0) {
+            const expenseData = {
+                description: `Inventory purchase: ${productNamesForExpense.join(', ')}`,
+                amount: totalInventoryCost,
+                category: 'inventory_purchase',
+                date: Timestamp.now(), // নিশ্চিত করুন Timestamp ইম্পোর্ট করা হয়েছে
+            };
+            // batch-এর মধ্যে খরচ যোগ করা যাবে না কারণ এটি একটি আলাদা কালেকশন
+            // তাই আমরা এটিকে আলাদাভাবে addDoc দিয়ে যোগ করব
+            await addDoc(collection(db, "expenses"), expenseData);
+        }
+
+        // সব প্রোডাক্ট একসাথে সেভ করা
         await batch.commit();
         
-        showStatus(`${productsForBarcodeDisplay.length} products saved successfully!`, 'success');
+        showStatus(`${productsForBarcodeDisplay.length} products and inventory cost saved successfully!`, 'success');
         displayBarcodes(productsForBarcodeDisplay);
         productsTbody.innerHTML = '';
         addProductRow();
+        
     } catch (error) {
         console.error("Error adding documents: ", error);
-        showStatus(`Failed to save to database: ${error.message}`, 'error');
+        showStatus(`Failed to save data: ${error.message}`, 'error');
     } finally {
-        // --- পরিবর্তন: কাজ শেষে বাটন আবার এনাবল করা ---
         saveButton.disabled = false;
         saveButton.textContent = 'Save All Products';
     }
@@ -154,5 +174,4 @@ productsTbody.addEventListener('click', (e) => {
 // =================================================================
 // --- প্রাথমিক অ্যাকশন ---
 // =================================================================
-// পেজ লোড হওয়ার সাথে সাথে একটি খালি সারি যোগ করা
 addProductRow();

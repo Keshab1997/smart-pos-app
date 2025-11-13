@@ -1,262 +1,192 @@
-/* =================================
-   Smart POS - Billing Page New Design
-==================================== */
-
-/* --- রুট ভ্যারিয়েবল (রঙ এবং অন্যান্য মান এখানে পরিবর্তন করুন) --- */
-:root {
-    --primary-color: #4f46e5; /* একটি সুন্দর পার্পল-নীল রঙ */
-    --primary-hover: #4338ca;
-    --secondary-color: #10b981; /* সবুজ রঙ (Checkout Button) */
-    --secondary-hover: #059669;
-    --bg-light: #f8f9fa; /* হালকা ধূসর ব্যাকগ্রাউন্ড */
-    --bg-white: #ffffff;
-    --text-dark: #1f2937;
-    --text-light: #6b7280;
-    --border-color: #e5e7eb;
-    --font-family: 'Poppins', sans-serif;
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    --border-radius: 8px;
+/* =====================================
+   CSS ভেরিয়েবল এবং গ্লোবাল স্টাইল
+   ===================================== */
+   :root {
+    --primary-color: #007bff;
+    --text-color: #343a40;
+    --light-text-color: #6c757d;
+    --background-light: #f8f9fa;
+    --background-white: #ffffff;
+    --border-color: #dee2e6;
+    --danger-color: #dc3545;
+    --success-color: #28a745;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* --- সাধারণ স্টাইল --- */
-body {
-    background-color: var(--bg-light);
-    font-family: var(--font-family);
-    color: var(--text-dark);
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Poppins', sans-serif; background-color: var(--background-light); color: var(--text-color); line-height: 1.6; }
 
-h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-top: 0;
-    margin-bottom: 1rem;
-}
+/* হেডার এবং নেভিগেশন */
+header { background-color: var(--background-white); padding: 0 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; height: 70px; position: sticky; top: 0; z-index: 1000; }
+.shop-name a { text-decoration: none; color: var(--text-color); font-size: 1.5rem; font-weight: 700; }
+header nav .nav-links { display: flex; gap: 20px; }
+header nav a { text-decoration: none; color: var(--light-text-color); font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; }
+header nav a:hover, header nav a.active { color: var(--primary-color); background-color: #e9f2ff; }
+#mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; }
 
-/* --- Main Layout --- */
-.billing-container {
+/* প্রধান বিলিং কন্টেইনার */
+.billing-container { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 24px; padding: 24px; max-width: 1800px; margin: 0 auto; height: calc(100vh - 70px); }
+.product-selection, .cart-section { background-color: var(--background-white); border-radius: 12px; box-shadow: var(--shadow); padding: 24px; display: flex; flex-direction: column; overflow: hidden; }
+h2 { margin-bottom: 20px; }
+
+/* =====================================
+   বাম প্যানেল: প্রোডাক্ট সিলেকশন
+   ===================================== */
+.search-box { position: relative; margin-bottom: 20px; }
+#product-search { width: 100%; padding: 12px 15px 12px 40px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
+.search-box svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--light-text-color); }
+
+.category-browse-title { font-size: 1.1em; color: var(--light-text-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 10px; }
+#category-product-list { flex-grow: 1; overflow-y: auto; margin-top: 15px; padding-right: 10px; }
+.category-group { margin-bottom: 25px; }
+.category-name { font-size: 1.2em; font-weight: 600; color: var(--primary-color); margin-bottom: 15px; padding-bottom: 5px; border-bottom: 2px solid var(--primary-color); display: inline-block; }
+
+/* ===== পরিবর্তন এখানে: প্রোডাক্ট গ্রিড এবং কার্ডের নতুন স্টাইল ===== */
+.product-grid {
     display: grid;
-    grid-template-columns: 58% 1fr; /* বাম কলাম একটু বড় */
-    gap: 25px;
-    padding: 20px;
-    max-width: 1500px;
-    margin: 20px auto;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 15px;
 }
 
-/* --- বাম কলাম: Product Selection --- */
-.product-selection {
-    background-color: var(--bg-white);
-    padding: 25px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-md);
+.product-card {
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 90px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
 }
 
-#product-search {
-    width: 100%;
-    padding: 14px 16px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    font-size: 1rem;
-    font-family: var(--font-family);
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-#product-search:focus {
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0, 123, 255, 0.15);
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-    outline: none;
 }
 
-.search-results {
-    position: absolute;
-    background: var(--bg-white);
-    width: calc(58% - 50px);
-    max-height: 350px;
+.product-card-name {
+    font-weight: 500;
+    font-size: 0.9em;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.product-card-price {
+    font-size: 0.95em;
+    color: var(--primary-color);
+    margin-top: 8px;
+    font-weight: 600;
+}
+
+
+/* =====================================
+   ডান প্যানেল: বিলিং কার্ট
+   ===================================== */
+#cart-items {
+    display: flex;
+    flex-direction: column-reverse;
+    flex-grow: 1;
     overflow-y: auto;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-md);
-    z-index: 1000;
-    margin-top: 5px;
+    min-height: 0;
 }
+.empty-cart-message { text-align: center; color: var(--light-text-color); margin: auto; }
+.cart-item { display: grid; grid-template-columns: auto 70px 100px 30px; gap: 15px; align-items: center; padding: 12px 5px; border-bottom: 1px solid #f0f0f0; }
+.cart-item-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cart-item-quantity input { width: 100%; text-align: center; padding: 6px; border: 1px solid var(--border-color); border-radius: 5px; }
+.cart-item-price { text-align: right; color: var(--text-color); font-weight: 500; font-size: 1.05em; }
+.cart-item-remove { background: none; border: none; color: var(--danger-color); font-size: 1.6rem; line-height: 1; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+.cart-item-remove:hover { background-color: #fbeae9; }
 
-.product-item {
-    padding: 12px 15px;
-    cursor: pointer;
-    border-bottom: 1px solid var(--border-color);
+/* কার্ট ফুটার স্টাইল */
+.cart-footer {
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 2px solid var(--border-color);
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
-.product-item:last-child { border-bottom: none; }
-.product-item:hover { background-color: #f3f4f6; }
-.product-item .name { font-weight: 500; }
-.product-item .price { color: var(--primary-color); font-weight: 600; }
+.grand-total-display { text-align: left; }
+.grand-total-display .total-label { font-size: 0.9em; color: var(--light-text-color); display: block; }
+#footer-total-amount { font-size: 1.8rem; font-weight: 700; color: var(--success-color); }
+#proceed-to-checkout-btn {
+    padding: 12px 25px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+.checkout-button { background-color: var(--success-color); color: white; border: none; border-radius: 8px; cursor: pointer; }
+.checkout-button:disabled { background-color: #a5d6a7; cursor: not-allowed; }
 
+/* =====================================
+   মডাল / পপ-আপ স্টাইল
+   ===================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    transition: opacity 0.2s ease;
+}
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+.modal-content {
+    background-color: var(--background-white);
+    padding: 25px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+}
+.modal-overlay:not(.hidden) .modal-content {
+    transform: scale(1);
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+.modal-header h2 { margin-bottom: 0; }
+.close-button { background: none; border: none; font-size: 2rem; line-height: 1; cursor: pointer; color: var(--light-text-color); }
+.modal-body .summary-row { padding: 8px 0; display: flex; justify-content: space-between; }
+.modal-body .total-row { font-size: 1.3rem; font-weight: 700; color: var(--success-color); }
+.modal-body hr { border: none; border-top: 1px solid var(--border-color); margin: 10px 0; }
+.payment-method { margin: 20px 0; }
+.payment-method label { display: block; margin-bottom: 8px; font-weight: 500; }
+#payment-method-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
+.part-payment-details { border: 1px dashed var(--border-color); padding: 15px; border-radius: 8px; display: grid; gap: 10px; margin-top: 15px; }
+.part-payment-details.hidden { display: none; }
+.payment-input-group { display: flex; align-items: center; gap: 10px; }
+.payment-input-group label { flex-basis: 120px; }
+.payment-input-group input { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; }
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+    margin-top: 20px;
+}
+.final-bill-btn { width: 100%; padding: 15px; font-size: 1.2rem; }
 
-/* --- নতুন ক্যাটাগরি ব্রাউজার স্টাইল --- */
-#category-browser {
-    flex-grow: 1; display: flex; flex-direction: column;
-    overflow: hidden; margin-top: 20px;
-}
-.hidden { display: none !important; }
-
-.category-browse-title {
-    padding-bottom: 10px; font-size: 1.1rem; color: var(--text-light);
-    border-bottom: 1px solid var(--border-color); margin-bottom: 15px;
-}
-
-#category-grid-container {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 15px; overflow-y: auto; flex-grow: 1; padding: 5px;
-}
-
-.category-card {
-    background-color: var(--bg-light); border: 1px solid var(--border-color);
-    border-radius: var(--border-radius); padding: 20px 15px; text-align: center;
-    font-weight: 600; color: var(--text-dark); cursor: pointer;
-    transition: all 0.2s ease;
-}
-.category-card:hover {
-    transform: translateY(-4px); box-shadow: var(--shadow-md);
-    color: var(--primary-color); border-color: var(--primary-color);
-    background-color: var(--bg-white);
-}
-
-.product-view-header {
-    display: flex; align-items: center; gap: 15px; padding-bottom: 10px;
-    margin-bottom: 15px; border-bottom: 1px solid var(--border-color);
-}
-.btn-back {
-    background: var(--bg-white); border: 1px solid var(--border-color);
-    padding: 6px 14px; border-radius: 20px; cursor: pointer;
-    font-size: 0.9rem; transition: all 0.2s;
-}
-.btn-back:hover { background-color: #f3f4f6; border-color: #d1d5db; }
-#product-view-category-name { font-size: 1.2rem; font-weight: 600; margin: 0; }
-
-#product-grid-container {
-    overflow-y: auto; flex-grow: 1; padding: 5px;
-}
-.product-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 12px;
-}
-.product-card {
-    border: 1px solid var(--border-color); border-radius: var(--border-radius);
-    padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s;
-    background: var(--bg-white); display: flex; flex-direction: column;
-    justify-content: center; align-items: center; min-height: 80px;
-}
-.product-card:hover {
-    transform: translateY(-2px); box-shadow: var(--shadow-md);
-    border-color: var(--primary-color);
-}
-.product-card-name {
-    font-weight: 500; font-size: 0.85rem; line-height: 1.3;
-    overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
-    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-}
-.product-card-price {
-    font-size: 0.85rem; color: var(--primary-color);
-    font-weight: 700; margin-top: 5px;
-}
-
-
-/* --- ডান কলাম: Cart Section --- */
-.cart-section {
-    background-color: var(--bg-white);
-    padding: 25px; border-radius: var(--border-radius);
-    box-shadow: var(--shadow-md);
-    display: flex; flex-direction: column;
-}
-
-.cart-items {
-    flex-grow: 1; overflow-y: auto; margin-bottom: 15px;
-    padding-right: 5px; /* for scrollbar */
-}
-.empty-cart-message {
-    color: var(--text-light); text-align: center;
-    padding: 50px 20px; font-size: 1.1rem;
-    border: 2px dashed var(--border-color); border-radius: var(--border-radius);
-}
-.cart-item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 15px 0; border-bottom: 1px solid var(--border-color);
-}
-.cart-item:first-child { padding-top: 0; }
-.cart-item:last-child { border-bottom: none; }
-.cart-item-details { flex-grow: 1; padding-right: 10px; }
-.cart-item-name { font-weight: 600; }
-.cart-item-price { font-size: 0.9rem; color: var(--text-light); }
-.cart-item-actions { display: flex; align-items: center; gap: 10px; }
-.quantity-input {
-    width: 60px; text-align: center; padding: 8px;
-    border: 1px solid var(--border-color); border-radius: 6px;
-    font-size: 1rem; font-family: var(--font-family);
-}
-.remove-btn {
-    background: none; border: none; color: #ef4444; font-size: 1.6rem;
-    font-weight: bold; cursor: pointer; line-height: 1; padding: 0 5px;
-    transition: color 0.2s;
-}
-.remove-btn:hover { color: #b91c1c; }
-
-/* Billing Summary */
-.billing-summary {
-    padding-top: 15px; border-top: 1px solid var(--border-color);
-}
-.summary-row {
-    display: flex; justify-content: space-between; margin-bottom: 14px;
-    font-size: 1rem;
-}
-.summary-row span:first-child { color: var(--text-light); }
-.summary-row span:last-child { font-weight: 600; }
-.gst-row label { cursor: pointer; display: flex; align-items: center; gap: 8px; }
-.total-row {
-    font-size: 1.75rem; font-weight: 700; color: var(--text-dark);
-    margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);
-}
-
-/* --- নতুন এবং আকর্ষণীয় Payment Method ডিজাইন --- */
-.payment-method { margin: 25px 0; }
-.payment-method h4 { margin: 0 0 12px 0; font-weight: 600; }
-.payment-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-.payment-options input[type="radio"] { display: none; }
-.payment-options label {
-    padding: 12px; border: 2px solid var(--border-color);
-    border-radius: var(--border-radius); text-align: center;
-    cursor: pointer; font-weight: 500; transition: all 0.2s ease;
-}
-.payment-options label:hover { border-color: var(--primary-hover); }
-.payment-options input[type="radio"]:checked + label {
-    background-color: var(--primary-color);
-    color: var(--bg-white);
-    border-color: var(--primary-color);
-    box-shadow: var(--shadow-sm);
-}
-
-/* Checkout Button */
-.checkout-button {
-    width: 100%; padding: 16px; font-size: 1.2rem; font-weight: 700;
-    color: #fff; background-color: var(--secondary-color);
-    border: none; border-radius: var(--border-radius); cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-}
-.checkout-button:hover:not(:disabled) { background-color: var(--secondary-hover); }
-.checkout-button:active:not(:disabled) { transform: scale(0.98); }
-.checkout-button:disabled {
-    background-color: #9ca3af; cursor: not-allowed;
-}
-
-/* --- Responsive Design --- */
-@media (max-width: 1200px) {
-    .billing-container { grid-template-columns: 1fr; }
-    .search-results { width: calc(100% - 50px); }
-}
-@media (max-width: 768px) {
-    h2 { font-size: 1.3rem; }
-    .product-selection, .cart-section { padding: 15px; }
-    .billing-container { padding: 10px; gap: 15px; }
+/* মোবাইল রেসপন্সিভ */
+@media (max-width: 992px) { 
+    .billing-container { grid-template-columns: 1fr; height: auto; }
+    /* ... (আপনার অন্যান্য মোবাইল স্টাইল) ... */
 }

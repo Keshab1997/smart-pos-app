@@ -1,43 +1,61 @@
-// billing.js (Firebase v10 - with Smart Search)
-
 // Firebase মডিউল ইম্পোর্ট
 import { 
     db, collection, getDocs, doc, query, where, orderBy, writeBatch, serverTimestamp, increment, addDoc 
 } from '../js/firebase-config.js';
 
-// DOM এলিমেন্টের রেফারেন্স
+// ==========================================================
+// --- DOM এলিমেন্টের রেফারেন্স (নতুন UI অনুযায়ী) ---
+// ==========================================================
 const productSearchInput = document.getElementById('product-search');
 const searchResultsContainer = document.getElementById('search-results');
-const cartItemsContainer = document.getElementById('cart-items');
-const subtotalEl = document.getElementById('subtotal');
-const taxEl = document.getElementById('tax');
-const totalAmountEl = document.getElementById('total-amount');
-const checkoutBtn = document.getElementById('checkout-btn');
-const gstToggle = document.getElementById('gst-toggle');
-const shopHeaderPlaceholder = document.getElementById('shop-header-placeholder');
 const categoryProductListContainer = document.getElementById('category-product-list');
 
-let cart = []; 
-let allProducts = []; // সব প্রোডাক্টের লোকাল কপি
+// কার্ট এবং ফুটার
+const cartItemsContainer = document.getElementById('cart-items');
+const footerTotalAmountEl = document.getElementById('footer-total-amount');
+const proceedToCheckoutBtn = document.getElementById('proceed-to-checkout-btn');
 
-// দোকানের তথ্য লোড করা
+// মডাল (Modal) এলিমেন্ট
+const checkoutModal = document.getElementById('checkout-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
+const modalSubtotalEl = document.getElementById('modal-subtotal');
+const modalTaxEl = document.getElementById('modal-tax');
+const modalTotalAmountEl = document.getElementById('modal-total-amount');
+const gstToggle = document.getElementById('gst-toggle');
+const paymentMethodSelect = document.getElementById('payment-method-select');
+const generateBillBtn = document.getElementById('generate-bill-btn');
+
+// পার্ট পেমেন্ট এলিমেন্ট
+const partPaymentDetails = document.getElementById('part-payment-details');
+const cashAmountInput = document.getElementById('cash-amount');
+const cardAmountInput = document.getElementById('card-amount');
+
+// গ্লোবাল ভেরিয়েবল
+let cart = []; 
+let allProducts = [];
+let currentTotals = { subtotal: 0, tax: 0, total: 0 };
+
+
+// ==========================================================
+// --- প্রাথমিক ফাংশন (পেজ লোড) ---
+// ==========================================================
+
+// দোকানের তথ্য লোড করা (যদি থাকে)
 fetch('../shop-details.html')
     .then(response => response.text())
     .then(html => {
-        shopHeaderPlaceholder.innerHTML = html;
+        const shopHeaderPlaceholder = document.getElementById('shop-header-placeholder');
+        if(shopHeaderPlaceholder) shopHeaderPlaceholder.innerHTML = html;
     })
     .catch(error => console.error('Error loading shop details:', error));
 
-// ====================================================================
-// --- নতুন এবং পরিবর্তিত ফাংশন (Smart Search এর জন্য) ---
-// ====================================================================
 
 /**
  * পেজ লোড হওয়ার সাথে সাথে সব প্রোডাক্ট লোড করে এবং ক্যাটাগরি ভিউ তৈরি করে।
  */
 async function initializeProducts() {
     try {
-        const q = query(collection(db, 'products'), where('stock', '>', 0), orderBy('name'));
+        const q = query(collection(db, 'products'), orderBy('name'));
         const querySnapshot = await getDocs(q);
         
         allProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -54,12 +72,14 @@ async function initializeProducts() {
  * allProducts অ্যারে থেকে ক্যাটাগরি অনুযায়ী প্রোডাক্ট প্রদর্শন করে।
  */
 function displayProductsByCategory() {
-    if (allProducts.length === 0) {
+    const inStockProducts = allProducts.filter(p => p.stock > 0);
+
+    if (inStockProducts.length === 0) {
         categoryProductListContainer.innerHTML = '<p>No products available in stock.</p>';
         return;
     }
 
-    const productsByCategory = allProducts.reduce((acc, product) => {
+    const productsByCategory = inStockProducts.reduce((acc, product) => {
         const category = product.category || 'Uncategorized';
         if (!acc[category]) acc[category] = [];
         acc[category].push(product);
@@ -67,7 +87,6 @@ function displayProductsByCategory() {
     }, {});
 
     categoryProductListContainer.innerHTML = '';
-    // ক্যাটাগরিগুলোকে বর্ণানুক্রমে সাজানো
     const sortedCategories = Object.keys(productsByCategory).sort();
 
     for (const category of sortedCategories) {
@@ -78,6 +97,7 @@ function displayProductsByCategory() {
         categoryName.textContent = category;
         const productGrid = document.createElement('div');
         productGrid.classList.add('product-grid');
+
         productsByCategory[category].forEach(product => {
             const productCard = document.createElement('div');
             productCard.classList.add('product-card');
@@ -85,6 +105,7 @@ function displayProductsByCategory() {
             productCard.innerHTML = `<span class="product-card-name">${product.name}</span><span class="product-card-price">₹${product.sp.toFixed(2)}</span>`;
             productGrid.appendChild(productCard);
         });
+        
         categoryGroup.appendChild(categoryName);
         categoryGroup.appendChild(productGrid);
         categoryProductListContainer.appendChild(categoryGroup);
@@ -92,31 +113,28 @@ function displayProductsByCategory() {
 }
 
 
-// --- প্রোডাক্ট সার্চের মূল লজিক (সম্পূর্ণ পরিবর্তিত) ---
+// ==========================================================
+// --- প্রোডাক্ট সার্চ এবং কার্টে যোগ করার লজিক ---
+// ==========================================================
+
 productSearchInput.addEventListener('input', (e) => {
     const searchText = e.target.value.trim().toLowerCase();
-
-    // যদি ইনপুট খালি থাকে, তাহলে সার্চ রেজাল্ট হাইড করা
     if (searchText.length < 2) {
         searchResultsContainer.style.display = 'none';
         return;
     }
-    
-    // allProducts অ্যারে থেকে ফিল্টার করা (substring search)
     const matchedProducts = allProducts.filter(product => 
-        product.name.toLowerCase().includes(searchText) || 
-        (product.barcode && product.barcode.toLowerCase().includes(searchText))
-    ).slice(0, 10); // প্রথম ১০টি ফলাফল দেখানো
-
+        product.stock > 0 &&
+        (product.name.toLowerCase().includes(searchText) || (product.barcode && product.barcode.toLowerCase().includes(searchText)))
+    ).slice(0, 10);
     searchResultsContainer.innerHTML = '';
-
     if (matchedProducts.length === 0) {
-        searchResultsContainer.innerHTML = '<p class="product-item">No products found.</p>';
+        searchResultsContainer.innerHTML = '<div class="search-result-item">No products found.</div>';
     } else {
         matchedProducts.forEach(product => {
             const productDiv = document.createElement('div');
-            productDiv.classList.add('product-item');
-            productDiv.innerHTML = `<span class="name">${product.name}</span> <span class="price">₹${product.sp.toFixed(2)}</span>`;
+            productDiv.classList.add('search-result-item');
+            productDiv.innerHTML = `<span>${product.name}</span> <span>₹${product.sp.toFixed(2)}</span>`;
             productDiv.addEventListener('click', () => {
                 addToCart(product);
                 productSearchInput.value = '';
@@ -125,44 +143,28 @@ productSearchInput.addEventListener('input', (e) => {
             searchResultsContainer.appendChild(productDiv);
         });
     }
-
     searchResultsContainer.style.display = 'block';
 });
 
-// বারকোড স্ক্যানারের জন্য Enter কী-এর হ্যান্ডলিং
 productSearchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
         const searchText = e.target.value.trim().toLowerCase();
-        if (searchText.length === 0) return;
-
-        // বারকোড দিয়ে সরাসরি মিল খোঁজা
-        const exactMatch = allProducts.find(p => p.barcode && p.barcode.toLowerCase() === searchText);
-        if (exactMatch) {
-            addToCart(exactMatch);
-            productSearchInput.value = '';
-            searchResultsContainer.style.display = 'none';
-        } else {
-            // যদি সরাসরি মিল না পাওয়া যায়, তাহলে প্রথম সার্চ রেজাল্টটি কার্টে যোগ করা
-            const firstResult = searchResultsContainer.querySelector('.product-item');
-            if (firstResult) {
-                firstResult.click();
-            }
+        if (!searchText) return;
+        const exactMatch = allProducts.find(p => p.stock > 0 && p.barcode && p.barcode.toLowerCase() === searchText);
+        if (exactMatch) addToCart(exactMatch);
+        else {
+            const firstResult = searchResultsContainer.querySelector('.search-result-item');
+            if (firstResult) firstResult.click();
         }
-    }
-});
-
-// বাইরে ক্লিক করলে সার্চ রেজাল্ট হাইড করা
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-box')) {
+        productSearchInput.value = '';
         searchResultsContainer.style.display = 'none';
     }
 });
 
-
-// ====================================================================
-// --- বাকি ফাংশনগুলো প্রায় অপরিবর্তিত ---
-// ====================================================================
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-box')) searchResultsContainer.style.display = 'none';
+});
 
 categoryProductListContainer.addEventListener('click', (e) => {
     const card = e.target.closest('.product-card');
@@ -173,106 +175,197 @@ categoryProductListContainer.addEventListener('click', (e) => {
     }
 });
 
-function addToCart(product) { /* ...আগের মতোই ... */
+function addToCart(product) {
     if (product.stock <= 0) {
         alert(`'${product.name}' is out of stock!`);
         return;
     }
     const existingItem = cart.find(item => item.id === product.id);
     if (existingItem) {
-        if (existingItem.quantity < product.stock) {
-            existingItem.quantity++;
-        } else {
-            alert(`Cannot add more. Stock limit for '${product.name}' reached!`);
-        }
+        if (existingItem.quantity < product.stock) existingItem.quantity++;
+        else alert(`Cannot add more. Stock limit for '${product.name}' reached!`);
     } else {
         cart.push({ ...product, quantity: 1 });
     }
     updateCartDisplay();
 }
 
-function updateCartDisplay() { /* ...আগের মতোই ... */
+
+// ==========================================================
+// --- কার্ট ম্যানেজমেন্ট এবং UI আপডেট ---
+// ==========================================================
+
+function updateCartDisplay() {
     cartItemsContainer.innerHTML = '';
     if (cart.length === 0) {
         cartItemsContainer.innerHTML = '<p class="empty-cart-message">Your cart is empty.</p>';
-        checkoutBtn.disabled = true;
+        proceedToCheckoutBtn.disabled = true;
     } else {
         cart.forEach((item, index) => {
             const cartItemDiv = document.createElement('div');
             cartItemDiv.classList.add('cart-item');
-            cartItemDiv.innerHTML = `<div class="cart-item-details"><div class="cart-item-name">${item.name}</div><div class="cart-item-price">₹${item.sp.toFixed(2)}</div></div><div class="cart-item-actions"><input type="number" class="quantity-input" value="${item.quantity}" min="1" max="${item.stock}" data-index="${index}"><button class="remove-btn" data-index="${index}">&times;</button></div>`;
-            cartItemsContainer.appendChild(cartItemDiv);
+            cartItemDiv.innerHTML = `
+                <span class="cart-item-name">${item.name}</span>
+                <div class="cart-item-quantity">
+                    <input type="number" class="quantity-input" value="${item.quantity}" min="1" max="${item.stock}" data-index="${index}">
+                </div>
+                <span class="cart-item-price">₹${(item.sp * item.quantity).toFixed(2)}</span>
+                <button class="cart-item-remove" data-index="${index}">&times;</button>
+            `;
+            cartItemsContainer.prepend(cartItemDiv);
         });
-        checkoutBtn.disabled = false;
+        proceedToCheckoutBtn.disabled = false;
     }
+    addCartItemEventListeners();
+    calculateTotals();
+}
+
+function addCartItemEventListeners() {
     document.querySelectorAll('.quantity-input').forEach(input => {
         input.addEventListener('change', e => {
             const index = e.target.dataset.index;
-            const newQuantity = parseInt(e.target.value);
+            let newQuantity = parseInt(e.target.value);
             const item = cart[index];
-            if (newQuantity > 0 && newQuantity <= item.stock) item.quantity = newQuantity;
-            else if (newQuantity > item.stock) {
+            if (newQuantity > item.stock) {
                 alert(`Maximum stock available for ${item.name} is ${item.stock}.`);
-                e.target.value = item.quantity;
-            } else cart.splice(index, 1);
+                newQuantity = item.stock;
+                e.target.value = newQuantity;
+            }
+            if (newQuantity > 0) item.quantity = newQuantity;
+            else cart.splice(index, 1);
             updateCartDisplay();
         });
     });
-    document.querySelectorAll('.remove-btn').forEach(button => {
+    document.querySelectorAll('.cart-item-remove').forEach(button => {
         button.addEventListener('click', e => {
             cart.splice(e.target.dataset.index, 1);
             updateCartDisplay();
         });
     });
-    calculateTotals();
 }
 
-function calculateTotals() { /* ...আগের মতোই ... */
+function calculateTotals() {
     const subtotal = cart.reduce((sum, item) => sum + (item.sp * item.quantity), 0);
     const tax = gstToggle.checked ? subtotal * 0.05 : 0;
     const total = subtotal + tax;
-    subtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
-    taxEl.textContent = `₹${tax.toFixed(2)}`;
-    totalAmountEl.textContent = `₹${total.toFixed(2)}`;
+    currentTotals = { subtotal, tax, total };
+    footerTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
 }
 
 gstToggle.addEventListener('change', calculateTotals);
 
-checkoutBtn.addEventListener('click', async () => { /* ...আগের মতোই ... */
-    if (cart.length === 0) return;
-    checkoutBtn.disabled = true;
-    checkoutBtn.textContent = 'Processing...';
 
-    const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
-    const subtotal = cart.reduce((sum, item) => sum + (item.sp * item.quantity), 0);
-    const tax = gstToggle.checked ? subtotal * 0.05 : 0;
-    const total = subtotal + tax;
+// ==========================================================
+// --- চেকআউট এবং মডাল লজিক ---
+// ==========================================================
+
+proceedToCheckoutBtn.addEventListener('click', () => {
+    calculateTotals();
+    modalSubtotalEl.textContent = `₹${currentTotals.subtotal.toFixed(2)}`;
+    modalTaxEl.textContent = `₹${currentTotals.tax.toFixed(2)}`;
+    modalTotalAmountEl.textContent = `₹${currentTotals.total.toFixed(2)}`;
+    cashAmountInput.value = '';
+    cardAmountInput.value = '';
+    checkoutModal.classList.remove('hidden');
+});
+
+closeModalBtn.addEventListener('click', () => checkoutModal.classList.add('hidden'));
+checkoutModal.addEventListener('click', (e) => {
+    if (e.target === checkoutModal) checkoutModal.classList.add('hidden');
+});
+
+cashAmountInput.addEventListener('input', () => {
+    const total = currentTotals.total;
+    const cashPaid = parseFloat(cashAmountInput.value) || 0;
+    if (cashPaid > total) {
+        cashAmountInput.value = total.toFixed(2);
+        cardAmountInput.value = '0.00';
+        return;
+    }
+    cardAmountInput.value = (total - cashPaid).toFixed(2);
+});
+
+cardAmountInput.addEventListener('input', () => {
+    const total = currentTotals.total;
+    const cardPaid = parseFloat(cardAmountInput.value) || 0;
+    if (cardPaid > total) {
+        cardAmountInput.value = total.toFixed(2);
+        cashAmountInput.value = '0.00';
+        return;
+    }
+    cashAmountInput.value = (total - cardPaid).toFixed(2);
+});
+
+/**
+ * ফাইনাল বিল তৈরি এবং ডাটাবেসে সংরক্ষণ।
+ */
+generateBillBtn.addEventListener('click', async () => {
+    if (cart.length === 0) return;
+    generateBillBtn.disabled = true;
+    generateBillBtn.textContent = 'Processing...';
+
+    const paymentMethod = paymentMethodSelect.value;
+    
+    // === এই অংশে মূল পরিবর্তন ===
     const sale = {
         items: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.sp })),
-        subtotal, tax, total, paymentMethod, gstApplied: gstToggle.checked, createdAt: serverTimestamp()
+        subtotal: currentTotals.subtotal,
+        tax: currentTotals.tax,
+        total: currentTotals.total,
+        paymentMethod: paymentMethod, // পেমেন্টের মূল ধরন (cash, card, part-payment)
+        gstApplied: gstToggle.checked,
+        createdAt: serverTimestamp()
     };
+
+    // পার্ট পেমেন্টের ক্ষেত্রে অতিরিক্ত তথ্য যোগ করা
+    if (paymentMethod === 'part-payment') {
+        const cashPaid = parseFloat(cashAmountInput.value) || 0;
+        const cardPaid = parseFloat(cardAmountInput.value) || 0;
+        
+        if ((cashPaid + cardPaid).toFixed(2) !== currentTotals.total.toFixed(2)) {
+            alert('Part payment amounts do not match the total bill. Please check.');
+            generateBillBtn.disabled = false;
+            generateBillBtn.textContent = 'Generate Bill & Finalize';
+            return;
+        }
+
+        // sale অবজেক্টে breakdown যোগ করা
+        sale.paymentBreakdown = {
+            cash: cashPaid,
+            card_or_online: cardPaid
+        };
+    }
+
     try {
         const batch = writeBatch(db);
         const saleRef = await addDoc(collection(db, "sales"), sale);
-        cart.forEach(item => {
+
+        for (const item of cart) {
             const productRef = doc(db, "products", item.id);
             batch.update(productRef, { stock: increment(-item.quantity) });
-        });
+        }
         await batch.commit();
+
         window.open(`print.html?saleId=${saleRef.id}`, '_blank');
+        
+        // রিসেট
         cart = [];
         updateCartDisplay();
-        // প্রোডাক্ট স্টক আপডেট হওয়ার পর আবার লোড করা
-        initializeProducts();
+        checkoutModal.classList.add('hidden');
+        await initializeProducts(); // স্টক আপডেটের পর প্রোডাক্ট লিস্ট রিফ্রেশ
+
     } catch (error) {
         console.error("Error during checkout: ", error);
         alert('Checkout failed. Please try again.');
     } finally {
-        checkoutBtn.disabled = false;
-        checkoutBtn.textContent = 'Generate Bill & Checkout';
+        generateBillBtn.disabled = false;
+        generateBillBtn.textContent = 'Generate Bill & Finalize';
     }
 });
 
-// পেজ লোড হওয়ার পর প্রাথমিক ফাংশন কল
+
+// ==========================================================
+// --- পেজ লোড হওয়ার পর প্রাথমিক ফাংশন কল ---
+// ==========================================================
 updateCartDisplay();
 initializeProducts();

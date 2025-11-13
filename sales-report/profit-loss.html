@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profit & Loss Analysis - Smart POS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="../css/global.css"> <!-- Main global.css -->
+    <link rel="stylesheet" href="profit-loss.css"> <!-- This new CSS file -->
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <a href="../index.html" class="logo">Smart POS</a>
+            <nav>
+                <ul>
+                    <li><a href="../billing/billing.html">Billing</a></li>
+                    <li><a href="../inventory/inventory.html">Inventory</a></li>
+                    <li><a href="../add-product/add-product.html">Add Product</a></li>
+                    <li><a href="report.html">Sales Report</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container pnl-dashboard">
+        <h1>Profit & Loss Analysis</h1>
+
+        <!-- ফিল্টার সেকশন -->
+        <section class="filter-section card">
+            <div class="time-period-buttons">
+                <button class="btn btn-secondary active" id="btn-this-week">This Week</button>
+                <button class="btn btn-secondary" id="btn-this-month">This Month</button>
+                <button class="btn btn-secondary" id="btn-this-year">This Year</button>
+            </div>
+            <div class="form-group-inline">
+                <div>
+                    <label for="start-date">From Date:</label>
+                    <input type="date" id="start-date" class="form-control">
+                </div>
+                <div>
+                    <label for="end-date">To Date:</label>
+                    <input type="date" id="end-date" class="form-control">
+                </div>
+                <button id="generate-report-btn" class="btn btn-primary">Generate Report</button>
+            </div>
+        </section>
+
+        <!-- KPI কার্ডস -->
+        <section class="kpi-cards">
+            <div class="kpi-card revenue">
+                <h3>Total Revenue</h3>
+                <p id="total-revenue">₹0.00</p>
+            </div>
+            <div class="kpi-card cogs">
+                <h3>Cost of Goods Sold</h3>
+                <p id="total-cogs">₹0.00</p>
+            </div>
+            <div class="kpi-card gross-profit">
+                <h3>Gross Profit</h3>
+                <p id="gross-profit">₹0.00</p>
+            </div>
+            <div class="kpi-card expenses">
+                <h3>Total Expenses</h3>
+                <p id="total-other-expenses">₹0.00</p>
+            </div>
+            <div class="kpi-card net-profit">
+                <h3>Net Profit / Loss</h3>
+                <p id="net-profit-loss">₹0.00</p>
+            </div>
+        </section>
+        
+        <!-- চার্ট -->
+        <section class="card">
+            <h3>Summary Chart</h3>
+            <canvas id="pnlChart"></canvas>
+        </section>
+        
+        <!-- খরচের বিস্তারিত তালিকা -->
+        <section class="details-grid">
+            <div class="card">
+                <h3>Inventory Purchases</h3>
+                <div class="table-responsive">
+                    <table class="details-table">
+                        <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
+                        <tbody id="inventory-purchases-list"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Other Expenses</h3>
+                <div class="table-responsive">
+                    <table class="details-table">
+                        <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
+                        <tbody id="other-expenses-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="profit-loss.js" type="module"></script>
+</body>
+</html>

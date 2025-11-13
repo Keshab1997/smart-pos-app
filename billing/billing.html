@@ -1,87 +1,159 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Billing - Smart POS</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/global.css">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="billing.css">
-    <style>
-        .category-browse-title { margin-top: 20px; font-size: 1.1em; color: #555; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .category-product-list { margin-top: 15px; max-height: 40vh; overflow-y: auto; padding-right: 10px; }
-        .category-group { margin-bottom: 25px; }
-        .category-name { font-size: 1.2em; color: #333; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #007bff; display: inline-block; }
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-        .product-card { border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s ease-in-out; background-color: #fff; display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; }
-        .product-card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #007bff; }
-        .product-card-name { font-weight: bold; font-size: 0.9em; color: #444; }
-        .product-card-price { font-size: 0.85em; color: #007bff; margin-top: 5px; }
-    </style>
 </head>
 <body>
+
     <header>
-        <div id="shop-header-placeholder"></div>
-        <nav>
-            <a href="../index.html">Home</a>
-            <a href="../add-product/add-product.html">Add Product</a>
-            <a href="../inventory/inventory.html">Inventory</a>
+        <div class="shop-name"><a href="../index.html">Smart POS</a></div>
+        <nav id="main-nav">
+            <div class="nav-links">
+                <a href="../index.html">Home</a>
+                <a href="../add-product/add-product.html">Add Product</a>
+                <a href="../inventory/inventory.html">Inventory</a>
+                <a href="billing.html" class="active">Billing</a>
+            </div>
         </nav>
+        <button id="mobile-menu-btn" aria-label="Open Menu">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
     </header>
 
     <main class="billing-container">
+        
+        <!-- বাম দিক: প্রোডাক্ট খোঁজা -->
         <div class="product-selection">
-            <h2>Search Products</h2>
+            <h2>Search & Browse Products</h2>
             <div class="search-box">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="product-search" placeholder="Scan barcode or search by name..." autocomplete="off">
             </div>
-            <div id="search-results" class="search-results"></div>
+            <div id="search-results"></div>
+            
             <h3 class="category-browse-title">Or Browse by Category</h3>
-            <div id="category-product-list" class="category-product-list">
-                <!-- জাভাস্ক্রিপ্ট দিয়ে প্রোডাক্ট এখানে লোড হবে -->
+            <div id="category-product-list">
+                <p style="color: #888; text-align: center; margin-top: 20px;">Loading products...</p>
             </div>
         </div>
 
+        <!-- ডান দিক: বিলিং কার্ট -->
         <div class="cart-section">
             <h2>Billing Cart</h2>
-            <div id="cart-items" class="cart-items">
+            <div id="cart-items">
                 <p class="empty-cart-message">Your cart is empty.</p>
             </div>
-            <div class="billing-summary">
-                <div class="summary-row">
-                    <span>Subtotal:</span>
-                    <span id="subtotal">₹0.00</span>
+            
+            <!-- ===== নতুন মিনিমাল ফুটার ===== -->
+            <div class="cart-footer">
+                <div class="grand-total-display">
+                    <span class="total-label">Grand Total</span>
+                    <span id="footer-total-amount">₹0.00</span>
                 </div>
-                <div class="summary-row gst-row">
-                    <span>
-                        <input type="checkbox" id="gst-toggle" checked> 
-                        <label for="gst-toggle">GST (5%)</label>
-                    </span>
-                    <span id="tax">₹0.00</span>
-                </div>
-                <hr>
-                <div class="summary-row total-row">
-                    <span>Total:</span>
-                    <span id="total-amount">₹0.00</span>
-                </div>
-                <div class="payment-method">
-                    <h4>Payment Method</h4>
-                    <div class="payment-options">
-                        <!-- ===== পরিবর্তন এখানে করা হয়েছে ===== -->
-                        <label><input type="radio" name="payment-method" value="cash" checked> Cash</label>
-                        <label><input type="radio" name="payment-method" value="card"> Card</label>
-                        <label><input type="radio" name="payment-method" value="online"> Online</label>
-                    </div>
-                </div>
-                <button id="checkout-btn" class="checkout-button" disabled>Generate Bill & Checkout</button>
+                <button id="proceed-to-checkout-btn" class="checkout-button" disabled>Checkout</button>
             </div>
         </div>
     </main>
 
-    <!-- *** প্রধান পরিবর্তন এখানে *** -->
-    <!-- v10 ভার্সনের জন্য module হিসেবে স্ক্রিপ্ট লোড করা হচ্ছে -->
+    <!-- ============================================= -->
+    <!-- ===== চেকআউট মডাল (Popup) শুরু ===== -->
+    <!-- ============================================= -->
+    <div id="checkout-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Finalize Bill</h2>
+                <button id="close-modal-btn" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="billing-details">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="modal-subtotal">₹0.00</span>
+                    </div>
+                    <div class="summary-row gst-row">
+                        <span>
+                            <input type="checkbox" id="gst-toggle" checked> 
+                            <label for="gst-toggle">GST (5%)</label>
+                        </span>
+                        <span id="modal-tax">₹0.00</span>
+                    </div>
+                    <hr>
+                    <div class="summary-row total-row">
+                        <span>Grand Total:</span>
+                        <span id="modal-total-amount">₹0.00</span>
+                    </div>
+                </div>
+
+                <div class="payment-method">
+                    <label for="payment-method-select">Payment Method</label>
+                    <select id="payment-method-select" name="payment-method">
+                        <option value="cash" selected>Cash</option>
+                        <option value="card">Card</option>
+                        <option value="online">Online</option>
+                        <option value="part-payment">Part Payment</option>
+                    </select>
+                </div>
+
+                <div id="part-payment-details" class="part-payment-details hidden">
+                    <div class="payment-input-group">
+                        <label for="cash-amount">Cash Amount:</label>
+                        <input type="number" id="cash-amount" placeholder="0.00">
+                    </div>
+                    <div class="payment-input-group">
+                        <label for="card-amount">Card/Online:</label>
+                        <input type="number" id="card-amount" placeholder="0.00">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="generate-bill-btn" class="checkout-button final-bill-btn">Generate Bill & Finalize</button>
+            </div>
+        </div>
+    </div>
+    <!-- ===== চেকআউট মডাল শেষ ===== -->
+
     <script src="billing.js" type="module"></script>
+    <script>
+        // UI-এর জন্য ছোট স্ক্রিপ্ট
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+            document.getElementById('main-nav')?.classList.toggle('mobile-nav-active');
+        });
+        
+        // মডাল (Modal) দেখানোর এবং লুকানোর জন্য JS
+        const checkoutModal = document.getElementById('checkout-modal');
+        const proceedBtn = document.getElementById('proceed-to-checkout-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const paymentSelect = document.getElementById('payment-method-select');
+        const partPaymentDetails = document.getElementById('part-payment-details');
+
+        proceedBtn?.addEventListener('click', () => {
+            // জাভাস্ক্রিপ্ট থেকে মডালের ভেতরের মান আপডেট করতে হবে
+            // আপনার billing.js ফাইলে এই কাজটি করতে পারেন
+            checkoutModal?.classList.remove('hidden');
+        });
+
+        closeModalBtn?.addEventListener('click', () => {
+            checkoutModal?.classList.add('hidden');
+        });
+
+        // মডালের বাইরে ক্লিক করলে বন্ধ হবে
+        checkoutModal?.addEventListener('click', (event) => {
+            if (event.target === checkoutModal) {
+                checkoutModal.classList.add('hidden');
+            }
+        });
+
+        paymentSelect?.addEventListener('change', (event) => {
+            partPaymentDetails?.classList.toggle('hidden', event.target.value !== 'part-payment');
+        });
+    </script>
 </body>
 </html>

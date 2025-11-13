@@ -1,63 +1,59 @@
-/* =================================
-   Smart POS - Global Stylesheet
-==================================== */
+/* css/global.css */
 
-/* --- Basic Reset & Root Variables --- */
-:root {
+/* ============================
+   CSS ভেরিয়েবল এবং বেসিক স্টাইল
+   ============================ */
+   :root {
     --primary-color: #007bff;
-    --primary-hover: #0056b3;
-    --secondary-color: #6c757d;
     --success-color: #28a745;
     --danger-color: #dc3545;
     --warning-color: #ffc107;
-    --light-bg: #f8f9fa;
-    --white-bg: #ffffff;
-    --text-dark: #212529;
-    --text-light: #6c757d;
+    --info-color: #17a2b8;
+    --text-color: #343a40;
+    --light-text-color: #6c757d;
+    --background-color: #f4f6f9;
+    --white-color: #ffffff;
     --border-color: #dee2e6;
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 * {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f0f2f5; /* Slightly darker background for better contrast */
-    color: var(--text-dark);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
     line-height: 1.6;
 }
 
 .container {
-    max-width: 1400px; /* Wider container for POS systems */
+    max-width: 1600px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 0 20px;
 }
 
-/* --- Main Header / Navigation Bar --- */
+/* ============================
+   হেডার এবং নেভিগেশন
+   ============================ */
 .main-header {
-    background-color: var(--white-bg);
-    padding: 0 25px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    position: sticky; /* Keeps header at the top */
-    top: 0;
-    z-index: 1000;
-    width: 100%;
+    background-color: var(--white-color);
+    box-shadow: var(--shadow-sm);
+    padding: 15px 0;
+    margin-bottom: 20px;
 }
 
-.main-header nav {
+.main-header .container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 70px;
-    max-width: 1600px;
-    margin: 0 auto;
 }
 
-.main-header .logo {
+.logo {
     font-size: 1.8rem;
     font-weight: 700;
     color: var(--primary-color);
@@ -65,164 +61,194 @@ body {
 }
 
 .main-header nav ul {
-    list-style: none;
     display: flex;
-    gap: 10px;
-    margin: 0;
-    padding: 0;
+    gap: 25px;
+    list-style: none;
 }
 
 .main-header nav a {
     text-decoration: none;
-    color: var(--text-light);
+    color: var(--light-text-color);
     font-weight: 500;
-    padding: 10px 15px;
-    border-radius: 6px;
-    transition: background-color 0.2s, color 0.2s;
+    transition: color 0.2s;
 }
 
 .main-header nav a:hover {
-    background-color: #e9ecef;
-    color: var(--primary-hover);
+    color: var(--primary-color);
 }
 
-.main-header nav a.active {
-    background-color: var(--primary-color);
-    color: var(--white-bg);
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+/* ============================
+   ড্যাশবোর্ড স্টাইল
+   ============================ */
+.dashboard h1 {
+    margin-bottom: 20px;
 }
 
-/* --- Shop Details Header (From shop-details.html) --- */
-.shop-details-header {
-    text-align: center;
-    padding: 15px;
-    background-color: var(--light-bg);
-    border-bottom: 1px solid var(--border-color);
-}
-.shop-details-header h1 {
-    margin: 0 0 5px 0;
-    font-size: 1.6rem; /* Slightly smaller for compactness */
-    color: var(--text-dark);
-}
-.shop-details-header p {
-    margin: 0;
-    color: var(--text-light);
-    font-size: 0.9rem;
-    line-height: 1.5;
-}
-
-/* --- Common UI Components --- */
-
-/* Card Styles (For Dashboard & Other Pages) */
-.card-container, .card {
-    background-color: var(--white-bg);
-    padding: 25px;
-    border-radius: 12px; /* Smoother corners */
-    box-shadow: var(--shadow);
-    text-decoration: none;
-    color: inherit;
-}
-
-.dashboard-cards {
+/* KPI কার্ডস */
+.kpi-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.kpi-card {
+    background-color: var(--white-color);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+    border-left: 5px solid;
+}
+.kpi-card h3 {
+    font-size: 1.1rem;
+    color: var(--light-text-color);
+    margin-bottom: 10px;
+}
+.kpi-card p {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 0;
+}
+.kpi-card.sales { border-color: var(--primary-color); }
+.kpi-card.sales p { color: var(--primary-color); }
+.kpi-card.profit { border-color: var(--success-color); }
+.kpi-card.profit p { color: var(--success-color); }
+.kpi-card.expense { border-color: var(--danger-color); }
+.kpi-card.expense p { color: var(--danger-color); }
+.kpi-card.low-stock { border-color: var(--warning-color); }
+.kpi-card.low-stock p { color: var(--warning-color); }
+
+/* প্রধান গ্রিড */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: minmax(350px, auto);
+    gap: 20px;
 }
 
 .card {
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-.card h2 {
-    color: var(--primary-color);
-    margin-bottom: 10px;
-}
-
-/* Button Styles */
-.btn {
-    display: inline-block;
-    padding: 12px 24px;
-    border: none;
+    background-color: var(--white-color);
+    padding: 20px;
     border-radius: 8px;
-    color: var(--white-bg);
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    flex-direction: column;
 }
-.btn:hover { transform: translateY(-1px); }
-.btn:active { transform: translateY(0); }
 
-.btn-primary { background-color: var(--primary-color); }
-.btn-primary:hover { background-color: var(--primary-hover); }
+.card h3 {
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
 
-.btn-success { background-color: var(--success-color); }
+/* চার্ট কন্টেইনার */
+.chart-container {
+    grid-column: span 1;
+}
+.chart-container canvas {
+    max-height: 300px;
+}
+
+/* তালিকা কন্টেইনার */
+.list-card ul {
+    list-style: none;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+.list-card li {
+    padding: 10px 5px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+}
+.list-card li:last-child {
+    border-bottom: none;
+}
+.list-card .btn {
+    margin-top: auto; /* বাটনকে নিচে রাখার জন্য */
+}
+
+/* বাটন স্টাইল */
+.btn {
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+.btn-primary { background-color: var(--primary-color); color: var(--white-color); }
+.btn-primary:hover { background-color: #0056b3; }
+.btn-success { background-color: var(--success-color); color: var(--white-color); }
 .btn-success:hover { background-color: #1e7e34; }
 
-.btn-danger { background-color: var(--danger-color); }
-.btn-danger:hover { background-color: #b21f2d; }
-
-
-/* Form Styles */
-input[type="text"],
-input[type="number"],
-input[type="password"],
-input[type="email"],
-select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border-color);
+/* ============================
+   মডাল স্টাইল (Add Expense)
+   ============================ */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1001; opacity: 1; transition: opacity 0.3s;
+}
+.modal-overlay.hidden {
+    opacity: 0; pointer-events: none;
+}
+.modal-content {
+    background-color: var(--white-color);
+    padding: 30px;
     border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 90%; max-width: 500px;
+    transform: translateY(-20px); transition: transform 0.3s;
+}
+.modal-overlay:not(.hidden) .modal-content {
+    transform: translateY(0);
+}
+.modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px;
+}
+.modal-header h2 { margin: 0; }
+.close-button { background: none; border: none; font-size: 2rem; cursor: pointer; color: var(--light-text-color); }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+.form-group input, .form-group select {
+    width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px;
+}
+.modal-footer {
+    margin-top: 20px;
+    text-align: right;
 }
 
-input:focus, select:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+/* Responsive ডিজাইন */
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 768px) {
+    .main-header nav { display: none; } /* ছোট স্ক্রিনে নেভিগেশন হাইড করা যেতে পারে */
+}
+/* css/global.css ফাইলের শেষে যোগ করুন */
+
+/* ============================
+   Footer Credit Styles
+   ============================ */
+   .main-footer-credit {
+    background-color: #343a40; /* একটি গাঢ় ব্যাকগ্রাউন্ড */
+    color: #f8f9fa; /* হালকা রঙের লেখা */
+    padding: 20px 0;
+    text-align: center;
+    margin-top: 40px; /* main কন্টেন্ট থেকে একটু ফাঁকা জায়গা */
+    font-size: 0.9em;
 }
 
-.form-group { margin-bottom: 20px; }
-.form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
-
-/* Table Styles */
-.table-wrapper {
-    overflow-x: auto; /* Allows horizontal scroll on small screens */
-    background: var(--white-bg);
-    padding: 10px;
-    border-radius: 12px;
-    box-shadow: var(--shadow);
+.main-footer-credit .container p {
+    margin: 5px 0;
+    color: #adb5bd; /* আরও হালকা রঙ */
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th, td {
-    padding: 15px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-    vertical-align: middle;
-}
-
-thead {
-    background-color: var(--light-bg);
-}
-
-thead th {
+.main-footer-credit strong {
+    color: #ffffff; /* আপনার নামটিকে উজ্জ্বল দেখানোর জন্য */
     font-weight: 600;
-    color: var(--text-dark);
-}
-
-tbody tr:hover {
-    background-color: #f1f8ff; /* A subtle blue hover */
 }

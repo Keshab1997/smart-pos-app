@@ -1,65 +1,222 @@
+/* add-product.css */
+
+/* ============================
+   Layout & General Styles
+   ============================ */
+   body {
+    background-color: #f4f6f9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.card {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+}
+
+h1, h2 {
+    margin-bottom: 20px;
+}
+
+/* ============================
+   Product Table Styles
+   ============================ */
+.table-responsive {
+    overflow-x: auto; /* ছোট স্ক্রিনে টেবিল যেন ডানে-বামে স্ক্রল করা যায় */
+}
+
+#products-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+#products-table th,
+#products-table td {
+    padding: 10px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+}
+
+#products-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+/* টেবিলের ইনপুট ফিল্ডের স্টাইল */
 #products-table input {
     width: 100%;
     padding: 8px;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 5px;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+#products-table input:focus {
+    outline: none;
+    border-color: #007bff; /* আপনার primary color */
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* কলামের প্রস্থ নির্ধারণ (ঐচ্ছিক কিন্তু কার্যকরী) */
+#products-table th:nth-child(1) { width: 30%; } /* Name */
+#products-table th:nth-child(2) { width: 20%; } /* Category */
+#products-table th:nth-child(3) { width: 15%; } /* CP */
+#products-table th:nth-child(4) { width: 15%; } /* SP */
+#products-table th:nth-child(5) { width: 10%; } /* Stock */
+#products-table th:nth-child(6) { width: 10%; } /* Actions */
+
+
+/* ============================
+   Action Buttons & Status Message
+   ============================ */
 .table-actions {
     margin-top: 20px;
     display: flex;
+    justify-content: space-between; /* বাটনগুলোকে দুই পাশে রাখার জন্য */
+    align-items: center;
     gap: 10px;
 }
 
+/* বাটন স্টাইল */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-primary { background-color: #007bff; color: white; }
+.btn-primary:hover:not(:disabled) { background-color: #0056b3; }
+
+.btn-success { background-color: #28a745; color: white; }
+.btn-success:hover:not(:disabled) { background-color: #1e7e34; }
+
+.btn-danger { background-color: #dc3545; color: white; }
+.btn-danger:hover:not(:disabled) { background-color: #c82333; }
+
+/* টেবিলের Remove বাটনকে ছোট করার জন্য */
+.remove-row-btn {
+    padding: 5px 10px;
+    font-size: 1rem;
+}
+
+/* স্ট্যাটাস মেসেজ */
 #status-message {
     margin-top: 15px;
+    padding: 10px;
+    border-radius: 5px;
     font-weight: bold;
+    text-align: center;
 }
 
-.success {
-    color: #27ae60;
+.status.success {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
 }
 
-.error {
-    color: #c0392b;
+.status.error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
 }
 
-.hidden {
-    display: none;
-}
 
-/* Barcode Print Section Styles */
+/* ============================
+   Barcode Print Section Styles
+   ============================ */
 #barcode-print-area {
-    margin-top: 20px;
+    margin-top: 30px;
+}
+
+#barcode-print-area.hidden {
+    display: none;
 }
 
 #barcodes-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 15px; /* বারকোডের মধ্যে ফাঁকা জায়গা */
     margin-top: 15px;
+    padding: 20px;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    background-color: #f8f9fa;
 }
 
 .barcode-wrapper {
-    cursor: pointer;
+    background-color: #fff;
     border: 1px solid #ddd;
     padding: 10px;
     text-align: center;
     border-radius: 8px;
-    transition: box-shadow 0.3s;
+    transition: box-shadow 0.3s, transform 0.3s;
+    flex-basis: 150px; /* প্রতিটি বারকোডের জন্য একটি নির্দিষ্ট জায়গা */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .barcode-wrapper:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-3px);
 }
 
 .barcode-wrapper .product-info {
     font-size: 12px;
     font-weight: bold;
     margin-bottom: 5px;
+    word-break: break-word; /* লম্বা নাম ভেঙে দেবে */
 }
 
 .barcode-wrapper .product-price {
     font-size: 11px;
+    color: #555;
+    margin-top: 5px;
 }
 
+.barcode-wrapper .barcode-svg {
+    max-width: 100%; /* SVG যেন কন্টেইনারের বাইরে না যায় */
+}
+
+/* প্রিন্ট করার জন্য বিশেষ স্টাইল */
+@media print {
+    body, .container {
+        background-color: #fff;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+    }
+    header, .table-actions, .filter-section, #status-message, h1, h2 {
+        display: none; /* প্রিন্টে অপ্রয়োজনীয় অংশ হাইড করা */
+    }
+    #barcode-print-area, #barcodes-container {
+        display: block;
+        margin: 0;
+        padding: 0;
+        border: none;
+    }
+    .barcode-wrapper {
+        border: 1px solid #000;
+        page-break-inside: avoid; /* প্রিন্ট করার সময় যেন একটি বারকোড দুই পৃষ্ঠায় ভাগ না হয় */
+    }
+}

@@ -1,7 +1,7 @@
-// report.js (Payment Type কলাম সহ সম্পূর্ণ আপডেট করা)
+// report.js (নতুন ডেটা স্ট্রাকচারের জন্য সম্পূর্ণ আপডেট করা)
 
 import { 
-    db, collection, getDocs, query, where, orderBy 
+    db, collection, getDocs, query, where, orderBy, Timestamp 
 } from '../js/firebase-config.js';
 
 // DOM এলিমেন্টের রেফারেন্স
@@ -14,41 +14,45 @@ const startDateInputEl = document.getElementById('start-date');
 const endDateInputEl = document.getElementById('end-date');
 const filteredCashSalesEl = document.getElementById('filtered-cash-sales');
 const filteredCardSalesEl = document.getElementById('filtered-card-sales');
-const filteredOnlineSalesEl = document.getElementById('filtered-online-sales');
+// const filteredOnlineSalesEl = document.getElementById('filtered-online-sales'); // এই এলিমেন্টটি আপনার HTML-এ না থাকলে মুছে দিতে পারেন
 
+// সব সেলস ডেটা একটি গ্লোবাল ভেরিয়েবলে রাখা হবে, যাতে বারবার Firestore কল করতে না হয়
+let allSalesData = [];
 
 /**
- * সমস্ত সেলস ডেটা লোড করে
+ * Firestore থেকে একবার সমস্ত সেলস ডেটা লোড করে
  */
-async function loadSalesData() {
-    salesTableBody.innerHTML = '<tr><td colspan="7">Loading sales data...</td></tr>'; // colspan="7"
+async function loadAllSalesData() {
+    salesTableBody.innerHTML = '<tr><td colspan="7">Loading sales data...</td></tr>';
     try {
         const salesQuery = query(collection(db, "sales"), orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(salesQuery);
         
-        const salesData = [];
+        allSalesData = []; // প্রতিবার লোডের আগে রিসেট করা
         querySnapshot.forEach(doc => {
             if (doc.data().createdAt) {
-                salesData.push({ id: doc.id, ...doc.data() });
+                allSalesData.push({ id: doc.id, ...doc.data() });
             }
         });
 
-        calculateSummary(salesData);
-        calculateFilteredSummary(salesData);
-        displaySales(salesData);
+        // প্রাথমিক লোডের পর সব হিসাব দেখানো
+        calculateSummary(allSalesData);
+        filterAndDisplayData(); // ডিফল্ট তারিখ অনুযায়ী ফিল্টার করে দেখাবে
 
     } catch (error) {
         console.error("Error loading sales data: ", error);
-        salesTableBody.innerHTML = '<tr><td colspan="7" class="error-message">Failed to load sales data. Check console.</td></tr>'; // colspan="7"
+        salesTableBody.innerHTML = '<tr><td colspan="7" class="error-message">Failed to load sales data. Check console.</td></tr>';
     }
 }
 
 /**
- * বিক্রির প্রধান সামারি গণনা করে
+ * বিক্রির প্রধান সামারি (Today, Month, Overall) গণনা করে
  */
 function calculateSummary(sales) {
     let todayTotal = 0, monthTotal = 0, overallTotal = 0;
-    const now = new Date(), startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()), startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     sales.forEach(sale => {
         if (!sale.createdAt || typeof sale.createdAt.toDate !== 'function') return;
@@ -64,22 +68,71 @@ function calculateSummary(sales) {
 }
 
 /**
- * পেমেন্ট মেথড অনুযায়ী ফিল্টার করা বিক্রির সামারি গণনা করে
+ * নির্দিষ্ট তারিখের মধ্যে থাকা ডেটা ফিল্টার করে এবং সামারি ও টেবিল আপডেট করে
+ */
+function filterAndDisplayData() {
+    const startDateValue = startDateInputEl.value;
+    const endDateValue = endDateInputEl.value;
+
+    if (!startDateValue || !endDateValue) {
+        // ডিফল্ট তারিখ সেট করা (আজকের দিন)
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        startDateInputEl.value = `${yyyy}-${mm}-${dd}`;
+        endDateInputEl.value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    const startDate = new Date(startDateInputEl.value);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(endDateInputEl.value);
+    endDate.setHours(23, 59, 59, 999);
+
+    // গ্লোবাল `allSalesData` থেকে ফিল্টার করা
+    const filteredSales = allSalesData.filter(sale => {
+        const saleDate = sale.createdAt.toDate();
+        return saleDate >= startDate && saleDate <= endDate;
+    });
+
+    calculateFilteredSummary(filteredSales);
+    displaySales(filteredSales);
+}
+
+/**
+ * পেমেন্ট মেথড অনুযায়ী ফিল্টার করা বিক্রির সামারি গণনা করে (সম্পূর্ণ পরিবর্তিত)
  */
 function calculateFilteredSummary(sales) {
-    let cashTotal = 0, cardTotal = 0, onlineTotal = 0;
+    let cashTotal = 0, cardTotal = 0;
 
     sales.forEach(sale => {
+        // নতুন লজিক এখানে
         switch (sale.paymentMethod) {
-            case 'cash': cashTotal += sale.total; break;
-            case 'card': cardTotal += sale.total; break;
-            case 'online': onlineTotal += sale.total; break;
+            case 'cash':
+                cashTotal += sale.total;
+                break;
+            case 'card':
+            case 'online': // কার্ড এবং অনলাইন একই হিসাবে ধরা হচ্ছে
+                cardTotal += sale.total;
+                break;
+            case 'part-payment':
+                if (sale.paymentBreakdown) {
+                    cashTotal += sale.paymentBreakdown.cash || 0;
+                    cardTotal += sale.paymentBreakdown.card_or_online || 0;
+                }
+                break;
+            default:
+                // যদি কোনো পেমেন্ট মেথড না থাকে (পুরনো ডেটা)
+                cashTotal += sale.total; 
+                break;
         }
     });
 
     filteredCashSalesEl.textContent = `₹${cashTotal.toFixed(2)}`;
     filteredCardSalesEl.textContent = `₹${cardTotal.toFixed(2)}`;
-    filteredOnlineSalesEl.textContent = `₹${onlineTotal.toFixed(2)}`;
+    // যদি অনলাইন আলাদাভাবে দেখাতে চান, তাহলে HTML-এ একটি নতুন এলিমেন্ট যোগ করতে হবে
+    // filteredOnlineSalesEl.textContent = `₹${onlineTotal.toFixed(2)}`; 
 }
 
 /**
@@ -88,28 +141,31 @@ function calculateFilteredSummary(sales) {
 function displaySales(sales) {
     salesTableBody.innerHTML = '';
     if (sales.length === 0) {
-        salesTableBody.innerHTML = '<tr><td colspan="7">No sales found for the selected period.</td></tr>'; // colspan="7"
+        salesTableBody.innerHTML = '<tr><td colspan="7">No sales found for the selected period.</td></tr>';
         return;
     }
 
     sales.forEach(sale => {
         const row = document.createElement('tr');
         const saleDate = sale.createdAt.toDate();
-        const formattedDate = saleDate.toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        const itemNames = sale.items.map(item => item.name).join(', ');
+        const formattedDate = saleDate.toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
+        const itemNames = sale.items.map(item => `${item.name} (x${item.quantity})`).join(', ');
 
-        // ========= নতুন পরিবর্তন এখানে ==========
-        // পেমেন্ট মেথড ফরম্যাট করা, যেমন 'cash' কে 'Cash' দেখানো
-        const paymentMethod = sale.paymentMethod 
-            ? sale.paymentMethod.charAt(0).toUpperCase() + sale.paymentMethod.slice(1) 
-            : 'N/A'; // যদি কোনো কারণে paymentMethod না থাকে
+        // পেমেন্ট মেথড ফরম্যাট করা
+        let paymentDisplay = 'N/A';
+        if (sale.paymentMethod) {
+            paymentDisplay = sale.paymentMethod.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            if (sale.paymentMethod === 'part-payment' && sale.paymentBreakdown) {
+                paymentDisplay += ` (Cash: ₹${sale.paymentBreakdown.cash.toFixed(2)}, Card: ₹${sale.paymentBreakdown.card_or_online.toFixed(2)})`;
+            }
+        }
 
         row.innerHTML = `
             <td>${sale.id.substring(0, 8)}...</td>
             <td>${formattedDate}</td>
-            <td>${sale.items.length}</td>
+            <td>${sale.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
             <td title="${itemNames}">${itemNames.length > 40 ? itemNames.substring(0, 40) + '...' : itemNames}</td>
-            <td>${paymentMethod}</td> <!-- নতুন সেল -->
+            <td title="${paymentDisplay}">${paymentDisplay.length > 30 ? paymentDisplay.substring(0, 30) + '...' : paymentDisplay}</td>
             <td>₹${sale.total.toFixed(2)}</td>
             <td>
                 <button class="reprint-btn btn btn-secondary" data-sale-id="${sale.id}">Reprint</button>
@@ -119,42 +175,10 @@ function displaySales(sales) {
     });
 }
 
-/**
- * তারিখ অনুযায়ী ফিল্টার করার ইভেন্ট হ্যান্ডলার
- */
-filterBtn.addEventListener('click', async () => {
-    const startDateValue = startDateInputEl.value;
-    const endDateValue = endDateInputEl.value;
+// "Filter" বাটনে ক্লিকের জন্য ইভেন্ট হ্যান্ডলার
+filterBtn.addEventListener('click', filterAndDisplayData);
 
-    if (!startDateValue || !endDateValue) {
-        alert('Please select both start and end dates.');
-        return;
-    }
-
-    const startDate = new Date(startDateValue);
-    const endDate = new Date(endDateValue);
-    endDate.setHours(23, 59, 59, 999);
-
-    salesTableBody.innerHTML = '<tr><td colspan="7">Filtering data...</td></tr>'; // colspan="7"
-
-    try {
-        const q = query(collection(db, "sales"), where("createdAt", ">=", startDate), where("createdAt", "<=", endDate), orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
-        const filteredSales = [];
-        querySnapshot.forEach(doc => filteredSales.push({ id: doc.id, ...doc.data() }));
-        
-        calculateFilteredSummary(filteredSales);
-        displaySales(filteredSales);
-
-    } catch (error) {
-        console.error("Error filtering sales data: ", error);
-        salesTableBody.innerHTML = '<tr><td colspan="7" class="error-message">Filtering failed.</td></tr>'; // colspan="7"
-    }
-});
-
-/**
- * 'Reprint' বাটনে ক্লিকের জন্য ইভেন্ট হ্যান্ডলার
- */
+// "Reprint" বাটনে ক্লিকের জন্য ইভेंट হ্যান্ডলার
 salesTableBody.addEventListener('click', (e) => {
     if (e.target.classList.contains('reprint-btn')) {
         const saleId = e.target.dataset.saleId;
@@ -165,4 +189,4 @@ salesTableBody.addEventListener('click', (e) => {
 });
 
 // পেজ লোড হওয়ার পর ডেটা লোড করা
-document.addEventListener('DOMContentLoaded', loadSalesData);
+document.addEventListener('DOMContentLoaded', loadAllSalesData);
