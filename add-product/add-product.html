@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Product</title>
+    <title>Add Products</title>
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="add-product.css">
 </head>
@@ -22,32 +22,38 @@
 
     <main class="container">
         <div class="card-container">
-            <h1>Add a New Product</h1>
-            <form id="add-product-form">
-                <div class="form-group">
-                    <label for="product-name">Product Name</label>
-                    <input type="text" id="product-name" required>
+            <h1>Add New Products</h1>
+            <p>Fill the table below to add multiple products at once. Barcode will be generated automatically.</p>
+            
+            <form id="add-products-form">
+                <table id="products-table">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Cost Price (CP)</th>
+                            <th>Selling Price (SP)</th>
+                            <th>Initial Stock</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-tbody">
+                        <!-- Rows will be added dynamically here -->
+                    </tbody>
+                </table>
+                <div class="table-actions">
+                    <button type="button" id="add-row-btn" class="btn">Add More Rows</button>
+                    <button type="submit" class="btn btn-primary">Save All Products</button>
                 </div>
-                <div class="form-group">
-                    <label for="product-price">Price</label>
-                    <input type="number" id="product-price" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="product-stock">Initial Stock</label>
-                    <input type="number" id="product-stock" required>
-                </div>
-                <div class="form-group">
-                    <label for="product-barcode">Barcode</label>
-                    <input type="text" id="product-barcode" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Add Product</button>
             </form>
             <p id="status-message"></p>
+        </div>
 
-            <div id="barcode-section" class="hidden">
-                <h2>Generated Barcode</h2>
-                <svg id="barcode-display"></svg>
-                <button id="print-barcode-btn" class="btn btn-success">Print Barcode</button>
+        <div id="barcode-print-area" class="card-container hidden">
+            <h2>Generated Barcodes</h2>
+            <p>Click on a barcode to print it.</p>
+            <div id="barcodes-container">
+                <!-- Generated barcodes will appear here -->
             </div>
         </div>
     </main>

@@ -27,15 +27,18 @@
                 <input type="text" id="search-inventory" placeholder="Search by name or barcode...">
             </div>
             <table>
-                <thead>
-                    <tr>
-                        <th>Product Name</th>
-                        <th>Price</th>
-                        <th>Current Stock</th>
-                        <th>Barcode</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+                <!-- inventory.html ফাইলের <thead> অংশ -->
+<thead>
+    <tr>
+        <th>Product Name</th>
+        <th>Category</th>
+        <th>Cost Price (CP)</th>
+        <th>Selling Price (SP)</th>
+        <th>Current Stock</th>
+        <th>Barcode</th>
+        <th>Actions</th>
+    </tr>
+</thead>
                 <tbody id="inventory-body">
                     <!-- Products will be loaded here by JavaScript -->
                 </tbody>
