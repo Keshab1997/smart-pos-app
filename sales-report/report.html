@@ -25,17 +25,18 @@
         <div class="summary-boxes">
             <div class="summary-box">
                 <h2>Today's Sales</h2>
-                <p id="total-sales-today">0.00</p>
+                <p id="total-sales-today">₹0.00</p>
             </div>
             <div class="summary-box">
                 <h2>This Month's Sales</h2>
-                <p id="total-sales-month">0.00</p>
+                <p id="total-sales-month">₹0.00</p>
             </div>
             <div class="summary-box">
                 <h2>Overall Sales</h2>
-                <p id="overall-total-sales">0.00</p>
+                <p id="overall-total-sales">₹0.00</p>
             </div>
         </div>
+        
 
         <div class="card-container filter-section">
             <h2>Filter Sales</h2>
@@ -53,6 +54,24 @@
         </div>
 
         <div class="card-container">
+            <h2>Filtered Sales Summary</h2>
+            <div class="filtered-summary-boxes">
+                <div class="summary-box">
+                    <h3>Cash Sales</h3>
+                    <p id="filtered-cash-sales">₹0.00</p>
+                </div>
+                <div class="summary-box">
+                    <h3>Card Sales</h3>
+                    <p id="filtered-card-sales">₹0.00</p>
+                </div>
+                <div class="summary-box">
+                    <h3>Online Sales</h3>
+                    <p id="filtered-online-sales">₹0.00</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-container">
             <h2>Sales History</h2>
             <table>
                 <thead>
@@ -60,16 +79,20 @@
                         <th>Sale ID</th>
                         <th>Date</th>
                         <th>Items Sold</th>
+                        <th>Item Names</th>
+                        <th>Payment Type</th> <!-- এই কলামটি যোগ করা হয়েছে -->
                         <th>Total Amount</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="sales-table-body">
-                    <!-- Sales data will be loaded here -->
+                    <!-- JavaScript দিয়ে সেলস ডেটা এখানে লোড করা হবে -->
                 </tbody>
             </table>
         </div>
     </main>
     
+    <!-- JavaScript ফাইলগুলো লোড করা হচ্ছে -->
     <script type="module" src="../js/firebase-config.js"></script>
     <script type="module" src="report.js"></script>
 </body>

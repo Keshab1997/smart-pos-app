@@ -35,3 +35,79 @@
     gap: 15px;
     flex-wrap: wrap;
 }
+/* ============================
+   Button Styles
+   ============================ */
+
+/* --- Base Button Style --- */
+/* সব বাটনের জন্য সাধারণ স্টাইল */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: bold; /* লেখাকে বোল্ড করে */
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+/* বাটনে ক্লিক করার সময় একটি ছোট ইফেক্ট */
+.btn:active {
+    transform: translateY(1px);
+}
+
+/* --- Primary Button --- */
+/* আপনার 'Filter' বাটনের জন্য */
+.btn-primary {
+    background-color: #3498db; /* নীল ব্যাকগ্রাউন্ড */
+    color: white; /* সাদা লেখা */
+}
+
+.btn-primary:hover {
+    background-color: #2980b9; /* হোভার করলে গাঢ় নীল */
+}
+
+/* --- Secondary Button (Reprint) --- */
+/* আপনার 'Reprint' বাটনের জন্য নতুন স্টাইল */
+.btn-secondary {
+    background-color: #6c757d; /* একটি সুন্দর ধূসর রঙ */
+    color: white; /* সাদা লেখা */
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268; /* হোভার করলে গাঢ় ধূসর */
+}
+
+/* --- টেবিলের মধ্যে বাটনের জন্য অতিরিক্ত মার্জিন (ঐচ্ছিক) --- */
+table .btn {
+    margin: 0;
+    padding: 6px 12px; /* টেবিলের মধ্যে বাটন একটু ছোট হতে পারে */
+}
+/* ========================================
+   Filtered Summary Box Colors
+   ======================================== */
+
+/* এই ক্লাসটি HTML-এ filtered-summary-boxes এর div-এ ব্যবহার করা হয়েছে */
+.filtered-summary-boxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* ചെറിയ സ്ക്രീനുകൾക്ക് അനുയോജ്യമാക്കാൻ minmax ക്രമീകരിച്ചു */
+    gap: 20px;
+}
+
+/* 1. Cash Sales Box (সবুজ রঙ) */
+.filtered-summary-boxes .summary-box:nth-child(1) p {
+    color: #27ae60; /* গাঢ় সবুজ */
+}
+
+/* 2. Card Sales Box (কমলা রঙ) */
+.filtered-summary-boxes .summary-box:nth-child(2) p {
+    color: #e67e22; /* গাঢ় কমলা */
+}
+
+/* 3. Online Sales Box (পার্পল রঙ) */
+.filtered-summary-boxes .summary-box:nth-child(3) p {
+    color: #8e44ad; /* পার্পল */
+}
