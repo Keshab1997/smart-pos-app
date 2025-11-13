@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Print Bill</title>
+    <link rel="stylesheet" href="print.css">
+</head>
+<body>
+    <div class="receipt">
+        <header id="shop-details-container">
+            <!-- Shop details will be loaded here -->
+        </header>
+        
+        <section class="bill-details">
+            <p><strong>Bill No:</strong> <span id="bill-no"></span></p>
+            <p><strong>Date:</strong> <span id="bill-date"></span></p>
+        </section>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="receipt-items">
+                <!-- Items will be loaded here -->
+            </tbody>
+        </table>
+
+        <section class="totals">
+            <p><strong>Subtotal:</strong> <span id="receipt-subtotal"></span></p>
+            <p id="gst-line"><strong>GST:</strong> <span id="receipt-tax"></span></p>
+            <hr>
+            <p class="grand-total"><strong>Total:</strong> <span id="receipt-total"></span></p>
+        </section>
+
+        <section class="payment-info">
+            <p><strong>Payment Method:</strong> <span id="payment-method"></span></p>
+        </section>
+
+        <footer>
+            <p>Thank you for your purchase!</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    <script src="../js/firebase-config.js"></script>
+    <script src="print.js"></script>
+</body>
+</html>
