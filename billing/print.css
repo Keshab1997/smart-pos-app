@@ -1,84 +1,98 @@
-body {
-    font-family: 'Courier New', Courier, monospace;
-    color: #000;
-    background-color: #fff;
+/* print.css - Auto-fit Layout for Thermal Printers (Revised) */
+
+@page {
+    /* ব্রাউজার এবং প্রিন্টারকে পেজের সাইজ ও মার্জিন নিজে থেকে ঠিক করতে দিন */
+    size: auto;
+    /* দু'পাশে অতিরিক্ত মার্জিন যোগ করা হলো যাতে কন্টেন্ট কেটে না যায় */
+    margin: 3mm 4mm;
+}
+
+html, body {
+    /* কোনো নির্দিষ্ট প্রস্থ সেট না করে 100% ব্যবহার করা */
+    width: 100%;
     margin: 0;
-    padding: 20px;
+    padding: 0;
+    -webkit-text-size-adjust: 100%; /* iOS ডিভাইসে ফন্ট সাইজ ঠিক রাখে */
+}
+
+body {
+    font-family: 'Consolas', 'Lucida Console', 'Courier New', monospace;
+    font-size: 13px; /* একটি মাঝারি সাইজ যা বেশিরভাগ প্রিন্টারে ভালো দেখায় */
+    line-height: 1.4;
+    color: #000;
+}
+
+@media print {
+    /* প্রিন্টের সময় অপ্রয়োজনীয় শ্যাডো বা রঙ বাদ দেওয়া */
+    * {
+        color: #000 !important;
+        background: #fff !important;
+        text-shadow: none !important;
+        box-shadow: none !important;
+    }
+
+    html, body {
+        overflow: visible !important; /* কন্টেন্ট যেন কেটে না যায় */
+    }
 }
 
 .receipt {
-    width: 300px; /* Standard thermal printer width */
-    margin: 0 auto;
-    font-size: 12px;
+    /* 80mm কাগজের জন্য একটি নিরাপদ সর্বোচ্চ প্রস্থ সেট করা হলো */
+    max-width: 72mm;
+    width: 100%;
+    margin: 0 auto; /* কন্টেন্টকে মাঝখানে রাখার জন্য */
+    box-sizing: border-box;
 }
 
-header {
-    text-align: center;
-    border-bottom: 1px dashed #000;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-}
 
-header h2 { margin: 0; }
-header p { margin: 2px 0; }
-
-.bill-details p {
-    margin: 3px 0;
-}
-
+/* টেবিল স্টাইল */
 table {
     width: 100%;
     border-collapse: collapse;
-    margin: 10px 0;
+    margin-top: 8px;
+    margin-bottom: 8px;
 }
 
 th, td {
-    padding: 5px 0;
+    padding: 4px 1px;
     text-align: left;
-}
-
-th:nth-child(2), td:nth-child(2) { text-align: center; } /* Qty */
-th:nth-child(3), td:nth-child(3) { text-align: right; } /* Rate */
-th:nth-child(4), td:nth-child(4) { text-align: right; } /* Total */
-
-thead tr {
-    border-top: 1px dashed #000;
     border-bottom: 1px dashed #000;
+    /* গুরুত্বপূর্ণ: লম্বা টেক্সটকে ভেঙে পরের লাইনে আনার জন্য এই কোড যোগ করা হলো */
+    word-break: break-all;
 }
 
-.totals {
-    margin-top: 10px;
+th {
     border-top: 1px dashed #000;
-    padding-top: 5px;
-}
-
-.totals p {
-    margin: 3px 0;
-    display: flex;
-    justify-content: space-between;
-}
-
-.grand-total {
-    font-size: 14px;
     font-weight: bold;
 }
 
-footer {
-    text-align: center;
-    margin-top: 20px;
-    border-top: 1px dashed #000;
-    padding-top: 10px;
+/* সংখ্যা ডান দিকে অ্যালাইন করা */
+td:nth-child(2), td:nth-child(3), td:nth-child(4),
+th:nth-child(2), th:nth-child(3), th:nth-child(4) {
+    text-align: right;
 }
 
-/* Print specific styles */
-@media print {
-    body {
-        padding: 0;
-        background-color: #fff;
-    }
-    .receipt {
-        margin: 0;
-        width: 100%; /* Use full available width for printing */
-        box-shadow: none;
-    }
+hr {
+    border: none;
+    border-top: 1px dashed #000;
+    margin: 6px 0;
+}
+
+/* শিরোনাম এবং অন্যান্য টেক্সট */
+header, footer {
+    text-align: center;
+}
+
+header h1 {
+    font-size: 1.2em; /* মূল ফন্ট সাইজের ১.২ গুণ বড় */
+    margin: 0 0 5px 0;
+}
+
+.grand-total strong {
+    font-size: 1.1em; /* মূল ফন্ট সাইজের ১.১ গুণ বড় */
+}
+
+.totals {
+    text-align: right;
+    margin-top: 5px;
 }

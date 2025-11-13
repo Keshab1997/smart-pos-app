@@ -259,7 +259,7 @@ checkoutBtn.addEventListener('click', async () => { /* ...আগের মতো
             batch.update(productRef, { stock: increment(-item.quantity) });
         });
         await batch.commit();
-        window.open(`../print/print.html?saleId=${saleRef.id}`, '_blank');
+        window.open(`print.html?saleId=${saleRef.id}`, '_blank');
         cart = [];
         updateCartDisplay();
         // প্রোডাক্ট স্টক আপডেট হওয়ার পর আবার লোড করা

@@ -1,46 +1,43 @@
-/* print.css */
+/* print-barcode.css - Revised for 50x25mm Sticker */
 
-/* @page রুল দিয়ে প্রিন্টারের জন্য কাগজের আকার এবং হেডার/ফুটার নিয়ন্ত্রণ করা হচ্ছে */
 @page {
-    /* আপনার স্টিকারের আসল মাপ দিন */
+    /* আপনার স্টিকারের সঠিক মাপ */
     size: 50mm 25mm;
 
-    /* ডিফল্ট হেডার এবং ফুটার (তারিখ, শিরোনাম, URL, পেজ নম্বর) বন্ধ করা হচ্ছে */
+    /* প্রিন্টারের হার্ডওয়্যার মার্জিন সামলানোর জন্য margin: 0 যথেষ্ট */
     margin: 0;
 }
 
 body {
-    /* প্রিন্ট করার সময় body-র মার্জিন ০ করে দেওয়া ভালো */
     margin: 0;
     padding: 0;
+    /* নিশ্চিত করুন যে body-র কোনো অতিরিক্ত উচ্চতা নেই */
+    height: 100vh; /* viewport height অনুযায়ী উচ্চতা */
 }
 
 @media print {
-    /* প্রথমে পেজের সবকিছু লুকিয়ে ফেলুন */
+    /* অপ্রয়োজনীয় এলিমেন্ট লুকানো */
     body * {
         visibility: hidden;
     }
 
-    /* শুধুমাত্র প্রিন্ট করার এলিমেন্টটি দৃশ্যমান করুন */
     .printable-barcode, .printable-barcode * {
         visibility: visible;
     }
 
-    /* .printable-barcode এলিমেন্টটিকে সঠিকভাবে সাজানো */
     .printable-barcode {
-        /* position: absolute এবং top/left ব্যবহার করা হচ্ছে যাতে এটি ডকুমেন্টের শুরুতে থাকে */
+        /* position: absolute ডকুমেন্টের ফ্লো থেকে বের করে আনে */
         position: absolute;
-        left: 0;
         top: 0;
-        
-        /* এখানে vh (viewport height) ব্যবহার না করে % ব্যবহার করা হচ্ছে */
-        /* এটি অতিরিক্ত পৃষ্ঠা তৈরি হওয়া প্রতিরোধ করে */
-        width: 100%;
-        height: 100%;
-        
-        box-sizing: border-box;
+        left: 0;
 
-        /* কন্টেন্ট সেন্টারে আনার জন্য */
+        /* স্টিকারের সঠিক প্রস্থ ও উচ্চতা এখানেও দিন */
+        width: 50mm;
+        height: 25mm;
+
+        box-sizing: border-box; /* Padding ও Border যেন width/height এর ভেতরে থাকে */
+        
+        /* কন্টেন্ট মাঝখানে আনার জন্য */
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -53,24 +50,29 @@ body {
         overflow: hidden;
     }
 
-    /* স্টিকারের আকারের সাথে মানানসই করতে ফন্টের আকার এবং বারকোডের আকার পরিবর্তন করুন */
+    /* ফন্ট এবং বারকোডের আকার আরও নিখুঁতভাবে সমন্বয় করা */
     .printable-barcode .product-info {
+        font-family: Arial, sans-serif;
         font-size: 7pt !important;
-        line-height: 1.2;
-        margin-bottom: 1mm !important;
         font-weight: bold;
+        line-height: 1.1;
+        margin: 0 0 1mm 0;
+        text-align: center;
     }
 
     .printable-barcode .barcode-svg {
-        /* বারকোডের আকার নির্দিষ্ট করে দেওয়া হচ্ছে */
+        /* প্রস্থ ঠিক রেখে উচ্চতা প্রয়োজনমতো দিন */
         width: 45mm !important; 
         height: 10mm !important;
+        display: block; /* এক্সট্রা স্পেস দূর করতে */
     }
 
     .printable-barcode .product-price {
+        font-family: Arial, sans-serif;
         font-size: 8pt !important;
-        line-height: 1.2;
-        margin-top: 1mm !important;
         font-weight: bold;
+        line-height: 1.1;
+        margin: 1mm 0 0 0;
+        text-align: center;
     }
 }
