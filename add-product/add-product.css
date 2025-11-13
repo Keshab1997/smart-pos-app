@@ -63,18 +63,3 @@
     font-size: 11px;
 }
 
-/* Print Styles */
-@media print {
-    body * {
-        visibility: hidden;
-    }
-    .printable-barcode, .printable-barcode * {
-        visibility: visible;
-    }
-    .printable-barcode {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
-}

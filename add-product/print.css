@@ -1,0 +1,76 @@
+/* print.css */
+
+/* @page রুল দিয়ে প্রিন্টারের জন্য কাগজের আকার এবং হেডার/ফুটার নিয়ন্ত্রণ করা হচ্ছে */
+@page {
+    /* আপনার স্টিকারের আসল মাপ দিন */
+    size: 50mm 25mm;
+
+    /* ডিফল্ট হেডার এবং ফুটার (তারিখ, শিরোনাম, URL, পেজ নম্বর) বন্ধ করা হচ্ছে */
+    margin: 0;
+}
+
+body {
+    /* প্রিন্ট করার সময় body-র মার্জিন ০ করে দেওয়া ভালো */
+    margin: 0;
+    padding: 0;
+}
+
+@media print {
+    /* প্রথমে পেজের সবকিছু লুকিয়ে ফেলুন */
+    body * {
+        visibility: hidden;
+    }
+
+    /* শুধুমাত্র প্রিন্ট করার এলিমেন্টটি দৃশ্যমান করুন */
+    .printable-barcode, .printable-barcode * {
+        visibility: visible;
+    }
+
+    /* .printable-barcode এলিমেন্টটিকে সঠিকভাবে সাজানো */
+    .printable-barcode {
+        /* position: absolute এবং top/left ব্যবহার করা হচ্ছে যাতে এটি ডকুমেন্টের শুরুতে থাকে */
+        position: absolute;
+        left: 0;
+        top: 0;
+        
+        /* এখানে vh (viewport height) ব্যবহার না করে % ব্যবহার করা হচ্ছে */
+        /* এটি অতিরিক্ত পৃষ্ঠা তৈরি হওয়া প্রতিরোধ করে */
+        width: 100%;
+        height: 100%;
+        
+        box-sizing: border-box;
+
+        /* কন্টেন্ট সেন্টারে আনার জন্য */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        
+        /* ভেতরের দিকে সামান্য প্যাডিং */
+        padding: 1.5mm;
+
+        /* ওভারফ্লো প্রতিরোধ করতে */
+        overflow: hidden;
+    }
+
+    /* স্টিকারের আকারের সাথে মানানসই করতে ফন্টের আকার এবং বারকোডের আকার পরিবর্তন করুন */
+    .printable-barcode .product-info {
+        font-size: 7pt !important;
+        line-height: 1.2;
+        margin-bottom: 1mm !important;
+        font-weight: bold;
+    }
+
+    .printable-barcode .barcode-svg {
+        /* বারকোডের আকার নির্দিষ্ট করে দেওয়া হচ্ছে */
+        width: 45mm !important; 
+        height: 10mm !important;
+    }
+
+    .printable-barcode .product-price {
+        font-size: 8pt !important;
+        line-height: 1.2;
+        margin-top: 1mm !important;
+        font-weight: bold;
+    }
+}
