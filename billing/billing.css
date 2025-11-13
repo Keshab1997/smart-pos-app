@@ -323,3 +323,123 @@
         width: calc(100% - 40px);
     }
 }
+/* billing.css ফাইলের শেষে যোগ করুন */
+
+/* --- নতুন ক্যাটাগরি ব্রাউজার স্টাইল --- */
+
+#category-browser {
+    flex-grow: 1; /* বাকি সব জায়গা নিয়ে নেবে */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* ভেতরের কন্টেন্ট বাইরে যেতে দেবে না */
+    margin-top: 15px;
+}
+
+.hidden {
+    display: none !important; /* কোনো ভিউ হাইড করার জন্য */
+}
+
+/* ক্যাটাগরি গ্রিড ভিউ */
+#category-grid-view {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.category-browse-title {
+    padding: 0 0 10px;
+    font-size: 1.1rem;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+}
+
+#category-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    overflow-y: auto; /* এখানে স্ক্রল হবে */
+    flex-grow: 1;
+    padding-right: 10px;
+}
+
+.category-card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px 15px;
+    text-align: center;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.category-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    color: #007bff;
+    border-color: #007bff;
+}
+
+/* প্রোডাক্ট লিস্ট ভিউ */
+#product-list-view {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-view-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+.btn-back {
+    background: none;
+    border: 1px solid #ccc;
+    padding: 5px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.btn-back:hover {
+    background-color: #f0f0f0;
+}
+
+#product-view-category-name {
+    font-size: 1.2rem;
+    color: #333;
+    margin: 0;
+}
+
+#product-grid-container {
+    overflow-y: auto; /* এখানেও স্ক্রল হবে */
+    flex-grow: 1;
+    padding-right: 10px;
+}
+
+/* প্রোডাক্ট কার্ডের স্টাইল আগের মতোই থাকবে, যদি না থাকে তবে এটি ব্যবহার করুন */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 8px;
+}
+.product-card {
+    border: 1px solid #e5e5e5; border-radius: 6px; padding: 8px;
+    text-align: center; cursor: pointer; transition: all 0.2s;
+    background: #fff; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; min-height: 70px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.product-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #007bff; }
+.product-card-name { font-weight: 500; font-size: 0.8rem; color: #444; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.product-card-price { font-size: 0.8rem; color: #007bff; font-weight: 700; margin-top: 4px; }
