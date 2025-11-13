@@ -1,0 +1,47 @@
+.hidden {
+    display: none;
+}
+
+#barcode-section {
+    margin-top: 30px;
+    text-align: center;
+    padding: 20px;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+}
+
+#barcode-display {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 20px;
+}
+
+#status-message {
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+.success {
+    color: #27ae60;
+}
+
+.error {
+    color: #c0392b;
+}
+
+/* Print Styles */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #barcode-section, #barcode-section * {
+        visibility: visible;
+    }
+    #barcode-section {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        border: none;
+    }
+}
