@@ -6,7 +6,6 @@
     <title>Add Products</title>
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="add-product.css">
-    <!-- নতুন প্রিন্ট স্টাইলশিট যোগ করা হয়েছে -->
     <link rel="stylesheet" href="print.css">
 </head>
 <body>
@@ -40,7 +39,7 @@
                         </tr>
                     </thead>
                     <tbody id="products-tbody">
-                        <!-- Rows will be added dynamically here -->
+                        <!-- জাভাস্ক্রিপ্ট দিয়ে সারি এখানে যোগ হবে -->
                     </tbody>
                 </table>
                 <div class="table-actions">
@@ -55,19 +54,19 @@
             <h2>Generated Barcodes</h2>
             <p>Click on a barcode to print it.</p>
             <div id="barcodes-container">
-                <!-- Generated barcodes will appear here -->
+                <!-- জেনারেট করা বারকোড এখানে আসবে -->
             </div>
         </div>
     </main>
     
-    <!-- JsBarcode Library -->
+    <!-- JsBarcode লাইব্রেরি -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     
-    <!-- Firebase and Page Logic -->
-    <script type="module" src="../js/firebase-config.js"></script>
+    <!-- *** প্রধান পরিবর্তন এখানে *** -->
+    <!-- firebase-config.js লোড করার লাইনটি সরানো হয়েছে। -->
+    <!-- শুধুমাত্র প্রধান JS ফাইলগুলোকে মডিউল হিসেবে লোড করা হচ্ছে। -->
     <script type="module" src="add-product.js"></script>
+    <script type="module" src="print-handler.js"></script>
 
-    <!-- নতুন প্রিন্ট হ্যান্ডলার স্ক্রিপ্ট যোগ করা হয়েছে -->
-    <script src="print-handler.js"></script>
 </body>
 </html>

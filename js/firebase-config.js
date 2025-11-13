@@ -3,19 +3,34 @@
 // Firebase SDK থেকে প্রয়োজনীয় মডিউল ইম্পোর্ট করা হচ্ছে
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-// Firestore থেকে getFirestore এবং আমাদের প্রয়োজনীয় অন্যান্য ফাংশন ইম্পোর্ট করা হচ্ছে
+// Firestore থেকে আপনার প্রোজেক্টের জন্য প্রয়োজনীয় সব ফাংশন ইম্পোর্ট করা হচ্ছে
 import { 
     getFirestore, 
     collection, 
     doc, 
-    writeBatch 
+    writeBatch,
+    getDocs,
+    getDoc,
+    query,
+    where,
+    orderBy,
+    startAt,
+    endAt,
+    limit,
+    serverTimestamp,
+    increment,
+    onSnapshot,
+    deleteDoc,
+    updateDoc,
+    addDoc 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // আপনার ওয়েব অ্যাপের Firebase কনফিগারেশন
 const firebaseConfig = {
-  apiKey: "AIzaSyB1fmVLCxyq8kQRULji0j7T-8c5De3X_Gk",
+  // ⚠️ নিরাপত্তা সতর্কতা: এই কী-টি পাবলিক হয়ে গেছে। দ্রুত পরিবর্তন করুন।
+  apiKey: "AIzaSyB1fmVLCxyq8kQRULji0j7T-8c5De3X_Gk", 
   authDomain: "smart-pos-app-64ad6.firebaseapp.com",
   projectId: "smart-pos-app-64ad6",
   storageBucket: "smart-pos-app-64ad6.appspot.com",
@@ -28,8 +43,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // আমাদের প্রয়োজনীয় Firebase সার্ভিসগুলো ইনিশিয়ালাইজ করা হচ্ছে
-const db = getFirestore(app); // Firestore ডেটাবেস ব্যবহারের জন্য
-const auth = getAuth(app);    // Authentication (লগইন/সাইনআপ) ব্যবহারের জন্য
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 // অন্য জাভাস্ক্রিপ্ট ফাইল থেকে ব্যবহারের জন্য সার্ভিস এবং ফাংশনগুলো এক্সপোর্ট করা হচ্ছে
 export { 
@@ -37,5 +52,19 @@ export {
     auth, 
     collection, 
     doc, 
-    writeBatch 
+    writeBatch,
+    getDocs,
+    getDoc,
+    query,
+    where,
+    orderBy,
+    startAt,
+    endAt,
+    limit,
+    serverTimestamp,
+    increment,
+    onSnapshot,
+    deleteDoc,
+    updateDoc,
+    addDoc
 };
