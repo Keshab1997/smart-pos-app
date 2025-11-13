@@ -3,50 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Inventory</title>
+    <title>Inventory Management - Smart POS</title>
+    
+    <!-- Global stylesheet (for navigation, buttons, etc.) -->
     <link rel="stylesheet" href="../css/global.css">
+    
+    <!-- Specific stylesheet for the inventory page -->
     <link rel="stylesheet" href="inventory.css">
 </head>
 <body>
-    <header class="main-header">
-        <nav class="container">
-            <a href="../index.html" class="logo">Smart POS</a>
-            <ul>
-                <li><a href="../billing/billing.html">Billing</a></li>
-                <li><a href="inventory.html" class="active">Inventory</a></li>
-                <li><a href="../add-product/add-product.html">Add Product</a></li>
-                <li><a href="../sales-report/report.html">Sales Report</a></li>
-            </ul>
+
+    <!-- ======== Navigation Bar ======== -->
+    <header class="navbar">
+        <div class="navbar-brand">Smart POS</div>
+        <nav class="navbar-nav">
+            <a href="../index.html">Dashboard</a>
+            <a href="../billing/billing.html">Billing</a>
+            <a href="../inventory/inventory.html" class="active">Inventory</a>
+            <a href="../add-product/add-product.html">Add Product</a>
+            <a href="../sales-report/report.html">Report</a>
         </nav>
     </header>
 
-    <main class="container">
-        <div class="card-container">
-            <h1>Product Inventory</h1>
-            <div class="form-group">
-                <input type="text" id="search-inventory" placeholder="Search by name or barcode...">
-            </div>
-            <table>
-                <!-- inventory.html ফাইলের <thead> অংশ -->
-<thead>
-    <tr>
-        <th>Product Name</th>
-        <th>Category</th>
-        <th>Cost Price (CP)</th>
-        <th>Selling Price (SP)</th>
-        <th>Current Stock</th>
-        <th>Barcode</th>
-        <th>Actions</th>
-    </tr>
-</thead>
+    <!-- ======== Main Content ======== -->
+    <main>
+        <h1>Product Inventory</h1>
+
+        <!-- Controls: Search and Add New Product button -->
+        <div class="inventory-controls">
+            <input type="search" id="search-inventory" placeholder="Search for product (name, barcode, category)...">
+            <a href="../add-product/add-product.html" class="btn btn-primary">Add New Product</a>
+        </div>
+
+        <!-- Product Table -->
+        <div class="table-container">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Cost Price (CP)</th>
+                        <th>Selling Price (SP)</th>
+                        <th>Stock</th>
+                        <th>Barcode</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <!-- inventory.js will load data inside this tbody -->
                 <tbody id="inventory-body">
-                    <!-- Products will be loaded here by JavaScript -->
+                    <!-- To show the initial loading state -->
+                    <tr>
+                        <td colspan="7" style="text-align: center;">Loading products...</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </main>
 
-    <script type="module" src="../js/firebase-config.js"></script>
+    <!-- ======== JavaScript File ======== -->
+    <!-- type="module" is very important because we are using import/export -->
     <script type="module" src="inventory.js"></script>
+
 </body>
 </html>

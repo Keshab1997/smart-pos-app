@@ -1,17 +1,130 @@
+/* ==================================== */
+/*          ইনভেন্টরি পেজের স্টাইল       */
+/* ==================================== */
+
+/* মূল কনটেন্ট কন্টেইনার */
+main {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 20px auto; /* উপরে-নিচে মার্জিন এবং ডানে-বামে অটো সেন্টারের জন্য */
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+main h1 {
+    font-size: 2rem;
+    color: #2c3e50; /* গাঢ় নীল */
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 0.5rem;
+}
+
+/* কন্ট্রোলস: সার্চ এবং বাটন */
+.inventory-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap; /* ছোট স্ক্রিনে আইটেমগুলো নিচে চলে আসবে */
+    gap: 1rem; /* আইটেমগুলোর মধ্যে ফাঁকা জায়গা */
+}
+
 #search-inventory {
-    margin-bottom: 20px;
-    padding: 12px;
-    width: 100%;
+    flex-grow: 1; /* উপলব্ধ স্থান পূরণ করবে */
+    max-width: 500px; /* সার্চ বার যেন অতিরিক্ত বড় না হয় */
+    padding: 0.75rem 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-.low-stock {
-    background-color: #ffebee !important;
-    color: #c62828;
+#search-inventory:focus {
+    outline: none;
+    border-color: #007bff; /* ফোকাস করলে বর্ডারের রঙ পরিবর্তন হবে */
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* হালকা শ্যাডো */
+}
+
+/* নতুন প্রোডাক্ট যোগ করার বাটন (global.css থেকে আসতে পারে, এখানেও দেওয়া হলো) */
+.btn.btn-primary {
+    padding: 0.75rem 1.5rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
     font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    white-space: nowrap; /* বাটন টেক্সট যেন এক লাইনে থাকে */
 }
 
-.action-btn {
-    margin-right: 5px;
-    padding: 5px 10px;
-    font-size: 0.9rem;
+.btn.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+
+/* টেবিল কন্টেইনার */
+.table-container {
+    overflow-x: auto; /* ছোট স্ক্রিনে টেবিলকে হরাইজন্টালি স্ক্রল করার জন্য */
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.inventory-table {
+    width: 100%;
+    border-collapse: collapse; /* সেলগুলোর মধ্যে স্পেস দূর করে */
+    font-size: 0.95rem;
+}
+
+/* টেবিল হেডার এবং সেল */
+.inventory-table th,
+.inventory-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.inventory-table thead th {
+    background-color: #f8f9fa; /* হালকা ধূসর ব্যাকগ্রাউন্ড */
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+/* টেবিল বডির সারি */
+.inventory-table tbody tr:hover {
+    background-color: #f1f3f5; /* হোভার করলে ব্যাকগ্রাউন্ডের রঙ পরিবর্তন */
+}
+
+/* একটি পর একটি সারির রঙ ভিন্ন করার জন্য (পড়তে সুবিধা হয়) */
+.inventory-table tbody tr:nth-child(even) {
+    background-color: #fdfdfd;
+}
+
+.inventory-table tbody tr:nth-child(even):hover {
+    background-color: #e9ecef;
+}
+
+
+/* টেবিলের শেষ সারির নিচের বর্ডার বাদ দেওয়া */
+.inventory-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* অ্যাকশন কলামের জন্য (ভবিষ্যতে বাটন যোগ হলে কাজে লাগবে) */
+.inventory-table td:last-child {
+    /* এখানে এডিট বা ডিলিট বাটনের স্টাইল যোগ করা যেতে পারে */
+    white-space: nowrap;
+}
+
+/* লোডিং মেসেজ স্টাইল */
+.inventory-table td[colspan="7"] {
+    color: #888;
+    padding: 2rem;
+    font-style: italic;
 }

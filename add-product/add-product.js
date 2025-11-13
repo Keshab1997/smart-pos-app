@@ -1,6 +1,10 @@
+// js/add-product.js
+
+// Firebase SDK থেকে প্রয়োজনীয় মডিউল ইম্পোর্ট করা হচ্ছে
 import { db } from '../js/firebase-config.js';
 import { collection, writeBatch, doc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
+// --- HTML এলিমেন্টগুলোর রেফারেন্স নেওয়া হচ্ছে ---
 const addRowBtn = document.getElementById('add-row-btn');
 const productsTbody = document.getElementById('products-tbody');
 const form = document.getElementById('add-products-form');
@@ -8,16 +12,15 @@ const statusMessage = document.getElementById('status-message');
 const barcodePrintArea = document.getElementById('barcode-print-area');
 const barcodesContainer = document.getElementById('barcodes-container');
 
-// --- Functions ---
+// =================================================================
+// --- ফাংশনসমূহ ---
+// =================================================================
 
-/**
- * Adds a new empty row to the products table for data entry.
- */
 function addProductRow() {
     const row = document.createElement('tr');
     row.innerHTML = `
-        <td><input type="text" class="product-name" placeholder="e.g., Lux Soap" required></td>
-        <td><input type="text" class="product-category" placeholder="e.g., Cosmetics" required></td>
+        <td><input type="text" class="product-name" placeholder="যেমন, লাক্স সাবান" required></td>
+        <td><input type="text" class="product-category" placeholder="যেমন, কসমেটিকস" required></td>
         <td><input type="number" step="0.01" class="product-cp" placeholder="0.00" required></td>
         <td><input type="number" step="0.01" class="product-sp" placeholder="0.00" required></td>
         <td><input type="number" class="product-stock" placeholder="0" required></td>
@@ -26,30 +29,20 @@ function addProductRow() {
     productsTbody.appendChild(row);
 }
 
-/**
- * Displays a status message to the user.
- * @param {string} message - The message to display.
- * @param {'success' | 'error'} type - The type of message.
- */
 function showStatus(message, type) {
     statusMessage.textContent = message;
-    statusMessage.className = type;
-    // Message disappears after 5 seconds
+    statusMessage.className = `status ${type}`;
     setTimeout(() => {
         statusMessage.textContent = '';
-        statusMessage.className = '';
+        statusMessage.className = 'status';
     }, 5000);
 }
 
-/**
- * Generates and displays barcodes for the newly added products.
- * @param {Array<Object>} products - An array of product objects that were added.
- */
-function displayBarcodes(products) {
+function displayBarcodes(productsWithId) {
     barcodePrintArea.classList.remove('hidden');
-    barcodesContainer.innerHTML = ''; // Clear previous barcodes
+    barcodesContainer.innerHTML = '';
 
-    products.forEach(product => {
+    productsWithId.forEach(product => {
         const wrapper = document.createElement('div');
         wrapper.className = 'barcode-wrapper';
         wrapper.innerHTML = `
@@ -59,118 +52,105 @@ function displayBarcodes(products) {
         `;
 
         const svgElement = wrapper.querySelector('.barcode-svg');
-        JsBarcode(svgElement, product.barcode, {
-            format: "CODE128",
-            displayValue: true,
-            fontSize: 14,
-            width: 1.5,
-            height: 50,
-            margin: 10
-        });
-
-        // Add print functionality to each barcode wrapper
-        wrapper.addEventListener('click', () => {
-            printBarcode(wrapper);
+        JsBarcode(svgElement, product.id, {
+            format: "CODE128", displayValue: true, fontSize: 14, width: 1.5, height: 50, margin: 10
         });
 
         barcodesContainer.appendChild(wrapper);
     });
 }
 
-/**
- * Prints a single barcode element.
- * @param {HTMLElement} elementToPrint - The wrapper element of the barcode to be printed.
- */
-function printBarcode(elementToPrint) {
-    // Clone the element to avoid modifying the original element on the page
-    const printableElement = elementToPrint.cloneNode(true);
-    printableElement.classList.add('printable-barcode');
-    
-    // Append to body, print, then remove
-    document.body.appendChild(printableElement);
-    window.print();
-    document.body.removeChild(printableElement);
-}
 
+// =================================================================
+// --- ইভেন্ট লিসেনার (Event Listeners) ---
+// =================================================================
 
-// --- Event Listeners ---
-
-// Add a new row when the "Add More Rows" button is clicked
 addRowBtn.addEventListener('click', addProductRow);
 
-// Handle form submission to save all products to Firestore
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const rows = productsTbody.querySelectorAll('tr');
 
     if (rows.length === 0) {
-        showStatus('Please add at least one product to save.', 'error');
+        showStatus('সেভ করার জন্য অন্তত একটি প্রোডাক্ট যোগ করুন।', 'error');
         return;
     }
 
-    const batch = writeBatch(db);
-    const productsToAdd = [];
-    let isValid = true;
+    let allRowsValid = true;
+    const productsToProcess = [];
 
-    rows.forEach((row, index) => {
+    rows.forEach(row => {
+        if (!allRowsValid) return;
+
         const name = row.querySelector('.product-name').value.trim();
         const category = row.querySelector('.product-category').value.trim();
         const cp = parseFloat(row.querySelector('.product-cp').value);
         const sp = parseFloat(row.querySelector('.product-sp').value);
         const stock = parseInt(row.querySelector('.product-stock').value, 10);
-        
-        // Simple validation
-        if (!name || !category || isNaN(cp) || isNaN(sp) || isNaN(stock)) {
-            isValid = false;
+
+        if (!name || !category || isNaN(cp) || isNaN(sp) || isNaN(stock) || cp < 0 || sp < 0 || stock < 0) {
+            allRowsValid = false;
+            return;
         }
-
-        // Auto-generate a unique barcode using timestamp and a random suffix
-        const barcode = Date.now().toString() + index.toString();
-
-        productsToAdd.push({ name, category, cp, sp, stock, barcode });
+        
+        const productData = { name, category, cp, sp, stock };
+        productsToProcess.push(productData);
     });
 
-    if (!isValid) {
-        showStatus('Please fill all fields correctly for all products.', 'error');
+    if (!allRowsValid) {
+        showStatus('ত্রুটি: সব ফিল্ড সঠিকভাবে পূরণ করুন। মূল্য এবং স্টক অবশ্যই বৈধ ও অ-ঋণাত্মক সংখ্যা হতে হবে।', 'error');
         return;
     }
 
     try {
-        // Prepare batch write
-        productsToAdd.forEach(product => {
-            const newProductRef = doc(collection(db, "products")); // Create a reference with a new auto-generated ID
-            batch.set(newProductRef, product);
+        const batch = writeBatch(db);
+        const productsForBarcodeDisplay = [];
+
+        productsToProcess.forEach(product => {
+            const newProductRef = doc(collection(db, "products"));
+
+            const cleanDataForFirestore = {
+                name: product.name,
+                category: product.category,
+                cp: product.cp,
+                sp: product.sp,
+                stock: product.stock
+            };
+            
+            // ==========================================================================
+            // === চূড়ান্ত ডিবাগিং ধাপ: অবজেক্টটিকে টেক্সট হিসেবে প্রিন্ট করে দেখা ===
+            // ==========================================================================
+            console.log("SNAPSHOT OF DATA TO BE SENT:", JSON.stringify(cleanDataForFirestore, null, 2));
+
+
+            batch.set(newProductRef, cleanDataForFirestore);
+            
+            productsForBarcodeDisplay.push({ id: newProductRef.id, ...cleanDataForFirestore });
         });
 
-        // Commit the batch
         await batch.commit();
         
-        showStatus(`${productsToAdd.length} product(s) added successfully!`, 'success');
+        showStatus(`${productsForBarcodeDisplay.length} টি প্রোডাক্ট সফলভাবে যোগ করা হয়েছে!`, 'success');
         
-        // Display barcodes for printing
-        displayBarcodes(productsToAdd);
+        displayBarcodes(productsForBarcodeDisplay);
         
-        // Clear the table and add a new empty row for the next entry
         productsTbody.innerHTML = '';
         addProductRow();
 
     } catch (error) {
         console.error("Error adding documents: ", error);
-        showStatus('Error adding products. Please try again.', 'error');
+        showStatus(`ডেটাবেসে সেভ করতে সমস্যা হয়েছে: ${error.message}`, 'error');
     }
 });
 
-// Use event delegation to handle clicks on dynamically added "remove" buttons
+// ডাইনামিকভাবে তৈরি করা "Remove" বাটনের ক্লিক হ্যান্ডেল করা
 productsTbody.addEventListener('click', (e) => {
     if (e.target.classList.contains('remove-row-btn')) {
-        // Find the closest parent 'tr' and remove it
         e.target.closest('tr').remove();
     }
 });
 
-
-// --- Initial Action ---
-
-// Add one initial row when the script loads so the user can start entering data right away.
-// Since the script is a module and deferred, the DOM will be ready when this runs.
+// =================================================================
+// --- প্রাথমিক অ্যাকশন ---
+// =================================================================
 addProductRow();

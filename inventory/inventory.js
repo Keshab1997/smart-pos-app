@@ -1,28 +1,39 @@
-import { db } from '../js/firebase-config.js';
-import { collection, onSnapshot, doc, deleteDoc, orderBy, query } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+// inventory/inventory.js
+
+// firebase-config.js থেকে db অবজেক্টটি ইম্পোর্ট করা হচ্ছে
+import { db } from '../js/firebase-config.js'; 
+// firebase-config.js এর সাথে মিলিয়ে SDK ভার্সন একই রাখা হয়েছে (e.g., 10.12.2)
+import { collection, onSnapshot, doc, deleteDoc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const inventoryBody = document.getElementById('inventory-body');
 const searchInput = document.getElementById('search-inventory');
-let allProducts = []; // To store a local copy for searching and filtering
+let allProducts = []; // সার্চ ও ফিল্টারিংয়ের জন্য লোকাল কপি
 
-// Create a query to order products, e.g., by name
+// প্রোডাক্টগুলোকে নাম অনুযায়ী সাজানোর জন্য একটি কোয়েরি তৈরি করা
 const productsQuery = query(collection(db, "products"), orderBy("name"));
 
-// Listen for real-time updates from Firestore
-onSnapshot(productsQuery, (querySnapshot) => {
-    allProducts = [];
-    inventoryBody.innerHTML = ''; // Clear the table before rendering
-    
-    querySnapshot.forEach((doc) => {
-        const product = { id: doc.id, ...doc.data() };
-        allProducts.push(product);
-    });
+// Firestore থেকে রিয়েল-টাইম আপডেটের জন্য লিসেন করা
+const unsubscribe = onSnapshot(productsQuery, 
+    // Success callback
+    (querySnapshot) => {
+        allProducts = []; // রেন্ডার করার আগে অ্যারে খালি করা হচ্ছে
+        
+        querySnapshot.forEach((doc) => {
+            const product = { id: doc.id, ...doc.data() };
+            allProducts.push(product);
+        });
 
-    renderInventory(allProducts);
-});
+        renderInventory(allProducts); // নতুন ডেটা দিয়ে টেবিল রেন্ডার করা
+    }, 
+    // Error callback (উন্নত प्रैक्टिस)
+    (error) => {
+        console.error("Error fetching inventory: ", error);
+        inventoryBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Failed to load data. Please check your connection or permissions.</td></tr>';
+    }
+);
 
 function renderInventory(products) {
-    inventoryBody.innerHTML = ''; // Clear current content to prevent duplicates
+    inventoryBody.innerHTML = ''; // ডুপ্লিকেট এড়ানোর জন্য বর্তমান কনটেন্ট মুছে ফেলা হচ্ছে
 
     if (products.length === 0) {
         inventoryBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No products found.</td></tr>';
@@ -31,12 +42,12 @@ function renderInventory(products) {
 
     products.forEach(product => {
         const row = document.createElement('tr');
-        // Add a 'low-stock' class if stock is 10 or less
+        // স্টক ১০ বা তার কম হলে 'low-stock' ক্লাস যোগ করা
         if (product.stock <= 10) {
             row.classList.add('low-stock');
         }
 
-        // Safely access properties with default values in case they are missing
+        // ডেটা অনুপস্থিত থাকলেও যেন ইরর না আসে, তার জন্য ডিফল্ট ভ্যালু সেট করা
         const name = product.name || 'N/A';
         const category = product.category || 'N/A';
         const cp = (typeof product.cp === 'number') ? product.cp.toFixed(2) : '0.00';
@@ -59,12 +70,12 @@ function renderInventory(products) {
     });
 }
 
-// Search functionality
+// সার্চ ফাংশনালিটি
 searchInput.addEventListener('input', (e) => {
     const searchTerm = e.target.value.toLowerCase().trim();
     
     if (searchTerm === '') {
-        renderInventory(allProducts); // If search is empty, show all products
+        renderInventory(allProducts); // সার্চ ইনপুট খালি থাকলে সব প্রোডাক্ট দেখানো
         return;
     }
 
@@ -77,22 +88,25 @@ searchInput.addEventListener('input', (e) => {
     renderInventory(filteredProducts);
 });
 
-// Delete functionality using event delegation
+// ইভেন্ট ডেলিগেশন ব্যবহার করে ডিলিট ফাংশনালিটি
 inventoryBody.addEventListener('click', async (e) => {
     if (e.target.classList.contains('btn-danger')) {
         const productId = e.target.dataset.id;
         
         if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+            const deleteButton = e.target;
+            deleteButton.disabled = true; // ডিলিট করার সময় বাটনটি ডিজেবল করে দেওয়া
+            deleteButton.textContent = 'Deleting...';
+
             try {
-                // Get a reference to the document to be deleted
                 const productDocRef = doc(db, "products", productId);
-                // Delete the document
                 await deleteDoc(productDocRef);
-                // The onSnapshot listener will automatically refresh the UI, so no need to call renderInventory here.
-                // console.log("Product deleted successfully");
+                // onSnapshot স্বয়ংক্রিয়ভাবে UI আপডেট করে দেবে, তাই এখানে কিছু করার প্রয়োজন নেই
             } catch (error) {
                 console.error("Error deleting product: ", error);
                 alert('Failed to delete product. Please try again.');
+                deleteButton.disabled = false; // ইরর হলে বাটনটি আবার এনাবল করে দেওয়া
+                deleteButton.textContent = 'Delete';
             }
         }
     }
