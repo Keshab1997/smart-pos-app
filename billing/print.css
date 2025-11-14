@@ -1,4 +1,4 @@
-/* print.css - Auto-fit Layout for Thermal Printers (Revised) */
+/* print.css - Auto-fit Layout for Thermal Printers (Revised & Enhanced) */
 
 @page {
     /* ব্রাউজার এবং প্রিন্টারকে পেজের সাইজ ও মার্জিন নিজে থেকে ঠিক করতে দিন */
@@ -8,7 +8,6 @@
 }
 
 html, body {
-    /* কোনো নির্দিষ্ট প্রস্থ সেট না করে 100% ব্যবহার করা */
     width: 100%;
     margin: 0;
     padding: 0;
@@ -17,8 +16,8 @@ html, body {
 
 body {
     font-family: 'Consolas', 'Lucida Console', 'Courier New', monospace;
-    font-size: 13px; /* একটি মাঝারি সাইজ যা বেশিরভাগ প্রিন্টারে ভালো দেখায় */
-    line-height: 1.4;
+    font-size: 14px; /* বেস ফন্ট সাইজ সামান্য বড় করা হলো (আগে ছিল 13px) */
+    line-height: 1.45; /* লাইন স্পেসিং বাড়ানো হলো */
     color: #000;
 }
 
@@ -32,17 +31,53 @@ body {
     }
 
     html, body {
-        overflow: visible !important; /* কন্টেন্ট যেন কেটে না যায় */
+        overflow: visible !important;
     }
 }
 
 .receipt {
-    /* 80mm কাগজের জন্য একটি নিরাপদ সর্বোচ্চ প্রস্থ সেট করা হলো */
     max-width: 72mm;
     width: 100%;
-    margin: 0 auto; /* কন্টেন্টকে মাঝখানে রাখার জন্য */
+    margin: 0 auto;
     box-sizing: border-box;
 }
+
+/* ======================================================== */
+/* START: হেডার এবং বিলের তথ্যের জন্য নতুন স্টাইল (পরিবর্তিত) */
+/* ======================================================== */
+header {
+    text-align: center;
+    margin-bottom: 12px; /* নিচে স্পেস বাড়ানো হলো */
+}
+
+header h2 {
+    font-size: 1.4em; /* দোকানের নাম আরও বড় করা হলো */
+    margin: 0 0 5px 0;
+    font-weight: 700; /* বোল্ড করা হলো */
+}
+
+header p {
+    margin: 3px 0;
+    font-size: 0.95em; /* ঠিকানা ও ফোন নম্বর একটু বড় করা হলো */
+}
+
+.bill-details, .customer-details {
+    margin-top: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #000;
+}
+
+.bill-details p, .customer-details p {
+    margin: 4px 0;
+    font-size: 1.0em; /* বিল এবং কাস্টমারের তথ্য বড় করা হলো */
+}
+
+.bill-details strong, .customer-details strong {
+    font-weight: 700; /* 'Bill No:', 'Date:', 'To:' লেবেলগুলো বোল্ড করা হলো */
+}
+/* ======================================================== */
+/* END: নতুন স্টাইল */
+/* ======================================================== */
 
 
 /* টেবিল স্টাইল */
@@ -54,16 +89,15 @@ table {
 }
 
 th, td {
-    padding: 4px 1px;
+    padding: 5px 1px; /* প্যাডিং সামান্য বাড়ানো হলো */
     text-align: left;
     border-bottom: 1px dashed #000;
-    /* গুরুত্বপূর্ণ: লম্বা টেক্সটকে ভেঙে পরের লাইনে আনার জন্য এই কোড যোগ করা হলো */
     word-break: break-all;
 }
 
 th {
     border-top: 1px dashed #000;
-    font-weight: bold;
+    font-weight: 700; /* th আগে থেকেই বোল্ড ছিল, নিশ্চিত করা হলো */
 }
 
 /* সংখ্যা ডান দিকে অ্যালাইন করা */
@@ -75,24 +109,41 @@ th:nth-child(2), th:nth-child(3), th:nth-child(4) {
 hr {
     border: none;
     border-top: 1px dashed #000;
-    margin: 6px 0;
+    margin: 8px 0; /* স্পেস বাড়ানো হলো */
 }
 
-/* শিরোনাম এবং অন্যান্য টেক্সট */
-header, footer {
-    text-align: center;
-}
-
-header h1 {
-    font-size: 1.2em; /* মূল ফন্ট সাইজের ১.২ গুণ বড় */
-    margin: 0 0 5px 0;
-}
-
-.grand-total strong {
-    font-size: 1.1em; /* মূল ফন্ট সাইজের ১.১ গুণ বড় */
-}
-
+/* মোট হিসাবের স্টাইল */
 .totals {
     text-align: right;
+    margin-top: 8px;
+}
+
+.summary-line {
+    font-size: 1.0em;
+    margin-bottom: 4px;
+}
+
+.summary-line strong {
+    font-weight: 700;
+}
+
+.grand-total {
     margin-top: 5px;
+    font-size: 1.2em; /* গ্র্যান্ড টোটাল আরও বড় করা হলো */
+    font-weight: 700; /* বোল্ড করা হলো */
+}
+
+.payment-info {
+    margin-top: 10px;
+}
+
+.payment-info strong {
+    font-weight: 700;
+}
+
+/* ফুটার স্টাইল */
+footer {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 0.9em;
 }

@@ -12,6 +12,37 @@
     <!-- global.css লিঙ্ক করা হচ্ছে সাধারণ স্টাইলের জন্য -->
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="billing.css">
+    
+    <!-- নতুন CSS স্টাইলের জন্য -->
+    <style>
+        .customer-details-section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        .customer-details-title {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        .customer-details-section .form-group {
+            margin-bottom: 10px;
+        }
+        .customer-details-section .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .customer-details-section .form-group input,
+        .customer-details-section .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+    </style>
 </head>
 <body>
 
@@ -83,6 +114,25 @@
                 <button id="close-modal-btn" class="close-button">&times;</button>
             </div>
             <div class="modal-body">
+                
+                <!-- ===== START: Customer Details Section (নতুন যোগ করা হয়েছে) ===== -->
+                <div class="customer-details-section">
+                    <h4 class="customer-details-title">Customer Details (Optional)</h4>
+                    <div class="form-group">
+                        <label for="customer-name">Name:</label>
+                        <input type="text" id="customer-name" placeholder="Walk-in Customer">
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-phone">Phone:</label>
+                        <input type="tel" id="customer-phone" placeholder="e.g., 9876543210">
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-address">Address:</label>
+                        <textarea id="customer-address" rows="2" placeholder="Customer address"></textarea>
+                    </div>
+                </div>
+                <!-- ===== END: Customer Details Section ===== -->
+
                 <div class="billing-details">
                     <div class="summary-row">
                         <span>Subtotal:</span>
@@ -103,8 +153,7 @@
                 </div>
 
                 <div class="payment-method">
-                    <label for="payment-method-select">Payment Method</label>
-                    <select id="payment-method-select" name="payment-method">
+                    <label for="payment-method-select">Payment Method</label>                    <select id="payment-method-select" name="payment-method">
                         <option value="cash" selected>Cash</option>
                         <option value="card">Card</option>
                         <option value="online">Online (UPI/etc)</option>

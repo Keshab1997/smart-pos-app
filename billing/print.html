@@ -6,6 +6,19 @@
     <title>Print Bill</title>
     <!-- print.css ফাইলটি print.html এর একই ফোল্ডারে আছে -->
     <link rel="stylesheet" href="print.css">
+
+    <!-- নতুন কাস্টমার সেকশনের জন্য স্টাইল যোগ করা হয়েছে -->
+    <style>
+        .customer-details {
+            margin-top: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #555;
+        }
+        .customer-details p {
+            margin: 3px 0;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
 <body>
     <div class="receipt">
@@ -19,6 +32,18 @@
             <p><strong>Bill No:</strong> <span id="bill-no"></span></p>
             <p><strong>Date:</strong> <span id="bill-date"></span></p>
         </section>
+
+        <!-- ======================================================= -->
+        <!-- START: নতুন কাস্টমার ডিটেইলস সেকশন (এখানে যোগ করা হয়েছে) -->
+        <!-- ======================================================= -->
+        <section class="customer-details" id="customer-details-section" style="display: none;">
+            <p><strong>To:</strong> <span id="customer-name"></span></p>
+            <p id="customer-phone-p" style="display: none;"><strong>Phone:</strong> <span id="customer-phone"></span></p>
+            <p id="customer-address-p" style="display: none;"><strong>Address:</strong> <span id="customer-address"></span></p>
+        </section>
+        <!-- ======================================================= -->
+        <!-- END: নতুন কাস্টমার ডিটেইলস সেকশন -->
+        <!-- ======================================================= -->
 
         <!-- আইটেমের তালিকা -->
         <table>
@@ -64,7 +89,7 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- START: Firebase v10 Import Map (এই অংশটি যোগ করতে হবে) -->
+    <!-- START: Firebase v10 Import Map -->
     <!-- ======================================================== -->
     <script type="importmap">
     {
@@ -78,7 +103,6 @@
     <!-- ======================================================== -->
 
     <!-- আপনার কাস্টম জাভাস্ক্রিপ্ট ফাইল -->
-    <!-- `firebase-config.js` কে `print.js` এর আগে লোড করতে হবে -->
     <script type="module" src="../js/firebase-config.js"></script>
     <script type="module" src="print.js"></script>
 

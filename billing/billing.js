@@ -33,6 +33,13 @@ const logoutBtn = document.getElementById('logout-btn');
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mainNavLinks = document.getElementById('main-nav-links');
 
+// ===== START: কাস্টমার ডিটেইলসের জন্য নতুন রেফারেন্স (নতুন যোগ করা হয়েছে) =====
+const customerNameInput = document.getElementById('customer-name');
+const customerPhoneInput = document.getElementById('customer-phone');
+const customerAddressInput = document.getElementById('customer-address');
+// ===== END: কাস্টমার ডিটেইলসের জন্য নতুন রেফারেন্স =====
+
+
 // ==========================================================
 // --- গ্লোবাল ভেরিয়েবল ---
 // ==========================================================
@@ -100,7 +107,6 @@ function displayProductsByCategory() {
             const productCard = document.createElement('div');
             productCard.classList.add('product-card');
             productCard.dataset.productId = product.id;
-            // *** এখানে পরিবর্তন: product.sp এর বদলে product.sellingPrice ***
             const price = product.sellingPrice || 0;
             productCard.innerHTML = `<span class="product-card-name">${product.name}</span><span class="product-card-price">₹${price.toFixed(2)}</span>`;
             productGrid.appendChild(productCard);
@@ -130,7 +136,6 @@ function handleSearch(e) {
         matchedProducts.forEach(product => {
             const productDiv = document.createElement('div');
             productDiv.classList.add('search-result-item');
-            // *** এখানে পরিবর্তন: product.sp এর বদলে product.sellingPrice ***
             const price = product.sellingPrice || 0;
             productDiv.innerHTML = `<span>${product.name}</span> <span>₹${price.toFixed(2)}</span>`;
             productDiv.addEventListener('click', () => addProductToCart(product));
@@ -193,7 +198,6 @@ function updateCartDisplay() {
         cart.forEach((item, index) => {
             const cartItemDiv = document.createElement('div');
             cartItemDiv.classList.add('cart-item');
-            // *** এখানে পরিবর্তন: item.sp এর বদলে item.sellingPrice ***
             const itemTotal = (item.sellingPrice || 0) * item.quantity;
             cartItemDiv.innerHTML = `
                 <span class="cart-item-name">${item.name}</span>
@@ -240,13 +244,20 @@ function addCartItemEventListeners() {
 }
 
 function calculateTotals() {
-    // *** এখানে পরিবর্তন: item.sp এর বদলে item.sellingPrice ***
     const subtotal = cart.reduce((sum, item) => sum + ((item.sellingPrice || 0) * item.quantity), 0);
     const tax = gstToggle.checked ? subtotal * 0.05 : 0;
     const total = subtotal + tax;
     currentTotals = { subtotal, tax, total };
     footerTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
 }
+
+// ===== START: কাস্টমার ডিটেইলস ফিল্ড রিসেট করার ফাংশন (নতুন যোগ করা হয়েছে) =====
+function resetCustomerDetails() {
+    customerNameInput.value = '';
+    customerPhoneInput.value = '';
+    customerAddressInput.value = '';
+}
+// ===== END: কাস্টমার ডিটেইলস ফিল্ড রিসেট করার ফাংশন =====
 
 // ==========================================================
 // --- চেকআউট এবং বিল জেনারেশন ---
@@ -257,9 +268,16 @@ async function generateFinalBill() {
     generateBillBtn.disabled = true;
     generateBillBtn.textContent = 'Processing...';
 
+    // ===== START: কাস্টমারের ডিটেইলস সংগ্রহ করা (নতুন যোগ করা হয়েছে) =====
+    const customerDetails = {
+        name: customerNameInput.value.trim() || 'Walk-in Customer',
+        phone: customerPhoneInput.value.trim(),
+        address: customerAddressInput.value.trim()
+    };
+    // ===== END: কাস্টমারের ডিটেইলস সংগ্রহ করা =====
+
     const paymentMethod = paymentMethodSelect.value;
     const sale = {
-        // *** এখানে পরিবর্তন: price এর জন্য item.sellingPrice ব্যবহার করা ***
         items: cart.map(item => ({ 
             id: item.id, 
             name: item.name, 
@@ -272,6 +290,7 @@ async function generateFinalBill() {
         total: currentTotals.total,
         paymentMethod: paymentMethod,
         gstApplied: gstToggle.checked,
+        customerDetails: customerDetails, // Firestore-এ সেভ করার জন্য sale অবজেক্টে যোগ করা হলো
         createdAt: serverTimestamp()
     };
 
@@ -305,6 +324,7 @@ async function generateFinalBill() {
         cart = [];
         updateCartDisplay();
         checkoutModal.classList.add('hidden');
+        resetCustomerDetails(); // কাস্টমার ডিটেইলস ফিল্ড রিসেট করা
         await initializeProducts();
 
     } catch (error) {
@@ -341,9 +361,15 @@ function setupEventListeners() {
         modalTotalAmountEl.textContent = `₹${currentTotals.total.toFixed(2)}`;
         checkoutModal.classList.remove('hidden');
     });
-    closeModalBtn.addEventListener('click', () => checkoutModal.classList.add('hidden'));
+    closeModalBtn.addEventListener('click', () => {
+        checkoutModal.classList.add('hidden');
+        resetCustomerDetails(); // মডাল বন্ধ করার সময় ফিল্ড রিসেট করা
+    });
     checkoutModal.addEventListener('click', (e) => {
-        if (e.target === checkoutModal) checkoutModal.classList.add('hidden');
+        if (e.target === checkoutModal) {
+            checkoutModal.classList.add('hidden');
+            resetCustomerDetails(); // মডালের বাইরে ক্লিক করলে ফিল্ড রিসেট করা
+        }
     });
     paymentMethodSelect.addEventListener('change', (e) => {
         partPaymentDetails.classList.toggle('hidden', e.target.value !== 'part-payment');
