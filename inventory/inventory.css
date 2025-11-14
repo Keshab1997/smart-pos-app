@@ -1,79 +1,181 @@
-/* inventory.css */
-.inventory-controls {
+/* inventory.css (সম্পূর্ণ আপডেটেড) */
+
+/* ================================== */
+/* --- ফিল্টার এবং প্রিন্ট কন্ট্রোলস --- */
+/* ================================== */
+.filter-controls-section {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    flex-wrap: wrap; /* ছোট স্ক্রিনের জন্য wrap হবে */
+    justify-content: space-between;
     align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
 }
-#search-inventory { flex-grow: 1; min-width: 200px; }
-#search-inventory, #category-filter {
-    padding: 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 1rem;
+
+.filter-controls {
+    display: flex;
+    flex-grow: 1; /* যতটা সম্ভব জায়গা নেবে */
+    gap: 1rem;
+    flex-wrap: wrap; /* বাটনগুলো নিচে চলে আসবে যদি জায়গা না থাকে */
 }
-.table-container { overflow-x: auto; }
-.inventory-table {
+
+#search-inventory {
+    flex-grow: 1; /* সার্চ বক্সকে বেশি জায়গা দেবে */
+    min-width: 250px; /* একটি ন্যূনতম প্রস্থ */
+}
+
+.print-controls {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* ============================ */
+/* --- টেবিল স্টাইল --- */
+/* ============================ */
+.table-responsive {
+    overflow-x: auto; /* ছোট স্ক্রিনে টেবিল স্ক্রল করা যাবে */
+}
+
+.data-table {
     width: 100%;
     border-collapse: collapse;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
-.inventory-table th, .inventory-table td {
-    padding: 1rem;
+
+.data-table th, .data-table td {
+    padding: 0.9rem 1rem;
     text-align: left;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #e0e0e0;
+    vertical-align: middle; /* কন্টেন্টকে উল্লম্বভাবে মাঝে রাখবে */
 }
-.inventory-table thead th { background-color: #f7f7f7; font-weight: bold; }
-.inventory-table tbody tr:hover { background-color: #f1f1f1; }
 
-/* Low stock highlight */
-.low-stock { background-color: #ffebee !important; color: #c62828; }
+.data-table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600; /* ফন্টকে একটু মোটা করা হলো */
+    color: #495057;
+}
 
-.action-buttons { display: flex; gap: 0.5rem; }
+.data-table tbody tr:hover {
+    background-color: #f1f8ff;
+}
+
+/* লোডিং এবং এরর সেলের জন্য স্টাইল */
+.loading-cell, .error-cell {
+    text-align: center !important;
+    padding: 3rem 1rem !important;
+    color: #6c757d;
+}
+.error-cell {
+    color: #dc3545;
+}
+
+/* লো-স্টক হাইলাইট */
+.low-stock {
+    background-color: #fff5f5 !important;
+    color: #c53030;
+}
+.low-stock:hover {
+    background-color: #fed7d7 !important;
+}
+
+/* ============================ */
+/* --- অ্যাকশন বাটন --- */
+/* ============================ */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: nowrap; /* বাটনগুলো যেন এক লাইনে থাকে */
+}
+
 .action-btn {
     padding: 0.4rem 0.8rem;
-    border: none;
     border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: white;
+    font-size: 0.85rem;
+    white-space: nowrap; /* বাটনের টেক্সট যেন না ভাঙে */
 }
-.btn-edit { background-color: #1e90ff; }
-.btn-danger { background-color: #dc3545; }
 
-/* Pagination Styles */
-.pagination-container {
-    margin-top: 2rem;
+/* বিভিন্ন বাটনের রঙ (global.css থেকে আসতে পারে, তবে এখানেও রাখা হলো) */
+.btn-edit { background-color: #1e90ff; color: white; }
+.btn-delete { background-color: #dc3545; color: white; }
+.btn-print { background-color: #28a745; color: white; }
+
+.btn-edit:hover { background-color: #187bcd; }
+.btn-delete:hover { background-color: #c82333; }
+.btn-print:hover { background-color: #218838; }
+
+
+/* ============================ */
+/* --- পেজিনেশন স্টাইল --- */
+/* ============================ */
+.pagination {
+    margin-top: 1.5rem;
     display: flex;
     justify-content: center;
     gap: 0.5rem;
 }
-.pagination-container button {
+
+.pagination button {
     padding: 0.5rem 1rem;
-    border: 1px solid #ddd;
+    border: 1px solid #dee2e6;
     background-color: white;
     cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.2s;
 }
-.pagination-container button.active {
-    background-color: #007bff;
+
+.pagination button:hover {
+    background-color: #f1f1f1;
+}
+
+.pagination button.active {
+    background-color: var(--primary-color, #007bff); /* global.css থেকে primary color ব্যবহার করবে */
     color: white;
-    border-color: #007bff;
+    border-color: var(--primary-color, #007bff);
 }
 
-/* Edit Modal Styles */
-.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
-.modal-content { background-color: #fefefe; margin: 10% auto; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
-.close-button { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
-#edit-form { display: flex; flex-direction: column; gap: 1rem; }
-#edit-form label { font-weight: bold; }
-#edit-form input { padding: 0.75rem; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; }
-/* inventory.css এর শেষে যোগ করুন */
-
-.btn-print {
-    background-color: #28a745; /* Green color for print button */
+/* ============================ */
+/* --- এডিট মোডাল স্টাইল --- */
+/* ============================ */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px); /* ব্যাকগ্রাউন্ডে ব্লার ইফেক্ট */
 }
 
-.btn-print:hover {
-    background-color: #218838;
+.modal-content {
+    background-color: #fff;
+    margin: 8% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 550px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.close-button {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.close-button:hover {
+    color: #333;
+}
+
+#edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
 }

@@ -1,21 +1,28 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventory Management - Smart POS</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS ফাইল -->
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="inventory.css">
 </head>
 <body>
 
     <!-- ======================================================= -->
-    <!-- START: আপডেট করা Navbar -->
+    <!-- START: Navbar -->
     <!-- ======================================================= -->
     <header class="main-header">
         <nav class="container">
             <a href="../dashboard.html" class="logo">Smart POS</a>
-            <ul>
+            <ul id="main-nav-links">
                 <li><a href="../dashboard.html">Dashboard</a></li>
                 <li><a href="../billing/billing.html">Billing</a></li>
                 <li><a href="inventory.html" class="active">Inventory</a></li>
@@ -24,6 +31,9 @@
                 <li><a href="../sales-report/profit-loss.html">Profit/Loss</a></li>
                 <li><a href="#" id="logout-btn">Logout</a></li>
             </ul>
+            <button id="mobile-menu-btn" aria-label="Open Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
         </nav>
     </header>
     <!-- ======================================================= -->
@@ -31,92 +41,93 @@
     <!-- ======================================================= -->
 
     <main class="container">
-        <h1>Product Inventory</h1>
+        <h1>Inventory Management</h1>
 
-        <!-- সাধারণ বার্তা দেখানোর জন্য একটি নতুন এলিমেন্ট -->
-        <div id="status-message-container"></div>
+        <!-- ফিল্টার এবং প্রিন্ট কন্ট্রোলস -->
+        <section class="card filter-controls-section">
+            <div class="filter-controls">
+                <input type="text" id="search-inventory" placeholder="Search by name or barcode..." class="form-control">
+                <select id="category-filter" class="form-control"></select>
+            </div>
+            <div class="print-controls">
+                <button id="print-selected-btn" class="btn btn-secondary">Print Selected</button>
+                <button id="print-all-filtered-btn" class="btn btn-primary">Print All Filtered</button>
+            </div>
+        </section>
 
-        <div class="inventory-controls card-container">
-            <input type="search" id="search-inventory" placeholder="Search by name, barcode, or category...">
-            <select id="category-filter">
-                <option value="">All Categories</option>
-                <!-- Categories will be loaded by JS -->
-            </select>
-            <a href="../add-product/add-product.html" class="btn btn-primary">Add New Product</a>
-        </div>
-
-        <div class="table-container card-container">
-            <table class="inventory-table">
-                <thead>
-                    <tr>
-                        <th>Product Name</th>
-                        <th>Category</th>
-                        <th>Cost Price (CP)</th>
-                        <th>Selling Price (SP)</th>
-                        <th>Stock</th>
-                        <th>Barcode</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="inventory-tbody">
-                    <tr>
-                        <td colspan="7" class="loading-cell">Loading products...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination Controls -->
-        <div class="pagination-container" id="pagination-container">
-            <!-- Pagination buttons will be generated here -->
-        </div>
+        <!-- ইনভেন্টরি টেবিল -->
+        <section class="card">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="select-all-checkbox" title="Select/Deselect All on this page"></th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Cost Price (₹)</th>
+                            <th>Selling Price (₹)</th>
+                            <th>Stock</th>
+                            <th>Barcode</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-tbody">
+                        <!-- জাভাস্ক্রিপ্ট দিয়ে ডেটা এখানে লোড হবে -->
+                        <tr>
+                            <td colspan="8" class="loading-cell">Loading inventory...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="pagination-container" class="pagination">
+                <!-- পেজিনেশন বাটন এখানে লোড হবে -->
+            </div>
+        </section>
     </main>
 
-    <!-- ======== Edit Product Modal ======== -->
+    <!-- প্রোডাক্ট এডিট করার জন্য Modal -->
     <div id="edit-modal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
             <h2>Edit Product</h2>
             <form id="edit-form">
                 <input type="hidden" id="edit-product-id">
-                
                 <div class="form-group">
                     <label for="edit-name">Product Name:</label>
-                    <input type="text" id="edit-name" required>
+                    <input type="text" id="edit-name" class="form-control" required>
                 </div>
-
                 <div class="form-group">
                     <label for="edit-category">Category:</label>
-                    <input type="text" id="edit-category" required>
+                    <input type="text" id="edit-category" class="form-control">
                 </div>
-
+                <div class="form-group-inline">
+                    <div class="form-group">
+                        <label for="edit-cp">Cost Price (₹):</label>
+                        <input type="number" id="edit-cp" class="form-control" required step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-sp">Selling Price (₹):</label>
+                        <input type="number" id="edit-sp" class="form-control" required step="0.01">
+                    </div>
+                </div>
                 <div class="form-group">
-                    <label for="edit-cp">Cost Price (CP):</label>
-                    <input type="number" id="edit-cp" step="0.01" required>
+                    <label for="edit-stock">Stock Quantity:</label>
+                    <input type="number" id="edit-stock" class="form-control" required>
                 </div>
-
                 <div class="form-group">
-                    <label for="edit-sp">Selling Price (SP):</label>
-                    <input type="number" id="edit-sp" step="0.01" required>
+                    <label for="edit-barcode">Barcode (Optional):</label>
+                    <input type="text" id="edit-barcode" class="form-control" disabled>
                 </div>
-
-                <div class="form-group">
-                    <label for="edit-stock">Current Stock:</label>
-                    <input type="number" id="edit-stock" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="edit-barcode">Barcode:</label>
-                    <input type="text" id="edit-barcode" readonly> <!-- বারকোড সাধারণত এডিট করা যায় না -->
-                </div>
-                
                 <button type="submit" class="btn btn-primary">Save Changes</button>
             </form>
         </div>
     </div>
     
+    <!-- স্ট্যাটাস মেসেজ দেখানোর জন্য কন্টেইনার -->
+    <div id="status-message-container"></div>
+
     <!-- ======================================================== -->
-    <!-- START: Firebase v10 Import Map (জাভাস্ক্রিপ্টের জন্য ضروری) -->
+    <!-- Firebase এবং কাস্টম JS -->
     <!-- ======================================================== -->
     <script type="importmap">
     {
@@ -127,10 +138,6 @@
       }
     }
     </script>
-    <!-- ======================================================== -->
-    
-    <!-- আপনার কাস্টম জাভাস্ক্রিপ্ট ফাইলগুলো (মডিউল হিসেবে) -->
-    <!-- firebase-config.js ফাইলটি inventory.js এর আগে লোড করতে হবে -->
     <script type="module" src="../js/firebase-config.js"></script>
     <script type="module" src="inventory.js"></script>
 
