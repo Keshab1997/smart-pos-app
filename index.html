@@ -3,143 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart POS - Dashboard</title>
-    <!-- চার্ট তৈরির জন্য Chart.js লাইব্রেরি যোগ করা হয়েছে -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- আপনার গ্লোবাল CSS ফাইল -->
-    <link rel="stylesheet" href="css/global.css">
+    <title>Login - Smart POS</title>
+    <!-- লগইন পেজের জন্য একটি নতুন CSS ফাইল -->
+    <link rel="stylesheet" href="css/login.css">
+    <!-- আপনি চাইলে Google Fonts ব্যবহার করতে পারেন -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header class="main-header">
-        <div class="container">
-            <a href="index.html" class="logo">Smart POS</a>
-            <nav>
-                <ul>
-                    <li><a href="billing/billing.html">Billing</a></li>
-                    <li><a href="inventory/inventory.html">Inventory</a></li>
-                    <li><a href="add-product/add-product.html">Add Product</a></li>
-                    <li><a href="sales-report/report.html">Sales Report</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <main class="container dashboard">
-        <h1>Dashboard</h1>
-        
-        <!-- KPI কার্ডস (Key Performance Indicators) -->
-        <section class="kpi-cards">
-            <div class="kpi-card sales">
-                <h3>Today's Sales</h3>
-                <p id="today-sales">₹0.00</p>
-            </div>
-            <div class="kpi-card profit">
-                <h3>Today's Profit</h3>
-                <p id="today-profit">₹0.00</p>
-            </div>
-            <div class="kpi-card expense">
-                <h3>Today's Expenses</h3>
-                <p id="today-expenses">₹0.00</p>
-            </div>
-            <div class="kpi-card low-stock">
-                <h3>Low Stock Items</h3>
-                <p id="low-stock-count">0</p>
-            </div>
-        </section>
-
-        <!-- ড্যাশবোর্ডের প্রধান গ্রিড -->
-        <section class="dashboard-grid">
-            <!-- সেলস এবং প্রফিট ট্রেন্ড চার্ট -->
-            <div class="card chart-container">
-                <h3>Sales & Profit Trend (Last 7 Days)</h3>
-                <canvas id="salesProfitChart"></canvas>
-            </div>
-
-            <!-- ক্যাটেগরি অনুযায়ী সেলস পাই চার্ট -->
-            <div class="card chart-container">
-                <h3>Sales by Category</h3>
-                <canvas id="categoryPieChart"></canvas>
-            </div>
-
-            <!-- টপ সেলিং প্রোডাক্ট -->
-            <div class="card list-card">
-                <h3>Top Selling Products</h3>
-                <ul id="topProductsList">
-                    <!-- JS দিয়ে এখানে ডেটা লোড হবে -->
-                    <li>Loading...</li>
-                </ul>
-            </div>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <h1 class="logo-text">Smart POS</h1>
+            <h2>Welcome Back!</h2>
+            <p>Please sign in to access your dashboard.</p>
             
-            <!-- সাম্প্রতিক খরচ এবং নতুন খরচ যোগ করার বাটন -->
-            <div class="card list-card">
-                <h3>Recent Expenses</h3>
-                <ul id="recentExpensesList">
-                    <!-- JS দিয়ে এখানে ডেটা লোড হবে -->
-                    <li>Loading...</li>
-                </ul>
-                <button id="add-expense-btn" class="btn btn-primary">Add Expense</button>
-            </div>
-
-            <!-- লো স্টক অ্যালার্ট -->
-            <div class="card list-card">
-                <h3>Low Stock Alerts</h3>
-                <ul id="lowStockList">
-                    <!-- JS দিয়ে এখানে ডেটা লোড হবে -->
-                    <li>Loading...</li>
-                </ul>
-            </div>
-        </section>
-    </main>
-
-    <!-- ===== নতুন খরচ যোগ করার মডাল (Popup) ===== -->
-    <div id="expense-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Add a New Expense</h2>
-                <button id="close-expense-modal-btn" class="close-button">&times;</button>
-            </div>
-            <form id="expense-form">
-                <div class="modal-body">
-                    <!-- ... মডালের ফর্মের বাকি অংশ ... -->
-                    <div class="form-group">
-                        <label for="expense-description">Description</label>
-                        <input type="text" id="expense-description" required placeholder="e.g., Rent, Electricity Bill">
-                    </div>
-                    <div class="form-group">
-                        <label for="expense-amount">Amount (₹)</label>
-                        <input type="number" id="expense-amount" required placeholder="0.00">
-                    </div>
-                    <div class="form-group">
-                        <label for="expense-category">Category</label>
-                        <select id="expense-category">
-                            <option value="rent">Rent</option>
-                            <option value="utilities">Utilities</option>
-                            <option value="salary">Salary</option>
-                            <option value="supplies">Supplies</option>
-                            <option value="miscellaneous">Miscellaneous</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="expense-date">Date</label>
-                        <input type="date" id="expense-date" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Save Expense</button>
-                </div>
-            </form>
+            <button id="google-login-btn" class="google-btn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google logo">
+                <span>Sign in with Google</span>
+            </button>
+            
+            <div id="login-status" class="status-message"></div>
         </div>
+        <footer class="login-footer">
+            <p>&copy; 2025 Smart POS. Developed by Keshab Sarkar.</p>
+        </footer>
     </div>
 
-    <!-- ===== নতুন ফুটার অংশ ===== -->
-    <footer class="main-footer-credit">
-        <div class="container">
-            <p>Developed with ❤️ by <strong>Keshab Sarkar</strong></p>
-            <p>&copy; 2025 Smart POS. All Rights Reserved.</p>
-        </div>
-    </footer>
-
-    <!-- ড্যাশবোর্ডের জন্য জাভাস্ক্রিপ্ট ফাইল -->
-    <script src="js/dashboard.js" type="module"></script>
+    <!-- মডিউলার জাভাস্ক্রিপ্ট ফাইল লোড করার জন্য type="module" ব্যবহার করুন -->
+    <script src="js/auth.js" type="module"></script>
 </body>
 </html>

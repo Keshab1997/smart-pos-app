@@ -1,0 +1,97 @@
+/* css/login.css */
+
+/* বেসিক রিসেট এবং ফন্ট সেটআপ */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f7f6; /* হালকা ধূসর ব্যাকগ্রাউন্ড */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* পুরো লগইন পেজের র‍্যাপার */
+.login-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+
+/* লগইন বক্স */
+.login-container {
+    background-color: #ffffff;
+    padding: 40px 50px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+/* লোগো টেক্সট */
+.logo-text {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50; /* গাঢ় নীল */
+    margin: 0 0 10px;
+}
+
+.login-container h2 {
+    font-size: 1.5rem;
+    color: #34495e; /* কিছুটা হালকা নীল */
+    margin-bottom: 10px;
+}
+
+.login-container p {
+    color: #7f8c8d; /* ধূসর টেক্সট */
+    margin-bottom: 30px;
+}
+
+/* গুগল লগইন বাটন */
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 12px 20px;
+    background-color: #ffffff;
+    color: #444;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.google-btn:hover {
+    background-color: #f8f8f8;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.google-btn img {
+    width: 20px;
+    height: 20px;
+    margin-right: 15px;
+}
+
+/* স্ট্যাটাস মেসেজ (যেমন: লগইন হচ্ছে...) */
+.status-message {
+    margin-top: 20px;
+    color: #3498db;
+    font-size: 0.9rem;
+}
+
+/* ফুটার */
+.login-footer {
+    position: absolute;
+    bottom: 20px;
+    text-align: center;
+    color: #95a5a6;
+    font-size: 0.9rem;
+}
