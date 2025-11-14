@@ -9,24 +9,35 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- global.css লিঙ্ক করা হচ্ছে সাধারণ স্টাইলের জন্য -->
+    <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="billing.css">
 </head>
 <body>
 
-    <header>
-        <div class="shop-name"><a href="../index.html">Smart POS</a></div>
-        <nav id="main-nav">
-            <div class="nav-links">
-                <a href="../index.html">Home</a>
-                <a href="../add-product/add-product.html">Add Product</a>
-                <a href="../inventory/inventory.html">Inventory</a>
-                <a href="billing.html" class="active">Billing</a>
-            </div>
+    <!-- ======================================================= -->
+    <!-- START: আপডেট করা Navbar -->
+    <!-- ======================================================= -->
+    <header class="main-header">
+        <nav class="container">
+            <a href="../dashboard.html" class="logo">Smart POS</a>
+            <ul id="main-nav-links">
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="billing.html" class="active">Billing</a></li>
+                <li><a href="../inventory/inventory.html">Inventory</a></li>
+                <li><a href="../add-product/add-product.html">Add Product</a></li>
+                <li><a href="../sales-report/report.html">Sales Report</a></li>
+                <li><a href="../sales-report/profit-loss.html">Profit/Loss</a></li>
+                <li><a href="#" id="logout-btn">Logout</a></li>
+            </ul>
+            <button id="mobile-menu-btn" aria-label="Open Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
         </nav>
-        <button id="mobile-menu-btn" aria-label="Open Menu">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-        </button>
     </header>
+    <!-- ======================================================= -->
+    <!-- END: Navbar -->
+    <!-- ======================================================= -->
 
     <main class="billing-container">
         
@@ -41,7 +52,7 @@
             
             <h3 class="category-browse-title">Or Browse by Category</h3>
             <div id="category-product-list">
-                <p style="color: #888; text-align: center; margin-top: 20px;">Loading products...</p>
+                <p class="loading-message">Loading products...</p>
             </div>
         </div>
 
@@ -52,7 +63,6 @@
                 <p class="empty-cart-message">Your cart is empty.</p>
             </div>
             
-            <!-- ===== নতুন মিনিমাল ফুটার ===== -->
             <div class="cart-footer">
                 <div class="grand-total-display">
                     <span class="total-label">Grand Total</span>
@@ -97,7 +107,7 @@
                     <select id="payment-method-select" name="payment-method">
                         <option value="cash" selected>Cash</option>
                         <option value="card">Card</option>
-                        <option value="online">Online</option>
+                        <option value="online">Online (UPI/etc)</option>
                         <option value="part-payment">Part Payment</option>
                     </select>
                 </div>
@@ -108,52 +118,35 @@
                         <input type="number" id="cash-amount" placeholder="0.00">
                     </div>
                     <div class="payment-input-group">
-                        <label for="card-amount">Card/Online:</label>
+                        <label for="card-amount">Card/Online Amount:</label>
                         <input type="number" id="card-amount" placeholder="0.00">
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="generate-bill-btn" class="checkout-button final-bill-btn">Generate Bill & Finalize</button>
+                <button id="generate-bill-btn" class="checkout-button final-bill-btn" disabled>Generate Bill & Finalize</button>
             </div>
         </div>
     </div>
     <!-- ===== চেকআউট মডাল শেষ ===== -->
 
-    <script src="billing.js" type="module"></script>
-    <script>
-        // UI-এর জন্য ছোট স্ক্রিপ্ট
-        document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
-            document.getElementById('main-nav')?.classList.toggle('mobile-nav-active');
-        });
-        
-        // মডাল (Modal) দেখানোর এবং লুকানোর জন্য JS
-        const checkoutModal = document.getElementById('checkout-modal');
-        const proceedBtn = document.getElementById('proceed-to-checkout-btn');
-        const closeModalBtn = document.getElementById('close-modal-btn');
-        const paymentSelect = document.getElementById('payment-method-select');
-        const partPaymentDetails = document.getElementById('part-payment-details');
-
-        proceedBtn?.addEventListener('click', () => {
-            // জাভাস্ক্রিপ্ট থেকে মডালের ভেতরের মান আপডেট করতে হবে
-            // আপনার billing.js ফাইলে এই কাজটি করতে পারেন
-            checkoutModal?.classList.remove('hidden');
-        });
-
-        closeModalBtn?.addEventListener('click', () => {
-            checkoutModal?.classList.add('hidden');
-        });
-
-        // মডালের বাইরে ক্লিক করলে বন্ধ হবে
-        checkoutModal?.addEventListener('click', (event) => {
-            if (event.target === checkoutModal) {
-                checkoutModal.classList.add('hidden');
-            }
-        });
-
-        paymentSelect?.addEventListener('change', (event) => {
-            partPaymentDetails?.classList.toggle('hidden', event.target.value !== 'part-payment');
-        });
+    <!-- ======================================================== -->
+    <!-- START: Firebase v10 Import Map -->
+    <!-- ======================================================== -->
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      }
+    }
     </script>
+    <!-- ======================================================== -->
+
+    <!-- আপনার কাস্টম জাভাস্ক্রিপ্ট ফাইল -->
+    <script type="module" src="../js/firebase-config.js"></script>
+    <script type="module" src="billing.js"></script>
+
 </body>
 </html>

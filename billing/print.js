@@ -1,9 +1,11 @@
-// print.js (Firebase v10)
+// print.js (সম্পূর্ণ এবং চূড়ান্ত কোড)
 
 // Firebase মডিউল ইম্পোর্ট করুন
-import { db, doc, getDoc } from '../js/firebase-config.js';
+import { db, auth } from '../js/firebase-config.js';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
-// ফাংশন: বিলের তথ্য লোড এবং প্রিন্ট করার জন্য
+// ফাংশন: বিল এবং দোকানের তথ্য লোড করে প্রিন্ট করার জন্য
 async function loadAndPrintBill() {
     // ১. URL থেকে saleId বের করা
     const urlParams = new URLSearchParams(window.location.search);
@@ -11,75 +13,87 @@ async function loadAndPrintBill() {
 
     if (!saleId) {
         document.body.innerHTML = '<h1>Error: Sale ID not found in URL.</h1>';
-        console.error("Sale ID is missing from the URL.");
         return;
     }
 
-    try {
-        // ২. দোকানের তথ্য লোড করা (shop-details.html)
-        const shopDetailsContainer = document.getElementById('shop-details-container');
-        try {
-            const response = await fetch('../shop-details.html');
-            if (response.ok) {
-                shopDetailsContainer.innerHTML = await response.text();
-            } else {
-                shopDetailsContainer.innerHTML = '<p>Shop details could not be loaded.</p>';
-            }
-        } catch (err) {
-            console.error('Error fetching shop details:', err);
-            shopDetailsContainer.innerHTML = '<p>Error loading shop details.</p>';
-        }
-
-        // ৩. Firebase থেকে বিলের তথ্য আনা
-        const saleDocRef = doc(db, 'sales', saleId);
-        const saleDocSnap = await getDoc(saleDocRef);
-
-        if (saleDocSnap.exists()) {
-            const saleData = saleDocSnap.data();
-
-            // ৪. HTML এলিমেন্টে তথ্য বসানো
-            document.getElementById('bill-no').textContent = saleId.substring(0, 8).toUpperCase();
-            document.getElementById('bill-date').textContent = saleData.createdAt.toDate().toLocaleString();
-
-            const itemsTbody = document.getElementById('receipt-items');
-            itemsTbody.innerHTML = ''; // টেবিল খালি করা
-            saleData.items.forEach(item => {
-                const row = itemsTbody.insertRow();
-                row.innerHTML = `
-                    <td>${item.name}</td>
-                    <td>${item.quantity}</td>
-                    <td>${item.price.toFixed(2)}</td>
-                    <td>${(item.quantity * item.price).toFixed(2)}</td>
-                `;
-            });
-
-            document.getElementById('receipt-subtotal').textContent = `₹${saleData.subtotal.toFixed(2)}`;
+    // ২. Authentication State এর জন্য অপেক্ষা করা
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const userId = user.uid;
             
-            const gstLine = document.getElementById('gst-line');
-            if (saleData.gstApplied && saleData.tax > 0) {
-                gstLine.style.display = 'block';
-                document.getElementById('receipt-tax').textContent = `₹${saleData.tax.toFixed(2)}`;
-            } else {
-                gstLine.style.display = 'none';
-            }
-            
-            document.getElementById('receipt-total').textContent = `₹${saleData.total.toFixed(2)}`;
-            document.getElementById('payment-method').textContent = saleData.paymentMethod;
+            try {
+                // দুটি ডেটা (বিলের তথ্য এবং দোকানের তথ্য) একসাথে আনার জন্য Promise.all ব্যবহার করা হচ্ছে
+                const [saleDocSnap, userDocSnap] = await Promise.all([
+                    getDoc(doc(db, 'shops', userId, 'sales', saleId)),
+                    getDoc(doc(db, 'users', userId))
+                ]);
 
-            // ৫. সব তথ্য রেন্ডার হওয়ার পর প্রিন্ট ডায়ালগ ওপেন করা
-            // setTimeout ব্যবহার করা হয় যাতে DOM আপডেট হওয়ার জন্য যথেষ্ট সময় পায়
-            setTimeout(() => {
-                window.print();
-            }, 500); // ০.৫ সেকেন্ড অপেক্ষা
+                // দোকানের তথ্য রসিদে বসানো
+                const shopDetailsContainer = document.getElementById('shop-details-container');
+                if (userDocSnap.exists()) {
+                    const shopData = userDocSnap.data();
+                    shopDetailsContainer.innerHTML = `
+                        <h2>${shopData.shopName || 'Your Shop Name'}</h2>
+                        <p>${shopData.shopAddress || 'Your Shop Address'}</p>
+                        <p>Phone: ${shopData.shopPhone || 'N/A'}</p>
+                        ${shopData.shopGstin ? `<p>GSTIN: ${shopData.shopGstin}</p>` : ''}
+                    `;
+                } else {
+                    shopDetailsContainer.innerHTML = '<p>Shop details not set.</p>';
+                }
+
+                // বিলের তথ্য রসিদে বসানো
+                if (saleDocSnap.exists()) {
+                    const saleData = saleDocSnap.data();
+
+                    document.getElementById('bill-no').textContent = saleId.substring(0, 8).toUpperCase();
+                    document.getElementById('bill-date').textContent = saleData.createdAt.toDate().toLocaleString();
+
+                    const itemsTbody = document.getElementById('receipt-items');
+                    itemsTbody.innerHTML = '';
+                    saleData.items.forEach(item => {
+                        const row = itemsTbody.insertRow();
+                        row.innerHTML = `
+                            <td>${item.name}</td>
+                            <td>${item.quantity}</td>
+                            <td>${(item.price || 0).toFixed(2)}</td>
+                            <td>${(item.quantity * (item.price || 0)).toFixed(2)}</td>
+                        `;
+                    });
+
+                    document.getElementById('receipt-subtotal').textContent = `₹${(saleData.subtotal || 0).toFixed(2)}`;
+                    
+                    const gstLine = document.getElementById('gst-line');
+                    if (saleData.gstApplied && saleData.tax > 0) {
+                        gstLine.style.display = 'block';
+                        document.getElementById('receipt-tax').textContent = `₹${(saleData.tax || 0).toFixed(2)}`;
+                    } else {
+                        gstLine.style.display = 'none';
+                    }
+                    
+                    document.getElementById('receipt-total').textContent = `₹${(saleData.total || 0).toFixed(2)}`;
+                    document.getElementById('payment-method').textContent = saleData.paymentMethod;
+
+                    // সব তথ্য রেন্ডার হওয়ার পর প্রিন্ট ডায়ালগ ওপেন করা
+                    setTimeout(() => {
+                        window.print();
+                        // প্রিন্টের পর ট্যাব বন্ধ করতে চাইলে নিচের লাইনটি আনকমেন্ট করুন
+                        // window.onafterprint = () => window.close(); 
+                    }, 500);
+
+                } else {
+                    document.body.innerHTML = `<h1>Error: Bill with ID (${saleId}) not found for your shop.</h1>`;
+                }
+            } catch (error) {
+                console.error("Error fetching bill details: ", error);
+                document.body.innerHTML = `<h1>Failed to load bill details. Error: ${error.message}</h1>`;
+            }
 
         } else {
-            document.body.innerHTML = `<h1>Error: Bill with ID (${saleId}) not found.</h1>`;
-            console.error(`Document with ID ${saleId} does not exist.`);
+            // ব্যবহারকারী লগইন করা নেই
+            document.body.innerHTML = '<h1>Authentication Error: Please log in to view this receipt.</h1>';
         }
-    } catch (error) {
-        console.error("Error fetching and printing bill details: ", error);
-        document.body.innerHTML = '<h1>Failed to load bill details. See console for more information.</h1>';
-    }
+    });
 }
 
 // পেজ লোড হয়ে গেলে ফাংশনটি কল করা

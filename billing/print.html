@@ -11,7 +11,7 @@
     <div class="receipt">
         <!-- দোকানের তথ্য এখানে লোড হবে -->
         <header id="shop-details-container">
-            <p>Loading shop details...</p>
+            <p style="text-align: center;">Loading shop details...</p>
         </header>
         
         <!-- বিলের প্রাথমিক তথ্য -->
@@ -40,10 +40,16 @@
 
         <!-- মোট টাকার হিসাব -->
         <section class="totals">
-            <p><strong>Subtotal:</strong> <span id="receipt-subtotal"></span></p>
-            <p id="gst-line" style="display: none;"><strong>GST:</strong> <span id="receipt-tax"></span></p>
+            <div class="summary-line">
+                <strong>Subtotal:</strong> <span id="receipt-subtotal"></span>
+            </div>
+            <div class="summary-line" id="gst-line" style="display: none;">
+                <strong>GST:</strong> <span id="receipt-tax"></span>
+            </div>
             <hr>
-            <p class="grand-total"><strong>Total:</strong> <span id="receipt-total"></span></p>
+            <div class="summary-line grand-total">
+                <strong>Total:</strong> <span id="receipt-total"></span>
+            </div>
         </section>
 
         <!-- পেমেন্টের তথ্য -->
@@ -57,13 +63,23 @@
         </footer>
     </div>
 
-    <!-- ======================= Scripts ======================= -->
-    <!-- 
-        Firebase v10 এর মডিউলার সিস্টেম ব্যবহার করার জন্য,
-        পুরনো v8 স্ক্রিপ্ট ট্যাগগুলোর আর প্রয়োজন নেই।
-        'print.js' ফাইলটি 'import' ব্যবহার করে, তাই এটিকে
-        'type="module"' হিসেবে লোড করতে হবে।
-    -->
+    <!-- ======================================================== -->
+    <!-- START: Firebase v10 Import Map (এই অংশটি যোগ করতে হবে) -->
+    <!-- ======================================================== -->
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      }
+    }
+    </script>
+    <!-- ======================================================== -->
+
+    <!-- আপনার কাস্টম জাভাস্ক্রিপ্ট ফাইল -->
+    <!-- `firebase-config.js` কে `print.js` এর আগে লোড করতে হবে -->
+    <script type="module" src="../js/firebase-config.js"></script>
     <script type="module" src="print.js"></script>
 
 </body>

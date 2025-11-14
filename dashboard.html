@@ -4,25 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart POS - Dashboard</title>
-    <!-- চার্ট তৈরির জন্য Chart.js লাইব্রেরি যোগ করা হয়েছে -->
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <!-- আপনার গ্লোবাল CSS ফাইল -->
     <link rel="stylesheet" href="css/global.css">
+    <!-- ড্যাশবোর্ডের জন্য বিশেষ CSS ফাইল (যদি থাকে) -->
+    <!-- <link rel="stylesheet" href="css/dashboard.css"> -->
+
 </head>
 <body>
+
+    <!-- ======================================================= -->
+    <!-- START: আপডেট করা Navbar -->
+    <!-- ======================================================= -->
     <header class="main-header">
-        <div class="container">
-            <a href="index.html" class="logo">Smart POS</a>
-            <nav>
-                <ul>
-                    <li><a href="billing/billing.html">Billing</a></li>
-                    <li><a href="inventory/inventory.html">Inventory</a></li>
-                    <li><a href="add-product/add-product.html">Add Product</a></li>
-                    <li><a href="sales-report/report.html">Sales Report</a></li>
-                </ul>
-            </nav>
-        </div>
+        <nav class="container">
+            <a href="dashboard.html" class="logo">Smart POS</a>
+            <ul id="main-nav-links">
+                <li><a href="dashboard.html" class="active">Dashboard</a></li> <!-- এই পেজটি active -->
+                <li><a href="billing/billing.html">Billing</a></li>
+                <li><a href="inventory/inventory.html">Inventory</a></li>
+                <li><a href="add-product/add-product.html">Add Product</a></li>
+                <li><a href="sales-report/report.html">Sales Report</a></li>
+                <li><a href="sales-report/profit-loss.html">Profit/Loss</a></li>
+                <!-- নতুন "Shop Details" বাটন যোগ করা হয়েছে -->
+                <li><a href="shop-details/shop-details.html">Shop Details</a></li> 
+                <li><a href="#" id="logout-btn">Logout</a></li>
+            </ul>
+            <button id="mobile-menu-btn" aria-label="Open Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+        </nav>
     </header>
+    <!-- ======================================================= -->
+    <!-- END: Navbar -->
+    <!-- ======================================================= -->
 
     <main class="container dashboard">
         <h1>Dashboard</h1>
@@ -65,7 +88,6 @@
             <div class="card list-card">
                 <h3>Top Selling Products</h3>
                 <ul id="topProductsList">
-                    <!-- JS দিয়ে এখানে ডেটা লোড হবে -->
                     <li>Loading...</li>
                 </ul>
             </div>
@@ -74,7 +96,6 @@
             <div class="card list-card">
                 <h3>Recent Expenses</h3>
                 <ul id="recentExpensesList">
-                    <!-- JS দিয়ে এখানে ডেটা লোড হবে -->
                     <li>Loading...</li>
                 </ul>
                 <button id="add-expense-btn" class="btn btn-primary">Add Expense</button>
@@ -84,7 +105,6 @@
             <div class="card list-card">
                 <h3>Low Stock Alerts</h3>
                 <ul id="lowStockList">
-                    <!-- JS দিয়ে এখানে ডেটা লোড হবে -->
                     <li>Loading...</li>
                 </ul>
             </div>
@@ -100,7 +120,6 @@
             </div>
             <form id="expense-form">
                 <div class="modal-body">
-                    <!-- ... মডালের ফর্মের বাকি অংশ ... -->
                     <div class="form-group">
                         <label for="expense-description">Description</label>
                         <input type="text" id="expense-description" required placeholder="e.g., Rent, Electricity Bill">
@@ -131,7 +150,7 @@
         </div>
     </div>
 
-    <!-- ===== নতুন ফুটার অংশ ===== -->
+    <!-- ===== ফুটার অংশ ===== -->
     <footer class="main-footer-credit">
         <div class="container">
             <p>Developed with ❤️ by <strong>Keshab Sarkar</strong></p>
@@ -139,7 +158,22 @@
         </div>
     </footer>
 
-    <!-- ড্যাশবোর্ডের জন্য জাভাস্ক্রিপ্ট ফাইল -->
-    <script src="js/dashboard.js" type="module"></script>
+    <!-- ======================================================== -->
+    <!-- START: Firebase v10 Import Map -->
+    <!-- ======================================================== -->
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      }
+    }
+    </script>
+    <!-- ======================================================== -->
+
+    <!-- আপনার কাস্টম জাভাস্ক্রিপ্ট ফাইল -->
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
 </body>
 </html>

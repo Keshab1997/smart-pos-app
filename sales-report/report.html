@@ -4,17 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Report - Smart POS</title>
-    <link rel="stylesheet" href="../css/global.css"> <!-- আপনার গ্লোবাল CSS ফাইল -->
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS ফাইল -->
+    <link rel="stylesheet" href="../css/global.css"> <!-- গ্লোবাল CSS -->
     <link rel="stylesheet" href="report.css"> <!-- রিপোর্টের জন্য বিশেষ CSS -->
 </head>
 <body>
-    <header>
-        <!-- আপনার হেডার এখানে যোগ করতে পারেন, যেমন আগের ফাইলগুলোতে ছিল -->
-        <h1>Sales Report</h1>
-        <nav>
-            <a href="../billing/billing.html">Go to Billing</a>
+
+    <!-- ======================================================= -->
+    <!-- START: আপডেট করা Navbar -->
+    <!-- ======================================================= -->
+    <header class="main-header">
+        <nav class="container">
+            <a href="../dashboard.html" class="logo">Smart POS</a>
+            <ul id="main-nav-links">
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="../billing/billing.html">Billing</a></li>
+                <li><a href="../inventory/inventory.html">Inventory</a></li>
+                <li><a href="../add-product/add-product.html">Add Product</a></li>
+                <li><a href="report.html" class="active">Sales Report</a></li> <!-- এই পেজটি active -->
+                <li><a href="profit-loss.html">Profit/Loss</a></li>
+                <li><a href="#" id="logout-btn">Logout</a></li>
+            </ul>
+            <button id="mobile-menu-btn" aria-label="Open Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
         </nav>
     </header>
+    <!-- ======================================================= -->
+    <!-- END: Navbar -->
+    <!-- ======================================================= -->
 
     <main class="container">
         <!-- প্রথম সারির সামারি বক্স -->
@@ -35,6 +59,7 @@
 
         <!-- ফিল্টার সেকশন -->
         <section class="filter-section card">
+            <h3>Filter Sales Report</h3>
             <div class="form-group-inline">
                 <div>
                     <label for="start-date">From Date:</label>
@@ -48,13 +73,13 @@
             </div>
 
             <!-- ফিল্টার করা সামারি বক্স -->
-            <div class="filtered-summary-boxes" style="margin-top: 20px;">
+            <div class="filtered-summary-boxes">
                 <div class="summary-box">
-                    <h2>Filtered Cash Sales</h2>
+                    <h4>Filtered Cash Sales</h4>
                     <p id="filtered-cash-sales">₹0.00</p>
                 </div>
                 <div class="summary-box">
-                    <h2>Filtered Card/Online Sales</h2>
+                    <h4>Filtered Card/Online Sales</h4>
                     <p id="filtered-card-sales">₹0.00</p>
                 </div>
             </div>
@@ -78,14 +103,30 @@
                     </thead>
                     <tbody id="sales-table-body">
                         <!-- JS দিয়ে ডেটা এখানে লোড হবে -->
-                        <tr><td colspan="7">Loading...</td></tr>
+                        <tr><td colspan="7" class="loading-cell">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
         </section>
     </main>
 
-    <!-- জাভাস্ক্রিপ্ট ফাইল লিঙ্ক করা -->
-    <script src="report.js" type="module"></script>
+    <!-- ======================================================== -->
+    <!-- START: Firebase v10 Import Map -->
+    <!-- ======================================================== -->
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      }
+    }
+    </script>
+    <!-- ======================================================== -->
+
+    <!-- আপনার কাস্টম জাভাস্ক্রিপ্ট ফাইল -->
+    <script type="module" src="../js/firebase-config.js"></script>
+    <script type="module" src="report.js"></script>
+
 </body>
 </html>

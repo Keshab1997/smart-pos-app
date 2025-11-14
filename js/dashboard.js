@@ -1,7 +1,13 @@
-// js/dashboard.js
+// js/dashboard.js (সম্পূর্ণ আপডেট করা)
 
-// Firebase থেকে প্রয়োজনীয় মডিউল ইম্পোর্ট করা
-import { db, collection, getDocs, query, where, orderBy, addDoc, serverTimestamp, Timestamp } from './firebase-config.js';
+// ==========================================
+// --- Firebase থেকে প্রয়োজনীয় মডিউল ইম্পোর্ট ---
+// ==========================================
+import { db, auth } from './firebase-config.js';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import {
+    collection, getDocs, query, where, orderBy, addDoc, serverTimestamp, Timestamp
+} from 'firebase/firestore';
 
 // ==========================================
 // --- DOM এলিমেন্টের রেফারেন্স ---
@@ -29,193 +35,173 @@ const closeExpenseModalBtn = document.getElementById('close-expense-modal-btn');
 const expenseForm = document.getElementById('expense-form');
 const expenseDateInput = document.getElementById('expense-date');
 
-// গ্লোবাল ভেরিয়েবল চার্ট ইনস্ট্যান্স রাখার জন্য
+// ন্যাভিগেশন
+const logoutBtn = document.getElementById('logout-btn');
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const mainNavLinks = document.getElementById('main-nav-links');
+
+// গ্লোবাল ভেরিয়েবল
+let currentUserId = null;
 let salesProfitChartInstance;
 let categoryPieChartInstance;
 
+// ==========================================
+// --- Authentication ---
+// ==========================================
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUserId = user.uid;
+        initializeDashboard();
+    } else {
+        window.location.href = 'index.html'; // লগইন পেজে রিডাইরেক্ট
+    }
+});
 
 // ==========================================
-// --- মূল ডেটা লোডিং এবং প্রসেসিং ফাংশন ---
+// --- প্রাথমিক ফাংশন ---
 // ==========================================
+function initializeDashboard() {
+    setupEventListeners();
+    loadDashboardData();
+}
 
 /**
  * ড্যাশবোর্ডের জন্য সমস্ত ডেটা লোড এবং প্রসেস করে
  */
 async function loadDashboardData() {
+    if (!currentUserId) return;
+
     try {
-        // সমান্তরালভাবে সব ডেটা লোড করা
-        const [sales, products, expenses] = await Promise.all([
-            getDocs(query(collection(db, 'sales'), orderBy('createdAt', 'desc'))),
-            getDocs(collection(db, 'products')),
-            getDocs(query(collection(db, 'expenses'), orderBy('date', 'desc')))
+        const salesRef = collection(db, 'shops', currentUserId, 'sales');
+        const inventoryRef = collection(db, 'shops', currentUserId, 'inventory');
+        const expensesRef = collection(db, 'shops', currentUserId, 'expenses');
+
+        const [salesSnap, inventorySnap, expensesSnap] = await Promise.all([
+            getDocs(query(salesRef, orderBy('createdAt', 'desc'))),
+            getDocs(inventoryRef),
+            getDocs(query(expensesRef, orderBy('date', 'desc')))
         ]);
 
-        const salesData = sales.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const productsData = products.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const expensesData = expenses.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const salesData = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const inventoryData = inventorySnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const expensesData = expensesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // ডেটা দিয়ে UI আপডেট করা
-        updateKpiCards(salesData, productsData, expensesData);
-        updateSalesProfitChart(salesData, productsData);
-        updateCategoryPieChart(salesData, productsData);
+        // UI আপডেট করা
+        updateKpiCards(salesData, inventoryData, expensesData);
+        updateSalesProfitChart(salesData, inventoryData);
+        updateCategoryPieChart(salesData);
         updateTopSellingProducts(salesData);
-        updateLowStockAlerts(productsData);
+        updateLowStockAlerts(inventoryData);
         updateRecentExpenses(expensesData);
 
     } catch (error) {
         console.error("Error loading dashboard data:", error);
-        // এখানে একটি সুন্দর এরর মেসেজ দেখানো যেতে পারে
     }
 }
-
 
 // ==========================================
 // --- UI আপডেট করার ফাংশন ---
 // ==========================================
 
-/**
- * KPI কার্ডগুলো আপডেট করে
- */
-function updateKpiCards(sales, products, expenses) {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+function updateKpiCards(sales, inventory, expenses) {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
 
     let todaySales = 0;
-    let todayProfit = 0;
-    let todayExpenses = 0;
+    let todayGrossProfit = 0;
+    
+    // ইনভেন্টরি ডেটাকে একটি ম্যাপে রাখা для দ্রুত খোঁজার জন্য
+    const inventoryMap = new Map(inventory.map(p => [p.id, p]));
 
-    // আজকের বিক্রি এবং লাভ গণনা
     sales.forEach(sale => {
+        if (!sale.createdAt || !sale.createdAt.toDate) return;
         const saleDate = sale.createdAt.toDate();
         if (saleDate >= startOfToday) {
             todaySales += sale.total;
-            // প্রতিটি বিক্রির লাভ গণনা
             sale.items.forEach(item => {
-                const product = products.find(p => p.id === item.id);
-                if (product && product.cp) {
-                    const cost = product.cp * item.quantity;
-                    const revenue = item.price * item.quantity;
-                    todayProfit += (revenue - cost);
-                } else {
-                    todayProfit += (item.price * item.quantity); // যদি কস্ট প্রাইস না থাকে
-                }
+                const product = inventoryMap.get(item.id);
+                // আপনার মডেল অনুযায়ী costPrice ব্যবহার করা হচ্ছে
+                const costPrice = product ? product.costPrice || 0 : 0;
+                const sellingPrice = item.price || 0;
+                todayGrossProfit += (sellingPrice - costPrice) * item.quantity;
             });
         }
     });
 
-    // আজকের খরচ গণনা
-    expenses.forEach(expense => {
-        // Firebase থেকে আসা Timestamp অবজেক্টকে JS Date-এ রূপান্তর
-        const expenseDate = expense.date.toDate ? expense.date.toDate() : new Date(expense.date);
-        if (expenseDate >= startOfToday) {
-            todayExpenses += expense.amount;
-        }
-    });
-    
-    // আজকের লাভ থেকে আজকের খরচ বাদ দেওয়া
-    todayProfit -= todayExpenses;
+    const todayExpenses = expenses
+        .filter(e => e.date && e.date.toDate && e.date.toDate() >= startOfToday)
+        .reduce((sum, e) => sum + e.amount, 0);
 
     todaySalesEl.textContent = `₹${todaySales.toFixed(2)}`;
-    todayProfitEl.textContent = `₹${todayProfit.toFixed(2)}`;
+    todayProfitEl.textContent = `₹${todayGrossProfit.toFixed(2)}`; // এটি Gross Profit
     todayExpensesEl.textContent = `₹${todayExpenses.toFixed(2)}`;
-
-    // লো স্টক গণনা
-    const lowStockThreshold = 5; // উদাহরণ: ৫ বা তার কম হলে লো স্টক
-    const lowStockCount = products.filter(p => p.stock <= lowStockThreshold).length;
+    
+    const lowStockThreshold = 10; // আপনি এটি পরিবর্তন করতে পারেন
+    const lowStockCount = inventory.filter(p => p.stock <= lowStockThreshold).length;
     lowStockCountEl.textContent = lowStockCount;
 }
 
-/**
- * সেলস এবং প্রফিট ট্রেন্ড চার্ট তৈরি করে
- */
-function updateSalesProfitChart(sales, products) {
-    const last7Days = {};
+function updateSalesProfitChart(sales, inventory) {
+    const last7DaysData = {};
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        const dateString = d.toISOString().split('T')[0]; // YYYY-MM-DD ফরম্যাট
-        last7Days[dateString] = { sales: 0, profit: 0 };
+        last7DaysData[d.toISOString().split('T')[0]] = { sales: 0, profit: 0 };
     }
 
+    const inventoryMap = new Map(inventory.map(p => [p.id, p]));
+
     sales.forEach(sale => {
-        const saleDate = sale.createdAt.toDate();
-        const dateString = saleDate.toISOString().split('T')[0];
-        if (last7Days[dateString] !== undefined) {
-            last7Days[dateString].sales += sale.total;
-            
+        if (!sale.createdAt || !sale.createdAt.toDate) return;
+        const dateString = sale.createdAt.toDate().toISOString().split('T')[0];
+        if (last7DaysData[dateString] !== undefined) {
+            last7DaysData[dateString].sales += sale.total;
             let saleProfit = 0;
             sale.items.forEach(item => {
-                const product = products.find(p => p.id === item.id);
-                if (product && product.cp) {
-                    saleProfit += (item.price - product.cp) * item.quantity;
-                } else {
-                    saleProfit += item.price * item.quantity;
-                }
+                const product = inventoryMap.get(item.id);
+                const costPrice = product ? product.costPrice || 0 : 0;
+                saleProfit += (item.price - costPrice) * item.quantity;
             });
-            last7Days[dateString].profit += saleProfit;
+            last7DaysData[dateString].profit += saleProfit;
         }
     });
-    
-    const labels = Object.keys(last7Days).map(date => new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
-    const salesData = Object.values(last7Days).map(d => d.sales);
-    const profitData = Object.values(last7Days).map(d => d.profit);
 
-    if(salesProfitChartInstance) salesProfitChartInstance.destroy(); // পুরনো চার্ট ধ্বংস করা
+    const labels = Object.keys(last7DaysData).map(date => new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
+    const salesData = Object.values(last7DaysData).map(d => d.sales);
+    const profitData = Object.values(last7DaysData).map(d => d.profit);
+
+    if (salesProfitChartInstance) salesProfitChartInstance.destroy();
 
     salesProfitChartInstance = new Chart(salesProfitChartCtx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels,
             datasets: [
-                {
-                    label: 'Sales',
-                    data: salesData,
-                    borderColor: 'rgba(0, 123, 255, 1)',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    tension: 0.3,
-                    fill: true,
-                },
-                {
-                    label: 'Profit',
-                    data: profitData,
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                    tension: 0.3,
-                    fill: true,
-                }
+                { label: 'Sales', data: salesData, borderColor: '#007bff', tension: 0.3 },
+                { label: 'Profit', data: profitData, borderColor: '#28a745', tension: 0.3 }
             ]
         },
         options: { responsive: true, maintainAspectRatio: false }
     });
 }
 
-/**
- * ক্যাটেগরি অনুযায়ী বিক্রির পাই চার্ট তৈরি করে
- */
-function updateCategoryPieChart(sales, products) {
+function updateCategoryPieChart(sales) {
     const categorySales = {};
     sales.forEach(sale => {
         sale.items.forEach(item => {
-            const product = products.find(p => p.id === item.id);
-            if (product) {
-                const category = product.category || 'Uncategorized';
-                const revenue = item.price * item.quantity;
-                categorySales[category] = (categorySales[category] || 0) + revenue;
-            }
+            const category = item.category || 'Uncategorized';
+            categorySales[category] = (categorySales[category] || 0) + (item.price * item.quantity);
         });
     });
 
-    const labels = Object.keys(categorySales);
-    const data = Object.values(categorySales);
-    
-    if(categoryPieChartInstance) categoryPieChartInstance.destroy();
+    if (categoryPieChartInstance) categoryPieChartInstance.destroy();
 
     categoryPieChartInstance = new Chart(categoryPieChartCtx, {
         type: 'doughnut',
         data: {
-            labels: labels,
+            labels: Object.keys(categorySales),
             datasets: [{
-                data: data,
+                data: Object.values(categorySales),
                 backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d'],
             }]
         },
@@ -223,9 +209,6 @@ function updateCategoryPieChart(sales, products) {
     });
 }
 
-/**
- * টপ সেলিং প্রোডাক্টের তালিকা আপডেট করে
- */
 function updateTopSellingProducts(sales) {
     const productSales = {};
     sales.forEach(sale => {
@@ -236,108 +219,72 @@ function updateTopSellingProducts(sales) {
 
     const sortedProducts = Object.entries(productSales).sort(([, a], [, b]) => b - a).slice(0, 5);
     
-    topProductsListEl.innerHTML = '';
-    if (sortedProducts.length === 0) {
-        topProductsListEl.innerHTML = '<li>No sales data available.</li>';
-        return;
-    }
-    sortedProducts.forEach(([name, quantity]) => {
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${name}</span> <strong>${quantity} sold</strong>`;
-        topProductsListEl.appendChild(li);
-    });
+    topProductsListEl.innerHTML = sortedProducts.length === 0
+        ? '<li>No sales data available.</li>'
+        : sortedProducts.map(([name, quantity]) => `<li><span>${name}</span> <strong>${quantity} sold</strong></li>`).join('');
 }
 
-/**
- * লো স্টক আইটেমের তালিকা আপডেট করে
- */
-function updateLowStockAlerts(products) {
-    const lowStockThreshold = 5;
-    const lowStockProducts = products.filter(p => p.stock <= lowStockThreshold).sort((a, b) => a.stock - b.stock);
+function updateLowStockAlerts(inventory) {
+    const lowStockThreshold = 10;
+    const lowStockProducts = inventory.filter(p => p.stock <= lowStockThreshold).sort((a, b) => a.stock - b.stock);
 
-    lowStockListEl.innerHTML = '';
-    if (lowStockProducts.length === 0) {
-        lowStockListEl.innerHTML = '<li>All products have sufficient stock.</li>';
-        return;
-    }
-    lowStockProducts.forEach(product => {
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${product.name}</span> <strong style="color: red;">${product.stock} left</strong>`;
-        lowStockListEl.appendChild(li);
-    });
+    lowStockListEl.innerHTML = lowStockProducts.length === 0
+        ? '<li>All products have sufficient stock.</li>'
+        : lowStockProducts.map(p => `<li><span>${p.name}</span> <strong class="text-danger">${p.stock} left</strong></li>`).join('');
 }
 
-/**
- * সাম্প্রতিক খরচের তালিকা আপডেট করে
- */
 function updateRecentExpenses(expenses) {
-    const recentExpenses = expenses.slice(0, 5); // প্রথম ৫টি খরচ
-    recentExpensesListEl.innerHTML = '';
-
-    if(recentExpenses.length === 0) {
-        recentExpensesListEl.innerHTML = '<li>No recent expenses recorded.</li>';
-        return;
-    }
-    recentExpenses.forEach(expense => {
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${expense.description}</span> <strong>₹${expense.amount.toFixed(2)}</strong>`;
-        recentExpensesListEl.appendChild(li);
-    });
+    recentExpensesListEl.innerHTML = expenses.length === 0
+        ? '<li>No recent expenses recorded.</li>'
+        : expenses.slice(0, 5).map(exp => `<li><span>${exp.description}</span> <strong>₹${exp.amount.toFixed(2)}</strong></li>`).join('');
 }
 
 
 // ==========================================
-// --- খরচ যোগ করার মডাল এবং ফর্ম হ্যান্ডলিং ---
+// --- ইভেন্ট লিসেনার সেটআপ ---
 // ==========================================
+function setupEventListeners() {
+    expenseDateInput.valueAsDate = new Date();
 
-// ডিফল্ট তারিখ আজকের দিনে সেট করা
-expenseDateInput.valueAsDate = new Date();
+    addExpenseBtn.addEventListener('click', () => expenseModal.classList.remove('hidden'));
+    closeExpenseModalBtn.addEventListener('click', () => expenseModal.classList.add('hidden'));
+    expenseModal.addEventListener('click', (e) => {
+        if (e.target === expenseModal) expenseModal.classList.add('hidden');
+    });
 
-// মডাল খোলা ও বন্ধ করা
-addExpenseBtn.addEventListener('click', () => expenseModal.classList.remove('hidden'));
-closeExpenseModalBtn.addEventListener('click', () => expenseModal.classList.add('hidden'));
-expenseModal.addEventListener('click', (e) => {
-    if (e.target === expenseModal) expenseModal.classList.add('hidden');
-});
+    expenseForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const description = document.getElementById('expense-description').value;
+        const amount = parseFloat(document.getElementById('expense-amount').value);
+        const category = document.getElementById('expense-category').value;
+        const date = new Date(expenseDateInput.value);
 
-// ফর্ম সাবমিট হলে খরচ সেভ করা
-expenseForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const description = document.getElementById('expense-description').value;
-    const amount = parseFloat(document.getElementById('expense-amount').value);
-    const category = document.getElementById('expense-category').value;
-    const date = new Date(expenseDateInput.value);
+        if (!description || !amount || !date || !currentUserId) {
+            alert('Please fill all fields.');
+            return;
+        }
 
-    if (!description || !amount || !date) {
-        alert('Please fill all fields.');
-        return;
-    }
+        try {
+            await addDoc(collection(db, 'shops', currentUserId, 'expenses'), {
+                description,
+                amount,
+                category,
+                date: Timestamp.fromDate(date),
+                createdAt: serverTimestamp()
+            });
 
-    try {
-        await addDoc(collection(db, 'expenses'), {
-            description,
-            amount,
-            category,
-            date: Timestamp.fromDate(date), // তারিখকে Timestamp হিসাবে সেভ করা
-            createdAt: serverTimestamp()
-        });
+            expenseForm.reset();
+            expenseDateInput.valueAsDate = new Date();
+            expenseModal.classList.add('hidden');
+            loadDashboardData();
+            alert('Expense added successfully!');
 
-        expenseForm.reset();
-        expenseDateInput.valueAsDate = new Date(); // তারিখ রিসেট
-        expenseModal.classList.add('hidden');
-        
-        // ডেটা রিলোড করে UI আপডেট করা
-        loadDashboardData();
-        alert('Expense added successfully!');
+        } catch (error) {
+            console.error("Error adding expense:", error);
+            alert('Failed to add expense.');
+        }
+    });
 
-    } catch (error) {
-        console.error("Error adding expense:", error);
-        alert('Failed to add expense.');
-    }
-});
-
-
-// ==========================================
-// --- প্রাথমিক ফাংশন কল ---
-// ==========================================
-document.addEventListener('DOMContentLoaded', loadDashboardData);
+    logoutBtn.addEventListener('click', async () => await signOut(auth));
+    mobileMenuBtn.addEventListener('click', () => mainNavLinks.classList.toggle('mobile-nav-active'));
+}

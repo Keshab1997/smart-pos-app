@@ -1,0 +1,67 @@
+/* shop-details/shop-details.css */
+
+.card-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color, #007bff);
+}
+
+.form-group input[disabled] {
+    background-color: #f1f1f1;
+    cursor: not-allowed;
+}
+
+.form-group small {
+    font-size: 13px;
+    color: #777;
+    margin-top: 5px;
+    display: block;
+}
+
+#save-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+}
+
+#status-message {
+    margin-top: 15px;
+    text-align: center;
+    font-weight: 500;
+}
+
+#status-message.success {
+    color: #28a745;
+}
+
+#status-message.error {
+    color: #dc3545;
+}

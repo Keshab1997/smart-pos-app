@@ -9,21 +9,34 @@
 </head>
 <body>
 
-    <header class="navbar">
-        <div class="navbar-brand">Smart POS</div>
-        <nav class="navbar-nav">
-            <a href="../index.html">Dashboard</a>
-            <a href="../billing/billing.html">Billing</a>
-            <a href="inventory.html" class="active">Inventory</a>
-            <a href="../add-product/add-product.html">Add Product</a>
-            <a href="../sales-report/report.html">Report</a>
+    <!-- ======================================================= -->
+    <!-- START: আপডেট করা Navbar -->
+    <!-- ======================================================= -->
+    <header class="main-header">
+        <nav class="container">
+            <a href="../dashboard.html" class="logo">Smart POS</a>
+            <ul>
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="../billing/billing.html">Billing</a></li>
+                <li><a href="inventory.html" class="active">Inventory</a></li>
+                <li><a href="../add-product/add-product.html">Add Product</a></li>
+                <li><a href="../sales-report/report.html">Sales Report</a></li>
+                <li><a href="../sales-report/profit-loss.html">Profit/Loss</a></li>
+                <li><a href="#" id="logout-btn">Logout</a></li>
+            </ul>
         </nav>
     </header>
+    <!-- ======================================================= -->
+    <!-- END: Navbar -->
+    <!-- ======================================================= -->
 
-    <main>
+    <main class="container">
         <h1>Product Inventory</h1>
 
-        <div class="inventory-controls">
+        <!-- সাধারণ বার্তা দেখানোর জন্য একটি নতুন এলিমেন্ট -->
+        <div id="status-message-container"></div>
+
+        <div class="inventory-controls card-container">
             <input type="search" id="search-inventory" placeholder="Search by name, barcode, or category...">
             <select id="category-filter">
                 <option value="">All Categories</option>
@@ -32,7 +45,7 @@
             <a href="../add-product/add-product.html" class="btn btn-primary">Add New Product</a>
         </div>
 
-        <div class="table-container">
+        <div class="table-container card-container">
             <table class="inventory-table">
                 <thead>
                     <tr>
@@ -45,9 +58,9 @@
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="inventory-body">
+                <tbody id="inventory-tbody">
                     <tr>
-                        <td colspan="7" style="text-align: center;">Loading products...</td>
+                        <td colspan="7" class="loading-cell">Loading products...</td>
                     </tr>
                 </tbody>
             </table>
@@ -66,30 +79,58 @@
             <h2>Edit Product</h2>
             <form id="edit-form">
                 <input type="hidden" id="edit-product-id">
-                <label for="edit-name">Product Name:</label>
-                <input type="text" id="edit-name" required>
-
-                <label for="edit-category">Category:</label>
-                <input type="text" id="edit-category" required>
                 
-                <label for="edit-cp">Cost Price (CP):</label>
-                <input type="number" id="edit-cp" step="0.01" required>
+                <div class="form-group">
+                    <label for="edit-name">Product Name:</label>
+                    <input type="text" id="edit-name" required>
+                </div>
 
-                <label for="edit-sp">Selling Price (SP):</label>
-                <input type="number" id="edit-sp" step="0.01" required>
+                <div class="form-group">
+                    <label for="edit-category">Category:</label>
+                    <input type="text" id="edit-category" required>
+                </div>
 
-                <label for="edit-stock">Stock:</label>
-                <input type="number" id="edit-stock" required>
+                <div class="form-group">
+                    <label for="edit-cp">Cost Price (CP):</label>
+                    <input type="number" id="edit-cp" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-sp">Selling Price (SP):</label>
+                    <input type="number" id="edit-sp" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-stock">Current Stock:</label>
+                    <input type="number" id="edit-stock" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-barcode">Barcode:</label>
+                    <input type="text" id="edit-barcode" readonly> <!-- বারকোড সাধারণত এডিট করা যায় না -->
+                </div>
                 
-                <label for="edit-barcode">Barcode:</label>
-                <input type="text" id="edit-barcode">
-
                 <button type="submit" class="btn btn-primary">Save Changes</button>
             </form>
         </div>
     </div>
     
-    <!-- আপনার firebase-config.js এবং inventory.js ফাইল এখানে মডিউল হিসেবে লোড করুন -->
+    <!-- ======================================================== -->
+    <!-- START: Firebase v10 Import Map (জাভাস্ক্রিপ্টের জন্য ضروری) -->
+    <!-- ======================================================== -->
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      }
+    }
+    </script>
+    <!-- ======================================================== -->
+    
+    <!-- আপনার কাস্টম জাভাস্ক্রিপ্ট ফাইলগুলো (মডিউল হিসেবে) -->
+    <!-- firebase-config.js ফাইলটি inventory.js এর আগে লোড করতে হবে -->
     <script type="module" src="../js/firebase-config.js"></script>
     <script type="module" src="inventory.js"></script>
 
