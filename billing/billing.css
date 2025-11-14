@@ -35,10 +35,9 @@ h2 { margin-bottom: 20px; }
 .search-box { position: relative; margin-bottom: 20px; }
 #product-search { width: 100%; padding: 12px 15px 12px 40px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
 .search-box svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--light-text-color); }
-#search-results { position: absolute; background: white; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow); z-index: 10; max-height: 300px; overflow-y: auto; } /* সার্চ রেজাল্টের জন্য স্টাইল */
+#search-results { position: absolute; background: white; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow); z-index: 10; max-height: 300px; overflow-y: auto; }
 .search-result-item { padding: 10px 15px; cursor: pointer; display: flex; justify-content: space-between; }
 .search-result-item:hover { background-color: #f0f0f0; }
-
 
 .category-browse-title { font-size: 1.1em; color: var(--light-text-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 10px; }
 #category-product-list { flex-grow: 1; overflow-y: auto; margin-top: 15px; padding-right: 10px; }
@@ -82,47 +81,43 @@ h2 { margin-bottom: 20px; }
     background-color: rgba(0, 0, 0, 0.6);
     display: flex; justify-content: center; align-items: center;
     z-index: 2000; transition: opacity 0.2s ease;
-    padding: 20px 0; /* উপরে নিচে প্যাডিং যোগ করা হলো */
+    padding: 20px 0;
 }
 .modal-overlay.hidden { opacity: 0; pointer-events: none; }
 
-/* ===== START: মূল পরিবর্তন এখানে ===== */
 .modal-content {
     background-color: var(--background-white);
-    padding: 0; /* প্যাডিং সরানো হলো, কারণ ভেতরের অংশে দেওয়া হবে */
+    padding: 0; 
     border-radius: 12px;
     width: 90%;
     max-width: 500px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     transform: scale(0.95);
     transition: transform 0.2s ease;
-    display: flex; /* Flexbox লেআউট ব্যবহার করা হচ্ছে */
-    flex-direction: column; /* আইটেমগুলো উপর থেকে নিচে সাজানো থাকবে */
-    max-height: 95vh; /* মডালের সর্বোচ্চ উচ্চতা স্ক্রিনের ৯৫% */
-    overflow: hidden; /* ভেতরের কন্টেন্ট বাইরে যেতে দেবে না */
+    display: flex;
+    flex-direction: column;
+    max-height: 95vh;
+    overflow: hidden;
 }
-/* ===== END: মূল পরিবর্তন এখানে ===== */
 
 .modal-overlay:not(.hidden) .modal-content { transform: scale(1); }
 
 .modal-header {
     display: flex; justify-content: space-between; align-items: center;
     border-bottom: 1px solid var(--border-color);
-    padding: 15px 25px; /* প্যাডিং এখানে যোগ করা হলো */
-    flex-shrink: 0; /* এটি ছোট হবে না */
+    padding: 15px 25px;
+    flex-shrink: 0;
 }
 .modal-header h2 { margin-bottom: 0; }
 .close-button { background: none; border: none; font-size: 2rem; line-height: 1; cursor: pointer; color: var(--light-text-color); }
 
-/* ===== START: modal-body এর জন্য নতুন স্টাইল ===== */
 .modal-body {
-    padding: 20px 25px; /* প্যাডিং এখানে যোগ করা হলো */
-    overflow-y: auto; /* কন্টেন্ট বেশি হলে এখানে ভার্টিকাল স্ক্রলবার আসবে */
-    flex-grow: 1; /* হেডার ও ফুটারের মাঝের সবটুকু জায়গা নেবে */
+    padding: 20px 25px;
+    overflow-y: auto;
+    flex-grow: 1;
 }
-/* ===== END: modal-body এর জন্য নতুন স্টাইল ===== */
 
-/* কাস্টমার ডিটেইলস সেকশন (HTML থেকে) */
+/* কাস্টমার ডিটেইলস সেকশন */
 .customer-details-section { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
 .customer-details-title { margin-bottom: 15px; font-size: 1.1rem; color: #333; }
 .customer-details-section .form-group { margin-bottom: 10px; }
@@ -130,10 +125,33 @@ h2 { margin-bottom: 20px; }
 .customer-details-section .form-group input,
 .customer-details-section .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95rem; }
 
-
-.modal-body .summary-row { padding: 8px 0; display: flex; justify-content: space-between; }
+.modal-body .summary-row { padding: 8px 0; display: flex; justify-content: space-between; align-items: center; } /* align-items: center যোগ করা হলো */
 .modal-body .total-row { font-size: 1.3rem; font-weight: 700; color: var(--success-color); }
 .modal-body hr { border: none; border-top: 1px solid var(--border-color); margin: 10px 0; }
+
+/* ===== START: Discount Section Styles (নতুন যোগ করা হয়েছে) ===== */
+.discount-input-row > span {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* লেবেল এবং ড্রপডাউনের মধ্যে গ্যাপ */
+}
+#discount-type {
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: #f9f9f9;
+    font-size: 0.9rem;
+}
+#discount-value {
+    width: 100px;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    text-align: right;
+    font-size: 1rem;
+}
+/* ===== END: Discount Section Styles ===== */
+
 .payment-method { margin-top: 20px; }
 .payment-method label { display: block; margin-bottom: 8px; font-weight: 500; }
 #payment-method-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
@@ -145,8 +163,8 @@ h2 { margin-bottom: 20px; }
 
 .modal-footer {
     border-top: 1px solid var(--border-color);
-    padding: 20px 25px; /* প্যাডিং এখানে যোগ করা হলো */
-    flex-shrink: 0; /* এটি ছোট হবে না */
+    padding: 20px 25px;
+    flex-shrink: 0;
 }
 .final-bill-btn { width: 100%; padding: 15px; font-size: 1.2rem; }
 

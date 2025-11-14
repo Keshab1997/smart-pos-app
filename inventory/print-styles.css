@@ -1,0 +1,60 @@
+/* print-styles.css (TSC TE244 লেবেল প্রিন্টারের জন্য নতুন ভার্সন) */
+
+/* 
+   =========================================================
+   গুরুত্বপূর্ণ নোট: 
+   @page rule-এর 'size' আপনার লেবেলের আসল মাপ অনুযায়ী পরিবর্তন করুন।
+   প্রথমে আপনার লেবেলটি একটি রুলার দিয়ে মাপুন (চওড়া এবং উচ্চতা)।
+   এখানে ডিফল্ট হিসেবে 50mm চওড়া এবং 25mm লম্বা দেওয়া হয়েছে।
+   আপনার লেবেলের সাইজ 2.25in x 1.25in হলে size: 2.25in 1.25in; লিখুন।
+   =========================================================
+*/
+@page {
+    /* আপনার লেবেলের সাইজ এখানে দিন (প্রস্থ তারপর উচ্চতা) */
+    size: 50mm 25mm; 
+    margin: 0;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* প্রতিটি লেবেলের জন্য কন্টেইনার */
+.label-item {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* উল্লম্বভাবে মাঝখানে */
+    align-items: center;    /* অনুভূমিকভাবে মাঝখানে */
+    text-align: center;
+    box-sizing: border-box;
+    padding: 2mm; /* লেবেলের কিনার থেকে সামান্য ফাঁকা জায়গা */
+    overflow: hidden;
+    
+    /* একাধিক লেবেল প্রিন্ট করার সময় প্রতিটি লেবেলের পর একটি নতুন পেজ (লেবেল) শুরু হবে */
+    break-after: page; 
+}
+
+.label-item .product-name {
+    font-size: 7pt; /* ফন্ট সাইজ ছোট রাখা হয়েছে যেন লেবেলে আঁটে */
+    font-weight: bold;
+    margin: 0 0 1mm 0;
+    line-height: 1;
+    word-break: break-all; /* খুব লম্বা নাম হলে ভেঙে যাবে */
+}
+
+.label-item .product-price {
+    font-size: 7pt;
+    font-weight: bold;
+    margin: 1mm 0 0 0;
+    line-height: 1;
+}
+
+/* বারকোড SVG কন্টেইনারের জন্য কোনো অতিরিক্ত মার্জিন থাকবে না */
+.label-item svg {
+    margin: 0 !important;
+    padding: 0 !important;
+}

@@ -42,6 +42,32 @@
             border-radius: 4px;
             font-size: 0.95rem;
         }
+
+        /* ===== START: Discount Section CSS (নতুন যোগ করা হয়েছে) ===== */
+        .discount-input-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .discount-input-row > span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #discount-type {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        #discount-value {
+            width: 100px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: right;
+        }
+        /* ===== END: Discount Section CSS ===== */
     </style>
 </head>
 <body>
@@ -115,7 +141,7 @@
             </div>
             <div class="modal-body">
                 
-                <!-- ===== START: Customer Details Section (নতুন যোগ করা হয়েছে) ===== -->
+                <!-- ===== START: Customer Details Section ===== -->
                 <div class="customer-details-section">
                     <h4 class="customer-details-title">Customer Details (Optional)</h4>
                     <div class="form-group">
@@ -138,6 +164,24 @@
                         <span>Subtotal:</span>
                         <span id="modal-subtotal">₹0.00</span>
                     </div>
+
+                    <!-- ===== START: Discount Section (নতুন যোগ করা হয়েছে) ===== -->
+                    <div class="summary-row discount-input-row">
+                        <span>
+                            <label for="discount-value">Discount</label>
+                            <select id="discount-type">
+                                <option value="percent">%</option>
+                                <option value="amount">₹</option>
+                            </select>
+                        </span>
+                        <input type="number" id="discount-value" placeholder="0" min="0">
+                    </div>
+                    <div class="summary-row">
+                        <span>Discount Amount:</span>
+                        <span id="modal-discount">₹0.00</span>
+                    </div>
+                    <!-- ===== END: Discount Section ===== -->
+
                     <div class="summary-row gst-row">
                         <span>
                             <input type="checkbox" id="gst-toggle" checked> 
@@ -153,7 +197,8 @@
                 </div>
 
                 <div class="payment-method">
-                    <label for="payment-method-select">Payment Method</label>                    <select id="payment-method-select" name="payment-method">
+                    <label for="payment-method-select">Payment Method</label>
+                    <select id="payment-method-select" name="payment-method">
                         <option value="cash" selected>Cash</option>
                         <option value="card">Card</option>
                         <option value="online">Online (UPI/etc)</option>

@@ -1,149 +1,174 @@
-/* print.css - Auto-fit Layout for Thermal Printers (Revised & Enhanced) */
+/* ======================================================= */
+/* print.css - Enhanced Modern Receipt Design (v3)         */
+/* ======================================================= */
 
 @page {
-    /* ব্রাউজার এবং প্রিন্টারকে পেজের সাইজ ও মার্জিন নিজে থেকে ঠিক করতে দিন */
     size: auto;
-    /* দু'পাশে অতিরিক্ত মার্জিন যোগ করা হলো যাতে কন্টেন্ট কেটে না যায় */
-    margin: 3mm 4mm;
+    margin: 4mm 5mm; 
 }
 
+/* --- বেসিক সেটআপ --- */
 html, body {
     width: 100%;
     margin: 0;
     padding: 0;
-    -webkit-text-size-adjust: 100%; /* iOS ডিভাইসে ফন্ট সাইজ ঠিক রাখে */
+    background: #FFF;
 }
 
 body {
-    font-family: 'Consolas', 'Lucida Console', 'Courier New', monospace;
-    font-size: 14px; /* বেস ফন্ট সাইজ সামান্য বড় করা হলো (আগে ছিল 13px) */
-    line-height: 1.45; /* লাইন স্পেসিং বাড়ানো হলো */
+    font-family: 'Helvetica', 'Arial', sans-serif; 
+    font-size: 11pt;
+    line-height: 1.6;
     color: #000;
 }
 
 @media print {
-    /* প্রিন্টের সময় অপ্রয়োজনীয় শ্যাডো বা রঙ বাদ দেওয়া */
     * {
+        background: transparent !important;
         color: #000 !important;
-        background: #fff !important;
         text-shadow: none !important;
         box-shadow: none !important;
     }
-
-    html, body {
-        overflow: visible !important;
-    }
 }
 
+/* --- রশিদের প্রধান কন্টেইনার --- */
 .receipt {
-    max-width: 72mm;
+    max-width: 76mm;
     width: 100%;
     margin: 0 auto;
-    box-sizing: border-box;
 }
 
-/* ======================================================== */
-/* START: হেডার এবং বিলের তথ্যের জন্য নতুন স্টাইল (পরিবর্তিত) */
-/* ======================================================== */
+/* --- হেডার: দোকানের তথ্য --- */
 header {
     text-align: center;
-    margin-bottom: 12px; /* নিচে স্পেস বাড়ানো হলো */
+    padding-bottom: 15px;
+    border-bottom: 2px solid #000;
+    margin-bottom: 15px;
 }
 
 header h2 {
-    font-size: 1.4em; /* দোকানের নাম আরও বড় করা হলো */
-    margin: 0 0 5px 0;
-    font-weight: 700; /* বোল্ড করা হলো */
+    font-size: 20pt;
+    margin: 0 0 8px 0;
+    font-weight: 700;
 }
 
 header p {
-    margin: 3px 0;
-    font-size: 0.95em; /* ঠিকানা ও ফোন নম্বর একটু বড় করা হলো */
-}
-
-.bill-details, .customer-details {
-    margin-top: 10px;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed #000;
-}
-
-.bill-details p, .customer-details p {
     margin: 4px 0;
-    font-size: 1.0em; /* বিল এবং কাস্টমারের তথ্য বড় করা হলো */
+    font-size: 10pt;
+}
+
+/* --- বিল এবং কাস্টমারের তথ্য (এখানে মূল পরিবর্তন) --- */
+.bill-details, .customer-details {
+    padding-bottom: 10px;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed #333;
+}
+
+/* দুই সেকশনের জন্য সাধারণ স্টাইল */
+.bill-details p, .customer-details p {
+    margin: 3px 0;
+    font-size: 11pt;
+    display: flex;
+    align-items: baseline;
 }
 
 .bill-details strong, .customer-details strong {
-    font-weight: 700; /* 'Bill No:', 'Date:', 'To:' লেবেলগুলো বোল্ড করা হলো */
+    font-weight: 600;
 }
-/* ======================================================== */
-/* END: নতুন স্টাইল */
-/* ======================================================== */
+
+/* ===== START: মূল পরিবর্তন এখানে ===== */
+/* শুধুমাত্র বিল ডিটেইলসের জন্য লেবেল এবং ভ্যালু দুই প্রান্তে থাকবে */
+.bill-details p {
+    justify-content: space-between;
+}
+
+/* কাস্টমার ডিটেইলসের জন্য লেবেল এবং ভ্যালু একসাথে থাকবে */
+.customer-details strong {
+    margin-right: 8px; /* "To:" এর পরে একটি ছোট স্পেস দেওয়ার জন্য */
+}
+/* ===== END: মূল পরিবর্তন এখানে ===== */
 
 
-/* টেবিল স্টাইল */
+/* --- আইটেম টেবিল --- */
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 8px;
-    margin-bottom: 8px;
+    margin: 10px 0;
 }
 
-th, td {
-    padding: 5px 1px; /* প্যাডিং সামান্য বাড়ানো হলো */
-    text-align: left;
-    border-bottom: 1px dashed #000;
-    word-break: break-all;
+table thead {
+    border-top: 2px solid #000;
+    border-bottom: 2px solid #000;
 }
 
 th {
-    border-top: 1px dashed #000;
-    font-weight: 700; /* th আগে থেকেই বোল্ড ছিল, নিশ্চিত করা হলো */
+    padding: 8px 4px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 10pt;
+    text-transform: uppercase;
 }
 
-/* সংখ্যা ডান দিকে অ্যালাইন করা */
-td:nth-child(2), td:nth-child(3), td:nth-child(4),
-th:nth-child(2), th:nth-child(3), th:nth-child(4) {
+td {
+    padding: 8px 4px;
+    font-size: 11pt;
+    border-bottom: 1px dotted #999;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+th.numeric, td.numeric {
     text-align: right;
+    font-feature-settings: "tnum"; 
 }
 
-hr {
-    border: none;
-    border-top: 1px dashed #000;
-    margin: 8px 0; /* স্পেস বাড়ানো হলো */
+th:first-child, td:first-child {
+    width: 50%;
+    text-align: left;
 }
 
-/* মোট হিসাবের স্টাইল */
+
+/* --- মোট হিসাবের সেকশন --- */
 .totals {
-    text-align: right;
-    margin-top: 8px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px solid #000;
 }
 
 .summary-line {
-    font-size: 1.0em;
-    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 11pt;
 }
 
 .summary-line strong {
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .grand-total {
-    margin-top: 5px;
-    font-size: 1.2em; /* গ্র্যান্ড টোটাল আরও বড় করা হলো */
-    font-weight: 700; /* বোল্ড করা হলো */
+    font-size: 16pt;
+    font-weight: 700;
+    padding-top: 10px;
 }
 
-.payment-info {
-    margin-top: 10px;
-}
-
-.payment-info strong {
+.grand-total strong {
     font-weight: 700;
 }
 
-/* ফুটার স্টাইল */
-footer {
+/* --- পেমেন্ট এবং ফুটার --- */
+.payment-info {
+    margin-top: 20px;
+    padding: 12px 0;
+    border-top: 1px dashed #333;
     text-align: center;
-    margin-top: 15px;
-    font-size: 0.9em;
+    font-size: 10pt;
+}
+
+footer {
+    margin-top: 25px;
+    text-align: center;
+    font-size: 10pt;
 }

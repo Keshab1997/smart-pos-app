@@ -6,7 +6,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
-    collection, getDocs, doc, query, orderBy, writeBatch, serverTimestamp, increment, addDoc
+    collection, doc, getDocs, query, orderBy, writeBatch, serverTimestamp, increment
 } from 'firebase/firestore';
 
 // ==========================================================
@@ -18,26 +18,32 @@ const categoryProductListContainer = document.getElementById('category-product-l
 const cartItemsContainer = document.getElementById('cart-items');
 const footerTotalAmountEl = document.getElementById('footer-total-amount');
 const proceedToCheckoutBtn = document.getElementById('proceed-to-checkout-btn');
+
+// --- চেকআউট মডাল এলিমেন্টস ---
 const checkoutModal = document.getElementById('checkout-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const modalSubtotalEl = document.getElementById('modal-subtotal');
+const gstToggle = document.getElementById('gst-toggle');
 const modalTaxEl = document.getElementById('modal-tax');
 const modalTotalAmountEl = document.getElementById('modal-total-amount');
-const gstToggle = document.getElementById('gst-toggle');
+
+// --- ডিসকাউন্টের জন্য রেফারেন্স ---
+const discountTypeSelect = document.getElementById('discount-type');
+const discountValueInput = document.getElementById('discount-value');
+const modalDiscountEl = document.getElementById('modal-discount');
+
+// --- পেমেন্ট, কাস্টমার এবং অন্যান্য UI এলিমেন্টস ---
 const paymentMethodSelect = document.getElementById('payment-method-select');
-const generateBillBtn = document.getElementById('generate-bill-btn');
 const partPaymentDetails = document.getElementById('part-payment-details');
 const cashAmountInput = document.getElementById('cash-amount');
 const cardAmountInput = document.getElementById('card-amount');
-const logoutBtn = document.getElementById('logout-btn');
-const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-const mainNavLinks = document.getElementById('main-nav-links');
-
-// ===== START: কাস্টমার ডিটেইলসের জন্য নতুন রেফারেন্স (নতুন যোগ করা হয়েছে) =====
+const generateBillBtn = document.getElementById('generate-bill-btn');
 const customerNameInput = document.getElementById('customer-name');
 const customerPhoneInput = document.getElementById('customer-phone');
 const customerAddressInput = document.getElementById('customer-address');
-// ===== END: কাস্টমার ডিটেইলসের জন্য নতুন রেফারেন্স =====
+const logoutBtn = document.getElementById('logout-btn');
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const mainNavLinks = document.getElementById('main-nav-links');
 
 
 // ==========================================================
@@ -45,8 +51,9 @@ const customerAddressInput = document.getElementById('customer-address');
 // ==========================================================
 let cart = [];
 let allProducts = [];
-let currentTotals = { subtotal: 0, tax: 0, total: 0 };
+let currentTotals = { subtotal: 0, discount: 0, tax: 0, total: 0 };
 let currentUserId = null;
+
 
 // ==========================================================
 // --- Authentication ---
@@ -79,7 +86,7 @@ async function initializeProducts() {
         displayProductsByCategory();
     } catch (error) {
         console.error("Error initializing products: ", error);
-        categoryProductListContainer.innerHTML = '<p class="error-message">Failed to load products. Check permissions or connection.</p>';
+        categoryProductListContainer.innerHTML = '<p class="error-message">Failed to load products.</p>';
     }
 }
 
@@ -97,7 +104,7 @@ function displayProductsByCategory() {
     }, {});
     categoryProductListContainer.innerHTML = '';
     const sortedCategories = Object.keys(productsByCategory).sort();
-    for (const category of sortedCategories) {
+    sortedCategories.forEach(category => {
         const categoryGroup = document.createElement('div');
         categoryGroup.classList.add('category-group');
         categoryGroup.innerHTML = `<h4 class="category-name">${category}</h4>`;
@@ -113,7 +120,7 @@ function displayProductsByCategory() {
         });
         categoryGroup.appendChild(productGrid);
         categoryProductListContainer.appendChild(categoryGroup);
-    }
+    });
 }
 
 // ==========================================================
@@ -129,19 +136,16 @@ function handleSearch(e) {
         product.stock > 0 &&
         (product.name.toLowerCase().includes(searchText) || (product.barcode && product.barcode.toLowerCase().includes(searchText)))
     ).slice(0, 10);
-    searchResultsContainer.innerHTML = '';
-    if (matchedProducts.length === 0) {
-        searchResultsContainer.innerHTML = '<div class="search-result-item">No products found.</div>';
-    } else {
-        matchedProducts.forEach(product => {
-            const productDiv = document.createElement('div');
-            productDiv.classList.add('search-result-item');
+    searchResultsContainer.innerHTML = matchedProducts.length === 0
+        ? '<div class="search-result-item">No products found.</div>'
+        : matchedProducts.map(product => {
             const price = product.sellingPrice || 0;
-            productDiv.innerHTML = `<span>${product.name}</span> <span>₹${price.toFixed(2)}</span>`;
-            productDiv.addEventListener('click', () => addProductToCart(product));
-            searchResultsContainer.appendChild(productDiv);
-        });
-    }
+            const div = document.createElement('div');
+            div.classList.add('search-result-item');
+            div.innerHTML = `<span>${product.name}</span> <span>₹${price.toFixed(2)}</span>`;
+            div.addEventListener('click', () => addProductToCart(product));
+            return div.outerHTML;
+          }).join('');
     searchResultsContainer.style.display = 'block';
 }
 
@@ -190,10 +194,10 @@ function addToCart(product) {
 // ==========================================================
 function updateCartDisplay() {
     cartItemsContainer.innerHTML = '';
-    if (cart.length === 0) {
+    const isEmpty = cart.length === 0;
+
+    if (isEmpty) {
         cartItemsContainer.innerHTML = '<p class="empty-cart-message">Your cart is empty.</p>';
-        proceedToCheckoutBtn.disabled = true;
-        generateBillBtn.disabled = true;
     } else {
         cart.forEach((item, index) => {
             const cartItemDiv = document.createElement('div');
@@ -209,11 +213,12 @@ function updateCartDisplay() {
             `;
             cartItemsContainer.prepend(cartItemDiv);
         });
-        proceedToCheckoutBtn.disabled = false;
-        generateBillBtn.disabled = false;
     }
+
+    proceedToCheckoutBtn.disabled = isEmpty;
+    generateBillBtn.disabled = isEmpty;
     addCartItemEventListeners();
-    calculateTotals();
+    updateAllTotals();
 }
 
 function addCartItemEventListeners() {
@@ -227,14 +232,12 @@ function addCartItemEventListeners() {
                 newQuantity = item.stock;
                 e.target.value = newQuantity;
             }
-            if (newQuantity > 0) {
-                item.quantity = newQuantity;
-            } else {
-                cart.splice(index, 1);
-            }
+            if (newQuantity > 0) item.quantity = newQuantity;
+            else cart.splice(index, 1);
             updateCartDisplay();
         });
     });
+
     document.querySelectorAll('.cart-item-remove').forEach(button => {
         button.addEventListener('click', e => {
             cart.splice(parseInt(e.target.dataset.index), 1);
@@ -243,24 +246,57 @@ function addCartItemEventListeners() {
     });
 }
 
-function calculateTotals() {
+function updateAllTotals() {
     const subtotal = cart.reduce((sum, item) => sum + ((item.sellingPrice || 0) * item.quantity), 0);
-    const tax = gstToggle.checked ? subtotal * 0.05 : 0;
-    const total = subtotal + tax;
-    currentTotals = { subtotal, tax, total };
+    
+    const discountType = discountTypeSelect.value;
+    let discountValue = parseFloat(discountValueInput.value) || 0;
+    let discountAmount = 0;
+
+    if (discountType === 'percent') {
+        if (discountValue > 100) {
+            discountValue = 100;
+            discountValueInput.value = 100;
+        }
+        discountAmount = (subtotal * discountValue) / 100;
+    } else { 
+        if (discountValue > subtotal) {
+            discountValue = subtotal;
+            discountValueInput.value = subtotal.toFixed(2); 
+        }
+        discountAmount = discountValue;
+    }
+
+    const discountedSubtotal = subtotal - discountAmount;
+    
+    const tax = gstToggle.checked ? discountedSubtotal * 0.05 : 0;
+    
+    const total = discountedSubtotal + tax;
+
+    currentTotals = { subtotal, discount: discountAmount, tax, total };
+
     footerTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
+    modalSubtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
+    modalDiscountEl.textContent = `- ₹${discountAmount.toFixed(2)}`;
+    modalTaxEl.textContent = `₹${tax.toFixed(2)}`;
+    modalTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
 }
 
-// ===== START: কাস্টমার ডিটেইলস ফিল্ড রিসেট করার ফাংশন (নতুন যোগ করা হয়েছে) =====
-function resetCustomerDetails() {
+function resetCheckoutForm() {
     customerNameInput.value = '';
     customerPhoneInput.value = '';
     customerAddressInput.value = '';
+    discountValueInput.value = '';
+    discountTypeSelect.value = 'percent';
+    gstToggle.checked = true;
+    paymentMethodSelect.value = 'cash';
+    partPaymentDetails.classList.add('hidden');
+    cashAmountInput.value = '';
+    cardAmountInput.value = '';
 }
-// ===== END: কাস্টমার ডিটেইলস ফিল্ড রিসেট করার ফাংশন =====
 
 // ==========================================================
-// --- চেকআউট এবং বিল জেনারেশন ---
+// --- চেকআউট এবং বিল জেনারেশন (এখানে মূল পরিবর্তন) ---
 // ==========================================================
 async function generateFinalBill() {
     if (cart.length === 0 || !currentUserId) return;
@@ -268,13 +304,11 @@ async function generateFinalBill() {
     generateBillBtn.disabled = true;
     generateBillBtn.textContent = 'Processing...';
 
-    // ===== START: কাস্টমারের ডিটেইলস সংগ্রহ করা (নতুন যোগ করা হয়েছে) =====
     const customerDetails = {
         name: customerNameInput.value.trim() || 'Walk-in Customer',
         phone: customerPhoneInput.value.trim(),
         address: customerAddressInput.value.trim()
     };
-    // ===== END: কাস্টমারের ডিটেইলস সংগ্রহ করা =====
 
     const paymentMethod = paymentMethodSelect.value;
     const sale = {
@@ -286,12 +320,19 @@ async function generateFinalBill() {
             category: item.category || 'N/A'
         })),
         subtotal: currentTotals.subtotal,
+        discount: currentTotals.discount,
         tax: currentTotals.tax,
         total: currentTotals.total,
         paymentMethod: paymentMethod,
         gstApplied: gstToggle.checked,
-        customerDetails: customerDetails, // Firestore-এ সেভ করার জন্য sale অবজেক্টে যোগ করা হলো
-        createdAt: serverTimestamp()
+        customerDetails: customerDetails,
+        createdAt: serverTimestamp(),
+        
+        // ===== START: নতুন তথ্য যোগ করা হয়েছে =====
+        discountType: discountTypeSelect.value,
+        discountValue: parseFloat(discountValueInput.value) || 0,
+        gstRate: 5 // GST রেট (ভবিষ্যতে পরিবর্তন করার জন্য)
+        // ===== END: নতুন তথ্য যোগ করা হয়েছে =====
     };
 
     if (paymentMethod === 'part-payment') {
@@ -324,7 +365,7 @@ async function generateFinalBill() {
         cart = [];
         updateCartDisplay();
         checkoutModal.classList.add('hidden');
-        resetCustomerDetails(); // কাস্টমার ডিটেইলস ফিল্ড রিসেট করা
+        resetCheckoutForm();
         await initializeProducts();
 
     } catch (error) {
@@ -342,9 +383,11 @@ async function generateFinalBill() {
 function setupEventListeners() {
     productSearchInput.addEventListener('input', handleSearch);
     productSearchInput.addEventListener('keydown', handleSearchEnter);
+
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.search-box')) searchResultsContainer.style.display = 'none';
     });
+
     categoryProductListContainer.addEventListener('click', (e) => {
         const card = e.target.closest('.product-card');
         if (card) {
@@ -353,31 +396,38 @@ function setupEventListeners() {
             if (productToAdd) addToCart(productToAdd);
         }
     });
-    gstToggle.addEventListener('change', calculateTotals);
+
     proceedToCheckoutBtn.addEventListener('click', () => {
-        calculateTotals();
-        modalSubtotalEl.textContent = `₹${currentTotals.subtotal.toFixed(2)}`;
-        modalTaxEl.textContent = `₹${currentTotals.tax.toFixed(2)}`;
-        modalTotalAmountEl.textContent = `₹${currentTotals.total.toFixed(2)}`;
+        updateAllTotals();
         checkoutModal.classList.remove('hidden');
     });
+
     closeModalBtn.addEventListener('click', () => {
         checkoutModal.classList.add('hidden');
-        resetCustomerDetails(); // মডাল বন্ধ করার সময় ফিল্ড রিসেট করা
+        resetCheckoutForm();
     });
+
     checkoutModal.addEventListener('click', (e) => {
         if (e.target === checkoutModal) {
             checkoutModal.classList.add('hidden');
-            resetCustomerDetails(); // মডালের বাইরে ক্লিক করলে ফিল্ড রিসেট করা
+            resetCheckoutForm();
         }
     });
+    
+    gstToggle.addEventListener('change', updateAllTotals);
+    discountTypeSelect.addEventListener('change', updateAllTotals);
+    discountValueInput.addEventListener('input', updateAllTotals);
+
     paymentMethodSelect.addEventListener('change', (e) => {
         partPaymentDetails.classList.toggle('hidden', e.target.value !== 'part-payment');
     });
+
     generateBillBtn.addEventListener('click', generateFinalBill);
+
     logoutBtn.addEventListener('click', async () => {
         await signOut(auth);
     });
+
     mobileMenuBtn.addEventListener('click', () => {
         mainNavLinks.classList.toggle('mobile-nav-active');
     });

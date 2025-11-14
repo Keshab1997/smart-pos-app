@@ -1,78 +1,81 @@
-/* print-barcode.css - Revised for 50x25mm Sticker */
+/* print.css (TSC TE244 লেবেল প্রিন্টারের জন্য আপডেটেড) */
 
+/*
+   =========================================================
+   গুরুত্বপূর্ণ নোট:
+   @page rule-এর 'size' আপনার লেবেলের আসল মাপ অনুযায়ী পরিবর্তন করুন।
+   এখানে ডিফল্ট হিসেবে 50mm চওড়া এবং 25mm লম্বা দেওয়া হয়েছে।
+   =========================================================
+*/
 @page {
-    /* আপনার স্টিকারের সঠিক মাপ */
+    /* আপনার লেবেলের সাইজ এখানে দিন (প্রস্থ তারপর উচ্চতা) */
     size: 50mm 25mm;
-
-    /* প্রিন্টারের হার্ডওয়্যার মার্জিন সামলানোর জন্য margin: 0 যথেষ্ট */
     margin: 0;
 }
 
 body {
+    /* প্রিন্টের সময় body-র অপ্রয়োজনীয় মার্জিন/প্যাডিং দূর করা */
     margin: 0;
     padding: 0;
-    /* নিশ্চিত করুন যে body-র কোনো অতিরিক্ত উচ্চতা নেই */
-    height: 100vh; /* viewport height অনুযায়ী উচ্চতা */
 }
 
 @media print {
-    /* অপ্রয়োজনীয় এলিমেন্ট লুকানো */
+    /* প্রিন্ট করার সময় body-র সকল চাইল্ড এলিমেন্ট ডিফল্টভাবে লুকিয়ে রাখা হবে */
     body * {
         visibility: hidden;
     }
 
+    /* শুধুমাত্র যে এলিমেন্টে 'printable-barcode' ক্লাস আছে এবং তার ভেতরের সবকিছু দেখানো হবে */
     .printable-barcode, .printable-barcode * {
         visibility: visible;
     }
 
+    /* 'printable-barcode' ক্লাসযুক্ত এলিমেন্টটিকে পুরো পেজ জুড়ে স্থাপন করা হবে */
     .printable-barcode {
-        /* position: absolute ডকুমেন্টের ফ্লো থেকে বের করে আনে */
         position: absolute;
         top: 0;
         left: 0;
 
-        /* স্টিকারের সঠিক প্রস্থ ও উচ্চতা এখানেও দিন */
+        /* লেবেলের সঠিক প্রস্থ ও উচ্চতা */
         width: 50mm;
         height: 25mm;
-
-        box-sizing: border-box; /* Padding ও Border যেন width/height এর ভেতরে থাকে */
         
         /* কন্টেন্ট মাঝখানে আনার জন্য */
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        align-items: center;
+        justify-content: center; /* উল্লম্বভাবে মাঝখানে */
+        align-items: center;    /* অনুভূমিকভাবে মাঝখানে */
+        text-align: center;
         
-        /* ভেতরের দিকে সামান্য প্যাডিং */
-        padding: 1.5mm;
-
-        /* ওভারফ্লো প্রতিরোধ করতে */
+        box-sizing: border-box;
+        padding: 2mm; /* লেবেলের কিনার থেকে সামান্য ফাঁকা জায়গা */
         overflow: hidden;
     }
 
-    /* ফন্ট এবং বারকোডের আকার আরও নিখুঁতভাবে সমন্বয় করা */
-    .printable-barcode .product-info {
-        font-family: Arial, sans-serif;
+    /* পণ্যের নামের স্টাইল */
+    .printable-barcode .product-name {
+        font-family: 'Arial', sans-serif;
+        font-size: 7pt !important; /* pt ইউনিট প্রিন্টের জন্য ভালো */
+        font-weight: bold;
+        line-height: 1;
+        margin: 0 0 1mm 0;
+        word-break: break-all;
+    }
+    
+    /* পণ্যের দামের স্টাইল */
+    .printable-barcode .product-price {
+        font-family: 'Arial', sans-serif;
         font-size: 7pt !important;
         font-weight: bold;
-        line-height: 1.1;
-        margin: 0 0 1mm 0;
-        text-align: center;
+        line-height: 1;
+        margin: 1mm 0 0 0;
     }
-
+    
+    /* বারকোড SVG-এর স্টাইল */
     .printable-barcode .barcode-svg {
-        /* প্রস্থ ঠিক রেখে উচ্চতা প্রয়োজনমতো দিন */
+        display: block !important;
+        /* এই মাপগুলো আপনার লেবেলের আকার অনুযায়ী পরিবর্তন করতে পারেন */
         width: 45mm !important; 
         height: 10mm !important;
-        display: block; /* এক্সট্রা স্পেস দূর করতে */
-    }
-
-    .printable-barcode .product-price {
-        font-family: Arial, sans-serif;
-        font-size: 8pt !important;
-        font-weight: bold;
-        line-height: 1.1;
-        margin: 1mm 0 0 0;
-        text-align: center;
     }
 }

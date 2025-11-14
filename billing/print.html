@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,7 @@
     <!-- print.css ফাইলটি print.html এর একই ফোল্ডারে আছে -->
     <link rel="stylesheet" href="print.css">
 
-    <!-- নতুন কাস্টমার সেকশনের জন্য স্টাইল যোগ করা হয়েছে -->
+    <!-- কাস্টমার এবং অন্যান্য সেকশনের জন্য ইনলাইন স্টাইল -->
     <style>
         .customer-details {
             margin-top: 10px;
@@ -33,18 +33,13 @@
             <p><strong>Date:</strong> <span id="bill-date"></span></p>
         </section>
 
-        <!-- ======================================================= -->
-        <!-- START: নতুন কাস্টমার ডিটেইলস সেকশন (এখানে যোগ করা হয়েছে) -->
-        <!-- ======================================================= -->
+        <!-- কাস্টমার ডিটেইলস সেকশন -->
         <section class="customer-details" id="customer-details-section" style="display: none;">
             <p><strong>To:</strong> <span id="customer-name"></span></p>
             <p id="customer-phone-p" style="display: none;"><strong>Phone:</strong> <span id="customer-phone"></span></p>
             <p id="customer-address-p" style="display: none;"><strong>Address:</strong> <span id="customer-address"></span></p>
         </section>
-        <!-- ======================================================= -->
-        <!-- END: নতুন কাস্টমার ডিটেইলস সেকশন -->
-        <!-- ======================================================= -->
-
+        
         <!-- আইটেমের তালিকা -->
         <table>
             <thead>
@@ -63,11 +58,22 @@
             </tbody>
         </table>
 
-        <!-- মোট টাকার হিসাব -->
+        <!-- মোট টাকার হিসাব (এখানে পরিবর্তন করা হয়েছে) -->
         <section class="totals">
             <div class="summary-line">
                 <strong>Subtotal:</strong> <span id="receipt-subtotal"></span>
             </div>
+
+            <!-- ============================================== -->
+            <!-- START: ডিসকাউন্ট লাইন (নতুন যোগ করা হয়েছে) -->
+            <!-- ============================================== -->
+            <div class="summary-line" id="discount-line" style="display: none;">
+                <strong>Discount:</strong> <span id="receipt-discount"></span>
+            </div>
+            <!-- ============================================== -->
+            <!-- END: ডিসকাউন্ট লাইন -->
+            <!-- ============================================== -->
+
             <div class="summary-line" id="gst-line" style="display: none;">
                 <strong>GST:</strong> <span id="receipt-tax"></span>
             </div>
