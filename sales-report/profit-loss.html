@@ -16,11 +16,27 @@
     <!-- CSS ফাইল -->
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="profit-loss.css">
+
+    <!-- নতুন কার্ডের জন্য স্টাইল (ঐচ্ছিক) -->
+    <style>
+        .kpi-card.stock-value {
+            background-color: #e6f7ff;
+            border-left: 5px solid #1890ff;
+        }
+        .kpi-card.loss, .kpi-card.net-loss {
+            background-color: #fff1f0;
+            border-left: 5px solid #f5222d;
+        }
+        .kpi-card.profit {
+            background-color: #f6ffed;
+            border-left: 5px solid #52c41a;
+        }
+    </style>
 </head>
 <body>
 
     <!-- ======================================================= -->
-    <!-- START: আপডেট করা Navbar -->
+    <!-- START: Navbar -->
     <!-- ======================================================= -->
     <header class="main-header">
         <nav class="container">
@@ -31,7 +47,7 @@
                 <li><a href="../inventory/inventory.html">Inventory</a></li>
                 <li><a href="../add-product/add-product.html">Add Product</a></li>
                 <li><a href="report.html">Sales Report</a></li>
-                <li><a href="profit-loss.html" class="active">Profit/Loss</a></li> <!-- এই পেজটি active -->
+                <li><a href="profit-loss.html" class="active">Profit/Loss</a></li>
                 <li><a href="#" id="logout-btn">Logout</a></li>
             </ul>
             <button id="mobile-menu-btn" aria-label="Open Menu">
@@ -49,6 +65,7 @@
         <!-- ফিল্টার সেকশন -->
         <section class="filter-section card">
             <div class="time-period-buttons">
+                <button class="btn btn-secondary" id="btn-today">Today</button>
                 <button class="btn btn-secondary active" id="btn-this-week">This Week</button>
                 <button class="btn btn-secondary" id="btn-this-month">This Month</button>
                 <button class="btn btn-secondary" id="btn-this-year">This Year</button>
@@ -73,18 +90,22 @@
                 <p id="total-revenue">₹0.00</p>
             </div>
             <div class="kpi-card cogs">
-                <h3>Cost of Goods Sold</h3>
+                <h3>Cost of Goods Sold (COGS)</h3>
                 <p id="total-cogs">₹0.00</p>
             </div>
             <div class="kpi-card gross-profit">
                 <h3>Gross Profit</h3>
                 <p id="gross-profit">₹0.00</p>
             </div>
+            <div class="kpi-card stock-value">
+                <h3>Closing Stock Value</h3>
+                <p id="closing-stock-value">₹0.00</p>
+            </div>
             <div class="kpi-card expenses">
-                <h3>Total Expenses</h3>
+                <h3>Total Other Expenses</h3>
                 <p id="total-other-expenses">₹0.00</p>
             </div>
-            <div class="kpi-card net-profit">
+            <div class="kpi-card" id="net-profit-loss-card">
                 <h3>Net Profit / Loss</h3>
                 <p id="net-profit-loss">₹0.00</p>
             </div>
@@ -93,22 +114,14 @@
         <!-- চার্ট -->
         <section class="card">
             <h3>Summary Chart</h3>
+            <!-- এই Canvas ট্যাগটি এখানে থাকা আবশ্যক -->
             <canvas id="pnlChart"></canvas>
         </section>
         
         <!-- খরচের বিস্তারিত তালিকা -->
         <section class="details-grid">
             <div class="card">
-                <h3>Inventory Purchases</h3>
-                <div class="table-responsive">
-                    <table class="details-table">
-                        <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
-                        <tbody id="inventory-purchases-list"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card">
-                <h3>Other Expenses</h3>
+                <h3>Other Expenses Details</h3>
                 <div class="table-responsive">
                     <table class="details-table">
                         <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
@@ -119,9 +132,7 @@
         </section>
     </main>
 
-    <!-- ======================================================== -->
-    <!-- START: Firebase v10 Import Map -->
-    <!-- ======================================================== -->
+    <!-- Firebase এবং কাস্টম JS -->
     <script type="importmap">
     {
       "imports": {
@@ -131,9 +142,6 @@
       }
     }
     </script>
-    <!-- ======================================================== -->
-
-    <!-- আপনার কাস্টম জাভাস্ক্রিপ্ট ফাইল -->
     <script type="module" src="../js/firebase-config.js"></script>
     <script type="module" src="profit-loss.js"></script>
 
