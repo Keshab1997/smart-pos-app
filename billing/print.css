@@ -1,5 +1,5 @@
 /* ======================================================= */
-/* print.css - Enhanced Modern Receipt Design (v3)         */
+/* print.css - Enhanced Modern Receipt Design (v3.1)       */
 /* ======================================================= */
 
 @page {
@@ -38,7 +38,7 @@ body {
     margin: 0 auto;
 }
 
-/* --- হেডার: দোকানের তথ্য --- */
+/* ===== START: হেডার: দোকানের তথ্য (এখানে পরিবর্তন করা হয়েছে) ===== */
 header {
     text-align: center;
     padding-bottom: 15px;
@@ -47,24 +47,26 @@ header {
 }
 
 header h2 {
-    font-size: 20pt;
-    margin: 0 0 8px 0;
+    font-size: 22pt;      /* ফন্ট সাইজ 20pt থেকে 22pt করা হলো */
+    margin: 0 0 10px 0;   /* নিচের মার্জিন একটু বাড়ানো হলো */
     font-weight: 700;
 }
 
 header p {
-    margin: 4px 0;
-    font-size: 10pt;
+    margin: 5px 0;        /* লাইনগুলোর মধ্যে স্পেস একটু বাড়ানো হলো */
+    font-size: 12pt;      /* ফন্ট সাইজ 10pt থেকে 12pt করা হলো */
+    font-weight: 600;     /* লেখাগুলোকে বোল্ড (semi-bold) করা হলো */
 }
+/* ===== END: হেডার: দোকানের তথ্য (এখানে পরিবর্তন করা হয়েছে) ===== */
 
-/* --- বিল এবং কাস্টমারের তথ্য (এখানে মূল পরিবর্তন) --- */
+
+/* --- বিল এবং কাস্টমারের তথ্য --- */
 .bill-details, .customer-details {
     padding-bottom: 10px;
     margin-bottom: 8px;
     border-bottom: 1px dashed #333;
 }
 
-/* দুই সেকশনের জন্য সাধারণ স্টাইল */
 .bill-details p, .customer-details p {
     margin: 3px 0;
     font-size: 11pt;
@@ -76,17 +78,13 @@ header p {
     font-weight: 600;
 }
 
-/* ===== START: মূল পরিবর্তন এখানে ===== */
-/* শুধুমাত্র বিল ডিটেইলসের জন্য লেবেল এবং ভ্যালু দুই প্রান্তে থাকবে */
 .bill-details p {
     justify-content: space-between;
 }
 
-/* কাস্টমার ডিটেইলসের জন্য লেবেল এবং ভ্যালু একসাথে থাকবে */
 .customer-details strong {
-    margin-right: 8px; /* "To:" এর পরে একটি ছোট স্পেস দেওয়ার জন্য */
+    margin-right: 8px;
 }
-/* ===== END: মূল পরিবর্তন এখানে ===== */
 
 
 /* --- আইটেম টেবিল --- */

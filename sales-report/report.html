@@ -17,7 +17,7 @@
 <body>
 
     <!-- ======================================================= -->
-    <!-- START: আপডেট করা Navbar -->
+    <!-- START: Navbar -->
     <!-- ======================================================= -->
     <header class="main-header">
         <nav class="container">
@@ -82,6 +82,12 @@
                     <h4>Filtered Card/Online Sales</h4>
                     <p id="filtered-card-sales">₹0.00</p>
                 </div>
+                <!-- START: নতুন ডিসকাউন্ট বক্স যোগ করা হয়েছে -->
+                <div class="summary-box">
+                    <h4>Filtered Total Discount</h4>
+                    <p id="filtered-total-discount">₹0.00</p>
+                </div>
+                <!-- END: নতুন ডিসকাউন্ট বক্স -->
             </div>
         </section>
 
@@ -93,17 +99,19 @@
                     <thead>
                         <tr>
                             <th>Sale ID</th>
-                            <th>Date & Time</th>
-                            <th>Items</th>
+                            <th>Sale Date</th> <!-- উন্নত করা হয়েছে (JS এ dd-mm-yy ফরম্যাট হবে) -->
+                            <th>Total Items</th> <!-- উন্নত করা হয়েছে -->
                             <th>Item Names</th>
                             <th>Payment Type</th>
+                            <th>Discount</th> <!-- নতুন কলাম যোগ করা হয়েছে -->
                             <th>Total Amount</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="sales-table-body">
                         <!-- JS দিয়ে ডেটা এখানে লোড হবে -->
-                        <tr><td colspan="7" class="loading-cell">Loading...</td></tr>
+                        <!-- colspan="7" থেকে colspan="8" করা হয়েছে -->
+                        <tr><td colspan="8" class="loading-cell">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>

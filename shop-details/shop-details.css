@@ -1,67 +1,122 @@
 /* shop-details/shop-details.css */
 
-.card-container {
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 30px;
+/* ============================
+   Page Header
+   ============================ */
+   .page-header {
+    margin-bottom: 20px;
 }
 
+.page-header h1 {
+    margin-bottom: 5px;
+}
+
+.page-header p {
+    color: #6c757d;
+    font-size: 1rem;
+}
+
+/* ============================
+   Form Layout & Card
+   ============================ */
+.card {
+    max-width: 700px; /* ফর্মের জন্য একটু চওড়া করা হলো */
+    margin: 20px auto;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================
+   Form Elements
+   ============================ */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 25px; /* গ্রুপগুলোর মধ্যে স্পেস বাড়ানো হলো */
 }
 
 .form-group label {
     display: block;
-    font-weight: 500;
+    font-weight: 600; /* লেবেলকে একটু বেশি গুরুত্ব দেওয়া হলো */
     margin-bottom: 8px;
-    color: #333;
+    color: #343a40;
 }
 
-.form-group input,
-.form-group textarea {
+.form-control {
     width: 100%;
     padding: 12px;
-    border: 1px solid #ccc;
+    border: 1px solid #ced4da;
     border-radius: 6px;
-    font-size: 16px;
-    box-sizing: border-box;
-    transition: border-color 0.3s;
+    font-size: 1rem;
+    box-sizing: border-box; /* padding এবং border যেন width এর অন্তর্ভুক্ত থাকে */
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.form-control:focus {
     outline: none;
-    border-color: var(--primary-color, #007bff);
+    border-color: #3498db; /* প্রাইমারি কালার */
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
 }
 
-.form-group input[disabled] {
-    background-color: #f1f1f1;
+.form-control[disabled] {
+    background-color: #e9ecef;
     cursor: not-allowed;
+    color: #6c757d;
 }
 
 .form-group small {
-    font-size: 13px;
-    color: #777;
-    margin-top: 5px;
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 6px;
     display: block;
+}
+
+/* ============================
+   Form Actions (Button & Status)
+   ============================ */
+.form-actions {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #save-btn {
     width: 100%;
-    padding: 15px;
-    font-size: 18px;
+    max-width: 300px; /* বাটনকে পুরো চওড়া না করে একটি নির্দিষ্ট মাপে আনা হলো */
+    padding: 12px 20px;
+    font-size: 1.1rem;
+    font-weight: 600;
 }
 
 #status-message {
     margin-top: 15px;
-    text-align: center;
     font-weight: 500;
+    min-height: 20px; /* মেসেজ না থাকলেও জায়গা ধরে রাখবে */
+    transition: color 0.3s ease;
 }
 
+/* Status message colors */
 #status-message.success {
-    color: #28a745;
+    color: #27ae60; /* সবুজ */
 }
 
 #status-message.error {
-    color: #dc3545;
+    color: #e74c3c; /* লাল */
+}
+#status-message.loading {
+    color: #3498db; /* নীল */
+}
+
+/* ============================
+   Responsive Design
+   ============================ */
+@media (max-width: 768px) {
+    .card {
+        padding: 20px;
+    }
+
+    #save-btn {
+        max-width: 100%;
+    }
 }

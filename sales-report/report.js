@@ -6,7 +6,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
-    collection, getDocs, query, orderBy, Timestamp
+    collection, getDocs, query, orderBy
 } from 'firebase/firestore';
 
 // ==========================================================
@@ -22,6 +22,7 @@ const filterBtn = document.getElementById('filter-btn');
 
 const filteredCashSalesEl = document.getElementById('filtered-cash-sales');
 const filteredCardSalesEl = document.getElementById('filtered-card-sales');
+const filteredTotalDiscountEl = document.getElementById('filtered-total-discount'); 
 
 const salesTableBody = document.getElementById('sales-table-body');
 
@@ -43,7 +44,7 @@ onAuthStateChanged(auth, (user) => {
         currentUserId = user.uid;
         initializeReportPage();
     } else {
-        window.location.href = '../index.html'; // লগইন না থাকলে রিডাইরেক্ট
+        window.location.href = '../index.html';
     }
 });
 
@@ -52,7 +53,7 @@ onAuthStateChanged(auth, (user) => {
 // ==========================================================
 function initializeReportPage() {
     setupEventListeners();
-    fetchAllSalesAndRender(); // ডেটা লোড এবং প্রদর্শন
+    fetchAllSalesAndRender();
 }
 
 /**
@@ -61,24 +62,23 @@ function initializeReportPage() {
 async function fetchAllSalesAndRender() {
     if (!currentUserId) return;
     
-    salesTableBody.innerHTML = '<tr><td colspan="7" class="loading-cell">Loading sales data...</td></tr>';
+    salesTableBody.innerHTML = '<tr><td colspan="8" class="loading-cell">Loading sales data...</td></tr>';
     
     try {
         const salesRef = collection(db, 'shops', currentUserId, 'sales');
         const q = query(salesRef, orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
         
-        // Firestore থেকে পাওয়া ডেটা প্রসেস করে গ্লোবাল ভেরিয়েবলে রাখা
         allSalesData = querySnapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(sale => sale.createdAt && typeof sale.createdAt.toDate === 'function'); // শুধু বৈধ ডেটা রাখা
+            .filter(sale => sale.createdAt && typeof sale.createdAt.toDate === 'function');
 
         calculateTopSummaries(allSalesData);
-        filterAndDisplayData(); // ডিফল্ট তারিখ অনুযায়ী ফিল্টার করা
+        filterAndDisplayData();
 
     } catch (error) {
         console.error("Error loading sales data: ", error);
-        salesTableBody.innerHTML = '<tr><td colspan="7" class="error-message">Failed to load sales data.</td></tr>';
+        salesTableBody.innerHTML = '<tr><td colspan="8" class="error-message">Failed to load sales data.</td></tr>';
     }
 }
 
@@ -93,9 +93,10 @@ function calculateTopSummaries(sales) {
 
     sales.forEach(sale => {
         const saleDate = sale.createdAt.toDate();
-        overallTotal += sale.total;
-        if (saleDate >= startOfToday) todayTotal += sale.total;
-        if (saleDate >= startOfMonth) monthTotal += sale.total;
+        const netTotal = sale.total;
+        overallTotal += netTotal;
+        if (saleDate >= startOfToday) todayTotal += netTotal;
+        if (saleDate >= startOfMonth) monthTotal += netTotal;
     });
 
     totalSalesTodayEl.textContent = `₹${todayTotal.toFixed(2)}`;
@@ -107,9 +108,12 @@ function calculateTopSummaries(sales) {
  * তারিখ অনুযায়ী ডেটা ফিল্টার করে এবং সামারি ও টেবিল আপডেট করে
  */
 function filterAndDisplayData() {
-    // ডিফল্ট তারিখ সেট করা (যদি খালি থাকে)
     if (!startDatePicker.value || !endDatePicker.value) {
-        const todayStr = new Date().toISOString().split('T')[0];
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
         startDatePicker.value = todayStr;
         endDatePicker.value = todayStr;
     }
@@ -130,12 +134,19 @@ function filterAndDisplayData() {
 }
 
 /**
- * পেমেন্ট মেথড অনুযায়ী ফিল্টার করা বিক্রির সামারি গণনা করে
+ * পেমেন্ট মেথড এবং ডিসকাউন্ট অনুযায়ী ফিল্টার করা বিক্রির সামারি গণনা করে
  */
 function calculateFilteredPaymentSummary(sales) {
-    let cashTotal = 0, cardOrOnlineTotal = 0;
+    let cashTotal = 0, cardOrOnlineTotal = 0, totalDiscount = 0;
 
     sales.forEach(sale => {
+        // ===== START: মূল পরিবর্তন এখানে =====
+        // পুরোনো (discount) এবং নতুন (discountAmount) উভয় ফিল্ড চেক করা হচ্ছে
+        const discount = sale.discountAmount || sale.discount || 0;
+        totalDiscount += discount;
+        // ===== END: মূল পরিবর্তন =====
+
+        // পেমেন্ট অনুযায়ী গণনা
         switch (sale.paymentMethod) {
             case 'cash':
                 cashTotal += sale.total;
@@ -148,9 +159,11 @@ function calculateFilteredPaymentSummary(sales) {
                 if (sale.paymentBreakdown) {
                     cashTotal += sale.paymentBreakdown.cash || 0;
                     cardOrOnlineTotal += sale.paymentBreakdown.card_or_online || 0;
+                } else {
+                    cashTotal += sale.total;
                 }
                 break;
-            default: // পুরোনো ডেটা বা কোনো মেথড না থাকলে ক্যাশ হিসেবে ধরা যেতে পারে
+            default:
                 cashTotal += sale.total;
                 break;
         }
@@ -158,6 +171,17 @@ function calculateFilteredPaymentSummary(sales) {
 
     filteredCashSalesEl.textContent = `₹${cashTotal.toFixed(2)}`;
     filteredCardSalesEl.textContent = `₹${cardOrOnlineTotal.toFixed(2)}`;
+    filteredTotalDiscountEl.textContent = `₹${totalDiscount.toFixed(2)}`;
+}
+
+/**
+ * তারিখকে dd-mm-yyyy ফরম্যাটে রূপান্তর করার জন্য হেল্পার ফাংশন
+ */
+function formatDate(dateObject) {
+    const day = String(dateObject.getDate()).padStart(2, '0');
+    const month = String(dateObject.getMonth() + 1).padStart(2, '0');
+    const year = dateObject.getFullYear();
+    return `${day}-${month}-${year}`;
 }
 
 /**
@@ -166,22 +190,28 @@ function calculateFilteredPaymentSummary(sales) {
 function renderSalesTable(sales) {
     salesTableBody.innerHTML = '';
     if (sales.length === 0) {
-        salesTableBody.innerHTML = '<tr><td colspan="7" class="no-data">No sales found for the selected period.</td></tr>';
+        salesTableBody.innerHTML = '<tr><td colspan="8" class="no-data">No sales found for the selected period.</td></tr>';
         return;
     }
 
     sales.forEach(sale => {
-        const saleDate = sale.createdAt.toDate().toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
+        const saleDate = formatDate(sale.createdAt.toDate()); 
         const totalItems = sale.items.reduce((sum, item) => sum + item.quantity, 0);
         const itemNames = sale.items.map(item => item.name).join(', ');
+        
+        // ===== START: মূল পরিবর্তন এখানে =====
+        // পুরোনো (discount) এবং নতুন (discountAmount) উভয় ফিল্ড চেক করা হচ্ছে
+        const discount = sale.discountAmount || sale.discount || 0;
+        // ===== END: মূল পরিবর্তন =====
 
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${sale.id.substring(0, 6)}...</td>
             <td>${saleDate}</td>
             <td>${totalItems}</td>
-            <td title="${itemNames}">${itemNames.length > 30 ? itemNames.substring(0, 30) + '...' : itemNames}</td>
+            <td title="${itemNames}">${itemNames.length > 40 ? itemNames.substring(0, 40) + '...' : itemNames}</td>
             <td>${sale.paymentMethod.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</td>
+            <td>₹${discount.toFixed(2)}</td>
             <td>₹${sale.total.toFixed(2)}</td>
             <td>
                 <button class="btn btn-secondary reprint-btn" data-sale-id="${sale.id}">Print</button>

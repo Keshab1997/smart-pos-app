@@ -18,21 +18,35 @@ async function loadAndPrintBill() {
             const userId = user.uid;
             
             try {
-                const [saleDocSnap, userDocSnap] = await Promise.all([
+                // ===== START: ডেটাবেস পাথ পরিবর্তন করা হয়েছে =====
+                // এখন 'users' এর পরিবর্তে 'shops' কালেকশন থেকে দোকানের তথ্য আনা হচ্ছে
+                const [saleDocSnap, shopDocSnap] = await Promise.all([
                     getDoc(doc(db, 'shops', userId, 'sales', saleId)),
-                    getDoc(doc(db, 'users', userId))
+                    getDoc(doc(db, 'shops', userId)) 
                 ]);
+                // ===== END: ডেটাবেস পাথ পরিবর্তন করা হয়েছে =====
 
                 // দোকানের তথ্য রসিদে বসানো
                 const shopDetailsContainer = document.getElementById('shop-details-container');
-                if (userDocSnap.exists()) {
-                    const shopData = userDocSnap.data();
+                const receiptFooterContainer = document.getElementById('receipt-footer-note'); // ফুটারের জন্য রেফারেন্স
+
+                if (shopDocSnap.exists()) {
+                    const shopData = shopDocSnap.data();
+                    // ===== START: দোকানের তথ্য দেখানোর কোড আপডেট করা হয়েছে =====
                     shopDetailsContainer.innerHTML = `
                         <h2>${shopData.shopName || 'Your Shop Name'}</h2>
                         <p>${shopData.shopAddress || 'Your Shop Address'}</p>
                         <p>Phone: ${shopData.shopPhone || 'N/A'}</p>
+                        <p>Email: ${shopData.email || 'N/A'}</p> 
                         ${shopData.shopGstin ? `<p>GSTIN: ${shopData.shopGstin}</p>` : ''}
                     `;
+                    
+                    // রসিদের ফুটার নোট দেখানো হচ্ছে
+                    if (shopData.receiptFooter) {
+                        receiptFooterContainer.textContent = shopData.receiptFooter;
+                    }
+                    // ===== END: দোকানের তথ্য দেখানোর কোড আপডেট করা হয়েছে =====
+
                 } else {
                     shopDetailsContainer.innerHTML = '<p>Shop details not set.</p>';
                 }
@@ -77,16 +91,18 @@ async function loadAndPrintBill() {
                     
                     // ===== START: ডিসকাউন্ট এবং GST লেবেল আপডেট করার কোড =====
                     const discountLine = document.getElementById('discount-line');
-                    if (saleData.discount && saleData.discount > 0) {
+                    // পুরোনো (discount) এবং নতুন (discountAmount) উভয় ফিল্ড চেক করা হচ্ছে
+                    const discountAmount = saleData.discountAmount || saleData.discount || 0;
+                    
+                    if (discountAmount > 0) {
                         const discountLabel = discountLine.querySelector('strong');
-                        // যদি ডিসকাউন্টের ধরন 'percent' হয়, তবে পার্সেন্টেজ দেখানো হবে
                         if (saleData.discountType === 'percent' && saleData.discountValue > 0) {
                             discountLabel.textContent = `Discount (${saleData.discountValue}%):`;
                         } else {
                             discountLabel.textContent = 'Discount:';
                         }
                         discountLine.style.display = 'flex';
-                        document.getElementById('receipt-discount').textContent = `- ₹${(saleData.discount).toFixed(2)}`;
+                        document.getElementById('receipt-discount').textContent = `- ₹${discountAmount.toFixed(2)}`;
                     } else {
                         discountLine.style.display = 'none';
                     }
@@ -94,7 +110,6 @@ async function loadAndPrintBill() {
                     const gstLine = document.getElementById('gst-line');
                     if (saleData.gstApplied && saleData.tax > 0) {
                         const gstLabel = gstLine.querySelector('strong');
-                        // GST রেট (যেমন 5%) দেখানো হবে
                         gstLabel.textContent = `GST (${saleData.gstRate || 5}%):`;
                         gstLine.style.display = 'flex';
                         document.getElementById('receipt-tax').textContent = `₹${(saleData.tax || 0).toFixed(2)}`;

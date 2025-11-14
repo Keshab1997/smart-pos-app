@@ -2,52 +2,71 @@
 
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-// DOM Elements
+// ==========================================================
+// --- DOM এলিমেন্টের রেফারেন্স ---
+// ==========================================================
 const form = document.getElementById('shop-details-form');
 const shopNameInput = document.getElementById('shop-name');
 const shopAddressInput = document.getElementById('shop-address');
 const shopPhoneInput = document.getElementById('shop-phone');
 const shopGstinInput = document.getElementById('shop-gstin');
 const shopEmailInput = document.getElementById('shop-email');
+// নতুন Receipt Footer এলিমেন্ট যোগ করা হয়েছে
+const receiptFooterInput = document.getElementById('receipt-footer'); 
 const saveBtn = document.getElementById('save-btn');
 const statusMessage = document.getElementById('status-message');
-const logoutBtn = document.getElementById('logout-btn');
 
+// Navbar এলিমেন্টস
+const logoutBtn = document.getElementById('logout-btn');
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const mainNavLinks = document.getElementById('main-nav-links');
+
+// ==========================================================
+// --- গ্লোবাল ভেরিয়েবল ---
+// ==========================================================
 let currentUserId = null;
 
-// --- Authentication Check ---
+// ==========================================================
+// --- Authentication ---
+// ==========================================================
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserId = user.uid;
-        loadShopDetails(currentUserId);
+        // ব্যবহারকারীর ইমেলটি লোড হওয়া মাত্রই ফর্মে দেখানো হচ্ছে
+        shopEmailInput.value = user.email;
+        loadShopDetails();
     } else {
         window.location.href = '../index.html';
     }
 });
 
-// --- Functions ---
+// ==========================================================
+// --- মূল ফাংশন ---
+// ==========================================================
 
-// Firestore থেকে দোকানের তথ্য লোড করা
-async function loadShopDetails(userId) {
+/**
+ * Firestore থেকে দোকানের তথ্য লোড করে এবং ফর্মে দেখায়
+ */
+async function loadShopDetails() {
+    if (!currentUserId) return;
+    
     try {
-        // রুলস অনুযায়ী সঠিক পাথ: users/{userId}
-        const userDocRef = doc(db, 'users', userId);
-        const docSnap = await getDoc(userDocRef);
+        const shopDetailsRef = doc(db, 'shops', currentUserId);
+        const docSnap = await getDoc(shopDetailsRef);
 
         if (docSnap.exists()) {
-            const userData = docSnap.data();
-            // ফর্মের ফিল্ডগুলোতে ডেটা বসানো
-            shopNameInput.value = userData.shopName || '';
-            shopAddressInput.value = userData.shopAddress || '';
-            shopPhoneInput.value = userData.shopPhone || '';
-            shopGstinInput.value = userData.shopGstin || '';
-            shopEmailInput.value = userData.email || auth.currentUser.email;
+            const data = docSnap.data();
+            shopNameInput.value = data.shopName || '';
+            shopAddressInput.value = data.shopAddress || '';
+            shopPhoneInput.value = data.shopPhone || '';
+            shopGstinInput.value = data.shopGstin || '';
+            receiptFooterInput.value = data.receiptFooter || '';
+            // ইমেল Firestore থেকে লোড করা হচ্ছে, যদি না থাকে তবে auth থেকে নেওয়া হবে
+            shopEmailInput.value = data.email || auth.currentUser.email;
         } else {
-            console.log("No user document found! This might be a new user.");
-            // নতুন ব্যবহারকারী হলে শুধু ইমেল দেখানো
-            shopEmailInput.value = auth.currentUser.email;
+            console.log("No shop details document found. User might be setting up for the first time.");
         }
     } catch (error) {
         console.error("Error loading shop details: ", error);
@@ -55,20 +74,10 @@ async function loadShopDetails(userId) {
     }
 }
 
-// স্ট্যাটাস মেসেজ দেখানোর জন্য ফাংশন
-function showStatus(message, type) {
-    statusMessage.textContent = message;
-    statusMessage.className = type; // 'success' or 'error'
-    setTimeout(() => {
-        statusMessage.textContent = '';
-        statusMessage.className = '';
-    }, 4000);
-}
-
-// --- Event Listeners ---
-
-// ফর্ম সাবমিট হলে ডেটা সেভ করা
-form.addEventListener('submit', async (e) => {
+/**
+ * ফর্ম সাবমিট হলে দোকানের তথ্য Firestore-এ সেভ করে
+ */
+async function handleFormSubmit(e) {
     e.preventDefault();
     if (!currentUserId) {
         showStatus('Authentication error. Please log in again.', 'error');
@@ -76,7 +85,7 @@ form.addEventListener('submit', async (e) => {
     }
 
     saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving...';
+    showStatus('Saving...', 'loading');
 
     // ফর্ম থেকে ডেটা সংগ্রহ করা
     const shopDetails = {
@@ -84,15 +93,16 @@ form.addEventListener('submit', async (e) => {
         shopAddress: shopAddressInput.value.trim(),
         shopPhone: shopPhoneInput.value.trim(),
         shopGstin: shopGstinInput.value.trim(),
-        // email আপডেট করা হচ্ছে না
+        receiptFooter: receiptFooterInput.value.trim(),
+        // আপনার অনুরোধ অনুযায়ী, disabled ইমেলটিও সেভ করা হচ্ছে
+        email: shopEmailInput.value 
     };
 
     try {
-        const userDocRef = doc(db, 'users', currentUserId);
-        
-        // setDoc({ merge: true }) ব্যবহার করা হচ্ছে, যাতে ডকুমেন্ট না থাকলে তৈরি হয়
-        // এবং থাকলে শুধুমাত্র এই ফিল্ডগুলো আপডেট হয়, অন্য ফিল্ড (যেমন createdAt) মুছে না যায়।
-        await setDoc(userDocRef, shopDetails, { merge: true });
+        // ডেটা 'shops' কালেকশনের ভিতরে সেভ করা হচ্ছে, যা অন্যান্য ডেটার সাথে সামঞ্জস্যপূর্ণ
+        const shopDetailsRef = doc(db, 'shops', currentUserId);
+        // setDoc({ merge: true }) ব্যবহার করা হচ্ছে যাতে ডকুমেন্ট না থাকলে তৈরি হয়
+        await setDoc(shopDetailsRef, shopDetails, { merge: true });
         
         showStatus('Shop details saved successfully!', 'success');
     } catch (error) {
@@ -100,15 +110,39 @@ form.addEventListener('submit', async (e) => {
         showStatus(`Failed to save details: ${error.message}`, 'error');
     } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Changes';
+        // স্ট্যাটাস মেসেজ কিছুক্ষণ পর নিজে থেকেই মুছে যাবে
     }
-});
+}
 
-// লগআউট বাটন
+/**
+ * ব্যবহারকারীকে স্ট্যাটাস মেসেজ দেখানোর জন্য একটি হেল্পার ফাংশন
+ */
+function showStatus(message, type) {
+    statusMessage.textContent = message;
+    statusMessage.className = type; // 'success', 'error', বা 'loading'
+
+    // শুধু success বা error মেসেজ কিছু সময় পর মোছা হবে
+    if (type === 'success' || type === 'error') {
+        setTimeout(() => {
+            statusMessage.textContent = '';
+            statusMessage.className = '';
+        }, 4000);
+    }
+}
+
+// ==========================================================
+// --- ইভেন্ট লিসেনার সেটআপ ---
+// ==========================================================
+form.addEventListener('submit', handleFormSubmit);
+
 logoutBtn.addEventListener('click', async () => {
     try {
         await signOut(auth);
     } catch (error) {
         console.error("Logout error: ", error);
     }
+});
+
+mobileMenuBtn.addEventListener('click', () => {
+    mainNavLinks.classList.toggle('mobile-nav-active');
 });

@@ -4,60 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shop Details - Smart POS</title>
+    <!-- Google Fonts (Optional but recommended for better typography) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="shop-details.css">
 </head>
 <body>
 
+    <!-- ======================================================= -->
+    <!-- START: আপডেট করা Navbar -->
+    <!-- ======================================================= -->
     <header class="main-header">
         <nav class="container">
             <a href="../dashboard.html" class="logo">Smart POS</a>
-            <ul>
+            <ul id="main-nav-links">
                 <li><a href="../dashboard.html">Dashboard</a></li>
                 <li><a href="../billing/billing.html">Billing</a></li>
                 <li><a href="../inventory/inventory.html">Inventory</a></li>
+                <li><a href="../add-product/add-product.html">Add Product</a></li>
                 <li><a href="../sales-report/report.html">Sales Report</a></li>
                 <li><a href="shop-details.html" class="active">Shop Details</a></li>
                 <li><a href="#" id="logout-btn">Logout</a></li>
             </ul>
+            <!-- Mobile Menu Button -->
+            <button id="mobile-menu-btn" aria-label="Open Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
         </nav>
     </header>
+    <!-- ======================================================= -->
+    <!-- END: Navbar -->
+    <!-- ======================================================= -->
 
     <main class="container">
-        <h1>Shop Details</h1>
-        <p>Manage your shop's information. This will be used on printed receipts.</p>
+        <div class="page-header">
+            <h1>Shop Details</h1>
+            <p>Manage your shop's information. This information will be used on printed receipts.</p>
+        </div>
 
-        <div class="card-container">
+        <div class="card">
             <form id="shop-details-form">
                 <div class="form-group">
                     <label for="shop-name">Shop Name</label>
-                    <input type="text" id="shop-name" placeholder="e.g., Your Awesome Store" required>
+                    <input type="text" id="shop-name" class="form-control" placeholder="e.g., Your Awesome Store" required>
                 </div>
 
                 <div class="form-group">
                     <label for="shop-address">Address</label>
-                    <textarea id="shop-address" rows="3" placeholder="e.g., 123 Main Street, City, State - 123456"></textarea>
+                    <textarea id="shop-address" class="form-control" rows="3" placeholder="e.g., 123 Main Street, City, State - 123456"></textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="shop-phone">Phone Number</label>
-                    <input type="tel" id="shop-phone" placeholder="e.g., +91 98765 43210">
+                    <input type="tel" id="shop-phone" class="form-control" placeholder="e.g., +91 98765 43210">
                 </div>
 
                 <div class="form-group">
                     <label for="shop-gstin">GSTIN (Optional)</label>
-                    <input type="text" id="shop-gstin" placeholder="e.g., 27ABCDE1234F1Z5">
+                    <input type="text" id="shop-gstin" class="form-control" placeholder="e.g., 27ABCDE1234F1Z5">
+                </div>
+                
+                <!-- নতুন যুক্ত করা হয়েছে: রসিদের ফুটার নোট -->
+                <div class="form-group">
+                    <label for="receipt-footer">Receipt Footer Note (Optional)</label>
+                    <textarea id="receipt-footer" class="form-control" rows="2" placeholder="e.g., Thank you! Visit again."></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label for="shop-email">Email</label>
-                    <input type="email" id="shop-email" disabled>
-                    <small>Email address cannot be changed.</small>
+                    <label for="shop-email">Email (for login)</label>
+                    <input type="email" id="shop-email" class="form-control" disabled>
+                    <small>Email address is linked to your account and cannot be changed.</small>
                 </div>
 
-                <button type="submit" id="save-btn" class="btn btn-primary">Save Changes</button>
+                <div class="form-actions">
+                    <button type="submit" id="save-btn" class="btn btn-primary">Save Changes</button>
+                    <div id="status-message"></div>
+                </div>
             </form>
-            <div id="status-message"></div>
         </div>
     </main>
 
