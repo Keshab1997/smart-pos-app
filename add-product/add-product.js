@@ -1,21 +1,19 @@
-// /add-product/add-product.js (আপনার নতুন firebase-config.js অনুযায়ী আপডেট করা)
+// /add-product/add-product.js
 
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
-// এখন সব কিছু আপনার কাস্টম firebase-config.js ফাইল থেকে ইম্পোর্ট করা হচ্ছে
 // =================================================================
 import {
     db,
     auth,
     collection,
     doc,
-    writeBatch,
-    Timestamp
+    writeBatch, // এটি এখন আর ব্যবহৃত হচ্ছে না, ট্রানজ্যাকশন ব্যবহার করা হয়েছে
+    Timestamp,
+    runTransaction // <<<<<<<<<<< নতুন: ট্রানজ্যাকশনের জন্য এটি ইম্পোর্ট করা হয়েছে
 } from '../js/firebase-config.js';
 
-// Auth ফাংশনগুলো এখনও সরাসরি SDK থেকে ইম্পোর্ট করতে হবে, কারণ আপনি এগুলো এক্সপোর্ট করেননি।
-// অথবা এগুলোও firebase-config.js থেকে এক্সপোর্ট করতে পারেন। আপাতত এভাবেই রাখছি।
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -71,20 +69,29 @@ document.addEventListener('DOMContentLoaded', () => {
         barcodesContainer.innerHTML = '';
         products.forEach(product => {
             const wrapper = document.createElement('div');
-            wrapper.className = 'barcode-wrapper';
-            // ... (বাকি কোড অপরিবর্তিত)
-            wrapper.dataset.barcode = product.id;
-            wrapper.dataset.name = product.name;
-            wrapper.dataset.price = product.sp;
+            // =========================================================
+            // <<<<<<<<<<< পরিবর্তন শুরু: বারকোড wrapper এর ক্লাস পরিবর্তন করা হয়েছে প্রিন্টের সুবিধার জন্য
+            // =========================================================
+            wrapper.className = 'barcode-item';
+            // =========================================================
+            // >>>>>>>>>>> পরিবর্তন শেষ
+            // =========================================================
+            
             wrapper.innerHTML = `
-                <div class="product-info">${product.name}</div>
+                <p class="product-name-print">${product.name}</p>
                 <svg class="barcode-svg"></svg>
-                <div class="product-price">Price: ₹${product.sp.toFixed(2)}</div>
+                <p class="product-price-print">Price: ₹${product.sp.toFixed(2)}</p>
             `;
             const svgElement = wrapper.querySelector('.barcode-svg');
+
+            // product.id এখন আমাদের তৈরি করা ছোট সংখ্যা (e.g., "1001")
             JsBarcode(svgElement, product.id, {
-                format: "CODE128", displayValue: true, fontSize: 14,
-                width: 1.5, height: 50, margin: 10
+                format: "CODE128",
+                displayValue: true, // বারকোডের নিচে সংখ্যা দেখাবে
+                fontSize: 14,
+                width: 1.5, // বারকোডের লাইনের ঘনত্ব
+                height: 40, // বারকোডের উচ্চতা
+                margin: 5
             });
             barcodesContainer.appendChild(wrapper);
         });
@@ -104,13 +111,13 @@ document.addEventListener('DOMContentLoaded', () => {
         saveButton.disabled = true;
         saveButton.textContent = 'Saving...';
         
-        // --- ডেটা প্রসেসিং (অপরিবর্তিত) ---
         const rows = productsTbody.querySelectorAll('tr');
         if (rows.length === 0) {
             showStatus('Please add at least one product.', 'error');
             saveButton.disabled = false; saveButton.textContent = 'Save All Products';
             return;
         }
+        
         const productsToProcess = [];
         let allRowsValid = true;
         rows.forEach(row => {
@@ -134,51 +141,81 @@ document.addEventListener('DOMContentLoaded', () => {
             saveButton.disabled = false; saveButton.textContent = 'Save All Products';
             return;
         }
-
+        
+        // =========================================================================
+        // <<<<<<<<<<< পরিবর্তন শুরু: নতুন সাংখ্যিক বারকোড আইডি জেনারেশন লজিক
+        // =========================================================================
         try {
-            // এখন writeBatch, doc, collection ফাংশনগুলো আপনার firebase-config.js থেকে আসছে
-            const batch = writeBatch(db);
             const productsForBarcodeDisplay = [];
             let totalInventoryCost = 0;
             let productNamesForExpense = [];
             
-            const inventoryCol = collection(db, 'shops', currentUserId, 'inventory');
-            const expensesCol = collection(db, 'shops', currentUserId, 'expenses');
+            // একটি মেটাডেটা ডকুমেন্ট রেফারেন্স, যেখানে আমরা সর্বশেষ আইডি নম্বর রাখব
+            const metadataRef = doc(db, 'shops', currentUserId, '_metadata', 'counters');
 
-            productsToProcess.forEach(product => {
-                const newProductRef = doc(inventoryCol);
-                const dataToSave = { ...product, barcode: newProductRef.id, createdAt: Timestamp.now() };
-                batch.set(newProductRef, dataToSave);
+            // ট্রানজ্যাকশন ব্যবহার করে ডেটা পড়া এবং লেখা হবে
+            await runTransaction(db, async (transaction) => {
+                const metadataDoc = await transaction.get(metadataRef);
                 
-                productsForBarcodeDisplay.push({ id: newProductRef.id, name: product.name, sp: product.sellingPrice });
-                totalInventoryCost += product.costPrice * product.stock;
-                productNamesForExpense.push(`${product.name} (x${product.stock})`);
+                // যদি কাউন্টার না থাকে তবে 1000 থেকে শুরু হবে (অর্থাৎ প্রথম আইডি হবে 1001)
+                let lastProductId = metadataDoc.exists() ? metadataDoc.data().lastProductId || 1000 : 1000;
+
+                for (const product of productsToProcess) {
+                    lastProductId++; // আইডি ১ করে বাড়ানো হলো
+                    const newNumericId = String(lastProductId); // সংখ্যাকে স্ট্রিং-এ পরিণত করা হলো
+
+                    // নতুন প্রোডাক্টের রেফারেন্স তৈরি করা হলো সাংখ্যিক আইডি দিয়ে
+                    const newProductRef = doc(db, 'shops', currentUserId, 'inventory', newNumericId);
+
+                    const dataToSave = {
+                        ...product,
+                        barcode: newNumericId, // বারকোড হিসেবে নতুন সাংখ্যিক আইডি সেভ করা হলো
+                        createdAt: Timestamp.now()
+                    };
+
+                    // ট্রানজ্যাকশনের মাধ্যমে প্রোডাক্ট সেভ করা
+                    transaction.set(newProductRef, dataToSave);
+                    
+                    // বারকোড প্রদর্শনের জন্য ডেটা প্রস্তুত করা
+                    productsForBarcodeDisplay.push({ id: newNumericId, name: product.name, sp: product.sellingPrice });
+                    
+                    // খরচের হিসাব
+                    totalInventoryCost += product.costPrice * product.stock;
+                    productNamesForExpense.push(`${product.name} (x${product.stock})`);
+                }
+
+                // খরচের হিসাব যোগ করা (যদি থাকে)
+                if (totalInventoryCost > 0) {
+                    const expensesCol = collection(db, 'shops', currentUserId, 'expenses');
+                    const expenseRef = doc(expensesCol); // খরচের জন্য অটো-আইডি ঠিক আছে
+                    const expenseData = {
+                        description: `Inventory purchase: ${productNamesForExpense.join(', ')}`,
+                        amount: totalInventoryCost,
+                        category: 'inventory_purchase',
+                        date: Timestamp.now(),
+                    };
+                    transaction.set(expenseRef, expenseData);
+                }
+
+                // সর্বশেষ আইডি নম্বরটি মেটাডেটা ডকুমেন্টে আপডেট করা
+                transaction.set(metadataRef, { lastProductId: lastProductId }, { merge: true });
             });
 
-            if (totalInventoryCost > 0) {
-                const expenseRef = doc(expensesCol);
-                const expenseData = {
-                    description: `Inventory purchase: ${productNamesForExpense.join(', ')}`,
-                    amount: totalInventoryCost,
-                    category: 'inventory_purchase',
-                    date: Timestamp.now(),
-                };
-                batch.set(expenseRef, expenseData);
-            }
-
-            await batch.commit();
             showStatus(`${productsForBarcodeDisplay.length} products & inventory cost saved!`, 'success');
             displayBarcodes(productsForBarcodeDisplay);
             productsTbody.innerHTML = '';
             addProductRow();
-            
+
         } catch (error) {
-            console.error("Error adding documents: ", error);
+            console.error("Error in transaction: ", error);
             showStatus(`Failed to save data: ${error.message}`, 'error');
         } finally {
             saveButton.disabled = false;
             saveButton.textContent = 'Save All Products';
         }
+        // =========================================================================
+        // >>>>>>>>>>> পরিবর্তন শেষ
+        // =========================================================================
     });
 
     productsTbody.addEventListener('click', (e) => {
@@ -187,12 +224,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- লগআউট লজিক ---
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             try {
-                // signOut ফাংশনটি 'firebase/auth' থেকে ইম্পোর্ট করতে হবে
                 await signOut(auth);
             } catch (error) {
                 console.error("Logout Error:", error);
