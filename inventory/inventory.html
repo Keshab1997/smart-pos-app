@@ -13,7 +13,7 @@
     <!-- CSS ফাইল -->
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="inventory.css">
-    <!-- নতুন: প্রিন্টিং এর জন্য CSS ফাইল লিঙ্ক করা হলো -->
+    <!-- প্রিন্টিং এর জন্য CSS ফাইল -->
     <link rel="stylesheet" href="print-styles.css">
 </head>
 <body>
@@ -51,15 +51,12 @@
                 <input type="text" id="search-inventory" placeholder="Search by name or barcode..." class="form-control">
                 <select id="category-filter" class="form-control"></select>
             </div>
-            <!-- নতুন এবং আপডেটেড কোড -->
-<div class="print-controls">
-    <!-- নতুন বাটন: বড় লেবেল প্রিন্ট করার জন্য -->
-    <button id="print-large-label-btn" class="btn btn-primary">Print Large Label</button>
-    
-    <!-- পুরনো বাটনগুলো (যদি রাখতে চান): টেমপ্লেট সহ প্রিন্ট করার জন্য -->
-    <button id="print-selected-template-btn" class="btn btn-secondary">Print Selected (Template)</button>
-    <button id="print-all-filtered-template-btn" class="btn btn-secondary">Print All (Template)</button>
-</div>
+            <!-- START: পরিবর্তিত প্রিন্ট কন্ট্রোলস -->
+            <div class="print-controls">
+                <button id="print-selected-btn" class="btn btn-primary">Print Selected</button>
+                <button id="print-category-btn" class="btn btn-secondary">Print by Category</button>
+            </div>
+            <!-- END: পরিবর্তিত প্রিন্ট কন্ট্রোলস -->
         </section>
 
         <!-- ইনভেন্টরি টেবিল -->
@@ -134,49 +131,28 @@
     <div id="status-message-container"></div>
 
     <!-- ======================================================== -->
-    <!-- START: বারকোড প্রিন্টিং এর জন্য যুক্ত করা অংশ -->
+    <!-- START: বারকোড প্রিন্টিং এর জন্য নতুন Modal -->
     <!-- ======================================================== -->
 
-    <!-- টেমপ্লেট বেছে নেওয়ার জন্য Modal -->
-    <div id="template-modal" class="modal">
-        <div class="modal-content" style="max-width: 800px;">
+    <!-- লেবেলের কাস্টম সাইজ দেওয়ার জন্য নতুন Modal -->
+    <div id="custom-size-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
             <span class="close-button">&times;</span>
-            <h2>Choose a Label Template</h2>
-            <p>Select a design to print your selected products.</p>
-            <div id="template-choices" class="template-grid">
-                
-                <!-- Template 1: Standard -->
-                <div class="template-card" data-template-id="template-1">
-                    <div class="template-preview">
-                        <p style="font-size: 8px; font-weight: bold; text-align: center; margin: 0;">Product Name Here</p>
-                        <svg class="preview-barcode"></svg>
-                        <p style="font-size: 7px; text-align: center; margin: 0;">123456789</p>
-                        <p style="font-size: 8px; font-weight: bold; text-align: center; margin: 0;">Price: ₹XX.XX</p>
+            <h2>Set Label Size</h2>
+            <p>Provide width and height for each label in millimeters (mm).</p>
+            <form id="custom-size-form">
+                <div class="form-group-inline">
+                    <div class="form-group">
+                        <label for="label-width">Width (mm):</label>
+                        <input type="number" id="label-width" class="form-control" placeholder="e.g., 40" required min="10">
                     </div>
-                    <p class="template-name">Standard</p>
-                </div>
-
-                <!-- Template 2: Price Focused -->
-                <div class="template-card" data-template-id="template-2">
-                    <div class="template-preview">
-                        <p style="font-size: 10px; font-weight: bold; text-align: center; margin: 0;">₹XX.XX</p>
-                        <p style="font-size: 6px; text-align: center; margin: 0;">Product Name</p>
-                        <svg class="preview-barcode"></svg>
-                        <p style="font-size: 6px; text-align: center; margin: 0;">123456789</p>
+                    <div class="form-group">
+                        <label for="label-height">Height (mm):</label>
+                        <input type="number" id="label-height" class="form-control" placeholder="e.g., 30" required min="10">
                     </div>
-                    <p class="template-name">Price Focused</p>
                 </div>
-
-                <!-- Template 3: Minimalist -->
-                <div class="template-card" data-template-id="template-3">
-                    <div class="template-preview" style="justify-content: center;">
-                        <svg class="preview-barcode"></svg>
-                        <p style="font-size: 7px; text-align: center; margin: 0;">123456789</p>
-                    </div>
-                    <p class="template-name">Minimalist</p>
-                </div>
-
-            </div>
+                <button type="submit" class="btn btn-primary">Proceed to Print</button>
+            </form>
         </div>
     </div>
 

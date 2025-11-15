@@ -1,88 +1,70 @@
-/* ====================================================================== */
-/* --- ফাইনাল প্রিন্টিং CSS --- */
-/* ====================================================================== */
+/* ======================================================== */
+/* --- প্রিন্টিং এর জন্য স্টাইল --- */
+/* ======================================================== */
+
+/* শুধুমাত্র প্রিন্ট করার সময় এই স্টাইলগুলো কাজ করবে */
+@media print {
+    /* এই নিয়মটি ডাইনামিক CSS দ্বারা ওভাররাইড হবে, কিন্তু একটি ফলব্যাক হিসেবে রাখা ভালো */
+    body {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* এই ক্লাসটি একটি অদৃশ্য কন্টেইনার, যা শুধু প্রিন্টের সময় দৃশ্যমান হয় */
+.print-only {
+    display: none;
+}
 
 @media print {
-
-    /* ধাপ ১: প্রিন্ট করার সময় ওয়েবসাইটের অপ্রয়োজনীয় সব অংশ লুকিয়ে ফেলা */
-    body > *:not(#print-area) {
-        display: none !important;
-        visibility: hidden !important;
+    .print-only {
+        display: block;
     }
+}
 
-    /* ধাপ ২: প্রিন্ট এরিয়াকে দৃশ্যমান করা এবং পৃষ্ঠার উপরে নিয়ে আসা */
-    #print-area {
-        display: block !important;
-        visibility: visible !important;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-    }
+/* ======================================================== */
+/* --- কাস্টম বারকোড লেবেলের স্টাইল --- */
+/* ======================================================== */
 
-    /* ধাপ ৩: প্রিন্টারের কাগজের সাইজ এবং মার্জিন নির্ধারণ করা */
-    @page {
-        size: 4in 2in; /* লেবেল রোলের সাইজ (4 ইঞ্চি চওড়া, 2 ইঞ্চি লম্বা) */
-        margin: 0;
-    }
+/* 
+   .barcode-label এর মূল সাইজ (width, height) জাভাস্ক্রিপ্ট থেকে ডাইনামিকভাবে আসবে।
+   এখানে শুধুমাত্র ভিতরের এলিমেন্টগুলোর স্টাইল দেওয়া হলো।
+*/
+.barcode-label {
+    font-family: 'Arial', sans-serif;
+    color: #000;
+    text-align: center;
+    line-height: 1.2;
+    /* ডাইনামিক স্টাইল এখান থেকে যুক্ত হবে: width, height, display, flex-direction, ইত্যাদি */
+}
 
-    /* ================================================================= */
-    /* --- বড় লেবেল (1-up) এর জন্য ফাইনাল এবং নির্ভুল স্টাইল --- */
-    /* ================================================================= */
+.barcode-label .product-name {
+    font-size: 8pt; /* ফন্ট সাইজ ছোট রাখা ভালো, যেন বড় নামেও জায়গা হয় */
+    font-weight: bold;
+    margin: 0;
+    word-break: break-word; /* বড় নাম ভেঙে যাবে */
+}
 
-    .large-label-item {
-        /* লেবেলের সাইজ কাগজের সাইজের সমান রাখা */
-        width: 4in;
-        height: 2in;
-        
-        /* কন্টেন্টকে মাঝখানে আনার জন্য */
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        
-        box-sizing: border-box;
-        padding: 5mm;
-        font-family: 'Arial', sans-serif;
-        overflow: hidden; /* কন্টেন্ট বাইরে গেলে কেটে যাবে */
+.barcode-label .barcode-svg {
+    width: 85% !important;  /* লেবেলের প্রস্থের ৮৫% জায়গা নেবে */
+    height: 30px !important; /* উচ্চতা ফিক্সড রাখা যেতে পারে */
+    max-height: 40%; /* উচ্চতার সর্বোচ্চ ৪০% পর্যন্ত যাবে */
+    margin: 2px 0;
+}
 
-        /* --- খালি পৃষ্ঠা এবং দুটি লেবেলের সমস্যা সমাধানের মূল কোড --- */
-        page-break-after: always; /* প্রতিটি লেবেলের *পরে* একটি নতুন পৃষ্ঠা শুরু হবে */
-    }
-    
-    /* শেষ লেবেলের পর যেন অপ্রয়োজনীয় খালি পৃষ্ঠা না আসে */
-    .large-label-item:last-child {
-        page-break-after: auto; /* 'always' কে ওভাররাইড করে ডিফল্ট করে দেওয়া */
-    }
+.barcode-label .barcode-text {
+    font-size: 7pt;
+    margin: 0;
+    letter-spacing: 1px; /* বারকোড টেক্সট পড়তে সুবিধা হওয়ার জন্য */
+}
 
-    /* বড় লেবেলের ভেতরের কন্টেন্টের স্টাইল */
-    .large-label-item .label-product-name { font-size: 12pt; font-weight: bold; margin-bottom: 8px; text-align: center; }
-    .large-label-item .label-barcode { width: 90% !important; height: 65px !important; }
-    .large-label-item .label-barcode-text { font-size: 14pt; font-weight: bold; letter-spacing: 2px; margin-top: 5px; }
-    .large-label-item .label-price { font-size: 16pt; font-weight: bold; margin-top: 8px; }
-    .large-label-item .no-barcode { font-size: 10pt; color: #888; } /* বারকোড না থাকলে দেখানোর জন্য */
+.barcode-label .price {
+    font-size: 9pt;
+    font-weight: bold;
+    margin: 0;
+}
 
-
-    /* ================================================================= */
-    /* --- ছোট লেবেল (2-up) এর জন্য পুরনো স্টাইল (ঐচ্ছিক) --- */
-    /* ================================================================= */
-    .label-item {
-        width: 2in;
-        height: 2in;
-        float: left;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        box-sizing: border-box;
-        padding: 3mm;
-        page-break-inside: avoid;
-        overflow: hidden;
-        font-family: 'Arial', sans-serif;
-    }
-    .label-item .label-product-name { font-size: 10pt; font-weight: bold; margin: 0 0 5px 0; }
-    .label-item .label-price { font-size: 11pt; font-weight: bold; margin: 5px 0; }
-    .label-item .label-barcode { max-width: 100%; height: 28px; margin: 5px 0; }
-    .label-item .label-barcode-text { font-size: 8pt; letter-spacing: 1px; margin: 0; }
+.barcode-label .error-text {
+    font-size: 8pt;
+    color: red;
 }

@@ -4,8 +4,8 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, orderBy, query } from 'firebase/firestore';
-// *** পরিবর্তন ১: printer.js থেকে নতুন 'printLargeLabels' ফাংশনটি ইম্পোর্ট করা হলো ***
-import { showTemplateModal, printLargeLabels } from './printer.js'; 
+// *** পরিবর্তন ১: printer.js থেকে নতুন 'printCustomLabels' ফাংশনটি ইম্পোর্ট করা হলো ***
+import { printCustomLabels } from './printer.js'; 
 
 // =================================================================
 // --- DOM Elements ---
@@ -21,10 +21,15 @@ const logoutBtn = document.getElementById('logout-btn');
 const statusMessageContainer = document.getElementById('status-message-container');
 const selectAllCheckbox = document.getElementById('select-all-checkbox');
 
-// *** পরিবর্তন ২: HTML এ পরিবর্তন করা নতুন বাটন আইডিগুলো এখানে যুক্ত করা হলো ***
-const printLargeLabelBtn = document.getElementById('print-large-label-btn'); // নতুন বাটন
-const printSelectedTemplateBtn = document.getElementById('print-selected-template-btn'); // পুরনো বাটনের নতুন আইডি
-const printAllFilteredTemplateBtn = document.getElementById('print-all-filtered-template-btn'); // পুরনো বাটনের নতুন আইডি
+// *** পরিবর্তন ২: HTML এর নতুন বাটন এবং মডাল এর এলিমেন্ট যুক্ত করা হলো ***
+const printSelectedBtn = document.getElementById('print-selected-btn');
+const printCategoryBtn = document.getElementById('print-category-btn');
+const customSizeModal = document.getElementById('custom-size-modal');
+const customSizeForm = document.getElementById('custom-size-form');
+const customSizeModalCloseBtn = customSizeModal.querySelector('.close-button');
+const labelWidthInput = document.getElementById('label-width');
+const labelHeightInput = document.getElementById('label-height');
+
 
 // =================================================================
 // --- Global State ---
@@ -36,6 +41,7 @@ let currentPage = 1;
 const LOW_STOCK_THRESHOLD = 10;
 let currentUserId = null;
 let unsubscribe;
+let productsToPrint = []; // *** পরিবর্তন ৩: প্রিন্ট করার জন্য প্রোডাক্টগুলো এখানে সাময়িকভাবে রাখা হবে ***
 
 // =================================================================
 // --- Authentication & Initialization ---
@@ -51,7 +57,7 @@ onAuthStateChanged(auth, (user) => {
 });
 
 // =================================================================
-// --- Core Functions (Data loading & Rendering) ---
+// --- Core Functions (Data loading & Rendering) - কোনো পরিবর্তন নেই ---
 // =================================================================
 function loadInventory() {
     if (!currentUserId) return;
@@ -172,61 +178,89 @@ function setupEventListeners() {
         if (!productId) return;
         
         const product = allProducts.find(p => p.id === productId);
+        if (!product) return;
 
         if (target.matches('.btn-edit')) {
-            if (product) openEditModal(product);
+            openEditModal(product);
         } else if (target.matches('.btn-delete')) {
             if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
                 deleteProduct(productId);
             }
-        } else if (target.matches('.btn-print')) { // একটিমাত্র প্রোডাক্ট প্রিন্ট করার জন্য
-            if (product) {
-                printLargeLabels([product]); // সরাসরি বড় লেবেল প্রিন্ট
-            }
+        } 
+        // *** পরিবর্তন ৪: টেবিলের একটি প্রোডাক্ট প্রিন্ট করার জন্য লজিক আপডেট ***
+        else if (target.matches('.btn-print')) {
+            openCustomSizeModal([product]); // একটি প্রোডাক্টের অ্যারে পাস করা হলো
         }
     });
 
-    // *** পরিবর্তন ৩: নতুন 'Print Large Label' বাটনের জন্য ইভেন্ট লিসনার ***
-    printLargeLabelBtn.addEventListener('click', () => {
-        // টেবিল থেকে সিলেক্ট করা প্রোডাক্টগুলো সংগ্রহ করা
-        const selectedProducts = getSelectedProducts();
-        
-        if (selectedProducts.length === 0) {
-            alert('Please select products to print.');
-            return;
-        }
-        
-        // সরাসরি বড় লেবেল প্রিন্ট করার ফাংশন কল করা
-        printLargeLabels(selectedProducts);
-    });
-
-    // পুরনো টেমপ্লেট-ভিত্তিক প্রিন্ট বাটনগুলোর জন্য ইভেন্ট লিসনার
-    printSelectedTemplateBtn.addEventListener('click', () => {
+    // *** পরিবর্তন ৫: নতুন প্রিন্ট বাটনগুলোর জন্য ইভেন্ট লিসেনার ***
+    
+    // 'Print Selected' বাটনের জন্য
+    printSelectedBtn.addEventListener('click', () => {
         const selectedProducts = getSelectedProducts();
         if (selectedProducts.length === 0) {
             alert('Please select products to print.');
             return;
         }
-        showTemplateModal(selectedProducts);
+        openCustomSizeModal(selectedProducts);
     });
 
-    printAllFilteredTemplateBtn.addEventListener('click', () => {
+    // 'Print by Category' বাটনের জন্য
+    printCategoryBtn.addEventListener('click', () => {
+        const selectedCategory = categoryFilter.value;
+        if (!selectedCategory) {
+            alert('Please select a category first to print.');
+            return;
+        }
         if (filteredProducts.length === 0) {
-            alert('No products to print in the current filter.');
+            alert('No products found in the selected category.');
             return;
         }
-        showTemplateModal(filteredProducts);
+        // filteredProducts এ বর্তমানে সিলেক্ট করা ক্যাটাগরির সব প্রোডাক্ট আছে
+        openCustomSizeModal(filteredProducts);
     });
 
     selectAllCheckbox.addEventListener('change', (e) => {
         document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = e.target.checked);
     });
 
-    editForm.addEventListener('submit', handleEditFormSubmit);
-    closeModalBtn.addEventListener('click', () => editModal.style.display = 'none');
-    window.addEventListener('click', (e) => {
-        if (e.target === editModal) editModal.style.display = 'none';
+    // *** পরিবর্তন ৬: কাস্টম সাইজ মডালের ফর্ম এবং বাটনগুলোর জন্য ইভেন্ট লিসেনার ***
+    customSizeForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const width = labelWidthInput.value;
+        const height = labelHeightInput.value;
+
+        if (!width || !height || width <= 0 || height <= 0) {
+            alert('Please provide valid width and height in mm.');
+            return;
+        }
+
+        if (productsToPrint.length > 0) {
+            // printer.js এর ফাংশনকে কল করা হবে width, height সহ
+            printCustomLabels(productsToPrint, width, height);
+        }
+        
+        // কাজ শেষে মডাল বন্ধ করা এবং ফর্ম রিসেট করা
+        customSizeModal.style.display = 'none';
+        customSizeForm.reset();
+        productsToPrint = []; // অ্যারে খালি করা
     });
+
+    // মডাল বন্ধ করার জন্য
+    customSizeModalCloseBtn.addEventListener('click', () => {
+        customSizeModal.style.display = 'none';
+    });
+    
+    window.addEventListener('click', (e) => {
+        if (e.target === customSizeModal) {
+            customSizeModal.style.display = 'none';
+        }
+        if (e.target === editModal) {
+            editModal.style.display = 'none';
+        }
+    });
+
+    editForm.addEventListener('submit', handleEditFormSubmit);
     logoutBtn.addEventListener('click', async () => await signOut(auth));
 
     setupEventListeners.executed = true;
@@ -236,7 +270,17 @@ function setupEventListeners() {
 // --- Helper Functions for Actions ---
 // =================================================================
 
-// *** পরিবর্তন ৪: সিলেক্ট করা প্রোডাক্ট খুঁজে বের করার জন্য একটি Helper Function ***
+// *** পরিবর্তন ৭: সাইজ মডাল খোলার জন্য নতুন Helper Function ***
+function openCustomSizeModal(products) {
+    if (!products || products.length === 0) {
+        console.error("No products provided to print.");
+        return;
+    }
+    productsToPrint = products; // প্রিন্ট করার জন্য প্রোডাক্টগুলো গ্লোবাল ভ্যারিয়েবলে সেট করা
+    customSizeModal.style.display = 'flex'; // মডালটি দেখানো
+    labelWidthInput.focus(); // width ইনপুটে ফোকাস করা
+}
+
 function getSelectedProducts() {
     const selectedIds = Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.dataset.id);
     return allProducts.filter(p => selectedIds.includes(p.id));

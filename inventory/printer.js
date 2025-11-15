@@ -1,194 +1,115 @@
 // =================================================================
-// --- বারকোড প্রিন্টিং এর সম্পূর্ণ লজিক ---
+// --- বারকোড প্রিন্টিং এর মূল লজিক ---
 // =================================================================
 
-// DOM এলিমেন্টগুলো (প্রিন্টিং এর জন্য)
-const templateModal = document.getElementById('template-modal');
-const closeModalBtn = templateModal ? templateModal.querySelector('.close-button') : null;
-const templateChoices = document.getElementById('template-choices');
-const printArea = document.getElementById('print-area');
-
-// Modal-এর টেমপ্লেট প্রিভিউতে ডেমো বারকোড দেখানো
-if (templateModal && typeof JsBarcode === 'function') {
-    JsBarcode(".preview-barcode", "123456789", {
-        format: "CODE128",
-        height: 40,
-        displayValue: false,
-        margin: 0
-    });
-}
-
-// Modal বন্ধ করার জন্য ইভেন্ট লিসনার
-if (closeModalBtn) {
-    closeModalBtn.addEventListener('click', () => templateModal.style.display = 'none');
-}
-window.addEventListener('click', (event) => {
-    if (event.target === templateModal) {
-        templateModal.style.display = 'none';
-    }
-});
-
-
-// =================================================================
-// --- নতুন ফাংশন: সরাসরি বড় লেবেল প্রিন্ট করার জন্য ---
-// =================================================================
 /**
- * টেমপ্লেট Modal ছাড়াই সরাসরি বড় আকারের লেবেল প্রিন্ট করে (প্রতি পেজে একটি)
- * @param {Array<Object>} products - প্রিন্ট করার জন্য প্রোডাক্টের অ্যারে
+ * ইউজার-এর দেওয়া সাইজ অনুযায়ী লেবেল তৈরি করে এবং প্রিন্ট করে।
+ * এই ফাংশনটি inventory.js থেকে কল করা হবে।
+ * @param {Array<Object>} products - প্রিন্ট করার জন্য প্রোডাক্টের তালিকা।
+ * @param {number} width - লেবেলের প্রস্থ mm এককে।
+ * @param {number} height - লেবেলের উচ্চতা mm এককে।
  */
-export function printLargeLabels(products) {
+export function printCustomLabels(products, width, height) {
     if (!products || products.length === 0) {
-        alert("No products to print.");
+        console.error("প্রিন্ট করার জন্য কোনো প্রোডাক্ট পাওয়া যায়নি।");
         return;
     }
-    
+
+    const printArea = document.getElementById('print-area');
     if (!printArea) {
-        console.error("Print area (#print-area) not found in the HTML!");
-        alert("A critical error occurred. The print area is missing.");
+        console.error("প্রিন্ট করার জন্য 'print-area' এলিমেন্টটি পাওয়া যায়নি।");
         return;
     }
 
-    printArea.innerHTML = ''; // প্রিন্ট করার আগে পুরনো ডেটা মুছে ফেলা
+    const styleId = 'dynamic-print-style';
+    // পুরনো ডাইনামিক স্টাইল থাকলে মুছে ফেলা
+    document.getElementById(styleId)?.remove();
 
+    // নতুন স্টাইল ট্যাগ তৈরি করা
+    const style = document.createElement('style');
+    style.id = styleId;
+    
+    // ডাইনামিক CSS কোড তৈরি করা
+    // এখানে @page ব্যবহার করা হচ্ছে প্রতিটি লেবেলকে একটি আলাদা পৃষ্ঠা হিসেবে প্রিন্ট করার জন্য।
+    const css = `
+        @media print {
+            /* প্রিন্টের সময় print-area ছাড়া সব কিছু হাইড করা */
+            body > *:not(#print-area) {
+                display: none !important;
+            }
+            #print-area {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+            }
+
+            /* প্রিন্ট পেজের সাইজ ডাইনামিকভাবে সেট করা */
+            @page {
+                size: ${width}mm ${height}mm;
+                margin: 0;
+            }
+
+            .barcode-label {
+                width: ${width}mm;
+                height: ${height}mm;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-around;
+                align-items: center;
+                box-sizing: border-box;
+                padding: 2mm; /* লেবেলের ভিতরে একটু প্যাডিং */
+                overflow: hidden;
+                page-break-after: always; /* প্রতিটি লেবেলের পর নতুন পৃষ্ঠা */
+            }
+
+            .barcode-label:last-child {
+                page-break-after: auto; /* শেষ লেবেলের পর পৃষ্ঠা ভাঙবে না */
+            }
+        }
+    `;
+
+    style.innerHTML = css;
+    document.head.appendChild(style);
+
+
+    // প্রিন্ট এরিয়াতে HTML তৈরি করা
+    printArea.innerHTML = '';
     products.forEach(product => {
         const barcodeValue = product.barcode ? String(product.barcode).trim() : '';
-        const productName = product.name || 'Unknown Product';
-        const sellingPrice = (product.sellingPrice || 0).toFixed(2);
-
-        // বড় লেবেলের জন্য নতুন HTML টেমপ্লেট
-        // এখানে `.large-label-item` ক্লাস ব্যবহার করা হচ্ছে
         const labelHtml = `
-            <div class="large-label-item">
-                <p class="label-product-name">${productName}</p>
-                ${barcodeValue ? `<svg class="label-barcode" jsbarcode-value="${barcodeValue}"></svg>` : '<p class="no-barcode">No Barcode</p>'}
-                <p class="label-barcode-text">${barcodeValue}</p>
-                <p class="label-price">Price: ₹${sellingPrice}</p>
+            <div class="barcode-label">
+                <p class="product-name">${product.name}</p>
+                ${barcodeValue ? `<svg class="barcode-svg" jsbarcode-value="${barcodeValue}"></svg>` : ''}
+                ${barcodeValue ? `<p class="barcode-text">${barcodeValue}</p>` : ''}
+                <p class="price">Price: ₹${(product.sellingPrice || 0).toFixed(2)}</p>
             </div>
         `;
-        
         printArea.innerHTML += labelHtml;
     });
 
-    // সব বারকোড SVG তে রেন্ডার করা
-    if (typeof JsBarcode === 'function') {
-        try {
-            JsBarcode(".label-barcode").init({
-                format: "CODE128",
-                displayValue: false, // বারকোডের নিচে টেক্সট SVG-তে দেখাবে না, আমরা আলাদা p ট্যাগ ব্যবহার করছি
-                margin: 0
+    // বারকোড রেন্ডার করা
+    try {
+        if (typeof JsBarcode === 'function') {
+            JsBarcode(".barcode-svg").init({
+                width: 1.5,
+                height: 30,
+                fontSize: 14,
+                displayValue: false // আমরা টেক্সট আলাদাভাবে দেখাচ্ছি
             });
-        } catch (e) {
-            console.error("Error initializing JsBarcode:", e);
-            // এখানে ব্যবহারকারীকে একটি মেসেজ দেখানো যেতে পারে
         }
+    } catch (e) {
+        console.error("বারকোড রেন্ডার করার সময় সমস্যা হয়েছে:", e);
     }
-    
-    // প্রিন্ট ডায়ালগ খোলার জন্য সামান্য ডিলে
-    // এটি নিশ্চিত করে যে বারকোড রেন্ডার হওয়ার জন্য যথেষ্ট সময় পায়
+
+    // সামান্য ডিলে দিয়ে প্রিন্ট ডায়ালগ খোলা, যাতে বারকোড রেন্ডার হতে পারে
     setTimeout(() => {
         window.print();
     }, 300);
-}
 
-
-// =================================================================
-// --- পুরনো ফাংশন: টেমপ্লেট ব্যবহার করে প্রিন্ট করার জন্য ---
-// =================================================================
-/**
- * প্রিন্ট করার জন্য প্রোডাক্টের তালিকা সহ টেমপ্লেট Modal দেখায়
- * @param {Array<Object>} productsToPrint - প্রিন্ট করার জন্য প্রোডাক্টের একটি অ্যারে
- */
-export function showTemplateModal(productsToPrint) {
-    if (!productsToPrint || productsToPrint.length === 0) {
-        alert("No products to print.");
-        return;
-    }
-    
-    // টেমপ্লেট বেছে নেওয়ার জন্য একটি ইভেন্ট লিসনার তৈরি করা
-    const templateClickHandler = (event) => {
-        const selectedCard = event.target.closest('.template-card');
-        if (!selectedCard) return;
-
-        const templateId = selectedCard.dataset.templateId;
-        generateAndPrintLabels(productsToPrint, templateId); // নির্বাচিত প্রোডাক্ট ও টেমপ্লেট দিয়ে লেবেল তৈরি
-        
-        templateModal.style.display = 'none'; // Modal বন্ধ করা
-        // এখানে আর removeEventListener এর প্রয়োজন নেই কারণ { once: true } ব্যবহার করা হয়েছে
-    };
-
-    // পুরনো লিসনার থাকলে রিমুভ করে নতুন করে যোগ করা ভালো
-    templateChoices.replaceWith(templateChoices.cloneNode(true));
-    document.getElementById('template-choices').addEventListener('click', templateClickHandler, { once: true });
-    
-    templateModal.style.display = 'flex'; // Modal দেখানো
-}
-
-
-/**
- * নির্বাচিত টেমপ্লেট অনুযায়ী লেবেল তৈরি করে এবং প্রিন্ট ডায়ালগ খোলে
- * @param {Array<Object>} products - প্রিন্ট করার জন্য প্রোডাক্টের অ্যারে
- * @param {string} templateId - বেছে নেওয়া টেমপ্লেটের আইডি
- */
-function generateAndPrintLabels(products, templateId) {
-    if (!printArea) {
-        console.error("Print area (#print-area) not found in the HTML!");
-        return;
-    }
-
-    printArea.innerHTML = ''; // প্রিন্ট করার আগে পুরনো ডেটা মুছে ফেলা
-
-    products.forEach(product => {
-        let labelHtml = '';
-        const barcodeValue = product.barcode ? String(product.barcode).trim() : '';
-
-        // বেছে নেওয়া টেমপ্লেট অনুযায়ী HTML তৈরি করা
-        switch (templateId) {
-            case 'template-1': // Standard Template
-                labelHtml = `
-                    <div class="label-item">
-                        <p class="label-product-name">${product.name}</p>
-                        ${barcodeValue ? `<svg class="label-barcode" jsbarcode-value="${barcodeValue}"></svg>` : ''}
-                        <p class="label-barcode-text">${barcodeValue}</p>
-                        <p class="label-price">Price: ₹${(product.sellingPrice || 0).toFixed(2)}</p>
-                    </div>
-                `;
-                break;
-            
-            case 'template-2': // Price Focused Template
-                labelHtml = `
-                    <div class="label-item">
-                        <p class="label-price" style="font-size: 16pt;">₹${(product.sellingPrice || 0).toFixed(2)}</p>
-                        <p class="label-product-name" style="font-size: 8pt; margin-top: 5px;">${product.name}</p>
-                        ${barcodeValue ? `<svg class="label-barcode" jsbarcode-value="${barcodeValue}"></svg>` : ''}
-                        <p class="label-barcode-text">${barcodeValue}</p>
-                    </div>
-                `;
-                break;
-
-            case 'template-3': // Minimalist Template
-                 labelHtml = `
-                    <div class="label-item">
-                        ${barcodeValue ? `<svg class="label-barcode" jsbarcode-value="${barcodeValue}"></svg>` : ''}
-                        <p class="label-barcode-text">${barcodeValue}</p>
-                    </div>
-                `;
-                break;
-        }
-
-        printArea.innerHTML += labelHtml;
-    });
-
-    // সব বারকোড SVG তে রেন্ডার করা
-    if (typeof JsBarcode === 'function') {
-        try {
-            JsBarcode(".label-barcode").init();
-        } catch (e) {
-            console.error("Error initializing JsBarcode:", e);
-        }
-    }
-    
-    // প্রিন্ট ডায়ালগ খোলার জন্য সামান্য ডিলে
-    setTimeout(() => {
-        window.print();
-    }, 300);
+    // প্রিন্টের পর ডাইনামিক স্টাইল মুছে ফেলার জন্য ইভেন্ট লিসনার
+    window.addEventListener('afterprint', () => {
+        document.getElementById(styleId)?.remove();
+    }, { once: true });
 }
