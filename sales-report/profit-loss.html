@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="profit-loss.css">
 
-    <!-- নতুন কার্ডের জন্য স্টাইল (ঐচ্ছিক) -->
+    <!-- নতুন কার্ডের জন্য স্টাইল -->
     <style>
         .kpi-card.stock-value {
             background-color: #e6f7ff;
@@ -27,10 +27,16 @@
             background-color: #fff1f0;
             border-left: 5px solid #f5222d;
         }
-        .kpi-card.profit {
+        .kpi-card.profit, .kpi-card.gross-profit { /* Gross Profit এও profit স্টাইল যুক্ত করা হলো */
             background-color: #f6ffed;
             border-left: 5px solid #52c41a;
         }
+        /* ===== START: নতুন যোগ করা স্টাইল ===== */
+        .kpi-card.canceled {
+            background-color: #fffbe6; /* হালকা হলুদ */
+            border-left: 5px solid #faad14; /* অ্যাম্বার রঙ */
+        }
+        /* ===== END: নতুন যোগ করা স্টাইল ===== */
     </style>
 </head>
 <body>
@@ -79,7 +85,7 @@
                     <label for="end-date">To Date:</label>
                     <input type="date" id="end-date" class="form-control">
                 </div>
-                <button id="generate-report-btn" class="btn btn-primary">Generate Report</button>
+                <button id="generate-report-btn" class="btn btn-primary">Generate Report</button>            
             </div>
         </section>
 
@@ -93,6 +99,12 @@
                 <h3>Cost of Goods Sold (COGS)</h3>
                 <p id="total-cogs">₹0.00</p>
             </div>
+            <!-- ===== START: নতুন যোগ করা কার্ড ===== -->
+            <div class="kpi-card canceled">
+                <h3>Canceled Sales</h3>
+                <p id="total-canceled-sales">₹0.00</p>
+            </div>
+            <!-- ===== END: নতুন যোগ করা কার্ড ===== -->
             <div class="kpi-card gross-profit">
                 <h3>Gross Profit</h3>
                 <p id="gross-profit">₹0.00</p>
@@ -114,7 +126,6 @@
         <!-- চার্ট -->
         <section class="card">
             <h3>Summary Chart</h3>
-            <!-- এই Canvas ট্যাগটি এখানে থাকা আবশ্যক -->
             <canvas id="pnlChart"></canvas>
         </section>
         

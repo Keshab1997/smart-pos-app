@@ -16,6 +16,7 @@ import {
 // KPI কার্ডস
 const todaySalesEl = document.getElementById('today-sales');
 const todayProfitEl = document.getElementById('today-profit');
+const todayCanceledEl = document.getElementById('today-canceled'); // নতুন যোগ করা হয়েছে
 const todayExpensesEl = document.getElementById('today-expenses');
 const lowStockCountEl = document.getElementById('low-stock-count');
 
@@ -82,15 +83,20 @@ async function loadDashboardData() {
             getDocs(query(expensesRef, orderBy('date', 'desc')))
         ]);
 
-        const salesData = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const allSalesData = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const inventoryData = inventorySnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const expensesData = expensesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+        // ===== START: ক্যানসেল হওয়া বিল আলাদা করা =====
+        const validSales = allSalesData.filter(sale => sale.status !== 'canceled');
+        const canceledSales = allSalesData.filter(sale => sale.status === 'canceled');
+        // ===== END: পরিবর্তন =====
+
         // UI আপডেট করা
-        updateKpiCards(salesData, inventoryData, expensesData);
-        updateSalesProfitChart(salesData, inventoryData);
-        updateCategoryPieChart(salesData);
-        updateTopSellingProducts(salesData);
+        updateKpiCards(validSales, canceledSales, inventoryData, expensesData);
+        updateSalesProfitChart(validSales, inventoryData);
+        updateCategoryPieChart(validSales);
+        updateTopSellingProducts(validSales);
         updateLowStockAlerts(inventoryData);
         updateRecentExpenses(expensesData);
 
@@ -103,28 +109,39 @@ async function loadDashboardData() {
 // --- UI আপডেট করার ফাংশন ---
 // ==========================================
 
-function updateKpiCards(sales, inventory, expenses) {
+// === ফাংশনের প্যারামিটার আপডেট করা হয়েছে ===
+function updateKpiCards(validSales, canceledSales, inventory, expenses) {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
     let todaySales = 0;
     let todayGrossProfit = 0;
-    
+    let todayCanceledSales = 0; // নতুন ভেরিয়েবল
+
     // ইনভেন্টরি ডেটাকে একটি ম্যাপে রাখা для দ্রুত খোঁজার জন্য
     const inventoryMap = new Map(inventory.map(p => [p.id, p]));
 
-    sales.forEach(sale => {
+    // শুধুমাত্র বৈধ সেলস থেকে হিসাব করা হচ্ছে
+    validSales.forEach(sale => {
         if (!sale.createdAt || !sale.createdAt.toDate) return;
         const saleDate = sale.createdAt.toDate();
         if (saleDate >= startOfToday) {
             todaySales += sale.total;
             sale.items.forEach(item => {
                 const product = inventoryMap.get(item.id);
-                // আপনার মডেল অনুযায়ী costPrice ব্যবহার করা হচ্ছে
                 const costPrice = product ? product.costPrice || 0 : 0;
                 const sellingPrice = item.price || 0;
                 todayGrossProfit += (sellingPrice - costPrice) * item.quantity;
             });
+        }
+    });
+
+    // ক্যানসেল হওয়া সেলস থেকে হিসাব করা হচ্ছে
+    canceledSales.forEach(sale => {
+        if (!sale.createdAt || !sale.createdAt.toDate) return;
+        const saleDate = sale.createdAt.toDate();
+        if (saleDate >= startOfToday) {
+            todayCanceledSales += sale.total;
         }
     });
 
@@ -133,15 +150,17 @@ function updateKpiCards(sales, inventory, expenses) {
         .reduce((sum, e) => sum + e.amount, 0);
 
     todaySalesEl.textContent = `₹${todaySales.toFixed(2)}`;
-    todayProfitEl.textContent = `₹${todayGrossProfit.toFixed(2)}`; // এটি Gross Profit
+    todayProfitEl.textContent = `₹${todayGrossProfit.toFixed(2)}`;
+    todayCanceledEl.textContent = `₹${todayCanceledSales.toFixed(2)}`; // নতুন কার্ড আপডেট
     todayExpensesEl.textContent = `₹${todayExpenses.toFixed(2)}`;
     
-    const lowStockThreshold = 10; // আপনি এটি পরিবর্তন করতে পারেন
+    const lowStockThreshold = 10;
     const lowStockCount = inventory.filter(p => p.stock <= lowStockThreshold).length;
     lowStockCountEl.textContent = lowStockCount;
 }
 
-function updateSalesProfitChart(sales, inventory) {
+// === শুধুমাত্র `validSales` ব্যবহার করার জন্য আপডেট করা হয়েছে ===
+function updateSalesProfitChart(validSales, inventory) {
     const last7DaysData = {};
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
@@ -151,7 +170,7 @@ function updateSalesProfitChart(sales, inventory) {
 
     const inventoryMap = new Map(inventory.map(p => [p.id, p]));
 
-    sales.forEach(sale => {
+    validSales.forEach(sale => {
         if (!sale.createdAt || !sale.createdAt.toDate) return;
         const dateString = sale.createdAt.toDate().toISOString().split('T')[0];
         if (last7DaysData[dateString] !== undefined) {
@@ -185,9 +204,10 @@ function updateSalesProfitChart(sales, inventory) {
     });
 }
 
-function updateCategoryPieChart(sales) {
+// === শুধুমাত্র `validSales` ব্যবহার করার জন্য আপডেট করা হয়েছে ===
+function updateCategoryPieChart(validSales) {
     const categorySales = {};
-    sales.forEach(sale => {
+    validSales.forEach(sale => {
         sale.items.forEach(item => {
             const category = item.category || 'Uncategorized';
             categorySales[category] = (categorySales[category] || 0) + (item.price * item.quantity);
@@ -209,15 +229,16 @@ function updateCategoryPieChart(sales) {
     });
 }
 
-function updateTopSellingProducts(sales) {
+// === শুধুমাত্র `validSales` ব্যবহার করার জন্য আপডেট করা হয়েছে ===
+function updateTopSellingProducts(validSales) {
     const productSales = {};
-    sales.forEach(sale => {
+    validSales.forEach(sale => {
         sale.items.forEach(item => {
             productSales[item.name] = (productSales[item.name] || 0) + item.quantity;
         });
     });
 
-    const sortedProducts = Object.entries(productSales).sort(([, a], [, b]) => b - a).slice(0, 5);
+    const sortedProducts = Object.entries(productSales).sort(([, a], [, b]) => b - a);
     
     topProductsListEl.innerHTML = sortedProducts.length === 0
         ? '<li>No sales data available.</li>'
@@ -236,7 +257,10 @@ function updateLowStockAlerts(inventory) {
 function updateRecentExpenses(expenses) {
     recentExpensesListEl.innerHTML = expenses.length === 0
         ? '<li>No recent expenses recorded.</li>'
-        : expenses.slice(0, 5).map(exp => `<li><span>${exp.description}</span> <strong>₹${exp.amount.toFixed(2)}</strong></li>`).join('');
+        : expenses.slice(0, 5).map(exp => { // সাম্প্রতিক ৫টি খরচ দেখানো
+            const dateStr = exp.date.toDate().toLocaleDateString('en-GB');
+            return `<li><span>${exp.description} (${dateStr})</span> <strong>₹${exp.amount.toFixed(2)}</strong></li>`;
+        }).join('');
 }
 
 
@@ -276,7 +300,7 @@ function setupEventListeners() {
             expenseForm.reset();
             expenseDateInput.valueAsDate = new Date();
             expenseModal.classList.add('hidden');
-            loadDashboardData();
+            loadDashboardData(); // ডেটা রিফ্রেশ করা
             alert('Expense added successfully!');
 
         } catch (error) {

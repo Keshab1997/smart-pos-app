@@ -79,6 +79,16 @@ body {
 .summary-boxes .summary-box:nth-child(3) { border-left-color: #9b59b6; }
 .summary-boxes .summary-box:nth-child(3) p { color: #9b59b6; }
 
+/* ===== START: নতুন ক্যানসেলড বক্সের স্টাইল ===== */
+.summary-box-canceled {
+    border-left-color: #e74c3c !important; /* !important ব্যবহার করা হয়েছে যাতে nth-child ওভাররাইড না করে */
+}
+.summary-box-canceled p {
+    color: #e74c3c !important;
+}
+/* ===== END: নতুন ক্যানসেলড বক্সের স্টাইল ===== */
+
+
 /* ============================
    Filter Section
    ============================ */
@@ -134,9 +144,15 @@ body {
 .filtered-summary-boxes .summary-box:nth-child(2) { border-left-color: #e67e22; }
 .filtered-summary-boxes .summary-box:nth-child(2) p { color: #e67e22; }
 
-/* 3. Total Discount Box (লাল রঙ) - নতুন যোগ করা হয়েছে */
-.filtered-summary-boxes .summary-box:nth-child(3) { border-left-color: #e74c3c; }
-.filtered-summary-boxes .summary-box:nth-child(3) p { color: #e74c3c; }
+/* 3. Total Discount Box (লাল-কমলা রঙ) */
+.filtered-summary-boxes .summary-box:nth-child(3) { border-left-color: #d35400; }
+.filtered-summary-boxes .summary-box:nth-child(3) p { color: #d35400; }
+
+/* ===== START: নতুন ফিল্টারড ক্যানসেলড বক্সের স্টাইল ===== */
+/* 4. Filtered Canceled Amount (লাল রঙ) */
+.filtered-summary-boxes .summary-box:nth-child(4) { border-left-color: #e74c3c; }
+.filtered-summary-boxes .summary-box:nth-child(4) p { color: #e74c3c; }
+/* ===== END: নতুন ফিল্টারড ক্যানসেলড বক্সের স্টাইল ===== */
 
 
 /* ============================
@@ -176,16 +192,32 @@ body {
     overflow-wrap: break-word;
 }
 
-/* ===== START: কলামের প্রস্থ আপডেট করা হয়েছে ===== */
 .sales-table th:nth-child(1) { width: 10%; } /* Sale ID */
 .sales-table th:nth-child(2) { width: 15%; } /* Sale Date */
 .sales-table th:nth-child(3) { width: 8%; }  /* Total Items */
 .sales-table th:nth-child(4) { width: 25%; } /* Item Names */
 .sales-table th:nth-child(5) { width: 12%; } /* Payment Type */
-.sales-table th:nth-child(6) { width: 10%; } /* Discount (নতুন) */
+.sales-table th:nth-child(6) { width: 10%; } /* Discount */
 .sales-table th:nth-child(7) { width: 10%; } /* Total Amount */
-.sales-table th:nth-child(8) { width: 10%; } /* Actions */
-/* ===== END: কলামের প্রস্থ আপডেট করা হয়েছে ===== */
+.sales-table th:nth-child(8) { width: 10%; } /* Status / Actions */
+
+/* ===== START: নতুন টেবিল স্টাইল যোগ করা হয়েছে ===== */
+.sales-table tr.sale-canceled {
+    background-color: #fee2e2; /* হালকা লাল ব্যাকগ্রাউন্ড */
+    color: #991b1b; /* গাঢ় লাল টেক্সট */
+    text-decoration: line-through; /* লেখাগুলির উপর দিয়ে দাগ */
+}
+
+.sales-table tr.sale-canceled a { /* Cancelled row-এর মধ্যে কোনো লিঙ্ক থাকলে তার রঙও পরিবর্তন হবে */
+    color: #991b1b;
+    text-decoration: line-through;
+}
+
+.status-canceled {
+    color: #e74c3c;
+    font-weight: bold;
+}
+/* ===== END: নতুন টেবিল স্টাইল যোগ করা হয়েছে ===== */
 
 
 /* ============================
@@ -225,6 +257,16 @@ body {
 .btn-secondary:hover {
     background-color: #5a6268;
 }
+
+/* ===== START: নতুন বাটন স্টাইল যোগ করা হয়েছে ===== */
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+}
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+/* ===== END: নতুন বাটন স্টাইল যোগ করা হয়েছে ===== */
 
 table .btn {
     margin: 0;

@@ -1,6 +1,8 @@
 /* profit-loss.css */
+
 .pnl-dashboard h1 {
     margin-bottom: 20px;
+    color: var(--dark-text-color);
 }
 
 .filter-section {
@@ -10,16 +12,18 @@
     flex-wrap: wrap;
     gap: 20px;
     margin-bottom: 20px;
+    padding: 20px; /* একটি কার্ড লুক দেওয়ার জন্য */
 }
 
 .time-period-buttons .btn.active {
     background-color: var(--primary-color);
     color: var(--white-color);
+    border-color: var(--primary-color);
 }
 
 .kpi-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* সাইজ সামান্য বাড়ানো হলো */
     gap: 20px;
     margin-bottom: 30px;
 }
@@ -29,28 +33,67 @@
     border-radius: 8px;
     background: var(--white-color);
     box-shadow: var(--shadow-sm);
-    border-left: 4px solid;
+    border-left: 5px solid; /* বর্ডার সামান্য মোটা করা হলো */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.kpi-card h3 { font-size: 1rem; color: var(--light-text-color); margin-bottom: 8px; }
-.kpi-card p { font-size: 1.8rem; font-weight: 700; }
 
-/* KPI কার্ডের রঙ */
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.kpi-card h3 {
+    font-size: 1rem;
+    color: var(--light-text-color);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.kpi-card p {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* ========================================= */
+/* --- KPI কার্ডের রঙ --- */
+/* ========================================= */
+
 .kpi-card.revenue { border-color: #17a2b8; }
 .kpi-card.revenue p { color: #17a2b8; }
+
 .kpi-card.cogs { border-color: #ffc107; }
-.kpi-card.cogs p { color: #ffc107; }
+.kpi-card.cogs p { color: #d9a406; }
+
+/* ===== START: নতুন যোগ করা canceled কার্ডের স্টাইল ===== */
+.kpi-card.canceled { border-color: #fd7e14; } /* কমলা রঙ */
+.kpi-card.canceled p { color: #fd7e14; }
+/* ===== END: নতুন যোগ করা স্টাইল ===== */
+
 .kpi-card.gross-profit { border-color: #007bff; }
 .kpi-card.gross-profit p { color: #007bff; }
+
 .kpi-card.expenses { border-color: #dc3545; }
 .kpi-card.expenses p { color: #dc3545; }
 
-/* Net Profit কার্ডের বিশেষ স্টাইল */
-.kpi-card.net-profit { background-color: #f0f0f0; }
-.kpi-card.net-profit.profit p { color: var(--success-color); }
-.kpi-card.net-profit.loss p { color: var(--danger-color); }
+.kpi-card.stock-value { border-color: #6f42c1; } /* Closing Stock Value এর জন্য */
+.kpi-card.stock-value p { color: #6f42c1; }
+
+/* Net Profit কার্ডের বিশেষ স্টাইল (profit/loss ক্লাস অনুযায়ী) */
+.kpi-card.profit { border-color: var(--success-color); }
+.kpi-card.profit p { color: var(--success-color); }
+
+.kpi-card.loss { border-color: var(--danger-color); }
+.kpi-card.loss p { color: var(--danger-color); }
+
 
 /* চার্ট */
+.card-chart { /* چارٹ کے لیے ایک ریپر کلاس (اگر ضرورت ہو) */
+    padding: 20px;
+}
+
 #pnlChart {
+    width: 100% !important;
     max-height: 350px;
     margin-top: 20px;
 }
@@ -58,7 +101,8 @@
 /* বিস্তারিত তালিকা */
 .details-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* grid-template-columns: 1fr 1fr;  এখন একটি কলাম ব্যবহার করা হচ্ছে */
+    grid-template-columns: 1fr;
     gap: 20px;
     margin-top: 30px;
 }
@@ -69,15 +113,48 @@
     margin-top: 15px;
 }
 .details-table th, .details-table td {
-    padding: 8px;
+    padding: 12px 15px; /* প্যাডিং বাড়ানো হলো */
     border-bottom: 1px solid var(--border-color);
     text-align: left;
 }
-.details-table th { font-weight: 600; background-color: #f8f9fa; }
-.details-table td:last-child { text-align: right; font-weight: 500; }
+.details-table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+    color: var(--dark-text-color);
+}
+.details-table td:last-child {
+    text-align: right;
+    font-weight: 500;
+}
+.details-table tr:last-child td {
+    border-bottom: none;
+}
+.details-table tr:hover {
+    background-color: #f1f3f5;
+}
+
 
 @media (max-width: 992px) {
     .details-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-group-inline {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-group-inline > div, .form-group-inline > button {
+        width: 100%;
+    }
+    .kpi-cards {
+        grid-template-columns: 1fr; /* ছোট স্ক্রিনে একটি কলাম */
     }
 }

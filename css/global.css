@@ -25,7 +25,7 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* Poppins যোগ করা হলো */
     background-color: var(--background-color);
     color: var(--text-color);
     line-height: 1.6;
@@ -45,6 +45,9 @@ body {
     box-shadow: var(--shadow-sm);
     padding: 15px 0;
     margin-bottom: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 .main-header .container {
@@ -70,12 +73,30 @@ body {
     text-decoration: none;
     color: var(--light-text-color);
     font-weight: 500;
-    transition: color 0.2s;
+    padding: 5px 0;
+    transition: color 0.2s, border-bottom-color 0.2s;
+    border-bottom: 2px solid transparent;
 }
 
 .main-header nav a:hover {
     color: var(--primary-color);
 }
+
+/* ===== START: নতুন যোগ করা স্টাইল ===== */
+.main-header nav a.active {
+    color: var(--primary-color);
+    font-weight: 600;
+    border-bottom-color: var(--primary-color);
+}
+
+#mobile-menu-btn {
+    display: none; /* বড় স্ক্রিনে লুকানো থাকবে */
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+/* ===== END: নতুন যোগ করা স্টাইল ===== */
+
 
 /* ============================
    ড্যাশবোর্ড স্টাইল
@@ -87,7 +108,7 @@ body {
 /* KPI কার্ডস */
 .kpi-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* সাইজ অ্যাডজাস্ট করা হলো */
     gap: 20px;
     margin-bottom: 30px;
 }
@@ -96,8 +117,13 @@ body {
     background-color: var(--white-color);
     padding: 25px;
     border-radius: 8px;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
     border-left: 5px solid;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
 }
 .kpi-card h3 {
     font-size: 1.1rem;
@@ -111,10 +137,18 @@ body {
 }
 .kpi-card.sales { border-color: var(--primary-color); }
 .kpi-card.sales p { color: var(--primary-color); }
+
 .kpi-card.profit { border-color: var(--success-color); }
 .kpi-card.profit p { color: var(--success-color); }
+
+/* ===== START: নতুন যোগ করা স্টাইল ===== */
+.kpi-card.canceled { border-color: #fd7e14; } /* কমলা রঙ */
+.kpi-card.canceled p { color: #fd7e14; }
+/* ===== END: নতুন যোগ করা স্টাইল ===== */
+
 .kpi-card.expense { border-color: var(--danger-color); }
 .kpi-card.expense p { color: var(--danger-color); }
+
 .kpi-card.low-stock { border-color: var(--warning-color); }
 .kpi-card.low-stock p { color: var(--warning-color); }
 
@@ -122,7 +156,7 @@ body {
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: minmax(350px, auto);
+    grid-auto-rows: 450px;
     gap: 20px;
 }
 
@@ -130,42 +164,60 @@ body {
     background-color: var(--white-color);
     padding: 20px;
     border-radius: 8px;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
 }
 
 .card h3 {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
+    flex-shrink: 0; 
 }
 
 /* চার্ট কন্টেইনার */
-.chart-container {
-    grid-column: span 1;
-}
 .chart-container canvas {
-    max-height: 300px;
+    flex-grow: 1;
+    min-height: 0;
 }
 
-/* তালিকা কন্টেইনার */
-.list-card ul {
-    list-style: none;
-    flex-grow: 1;
-    overflow-y: auto;
+/* নতুন স্ক্রল কন্টেইনারের জন্য স্টাইল */
+.list-scroll-container {
+    flex-grow: 1; 
+    overflow-y: auto; 
+    padding-right: 10px; 
+    min-height: 0;
 }
+
+.list-scroll-container ul {
+    list-style: none;
+}
+
+/* কাস্টম স্ক্রলবার স্টাইল (ঐচ্ছিক) */
+.list-scroll-container::-webkit-scrollbar { width: 6px; }
+.list-scroll-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+.list-scroll-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+.list-scroll-container::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
 .list-card li {
     padding: 10px 5px;
     border-bottom: 1px solid #f0f0f0;
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 .list-card li:last-child {
     border-bottom: none;
 }
+.list-card .text-danger {
+    color: var(--danger-color);
+    font-weight: 700;
+}
+
 .list-card .btn {
-    margin-top: auto; /* বাটনকে নিচে রাখার জন্য */
+    margin-top: 15px; 
+    flex-shrink: 0;   
 }
 
 /* বাটন স্টাইল */
@@ -204,10 +256,7 @@ body {
 .modal-overlay:not(.hidden) .modal-content {
     transform: translateY(0);
 }
-.modal-header {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 20px;
-}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .modal-header h2 { margin: 0; }
 .close-button { background: none; border: none; font-size: 2rem; cursor: pointer; color: var(--light-text-color); }
 .form-group { margin-bottom: 15px; }
@@ -215,40 +264,54 @@ body {
 .form-group input, .form-group select {
     width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px;
 }
-.modal-footer {
-    margin-top: 20px;
-    text-align: right;
-}
+.modal-footer { margin-top: 20px; text-align: right; }
 
-/* Responsive ডিজাইন */
+/* ============================
+   Responsive ডিজাইন
+   ============================ */
 @media (max-width: 1200px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
 }
 @media (max-width: 768px) {
-    .main-header nav { display: none; } /* ছোট স্ক্রিনে নেভিগেশন হাইড করা যেতে পারে */
+    #mobile-menu-btn { display: block; } /* ছোট স্ক্রিনে দেখানো হবে */
+    
+    #main-nav-links {
+        display: none; /* ডিফল্টভাবে লুকানো */
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: var(--white-color);
+        box-shadow: var(--shadow-md);
+        flex-direction: column;
+        padding: 10px 0;
+    }
+    #main-nav-links.mobile-nav-active {
+        display: flex; /* JS দিয়ে এই ক্লাস যোগ হলে দেখানো হবে */
+    }
+    .main-header nav ul li {
+        width: 100%;
+        text-align: center;
+    }
+    .main-header nav a {
+        display: block;
+        padding: 15px 20px;
+    }
 }
-/* css/global.css ফাইলের শেষে যোগ করুন */
 
 /* ============================
    Footer Credit Styles
    ============================ */
-   .main-footer-credit {
-    background-color: #343a40; /* একটি গাঢ় ব্যাকগ্রাউন্ড */
-    color: #f8f9fa; /* হালকা রঙের লেখা */
+.main-footer-credit {
+    background-color: #343a40;
+    color: #f8f9fa;
     padding: 20px 0;
     text-align: center;
-    margin-top: 40px; /* main কন্টেন্ট থেকে একটু ফাঁকা জায়গা */
+    margin-top: 40px;
     font-size: 0.9em;
 }
 
-.main-footer-credit .container p {
-    margin: 5px 0;
-    color: #adb5bd; /* আরও হালকা রঙ */
-}
-
-.main-footer-credit strong {
-    color: #ffffff; /* আপনার নামটিকে উজ্জ্বল দেখানোর জন্য */
-    font-weight: 600;
-}
+.main-footer-credit .container p { margin: 5px 0; color: #adb5bd; }
+.main-footer-credit strong { color: #ffffff; font-weight: 600; }

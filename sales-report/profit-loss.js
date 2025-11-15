@@ -14,6 +14,7 @@ import {
 // ==========================================================
 const totalRevenueEl = document.getElementById('total-revenue');
 const totalCogsEl = document.getElementById('total-cogs');
+const totalCanceledSalesEl = document.getElementById('total-canceled-sales'); // নতুন যোগ করা হয়েছে
 const grossProfitEl = document.getElementById('gross-profit');
 const closingStockValueEl = document.getElementById('closing-stock-value');
 const totalOtherExpensesEl = document.getElementById('total-other-expenses');
@@ -67,27 +68,21 @@ function initializePnlPage() {
 function getPeriodDates(period) {
     const now = new Date();
     let startDate = new Date();
-    let endDate = new Date();
+    let endDate = new Date(now);
 
     switch (period) {
         case 'today':
             startDate = new Date(now);
-            endDate = new Date(now);
             break;
         case 'week':
-            const dayOfWeek = now.getDay();
-            const firstDay = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-            startDate = new Date(now.setDate(firstDay));
-            endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 6);
+            const firstDayOfWeek = now.getDate() - now.getDay();
+            startDate = new Date(now.setDate(firstDayOfWeek));
             break;
         case 'month':
             startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
             break;
         case 'year':
             startDate = new Date(now.getFullYear(), 0, 1);
-            endDate = new Date(now.getFullYear(), 11, 31);
             break;
     }
     startDate.setHours(0, 0, 0, 0);
@@ -96,16 +91,19 @@ function getPeriodDates(period) {
     return { startDate, endDate };
 }
 
-// *** আপনার inventory.js এর ডেটা স্ট্রাকচার অনুযায়ী আপডেটেড ফাংশন ***
-async function calculateClosingStockValue(inventoryCollectionRef) {
+async function calculateClosingStockValue() {
+    if (!currentUserId) return 0;
+    const inventoryCollectionRef = collection(db, 'shops', currentUserId, 'inventory');
     let totalStockValue = 0;
     try {
         const inventorySnap = await getDocs(inventoryCollectionRef);
         inventorySnap.forEach(doc => {
             const product = doc.data();
-            // এখন শুধুমাত্র 'stock' এবং 'costPrice' 필্ড চেক করা হচ্ছে
-            if (product.stock > 0 && typeof product.costPrice === 'number') {
-                totalStockValue += product.stock * product.costPrice;
+            const stock = product.stock || 0;
+            // inventory.js অনুযায়ী costPrice ব্যবহার করা হয়েছে
+            const costPrice = product.costPrice || product.purchasePrice || 0;
+            if (stock > 0 && typeof costPrice === 'number') {
+                totalStockValue += stock * costPrice;
             }
         });
     } catch (error) {
@@ -126,32 +124,36 @@ async function generatePnlReport(startDate, endDate) {
         const endTimestamp = Timestamp.fromDate(endDate);
 
         const salesQuery = query(collection(db, 'shops', currentUserId, 'sales'), where('createdAt', '>=', startTimestamp), where('createdAt', '<=', endTimestamp));
-        const inventoryCollectionRef = collection(db, 'shops', currentUserId, 'inventory');
         const expensesQuery = query(collection(db, 'shops', currentUserId, 'expenses'), where('date', '>=', startTimestamp), where('date', '<=', endTimestamp));
-
+        
         // Promise.all ব্যবহার করে ডেটা দ্রুত আনা হচ্ছে
-        const [salesSnap, expensesSnap, closingStockValue, inventorySnap] = await Promise.all([
+        const [salesSnap, expensesSnap, closingStockValue] = await Promise.all([
             getDocs(salesQuery),
             getDocs(expensesQuery),
-            calculateClosingStockValue(inventoryCollectionRef),
-            getDocs(inventoryCollectionRef) // COGS হিসাবের জন্য inventory ডেটা
+            calculateClosingStockValue()
         ]);
-
-        const inventoryData = {};
-        inventorySnap.forEach(doc => inventoryData[doc.id] = doc.data());
-
+        
         let totalRevenue = 0;
         let totalCogs = 0;
+        let totalCanceledSales = 0; // === নতুন ভেরিয়েবল ===
 
         salesSnap.forEach(doc => {
             const sale = doc.data();
+
+            // ===== START: ক্যানসেল হওয়া বিলের জন্য নতুন লজিক =====
+            if (sale.status === 'canceled') {
+                totalCanceledSales += sale.total || 0;
+                return; // এই বিলের হিসাব Revenue বা COGS-এ যোগ হবে না
+            }
+            // ===== END: নতুন লজিক =====
+
             totalRevenue += sale.total || 0;
+
             if (Array.isArray(sale.items)) {
                 sale.items.forEach(item => {
-                    const product = inventoryData[item.id] || inventoryData[item.productId]; 
-                    if (product && typeof product.costPrice === 'number') {
-                        totalCogs += product.costPrice * item.quantity;
-                    }
+                    // আইটেমের মধ্যে purchasePrice বা costPrice আছে কিনা চেক করা হচ্ছে
+                    const costPrice = item.purchasePrice || item.costPrice || 0;
+                    totalCogs += costPrice * (item.quantity || 0);
                 });
             }
         });
@@ -161,6 +163,7 @@ async function generatePnlReport(startDate, endDate) {
         
         expensesSnap.forEach(doc => {
             const expense = doc.data();
+            // ইনভেন্টরি কেনার খরচ বাদ দিয়ে অন্যান্য খরচ হিসাব করা হচ্ছে
             if (expense.category !== 'inventory_purchase') {
                 totalOtherExpenses += expense.amount || 0;
                 otherExpenses.push(expense);
@@ -170,7 +173,8 @@ async function generatePnlReport(startDate, endDate) {
         const grossProfit = totalRevenue - totalCogs;
         const netProfit = grossProfit - totalOtherExpenses;
 
-        updateKpiCards(totalRevenue, totalCogs, grossProfit, closingStockValue, totalOtherExpenses, netProfit);
+        // UI আপডেটে totalCanceledSales পাস করা হচ্ছে
+        updateKpiCards(totalRevenue, totalCogs, totalCanceledSales, grossProfit, closingStockValue, totalOtherExpenses, netProfit);
         updateExpenseTable(otherExpenses);
         updateChart(totalRevenue, totalCogs, totalOtherExpenses, netProfit);
 
@@ -182,10 +186,12 @@ async function generatePnlReport(startDate, endDate) {
     }
 }
 
-function updateKpiCards(revenue, cogs, gross, stockValue, expenses, net) {
+// === updateKpiCards ফাংশন আপডেট করা হয়েছে ===
+function updateKpiCards(revenue, cogs, canceledSales, gross, stockValue, expenses, net) {
     const format = (num) => `₹${num.toFixed(2)}`;
     totalRevenueEl.textContent = format(revenue);
     totalCogsEl.textContent = format(cogs);
+    totalCanceledSalesEl.textContent = format(canceledSales); // নতুন কার্ডের মান সেট করা
     grossProfitEl.textContent = format(gross);
     closingStockValueEl.textContent = format(stockValue);
     totalOtherExpensesEl.textContent = format(expenses);
@@ -246,13 +252,13 @@ function resetUI() {
     const loadingText = '₹0.00';
     totalRevenueEl.textContent = loadingText;
     totalCogsEl.textContent = loadingText;
+    totalCanceledSalesEl.textContent = loadingText; // রিসেট করা
     grossProfitEl.textContent = loadingText;
     closingStockValueEl.textContent = loadingText;
     totalOtherExpensesEl.textContent = loadingText;
     netProfitLossEl.textContent = loadingText;
-    if (netProfitLossCard) {
-        netProfitLossCard.classList.remove('profit', 'loss', 'net-profit', 'net-loss');
-    }
+    
+    netProfitLossCard.classList.remove('profit', 'loss');
     otherExpensesList.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
     if (pnlChartInstance) pnlChartInstance.destroy();
 }
@@ -265,13 +271,13 @@ function setupEventListeners() {
             timePeriodButtons.forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             
-            const period = e.target.id.split('-')[1];
-            const { startDate, endDate } = getPeriodDates(period);
+            const periodKey = e.target.id.replace('btn-', '');
+            const { startDate, endDate } = getPeriodDates(periodKey);
             
             startDateInput.valueAsDate = startDate;
-            endDateInput.valueAsDate = endDate;
+            endDateInput.valueAsDate = new Date(); // সবসময় আজকের তারিখ পর্যন্ত
             
-            generatePnlReport(startDate, endDate);
+            generatePnlReport(startDate, new Date());
         });
     });
 
@@ -287,12 +293,6 @@ function setupEventListeners() {
         }
     });
 
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            await signOut(auth);
-        } catch (error) {
-            console.error("Logout Error:", error);
-        }
-    });
+    logoutBtn.addEventListener('click', () => signOut(auth));
     mobileMenuBtn.addEventListener('click', () => mainNavLinks.classList.toggle('mobile-nav-active'));
 }
