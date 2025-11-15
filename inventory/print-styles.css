@@ -1,70 +1,88 @@
 /* ====================================================================== */
-/* শুধুমাত্র প্রিন্টিং এর জন্য CSS */
+/* --- ফাইনাল প্রিন্টিং CSS --- */
 /* ====================================================================== */
 
 @media print {
-    /* প্রিন্ট করার সময় ওয়েবসাইটের বাকি সব অংশ লুকিয়ে ফেলুন */
+
+    /* ধাপ ১: প্রিন্ট করার সময় ওয়েবসাইটের অপ্রয়োজনীয় সব অংশ লুকিয়ে ফেলা */
     body > *:not(#print-area) {
         display: none !important;
+        visibility: hidden !important;
     }
 
-    /* শুধুমাত্র প্রিন্ট করার কন্টেইনার এবং তার ভেতরের অংশ দেখান */
+    /* ধাপ ২: প্রিন্ট এরিয়াকে দৃশ্যমান করা এবং পৃষ্ঠার উপরে নিয়ে আসা */
     #print-area {
-        display: block;
+        display: block !important;
+        visibility: visible !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
     }
 
-    /* প্রিন্টারের পেইজ সাইজ এবং মার্জিন সেট করুন */
+    /* ধাপ ৩: প্রিন্টারের কাগজের সাইজ এবং মার্জিন নির্ধারণ করা */
     @page {
-        /* আপনার লেবেলের রোলের সাইজ (যেমন: 4 ইঞ্চি চওড়া, 2 ইঞ্চি লম্বা) */
-        size: 4in 2in;
+        size: 4in 2in; /* লেবেল রোলের সাইজ (4 ইঞ্চি চওড়া, 2 ইঞ্চি লম্বা) */
         margin: 0;
     }
 
-    /* প্রতিটি লেবেলের স্টাইল (2-up লেবেলের জন্য) */
+    /* ================================================================= */
+    /* --- বড় লেবেল (1-up) এর জন্য ফাইনাল এবং নির্ভুল স্টাইল --- */
+    /* ================================================================= */
+
+    .large-label-item {
+        /* লেবেলের সাইজ কাগজের সাইজের সমান রাখা */
+        width: 4in;
+        height: 2in;
+        
+        /* কন্টেন্টকে মাঝখানে আনার জন্য */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        
+        box-sizing: border-box;
+        padding: 5mm;
+        font-family: 'Arial', sans-serif;
+        overflow: hidden; /* কন্টেন্ট বাইরে গেলে কেটে যাবে */
+
+        /* --- খালি পৃষ্ঠা এবং দুটি লেবেলের সমস্যা সমাধানের মূল কোড --- */
+        page-break-after: always; /* প্রতিটি লেবেলের *পরে* একটি নতুন পৃষ্ঠা শুরু হবে */
+    }
+    
+    /* শেষ লেবেলের পর যেন অপ্রয়োজনীয় খালি পৃষ্ঠা না আসে */
+    .large-label-item:last-child {
+        page-break-after: auto; /* 'always' কে ওভাররাইড করে ডিফল্ট করে দেওয়া */
+    }
+
+    /* বড় লেবেলের ভেতরের কন্টেন্টের স্টাইল */
+    .large-label-item .label-product-name { font-size: 12pt; font-weight: bold; margin-bottom: 8px; text-align: center; }
+    .large-label-item .label-barcode { width: 90% !important; height: 65px !important; }
+    .large-label-item .label-barcode-text { font-size: 14pt; font-weight: bold; letter-spacing: 2px; margin-top: 5px; }
+    .large-label-item .label-price { font-size: 16pt; font-weight: bold; margin-top: 8px; }
+    .large-label-item .no-barcode { font-size: 10pt; color: #888; } /* বারকোড না থাকলে দেখানোর জন্য */
+
+
+    /* ================================================================= */
+    /* --- ছোট লেবেল (2-up) এর জন্য পুরনো স্টাইল (ঐচ্ছিক) --- */
+    /* ================================================================= */
     .label-item {
-        width: 2in;  /* প্রতিটি স্টিকারের সাইজ (4 ইঞ্চি রোলের অর্ধেক) */
-        height: 2in; /* আপনার স্টিকারের উচ্চতা */
-        
-        float: left; /* লেবেলগুলোকে পাশাপাশি বসানোর জন্য */
-        
-        /* কন্টেন্টের জন্য */
+        width: 2in;
+        height: 2in;
+        float: left;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         text-align: center;
-        font-family: 'Arial', sans-serif;
-        box-sizing: border-box; /* Padding এবং Border সাইজের মধ্যে অন্তর্ভুক্ত করবে */
-        
-        page-break-inside: avoid; /* একটি লেবেল যেন দুই পেইজে ভাগ না হয়ে যায় */
+        box-sizing: border-box;
+        padding: 3mm;
+        page-break-inside: avoid;
         overflow: hidden;
-        padding: 3mm; /* লেবেলের চারপাশে সামান্য ফাঁকা জায়গা রাখতে */
+        font-family: 'Arial', sans-serif;
     }
-
-    /* টেমপ্লেটের ভেতরের লেখা ও বারকোডের স্টাইল */
-    .label-product-name {
-        font-size: 10pt;
-        font-weight: bold;
-        margin: 0 0 5px 0;
-        line-height: 1.1;
-        max-width: 100%;
-        word-wrap: break-word;
-    }
-    .label-price {
-        font-size: 11pt;
-        font-weight: bold;
-        margin: 5px 0;
-        line-height: 1;
-    }
-    .label-barcode {
-        max-width: 100%;
-        height: 28px; /* বারকোডের উচ্চতা */
-        margin: 5px 0;
-    }
-    .label-barcode-text {
-        font-size: 8pt;
-        letter-spacing: 1px;
-        margin: 0;
-        line-height: 1;
-    }
+    .label-item .label-product-name { font-size: 10pt; font-weight: bold; margin: 0 0 5px 0; }
+    .label-item .label-price { font-size: 11pt; font-weight: bold; margin: 5px 0; }
+    .label-item .label-barcode { max-width: 100%; height: 28px; margin: 5px 0; }
+    .label-item .label-barcode-text { font-size: 8pt; letter-spacing: 1px; margin: 0; }
 }

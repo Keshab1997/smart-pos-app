@@ -51,10 +51,15 @@
                 <input type="text" id="search-inventory" placeholder="Search by name or barcode..." class="form-control">
                 <select id="category-filter" class="form-control"></select>
             </div>
-            <div class="print-controls">
-                <button id="print-selected-btn" class="btn btn-secondary">Print Selected</button>
-                <button id="print-all-filtered-btn" class="btn btn-primary">Print All Filtered</button>
-            </div>
+            <!-- নতুন এবং আপডেটেড কোড -->
+<div class="print-controls">
+    <!-- নতুন বাটন: বড় লেবেল প্রিন্ট করার জন্য -->
+    <button id="print-large-label-btn" class="btn btn-primary">Print Large Label</button>
+    
+    <!-- পুরনো বাটনগুলো (যদি রাখতে চান): টেমপ্লেট সহ প্রিন্ট করার জন্য -->
+    <button id="print-selected-template-btn" class="btn btn-secondary">Print Selected (Template)</button>
+    <button id="print-all-filtered-template-btn" class="btn btn-secondary">Print All (Template)</button>
+</div>
         </section>
 
         <!-- ইনভেন্টরি টেবিল -->

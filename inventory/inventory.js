@@ -4,8 +4,8 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, orderBy, query } from 'firebase/firestore';
-// এখন আমরা printer.js থেকে নতুন ফাংশনগুলো ইম্পোর্ট করব
-import { showTemplateModal } from './printer.js'; 
+// *** পরিবর্তন ১: printer.js থেকে নতুন 'printLargeLabels' ফাংশনটি ইম্পোর্ট করা হলো ***
+import { showTemplateModal, printLargeLabels } from './printer.js'; 
 
 // =================================================================
 // --- DOM Elements ---
@@ -16,19 +16,21 @@ const categoryFilter = document.getElementById('category-filter');
 const paginationContainer = document.getElementById('pagination-container');
 const editModal = document.getElementById('edit-modal');
 const editForm = document.getElementById('edit-form');
-const closeModalBtn = editModal.querySelector('.close-button'); // এডিট Modal-এর ক্লোজ বাটন
+const closeModalBtn = editModal.querySelector('.close-button');
 const logoutBtn = document.getElementById('logout-btn');
 const statusMessageContainer = document.getElementById('status-message-container');
 const selectAllCheckbox = document.getElementById('select-all-checkbox');
-const printSelectedBtn = document.getElementById('print-selected-btn');
-const printAllFilteredBtn = document.getElementById('print-all-filtered-btn');
+
+// *** পরিবর্তন ২: HTML এ পরিবর্তন করা নতুন বাটন আইডিগুলো এখানে যুক্ত করা হলো ***
+const printLargeLabelBtn = document.getElementById('print-large-label-btn'); // নতুন বাটন
+const printSelectedTemplateBtn = document.getElementById('print-selected-template-btn'); // পুরনো বাটনের নতুন আইডি
+const printAllFilteredTemplateBtn = document.getElementById('print-all-filtered-template-btn'); // পুরনো বাটনের নতুন আইডি
 
 // =================================================================
 // --- Global State ---
 // =================================================================
 let allProducts = [];
 let filteredProducts = [];
-let uniqueCategories = new Set(); // এটি এখন আর সরাসরি ব্যবহৃত হচ্ছে না, কিন্তু রাখা যেতে পারে
 const ROWS_PER_PAGE = 10;
 let currentPage = 1;
 const LOW_STOCK_THRESHOLD = 10;
@@ -59,8 +61,7 @@ function loadInventory() {
     const productsQuery = query(productsCollectionRef, orderBy("name"));
 
     unsubscribe = onSnapshot(productsQuery, (querySnapshot) => {
-        const currentSelectedCategory = categoryFilter.value; // ফিল্টার করার আগে বর্তমান ক্যাটেগরি সেভ করুন
-        
+        const currentSelectedCategory = categoryFilter.value;
         allProducts = [];
         const newCategories = new Set();
         querySnapshot.forEach((doc) => {
@@ -68,9 +69,8 @@ function loadInventory() {
             allProducts.push(product);
             if (product.category) newCategories.add(product.category);
         });
-        
         updateCategoryFilter(newCategories, currentSelectedCategory);
-        applyFiltersAndRender(); 
+        applyFiltersAndRender();
     });
 }
 
@@ -88,7 +88,7 @@ function applyFiltersAndRender(resetPage = false) {
         const matchesCategory = !selectedCategory || category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
-    
+
     setupPagination();
     const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
     const paginatedProducts = filteredProducts.slice(startIndex, startIndex + ROWS_PER_PAGE);
@@ -115,7 +115,7 @@ function renderTable(products) {
             <td class="action-buttons">
                 <button class="btn-edit action-btn" data-id="${product.id}">Edit</button>
                 <button class="btn-delete action-btn" data-id="${product.id}">Delete</button>
-                <button class="btn-print action-btn" data-id="${product.id}">Print Label</button>
+                <button class="btn-print action-btn" data-id="${product.id}">Print</button>
             </td>
         `;
         inventoryBody.appendChild(row);
@@ -131,12 +131,10 @@ function updateCategoryFilter(newCategories, currentSelectedCategory) {
     categoryFilter.innerHTML = options.join('');
 }
 
-
 function setupPagination() {
     paginationContainer.innerHTML = '';
     const pageCount = Math.ceil(filteredProducts.length / ROWS_PER_PAGE);
     if (pageCount <= 1) return;
-
     for (let i = 1; i <= pageCount; i++) {
         const btn = document.createElement('button');
         btn.innerText = i;
@@ -170,49 +168,61 @@ function setupEventListeners() {
     inventoryBody.addEventListener('click', (e) => {
         const target = e.target;
         if (!target) return;
-
         const productId = target.dataset.id;
+        if (!productId) return;
+        
         const product = allProducts.find(p => p.id === productId);
 
         if (target.matches('.btn-edit')) {
-            if (product) openEditModal(product); // এডিট modal খোলার জন্য ফাংশন
+            if (product) openEditModal(product);
         } else if (target.matches('.btn-delete')) {
             if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
-                deleteProduct(productId); // ডিলিট করার জন্য ফাংশন
+                deleteProduct(productId);
             }
-        } else if (target.matches('.btn-print')) {
-            if (product && product.barcode && product.barcode !== 'N/A') {
-                showTemplateModal([product]); // এখন একটি প্রোডাক্টের জন্য প্রিন্ট Modal দেখানো হবে
-            } else {
-                alert('Barcode not available for this product.');
+        } else if (target.matches('.btn-print')) { // একটিমাত্র প্রোডাক্ট প্রিন্ট করার জন্য
+            if (product) {
+                printLargeLabels([product]); // সরাসরি বড় লেবেল প্রিন্ট
             }
         }
     });
 
-    printSelectedBtn.addEventListener('click', () => {
-        const selectedIds = Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.dataset.id);
-        if (selectedIds.length === 0) {
+    // *** পরিবর্তন ৩: নতুন 'Print Large Label' বাটনের জন্য ইভেন্ট লিসনার ***
+    printLargeLabelBtn.addEventListener('click', () => {
+        // টেবিল থেকে সিলেক্ট করা প্রোডাক্টগুলো সংগ্রহ করা
+        const selectedProducts = getSelectedProducts();
+        
+        if (selectedProducts.length === 0) {
             alert('Please select products to print.');
             return;
         }
-        const productsToPrint = allProducts.filter(p => selectedIds.includes(p.id));
-        showTemplateModal(productsToPrint); // নির্বাচিত সব প্রোডাক্টের জন্য প্রিন্ট Modal
+        
+        // সরাসরি বড় লেবেল প্রিন্ট করার ফাংশন কল করা
+        printLargeLabels(selectedProducts);
     });
 
-    printAllFilteredBtn.addEventListener('click', () => {
+    // পুরনো টেমপ্লেট-ভিত্তিক প্রিন্ট বাটনগুলোর জন্য ইভেন্ট লিসনার
+    printSelectedTemplateBtn.addEventListener('click', () => {
+        const selectedProducts = getSelectedProducts();
+        if (selectedProducts.length === 0) {
+            alert('Please select products to print.');
+            return;
+        }
+        showTemplateModal(selectedProducts);
+    });
+
+    printAllFilteredTemplateBtn.addEventListener('click', () => {
         if (filteredProducts.length === 0) {
             alert('No products to print in the current filter.');
             return;
         }
-        showTemplateModal(filteredProducts); // ফিল্টার করা সব প্রোডাক্টের জন্য প্রিন্ট Modal
+        showTemplateModal(filteredProducts);
     });
 
     selectAllCheckbox.addEventListener('change', (e) => {
         document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = e.target.checked);
     });
 
-    editForm.addEventListener('submit', handleEditFormSubmit); // ফর্ম সাবমিট হ্যান্ডেল করার ফাংশন
-
+    editForm.addEventListener('submit', handleEditFormSubmit);
     closeModalBtn.addEventListener('click', () => editModal.style.display = 'none');
     window.addEventListener('click', (e) => {
         if (e.target === editModal) editModal.style.display = 'none';
@@ -222,10 +232,15 @@ function setupEventListeners() {
     setupEventListeners.executed = true;
 }
 
+// =================================================================
+// --- Helper Functions for Actions ---
+// =================================================================
 
-// =================================================================
-// --- Helper Functions for Actions (Edit, Delete) ---
-// =================================================================
+// *** পরিবর্তন ৪: সিলেক্ট করা প্রোডাক্ট খুঁজে বের করার জন্য একটি Helper Function ***
+function getSelectedProducts() {
+    const selectedIds = Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.dataset.id);
+    return allProducts.filter(p => selectedIds.includes(p.id));
+}
 
 function openEditModal(product) {
     document.getElementById('edit-product-id').value = product.id;
@@ -248,7 +263,6 @@ async function handleEditFormSubmit(e) {
         sellingPrice: parseFloat(document.getElementById('edit-sp').value),
         stock: parseInt(document.getElementById('edit-stock').value),
     };
-    
     try {
         const productRef = doc(db, 'shops', currentUserId, 'inventory', productId);
         await updateDoc(productRef, updatedProduct);
