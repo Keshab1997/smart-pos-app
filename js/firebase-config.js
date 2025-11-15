@@ -1,4 +1,4 @@
-// js/firebase-config.js
+// js/firebase-config.js (আপডেট করা সংস্করণ)
 
 // Firebase SDK থেকে প্রয়োজনীয় মডিউল ইম্পোর্ট করা হচ্ছে
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -23,7 +23,8 @@ import {
     deleteDoc,
     updateDoc,
     addDoc,
-    Timestamp  // <<<===== পরিবর্তন ১: এখানে Timestamp ইম্পোর্ট করা হয়েছে
+    Timestamp,
+    runTransaction  // <<<<<<<<<<<<< ১. এখানে runTransaction যোগ করা হয়েছে
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -70,5 +71,6 @@ export {
     deleteDoc,
     updateDoc,
     addDoc,
-    Timestamp // <<<===== পরিবর্তন ২: এখানে Timestamp এক্সপোর্ট করা হয়েছে
+    Timestamp,
+    runTransaction // <<<<<<<<<<<<< ২. এখানেও runTransaction এক্সপোর্ট করা হয়েছে
 };

@@ -1,4 +1,4 @@
-/* add-product.css */
+/* add-product.css (আপডেটেড সংস্করণ) */
 
 /* ============================
    Layout & General Styles
@@ -15,7 +15,7 @@
     padding: 0 20px;
 }
 
-.card {
+.card-container { /* আগের HTML এ এই ক্লাসটি ব্যবহার করা হয়েছে */
     background-color: #fff;
     padding: 25px;
     border-radius: 8px;
@@ -24,16 +24,17 @@
 }
 
 h1, h2 {
+    color: #343a40;
+    margin-top: 0;
     margin-bottom: 20px;
+}
+p {
+    color: #6c757d;
 }
 
 /* ============================
    Product Table Styles
    ============================ */
-.table-responsive {
-    overflow-x: auto; /* ছোট স্ক্রিনে টেবিল যেন ডানে-বামে স্ক্রল করা যায় */
-}
-
 #products-table {
     width: 100%;
     border-collapse: collapse;
@@ -42,7 +43,7 @@ h1, h2 {
 
 #products-table th,
 #products-table td {
-    padding: 10px;
+    padding: 12px 15px; /* প্যাডিং বাড়ানো হলো */
     text-align: left;
     vertical-align: middle;
     border-bottom: 1px solid #e9ecef;
@@ -51,31 +52,23 @@ h1, h2 {
 #products-table th {
     background-color: #f8f9fa;
     font-weight: 600;
+    color: #495057;
 }
 
-/* টেবিলের ইনপুট ফিল্ডের স্টাইল */
-#products-table input {
+#products-table input[type="text"],
+#products-table input[type="number"] {
     width: 100%;
     padding: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid #ced4da;
     border-radius: 5px;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 #products-table input:focus {
     outline: none;
-    border-color: #007bff; /* আপনার primary color */
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
 }
-
-/* কলামের প্রস্থ নির্ধারণ (ঐচ্ছিক কিন্তু কার্যকরী) */
-#products-table th:nth-child(1) { width: 30%; } /* Name */
-#products-table th:nth-child(2) { width: 20%; } /* Category */
-#products-table th:nth-child(3) { width: 15%; } /* CP */
-#products-table th:nth-child(4) { width: 15%; } /* SP */
-#products-table th:nth-child(5) { width: 10%; } /* Stock */
-#products-table th:nth-child(6) { width: 10%; } /* Actions */
-
 
 /* ============================
    Action Buttons & Status Message
@@ -83,71 +76,57 @@ h1, h2 {
 .table-actions {
     margin-top: 20px;
     display: flex;
-    justify-content: space-between; /* বাটনগুলোকে দুই পাশে রাখার জন্য */
+    justify-content: space-between;
     align-items: center;
     gap: 10px;
 }
 
-/* বাটন স্টাইল */
-.btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 600;
-    transition: all 0.2s;
-}
-
-.btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
-.btn-primary { background-color: #007bff; color: white; }
-.btn-primary:hover:not(:disabled) { background-color: #0056b3; }
-
-.btn-success { background-color: #28a745; color: white; }
-.btn-success:hover:not(:disabled) { background-color: #1e7e34; }
-
-.btn-danger { background-color: #dc3545; color: white; }
-.btn-danger:hover:not(:disabled) { background-color: #c82333; }
-
-/* টেবিলের Remove বাটনকে ছোট করার জন্য */
+/* টেবিলের Remove বাটন */
 .remove-row-btn {
     padding: 5px 10px;
     font-size: 1rem;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%; /* গোল করা হলো */
+    cursor: pointer;
+    line-height: 1;
+    width: 30px;
+    height: 30px;
+}
+.remove-row-btn:hover {
+    background-color: #c82333;
 }
 
 /* স্ট্যাটাস মেসেজ */
 #status-message {
     margin-top: 15px;
-    padding: 10px;
+    padding: 12px;
     border-radius: 5px;
-    font-weight: bold;
+    font-weight: 500;
     text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+#status-message.status {
+    opacity: 1;
 }
 
-.status.success {
+#status-message.success {
     color: #155724;
     background-color: #d4edda;
     border: 1px solid #c3e6cb;
 }
 
-.status.error {
+#status-message.error {
     color: #721c24;
     background-color: #f8d7da;
     border: 1px solid #f5c6cb;
 }
 
-
-/* ============================
-   Barcode Print Section Styles
-   ============================ */
-#barcode-print-area {
-    margin-top: 30px;
-}
-
+/* ==========================================================
+   Barcode Print Section Styles (স্ক্রিনে দেখানোর জন্য)
+   ========================================================== */
 #barcode-print-area.hidden {
     display: none;
 }
@@ -155,7 +134,7 @@ h1, h2 {
 #barcodes-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px; /* বারকোডের মধ্যে ফাঁকা জায়গা */
+    gap: 15px;
     margin-top: 15px;
     padding: 20px;
     border: 1px dashed #ccc;
@@ -163,60 +142,51 @@ h1, h2 {
     background-color: #f8f9fa;
 }
 
-.barcode-wrapper {
+/* --- পরিবর্তন: .barcode-wrapper এর পরিবর্তে .barcode-item ব্যবহার করা হয়েছে --- */
+.barcode-item {
     background-color: #fff;
     border: 1px solid #ddd;
     padding: 10px;
     text-align: center;
     border-radius: 8px;
     transition: box-shadow 0.3s, transform 0.3s;
-    flex-basis: 150px; /* প্রতিটি বারকোডের জন্য একটি নির্দিষ্ট জায়গা */
+    cursor: pointer; /* ক্লিক করা যাবে বোঝানোর জন্য */
+    flex-basis: 160px;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     align-items: center;
 }
 
-.barcode-wrapper:hover {
+.barcode-item:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     transform: translateY(-3px);
 }
 
-.barcode-wrapper .product-info {
-    font-size: 12px;
+/* --- পরিবর্তন: .product-info এর পরিবর্তে .product-name-print ব্যবহার করা হয়েছে --- */
+.barcode-item .product-name-print {
+    font-size: 13px;
     font-weight: bold;
     margin-bottom: 5px;
-    word-break: break-word; /* লম্বা নাম ভেঙে দেবে */
+    word-break: break-word;
+    color: #333;
 }
 
-.barcode-wrapper .product-price {
-    font-size: 11px;
+/* --- পরিবর্তন: .product-price এর পরিবর্তে .product-price-print ব্যবহার করা হয়েছে --- */
+.barcode-item .product-price-print {
+    font-size: 12px;
     color: #555;
     margin-top: 5px;
 }
 
-.barcode-wrapper .barcode-svg {
-    max-width: 100%; /* SVG যেন কন্টেইনারের বাইরে না যায় */
+.barcode-item .barcode-svg {
+    max-width: 100%;
+    height: 40px; /* স্ক্রিনে একটি নির্দিষ্ট উচ্চতা দেওয়া হলো */
+    margin: 5px 0;
 }
 
-/* প্রিন্ট করার জন্য বিশেষ স্টাইল */
-@media print {
-    body, .container {
-        background-color: #fff;
-        margin: 0;
-        padding: 0;
-        box-shadow: none;
-    }
-    header, .table-actions, .filter-section, #status-message, h1, h2 {
-        display: none; /* প্রিন্টে অপ্রয়োজনীয় অংশ হাইড করা */
-    }
-    #barcode-print-area, #barcodes-container {
-        display: block;
-        margin: 0;
-        padding: 0;
-        border: none;
-    }
-    .barcode-wrapper {
-        border: 1px solid #000;
-        page-break-inside: avoid; /* প্রিন্ট করার সময় যেন একটি বারকোড দুই পৃষ্ঠায় ভাগ না হয় */
-    }
-}
+/*
+  গুরুত্বপূর্ণ নোট: এই ফাইলের শেষের @media print অংশটি সরিয়ে দেওয়া হয়েছে।
+  কারণ, প্রিন্টের সমস্ত স্টাইল এখন আপনার দেওয়া লেবেল সাইজ অনুযায়ী 'print.css' ফাইল থেকে নিয়ন্ত্রণ করা হচ্ছে।
+  এতে কোড পরিষ্কার থাকে এবং কোনো কনফ্লিক্ট হয় না।
+*/

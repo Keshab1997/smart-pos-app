@@ -1,36 +1,28 @@
-/* print.css (TSC TE244 লেবেল প্রিন্টারের জন্য আপডেটেড) */
+/* /add-product/print.css (চূড়ান্ত এবং সামঞ্জস্যপূর্ণ সংস্করণ) */
 
-/*
-   =========================================================
-   গুরুত্বপূর্ণ নোট:
-   @page rule-এর 'size' আপনার লেবেলের আসল মাপ অনুযায়ী পরিবর্তন করুন।
-   এখানে ডিফল্ট হিসেবে 50mm চওড়া এবং 25mm লম্বা দেওয়া হয়েছে।
-   =========================================================
-*/
 @page {
-    /* আপনার লেবেলের সাইজ এখানে দিন (প্রস্থ তারপর উচ্চতা) */
+    /* আপনার লেবেলের সাইজ (TSC TE244 অনুযায়ী) */
     size: 50mm 25mm;
     margin: 0;
 }
 
 body {
-    /* প্রিন্টের সময় body-র অপ্রয়োজনীয় মার্জিন/প্যাডিং দূর করা */
     margin: 0;
     padding: 0;
 }
 
 @media print {
-    /* প্রিন্ট করার সময় body-র সকল চাইল্ড এলিমেন্ট ডিফল্টভাবে লুকিয়ে রাখা হবে */
+    /* ধাপ ১: প্রিন্টের সময় পেজের সবকিছু লুকিয়ে ফেলা */
     body * {
         visibility: hidden;
     }
 
-    /* শুধুমাত্র যে এলিমেন্টে 'printable-barcode' ক্লাস আছে এবং তার ভেতরের সবকিছু দেখানো হবে */
+    /* ধাপ ২: শুধুমাত্র প্রিন্ট করা হবে এমন বারকোড ও তার ভেতরের কন্টেন্ট দেখানো */
     .printable-barcode, .printable-barcode * {
         visibility: visible;
     }
 
-    /* 'printable-barcode' ক্লাসযুক্ত এলিমেন্টটিকে পুরো পেজ জুড়ে স্থাপন করা হবে */
+    /* ধাপ ৩: প্রিন্ট করা হবে এমন বারকোডটিকে পুরো লেবেল জুড়ে স্থাপন করা */
     .printable-barcode {
         position: absolute;
         top: 0;
@@ -43,29 +35,29 @@ body {
         /* কন্টেন্ট মাঝখানে আনার জন্য */
         display: flex;
         flex-direction: column;
-        justify-content: center; /* উল্লম্বভাবে মাঝখানে */
-        align-items: center;    /* অনুভূমিকভাবে মাঝখানে */
+        justify-content: center;
+        align-items: center;
         text-align: center;
         
         box-sizing: border-box;
-        padding: 2mm; /* লেবেলের কিনার থেকে সামান্য ফাঁকা জায়গা */
+        padding: 2mm; /* লেবেলের কিনার থেকে ফাঁকা জায়গা */
         overflow: hidden;
     }
 
-    /* পণ্যের নামের স্টাইল */
-    .printable-barcode .product-name {
+    /* পণ্যের নামের স্টাইল (সঠিক ক্লাসনেম সহ) */
+    .printable-barcode .product-name-print {
         font-family: 'Arial', sans-serif;
-        font-size: 7pt !important; /* pt ইউনিট প্রিন্টের জন্য ভালো */
+        font-size: 8pt !important;
         font-weight: bold;
-        line-height: 1;
+        line-height: 1.1;
         margin: 0 0 1mm 0;
-        word-break: break-all;
+        word-break: break-all; /* লম্বা নাম হলে যেন ভেঙে যায় */
     }
     
-    /* পণ্যের দামের স্টাইল */
-    .printable-barcode .product-price {
+    /* পণ্যের দামের স্টাইল (সঠিক ক্লাসনেম সহ) */
+    .printable-barcode .product-price-print {
         font-family: 'Arial', sans-serif;
-        font-size: 7pt !important;
+        font-size: 8pt !important;
         font-weight: bold;
         line-height: 1;
         margin: 1mm 0 0 0;
@@ -74,8 +66,7 @@ body {
     /* বারকোড SVG-এর স্টাইল */
     .printable-barcode .barcode-svg {
         display: block !important;
-        /* এই মাপগুলো আপনার লেবেলের আকার অনুযায়ী পরিবর্তন করতে পারেন */
-        width: 45mm !important; 
+        width: 44mm !important; /* প্যাডিং-এর জন্য সামান্য কমানো হলো */
         height: 10mm !important;
     }
 }
