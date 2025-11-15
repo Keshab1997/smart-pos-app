@@ -3,45 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Print Bill</title>
-    <!-- print.css ফাইলটি print.html এর একই ফোল্ডারে আছে -->
+    <title>Print Bill - Smart POS</title>
     <link rel="stylesheet" href="print.css">
-
-    <!-- কাস্টমার এবং অন্যান্য সেকশনের জন্য ইনলাইন স্টাইল -->
-    <style>
-        .customer-details {
-            margin-top: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px dashed #555;
-        }
-        .customer-details p {
-            margin: 3px 0;
-            font-size: 0.9em;
-        }
-    </style>
 </head>
 <body>
     <div class="receipt">
-        <!-- দোকানের তথ্য এখানে লোড হবে -->
-        <header id="shop-details-container">
-            <p style="text-align: center;">Loading shop details...</p>
+        <!-- দোকানের তথ্য -->
+        <header id="shop-details-container" class="shop-header">
+            <!-- জাভাস্ক্রিপ্ট এখানে দোকানের তথ্য লোড করবে -->
+            <h1 class="shop-name">Loading Shop Details...</h1>
         </header>
         
         <!-- বিলের প্রাথমিক তথ্য -->
-        <section class="bill-details">
-            <p><strong>Bill No:</strong> <span id="bill-no"></span></p>
-            <p><strong>Date:</strong> <span id="bill-date"></span></p>
+        <section class="bill-info">
+            <div><strong>Bill No:</strong> <span id="bill-no">N/A</span></div>
+            <div><strong>Date:</strong> <span id="bill-date">N/A</span></div>
         </section>
 
-        <!-- কাস্টমার ডিটেইলস সেকশন -->
-        <section class="customer-details" id="customer-details-section" style="display: none;">
+        <!-- কাস্টমার ডিটেইলস -->
+        <section class="customer-details" id="customer-details-container" style="display: none;">
             <p><strong>To:</strong> <span id="customer-name"></span></p>
             <p id="customer-phone-p" style="display: none;"><strong>Phone:</strong> <span id="customer-phone"></span></p>
             <p id="customer-address-p" style="display: none;"><strong>Address:</strong> <span id="customer-address"></span></p>
         </section>
         
         <!-- আইটেমের তালিকা -->
-        <table>
+        <table class="items-table">
             <thead>
                 <tr>
                     <th>Item</th>
@@ -51,52 +38,72 @@
                 </tr>
             </thead>
             <tbody id="receipt-items">
-                <!-- আইটেমগুলো জাভাস্ক্রিপ্ট দিয়ে এখানে লোড হবে -->
-                <tr>
-                    <td colspan="4" style="text-align: center;">Loading items...</td>
-                </tr>
+                <!-- আইটেমগুলো এখানে লোড হবে -->
             </tbody>
         </table>
 
-        <!-- মোট টাকার হিসাব (এখানে পরিবর্তন করা হয়েছে) -->
-        <section class="totals">
+        <!-- মোট টাকার হিসাব -->
+        <section class="totals-section">
             <div class="summary-line">
-                <strong>Subtotal:</strong> <span id="receipt-subtotal"></span>
+                <span>Subtotal</span>
+                <span id="receipt-subtotal"></span>
             </div>
-
-            <!-- ============================================== -->
-            <!-- START: ডিসকাউন্ট লাইন (নতুন যোগ করা হয়েছে) -->
-            <!-- ============================================== -->
             <div class="summary-line" id="discount-line" style="display: none;">
-                <strong>Discount:</strong> <span id="receipt-discount"></span>
+                <span>Discount</span>
+                <span id="receipt-discount"></span>
             </div>
-            <!-- ============================================== -->
-            <!-- END: ডিসকাউন্ট লাইন -->
-            <!-- ============================================== -->
-
             <div class="summary-line" id="gst-line" style="display: none;">
-                <strong>GST:</strong> <span id="receipt-tax"></span>
+                <span>GST (<span id="gst-rate"></span>%)</span>
+                <span id="receipt-tax"></span>
             </div>
-            <hr>
+            <hr class="separator">
             <div class="summary-line grand-total">
-                <strong>Total:</strong> <span id="receipt-total"></span>
+                <strong>Total Amount</strong>
+                <strong id="receipt-total"></strong>
             </div>
         </section>
 
-        <!-- পেমেন্টের তথ্য -->
-        <section class="payment-info">
-            <p><strong>Payment Method:</strong> <span id="payment-method"></span></p>
+        <!-- পেমেন্টের বিস্তারিত -->
+        <section class="payment-details">
+            <div class="summary-line">
+                <span>Payment Method</span>
+                <span id="payment-method"></span>
+            </div>
+            
+            <!-- ক্যাশ পেমেন্টের জন্য -->
+            <div id="cash-payment-info" class="payment-breakdown" style="display: none;">
+                <div class="summary-line">
+                    <span>Cash Received</span>
+                    <span id="cash-received"></span>
+                </div>
+                <div class="summary-line">
+                    <span>Change Returned</span>
+                    <span id="change-returned"></span>
+                </div>
+            </div>
+
+            <!-- পার্ট-পেমেন্টের জন্য -->
+            <div id="part-payment-info" class="payment-breakdown" style="display: none;">
+                <div class="summary-line">
+                    <span>Paid by Cash</span>
+                    <span id="cash-paid"></span>
+                </div>
+                <div class="summary-line">
+                    <span>Paid by Card/Online</span>
+                    <span id="card-paid"></span>
+                </div>
+            </div>
         </section>
 
         <!-- ফুটার -->
-        <footer>
-            <p>Thank you for your purchase!</p>
+        <footer class="receipt-footer">
+            <!-- দোকানের কাস্টম ফুটার নোট এখানে লোড হবে -->
+            <p id="receipt-footer-note">Thank you for your purchase!</p>
+            <p class="powered-by">Powered by Smart POS</p>
         </footer>
     </div>
 
-    <!-- ======================================================== -->
-    <!-- START: Firebase v10 Import Map -->
-    <!-- ======================================================== -->
+    <!-- Firebase SDK স্ক্রিপ্ট -->
     <script type="importmap">
     {
       "imports": {
@@ -106,9 +113,8 @@
       }
     }
     </script>
-    <!-- ======================================================== -->
-
-    <!-- আপনার কাস্টম জাভাস্ক্রিপ্ট ফাইল -->
+    
+    <!-- কাস্টম জাভাস্ক্রিপ্ট ফাইল -->
     <script type="module" src="../js/firebase-config.js"></script>
     <script type="module" src="print.js"></script>
 

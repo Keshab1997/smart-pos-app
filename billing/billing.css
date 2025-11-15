@@ -18,8 +18,8 @@ body { font-family: 'Poppins', sans-serif; background-color: var(--background-li
 
 /* হেডার এবং নেভিগেশন */
 header { background-color: var(--background-white); padding: 0 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; height: 70px; position: sticky; top: 0; z-index: 1000; }
-.shop-name a, .logo { text-decoration: none; color: var(--text-color); font-size: 1.5rem; font-weight: 700; } /* .logo ক্লাস যোগ করা হলো */
-header nav .nav-links { list-style: none; display: flex; gap: 20px; } /* list-style যোগ করা হলো */
+.shop-name a, .logo { text-decoration: none; color: var(--text-color); font-size: 1.5rem; font-weight: 700; }
+header nav .nav-links { list-style: none; display: flex; gap: 20px; }
 header nav a { text-decoration: none; color: var(--light-text-color); font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; }
 header nav a:hover, header nav a.active { color: var(--primary-color); background-color: #e9f2ff; }
 #mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; }
@@ -45,22 +45,57 @@ h2 { margin-bottom: 20px; }
 .category-name { font-size: 1.2em; font-weight: 600; color: var(--primary-color); margin-bottom: 15px; padding-bottom: 5px; border-bottom: 2px solid var(--primary-color); display: inline-block; }
 
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; }
-.product-card { background-color: #fff; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s ease-in-out; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 90px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+.product-card { 
+    background-color: #fff; border: 1px solid var(--border-color); border-radius: 8px; 
+    padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s ease-in-out; 
+    display: flex; flex-direction: column; justify-content: space-between; /* Updated */
+    min-height: 100px; /* Updated */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04); 
+    position: relative; /* স্টকের জন্য দরকার */
+}
 .product-card:hover { transform: translateY(-4px); box-shadow: 0 8px 15px rgba(0, 123, 255, 0.15); border-color: var(--primary-color); }
-.product-card-name { font-weight: 500; font-size: 0.9em; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-.product-card-price { font-size: 0.95em; color: var(--primary-color); margin-top: 8px; font-weight: 600; }
+.product-card-name { font-weight: 500; font-size: 0.9em; color: var(--text-color); width: 100%; word-break: break-word; } /* Updated */
+.product-card-price { font-size: 0.95em; color: var(--primary-color); margin-top: 5px; font-weight: 600; }
+
+/* ===== START: প্রোডাক্ট কার্ডে স্টক দেখানোর জন্য নতুন স্টাইল ===== */
+.product-card-stock {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #fff;
+    background-color: var(--light-text-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 8px; /* দাম থেকে সামান্য দূরে */
+}
+/* স্টক কম হলে রঙ পরিবর্তন */
+.product-card-stock.low-stock {
+    background-color: var(--danger-color);
+}
+/* ===== END: প্রোডাক্ট কার্ডে স্টক দেখানোর স্টাইল ===== */
+
 
 /* =====================================
    ডান প্যানেল: বিলিং কার্ট
    ===================================== */
-#cart-items { display: flex; flex-direction: column-reverse; flex-grow: 1; overflow-y: auto; min-height: 0; }
+#cart-items { display: flex; flex-direction: column; flex-grow: 1; overflow-y: auto; min-height: 0; }
 .empty-cart-message { text-align: center; color: var(--light-text-color); margin: auto; }
-.cart-item { display: grid; grid-template-columns: auto 70px 100px 30px; gap: 15px; align-items: center; padding: 12px 5px; border-bottom: 1px solid #f0f0f0; }
-.cart-item-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cart-item-quantity input { width: 100%; text-align: center; padding: 6px; border: 1px solid var(--border-color); border-radius: 5px; }
-.cart-item-price { text-align: right; color: var(--text-color); font-weight: 500; font-size: 1.05em; }
-.cart-item-remove { background: none; border: none; color: var(--danger-color); font-size: 1.6rem; line-height: 1; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
-.cart-item-remove:hover { background-color: #fbeae9; }
+.cart-item { 
+    display: grid; 
+    grid-template-columns: 1fr 120px 80px 30px; /* লেআউট আপডেট করা হলো */
+    gap: 15px; 
+    align-items: center; 
+    padding: 12px 5px; 
+    border-bottom: 1px solid #f0f0f0; 
+}
+.item-info { display: flex; flex-direction: column; }
+.item-name { font-weight: 500; }
+.item-price { font-size: 0.9em; color: var(--light-text-color); }
+.item-controls { display: flex; align-items: center; }
+.quantity-btn { background: #f0f0f0; border: 1px solid var(--border-color); width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem; }
+.quantity-input { width: 50px; height: 30px; text-align: center; border: 1px solid var(--border-color); border-left: none; border-right: none; }
+.item-total { text-align: right; color: var(--text-color); font-weight: 600; font-size: 1em; }
+.remove-item-btn { background: none; border: none; color: var(--danger-color); font-size: 1.6rem; line-height: 1; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+.remove-item-btn:hover { background-color: #fbeae9; }
 
 /* কার্ট ফুটার স্টাইল */
 .cart-footer { margin-top: auto; padding-top: 15px; border-top: 2px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
@@ -73,108 +108,93 @@ h2 { margin-bottom: 20px; }
 .checkout-button:disabled { background-color: #a5d6a7; cursor: not-allowed; }
 
 /* =====================================
-   মডাল / পপ-আপ স্টাইল (এখানে পরিবর্তন করা হয়েছে)
+   মডাল / পপ-আপ স্টাইল
    ===================================== */
-.modal-overlay {
-    position: fixed; top: 0; left: 0;
-    width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 2000; transition: opacity 0.2s ease;
-    padding: 20px 0;
-}
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; transition: opacity 0.2s ease; padding: 20px 0; }
 .modal-overlay.hidden { opacity: 0; pointer-events: none; }
-
-.modal-content {
-    background-color: var(--background-white);
-    padding: 0; 
-    border-radius: 12px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    transform: scale(0.95);
-    transition: transform 0.2s ease;
-    display: flex;
-    flex-direction: column;
-    max-height: 95vh;
-    overflow: hidden;
-}
-
+.modal-content { background-color: var(--background-white); padding: 0; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transform: scale(0.95); transition: transform 0.2s ease; display: flex; flex-direction: column; max-height: 95vh; overflow: hidden; }
 .modal-overlay:not(.hidden) .modal-content { transform: scale(1); }
-
-.modal-header {
-    display: flex; justify-content: space-between; align-items: center;
-    border-bottom: 1px solid var(--border-color);
-    padding: 15px 25px;
-    flex-shrink: 0;
-}
+.modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 15px 25px; flex-shrink: 0; }
 .modal-header h2 { margin-bottom: 0; }
 .close-button { background: none; border: none; font-size: 2rem; line-height: 1; cursor: pointer; color: var(--light-text-color); }
-
-.modal-body {
-    padding: 20px 25px;
-    overflow-y: auto;
-    flex-grow: 1;
-}
-
-/* কাস্টমার ডিটেইলস সেকশন */
+.modal-body { padding: 20px 25px; overflow-y: auto; flex-grow: 1; }
 .customer-details-section { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
 .customer-details-title { margin-bottom: 15px; font-size: 1.1rem; color: #333; }
 .customer-details-section .form-group { margin-bottom: 10px; }
 .customer-details-section .form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; }
-.customer-details-section .form-group input,
-.customer-details-section .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95rem; }
-
-.modal-body .summary-row { padding: 8px 0; display: flex; justify-content: space-between; align-items: center; } /* align-items: center যোগ করা হলো */
+.customer-details-section .form-group input, .customer-details-section .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95rem; }
+.modal-body .summary-row { padding: 8px 0; display: flex; justify-content: space-between; align-items: center; }
 .modal-body .total-row { font-size: 1.3rem; font-weight: 700; color: var(--success-color); }
 .modal-body hr { border: none; border-top: 1px solid var(--border-color); margin: 10px 0; }
+.discount-input-row > span { display: flex; align-items: center; gap: 10px; }
+#discount-type { padding: 5px 8px; border: 1px solid var(--border-color); border-radius: 6px; background-color: #f9f9f9; font-size: 0.9rem; }
+#discount-value { width: 100px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; text-align: right; font-size: 1rem; }
+.payment-method { margin-top: 20px; }
+.payment-method label { display: block; margin-bottom: 8px; font-weight: 500; }
+#payment-method-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
 
-/* ===== START: Discount Section Styles (নতুন যোগ করা হয়েছে) ===== */
-.discount-input-row > span {
+/* ===== START: ক্যাশ ও পার্ট-পেমেন্ট সেকশনের নতুন স্টাইল ===== */
+.payment-details-wrapper {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--border-color);
+}
+.payment-input-group {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px; /* লেবেল এবং ড্রপডাউনের মধ্যে গ্যাপ */
+    margin-bottom: 10px;
 }
-#discount-type {
-    padding: 5px 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background-color: #f9f9f9;
-    font-size: 0.9rem;
+.payment-input-group label {
+    font-weight: 500;
 }
-#discount-value {
-    width: 100px;
+.payment-input-group input {
+    width: 130px;
     padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     text-align: right;
     font-size: 1rem;
 }
-/* ===== END: Discount Section Styles ===== */
 
-.payment-method { margin-top: 20px; }
-.payment-method label { display: block; margin-bottom: 8px; font-weight: 500; }
-#payment-method-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
-.part-payment-details { border: 1px dashed var(--border-color); padding: 15px; border-radius: 8px; display: grid; gap: 10px; margin-top: 15px; }
-.part-payment-details.hidden { display: none; }
-.payment-input-group { display: flex; align-items: center; gap: 10px; }
-.payment-input-group label { flex-basis: 120px; }
-.payment-input-group input { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; }
-
-.modal-footer {
-    border-top: 1px solid var(--border-color);
-    padding: 20px 25px;
-    flex-shrink: 0;
+.return-amount-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #e9f2ff; /* primary color এর হালকা shade */
+    border: 1px solid var(--primary-color);
+    border-radius: 6px;
 }
+.return-amount-display span:first-child {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+.return-amount-display span:last-child {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+/* ===== END: ক্যাশ ও পার্ট-পেমেন্ট সেকশনের স্টাইল ===== */
+
+.modal-footer { border-top: 1px solid var(--border-color); padding: 20px 25px; flex-shrink: 0; }
 .final-bill-btn { width: 100%; padding: 15px; font-size: 1.2rem; }
+
+/* ===== START: Helper ক্লাস (নতুন যোগ করা হয়েছে) ===== */
+.hidden {
+    display: none !important;
+}
+/* ===== END: Helper ক্লাস ===== */
 
 /* মোবাইল রেসপন্সিভ */
 @media (max-width: 992px) { 
     .billing-container { grid-template-columns: 1fr; height: auto; }
 }
 @media (max-width: 768px) {
-    header nav .nav-links { display: none; /* মোবাইল মেনু জন্য */ }
+    header nav .nav-links { display: none; }
     #mobile-menu-btn { display: block; }
     .billing-container { padding: 15px; }
     .product-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+    .cart-item { grid-template-columns: 1fr 110px 70px 28px; gap: 10px; }
 }

@@ -1,10 +1,10 @@
 /* ======================================================= */
-/* print.css - Enhanced Modern Receipt Design (v3.1)       */
+/* print.css - Enhanced Modern Receipt Design (v4.0)       */
 /* ======================================================= */
 
 @page {
-    size: auto;
-    margin: 4mm 5mm; 
+    size: 80mm auto; /* Thermal printer paper width */
+    margin: 4mm; 
 }
 
 /* --- বেসিক সেটআপ --- */
@@ -12,17 +12,24 @@ html, body {
     width: 100%;
     margin: 0;
     padding: 0;
-    background: #FFF;
+    background-color: #f0f0f0; /* প্রিন্টের বাইরে ব্যাকগ্রাউন্ড কালার */
 }
 
 body {
-    font-family: 'Helvetica', 'Arial', sans-serif; 
-    font-size: 11pt;
-    line-height: 1.6;
+    font-family: 'Arial', 'Helvetica', sans-serif; 
+    font-size: 10pt; /* বেস ফন্ট সাইজ সামান্য কমানো হলো */
+    line-height: 1.5;
     color: #000;
 }
 
 @media print {
+    body {
+        background-color: #fff;
+    }
+    .receipt {
+        box-shadow: none;
+        margin: 0;
+    }
     * {
         background: transparent !important;
         color: #000 !important;
@@ -35,138 +42,137 @@ body {
 .receipt {
     max-width: 76mm;
     width: 100%;
-    margin: 0 auto;
+    margin: 20px auto;
+    padding: 15px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.15);
 }
 
-/* ===== START: হেডার: দোকানের তথ্য (এখানে পরিবর্তন করা হয়েছে) ===== */
-header {
+/* --- হেডার: দোকানের তথ্য --- */
+.shop-header {
     text-align: center;
-    padding-bottom: 15px;
+    padding-bottom: 10px;
     border-bottom: 2px solid #000;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
-
-header h2 {
-    font-size: 22pt;      /* ফন্ট সাইজ 20pt থেকে 22pt করা হলো */
-    margin: 0 0 10px 0;   /* নিচের মার্জিন একটু বাড়ানো হলো */
-    font-weight: 700;
+.shop-header .shop-name {
+    font-size: 20pt;
+    font-weight: 600;
+    margin: 0 0 5px 0;
 }
-
-header p {
-    margin: 5px 0;        /* লাইনগুলোর মধ্যে স্পেস একটু বাড়ানো হলো */
-    font-size: 12pt;      /* ফন্ট সাইজ 10pt থেকে 12pt করা হলো */
-    font-weight: 600;     /* লেখাগুলোকে বোল্ড (semi-bold) করা হলো */
+.shop-header .shop-address, .shop-header .shop-contact, .shop-header .shop-gstin {
+    font-size: 9pt;
+    margin: 3px 0;
 }
-/* ===== END: হেডার: দোকানের তথ্য (এখানে পরিবর্তন করা হয়েছে) ===== */
-
 
 /* --- বিল এবং কাস্টমারের তথ্য --- */
-.bill-details, .customer-details {
-    padding-bottom: 10px;
+.bill-info, .customer-details {
+    padding-bottom: 8px;
     margin-bottom: 8px;
-    border-bottom: 1px dashed #333;
+    border-bottom: 1px dashed #555;
+    font-size: 9.5pt;
 }
-
-.bill-details p, .customer-details p {
-    margin: 3px 0;
-    font-size: 11pt;
+.bill-info div, .customer-details p {
     display: flex;
-    align-items: baseline;
-}
-
-.bill-details strong, .customer-details strong {
-    font-weight: 600;
-}
-
-.bill-details p {
     justify-content: space-between;
+    margin: 4px 0;
 }
-
+.customer-details p {
+    justify-content: flex-start;
+}
 .customer-details strong {
-    margin-right: 8px;
+    min-width: 50px;
 }
-
 
 /* --- আইটেম টেবিল --- */
-table {
+.items-table {
     width: 100%;
     border-collapse: collapse;
     margin: 10px 0;
 }
-
-table thead {
-    border-top: 2px solid #000;
-    border-bottom: 2px solid #000;
+.items-table thead {
+    border-top: 1.5px solid #000;
+    border-bottom: 1.5px solid #000;
 }
-
-th {
-    padding: 8px 4px;
+.items-table th {
+    padding: 6px 2px;
     text-align: left;
     font-weight: 700;
-    font-size: 10pt;
+    font-size: 9pt;
     text-transform: uppercase;
 }
-
-td {
-    padding: 8px 4px;
-    font-size: 11pt;
+.items-table td {
+    padding: 6px 2px;
+    font-size: 9.5pt;
     border-bottom: 1px dotted #999;
 }
-
-tbody tr:last-child td {
+.items-table tbody tr:last-child td {
     border-bottom: none;
 }
 
-th.numeric, td.numeric {
-    text-align: right;
-    font-feature-settings: "tnum"; 
-}
+/* টেক্সট অ্যালাইনমেন্টের জন্য Helper ক্লাস */
+.items-table .center { text-align: center; }
+.items-table .right { text-align: right; font-feature-settings: "tnum"; }
 
-th:first-child, td:first-child {
-    width: 50%;
-    text-align: left;
-}
+.items-table th:nth-child(1) { width: 50%; } /* Item */
+.items-table th:nth-child(2) { width: 15%; text-align: center; } /* Qty */
+.items-table th:nth-child(3) { width: 20%; text-align: right; } /* Rate */
+.items-table th:nth-child(4) { width: 25%; text-align: right; } /* Total */
 
 
 /* --- মোট হিসাবের সেকশন --- */
-.totals {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 2px solid #000;
+.totals-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1.5px solid #000;
 }
-
 .summary-line {
     display: flex;
     justify-content: space-between;
-    padding: 6px 0;
-    font-size: 11pt;
+    padding: 4px 0;
+    font-size: 10pt;
 }
-
-.summary-line strong {
-    font-weight: 600;
+.summary-line span:first-child {
+    text-align: left;
 }
-
+.summary-line span:last-child, .summary-line strong:last-child {
+    text-align: right;
+}
+.separator {
+    border: none;
+    border-top: 1px dashed #555;
+    margin: 5px 0;
+}
 .grand-total {
-    font-size: 16pt;
+    font-size: 14pt;
     font-weight: 700;
-    padding-top: 10px;
+    padding-top: 5px;
 }
 
-.grand-total strong {
-    font-weight: 700;
+/* --- পেমেন্টের বিস্তারিত --- */
+.payment-details {
+    padding: 10px 0;
+    border-top: 1px dashed #555;
+    margin-top: 10px;
+}
+/* ক্যাশ ও পার্ট-পেমেন্টের ব্রেকডাউন সেকশন */
+.payment-breakdown {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dotted #999;
 }
 
-/* --- পেমেন্ট এবং ফুটার --- */
-.payment-info {
+/* --- ফুটার --- */
+.receipt-footer {
     margin-top: 20px;
-    padding: 12px 0;
-    border-top: 1px dashed #333;
     text-align: center;
-    font-size: 10pt;
+    font-size: 9pt;
 }
-
-footer {
-    margin-top: 25px;
-    text-align: center;
-    font-size: 10pt;
+.receipt-footer p {
+    margin: 5px 0;
+}
+.receipt-footer .powered-by {
+    margin-top: 10px;
+    font-style: italic;
+    color: #555;
 }

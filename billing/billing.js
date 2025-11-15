@@ -35,6 +35,9 @@ const modalDiscountEl = document.getElementById('modal-discount');
 // --- পেমেন্ট, কাস্টমার এবং অন্যান্য UI এলিমেন্টস ---
 const paymentMethodSelect = document.getElementById('payment-method-select');
 const partPaymentDetails = document.getElementById('part-payment-details');
+const cashPaymentDetails = document.getElementById('cash-payment-details');
+const cashReceivedInput = document.getElementById('cash-received');
+const returnAmountDisplay = document.getElementById('return-amount');
 const cashAmountInput = document.getElementById('cash-amount');
 const cardAmountInput = document.getElementById('card-amount');
 const generateBillBtn = document.getElementById('generate-bill-btn');
@@ -43,8 +46,7 @@ const customerPhoneInput = document.getElementById('customer-phone');
 const customerAddressInput = document.getElementById('customer-address');
 const logoutBtn = document.getElementById('logout-btn');
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-const mainNavLinks = document.getElementById('main-nav-links');
-
+const mainNavLinks = document.querySelector('header nav .nav-links');
 
 // ==========================================================
 // --- গ্লোবাল ভেরিয়েবল ---
@@ -74,10 +76,12 @@ function initializeBillingPage() {
     updateCartDisplay();
     initializeProducts();
     setupEventListeners();
+    handlePaymentMethodChange();
 }
 
 async function initializeProducts() {
     if (!currentUserId) return;
+    categoryProductListContainer.innerHTML = '<p class="loading-message">Loading products...</p>';
     try {
         const inventoryRef = collection(db, 'shops', currentUserId, 'inventory');
         const q = query(inventoryRef, orderBy('name'));
@@ -86,7 +90,7 @@ async function initializeProducts() {
         displayProductsByCategory();
     } catch (error) {
         console.error("Error initializing products: ", error);
-        categoryProductListContainer.innerHTML = '<p class="error-message">Failed to load products.</p>';
+        categoryProductListContainer.innerHTML = `<p class="error-message">Failed to load products. Check console for details.</p>`;
     }
 }
 
@@ -115,7 +119,13 @@ function displayProductsByCategory() {
             productCard.classList.add('product-card');
             productCard.dataset.productId = product.id;
             const price = product.sellingPrice || 0;
-            productCard.innerHTML = `<span class="product-card-name">${product.name}</span><span class="product-card-price">₹${price.toFixed(2)}</span>`;
+            const stockClass = product.stock <= 10 ? 'low-stock' : '';
+
+            productCard.innerHTML = `
+                <span class="product-card-name">${product.name}</span>
+                <span class="product-card-price">₹${price.toFixed(2)}</span>
+                <div class="product-card-stock ${stockClass}">Stock: ${product.stock}</div>
+            `;
             productGrid.appendChild(productCard);
         });
         categoryGroup.appendChild(productGrid);
@@ -123,43 +133,40 @@ function displayProductsByCategory() {
     });
 }
 
-// ==========================================================
-// --- প্রোডাক্ট সার্চ এবং কার্টে যোগ ---
-// ==========================================================
+// ... প্রোডাক্ট সার্চ এবং কার্টে যোগ করার ফাংশনগুলো অপরিবর্তিত ...
 function handleSearch(e) {
     const searchText = e.target.value.trim().toLowerCase();
-    if (searchText.length < 2) {
+    if (searchText.length < 1) {
         searchResultsContainer.style.display = 'none';
         return;
     }
     const matchedProducts = allProducts.filter(product =>
         product.stock > 0 &&
-        (product.name.toLowerCase().includes(searchText) || (product.barcode && product.barcode.toLowerCase().includes(searchText)))
+        (product.name.toLowerCase().includes(searchText) || (product.barcode && product.barcode.includes(searchText)))
     ).slice(0, 10);
-    searchResultsContainer.innerHTML = matchedProducts.length === 0
-        ? '<div class="search-result-item">No products found.</div>'
-        : matchedProducts.map(product => {
+
+    searchResultsContainer.innerHTML = '';
+    if (matchedProducts.length > 0) {
+        matchedProducts.forEach(product => {
             const price = product.sellingPrice || 0;
             const div = document.createElement('div');
             div.classList.add('search-result-item');
             div.innerHTML = `<span>${product.name}</span> <span>₹${price.toFixed(2)}</span>`;
             div.addEventListener('click', () => addProductToCart(product));
-            return div.outerHTML;
-          }).join('');
+            searchResultsContainer.appendChild(div);
+        });
+    } else {
+        searchResultsContainer.innerHTML = '<div class="search-result-item">No products found.</div>';
+    }
     searchResultsContainer.style.display = 'block';
 }
 
 function handleSearchEnter(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
-        const searchText = e.target.value.trim().toLowerCase();
-        if (!searchText) return;
-        const exactMatch = allProducts.find(p => p.stock > 0 && p.barcode && p.barcode.toLowerCase() === searchText);
-        if (exactMatch) {
-            addProductToCart(exactMatch);
-        } else {
-            const firstResult = searchResultsContainer.querySelector('.search-result-item');
-            if (firstResult) firstResult.click();
+        const firstResult = searchResultsContainer.querySelector('.search-result-item');
+        if (firstResult && firstResult.textContent !== 'No products found.') {
+            firstResult.click();
         }
     }
 }
@@ -172,7 +179,7 @@ function addProductToCart(product) {
 }
 
 function addToCart(product) {
-    if (product.stock <= 0) {
+    if (!product.stock || product.stock <= 0) {
         alert(`'${product.name}' is out of stock!`);
         return;
     }
@@ -194,52 +201,62 @@ function addToCart(product) {
 // ==========================================================
 function updateCartDisplay() {
     cartItemsContainer.innerHTML = '';
-    const isEmpty = cart.length === 0;
-
-    if (isEmpty) {
+    if (cart.length === 0) {
         cartItemsContainer.innerHTML = '<p class="empty-cart-message">Your cart is empty.</p>';
     } else {
         cart.forEach((item, index) => {
-            const cartItemDiv = document.createElement('div');
-            cartItemDiv.classList.add('cart-item');
+            const cartItemEl = document.createElement('div');
+            cartItemEl.className = 'cart-item';
             const itemTotal = (item.sellingPrice || 0) * item.quantity;
-            cartItemDiv.innerHTML = `
-                <span class="cart-item-name">${item.name}</span>
-                <div class="cart-item-quantity">
-                    <input type="number" class="quantity-input" value="${item.quantity}" min="1" max="${item.stock}" data-index="${index}">
+
+            cartItemEl.innerHTML = `
+                <div class="item-info">
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-price">₹${(item.sellingPrice || 0).toFixed(2)}</span>
                 </div>
-                <span class="cart-item-price">₹${itemTotal.toFixed(2)}</span>
-                <button class="cart-item-remove" data-index="${index}">&times;</button>
+                <div class="item-controls">
+                    <button class="quantity-btn decrease-btn" data-index="${index}">-</button>
+                    <input type="number" class="quantity-input" value="${item.quantity}" data-index="${index}" readonly>
+                    <button class="quantity-btn increase-btn" data-index="${index}">+</button>
+                </div>
+                <div class="item-total">₹${itemTotal.toFixed(2)}</div>
+                <button class="remove-item-btn" data-index="${index}">&times;</button>
             `;
-            cartItemsContainer.prepend(cartItemDiv);
+            cartItemsContainer.prepend(cartItemEl);
         });
     }
-
-    proceedToCheckoutBtn.disabled = isEmpty;
-    generateBillBtn.disabled = isEmpty;
+    proceedToCheckoutBtn.disabled = cart.length === 0;
     addCartItemEventListeners();
     updateAllTotals();
 }
 
 function addCartItemEventListeners() {
-    document.querySelectorAll('.quantity-input').forEach(input => {
-        input.addEventListener('change', e => {
-            const index = parseInt(e.target.dataset.index);
-            let newQuantity = parseInt(e.target.value);
-            const item = cart[index];
-            if (newQuantity > item.stock) {
-                alert(`Maximum stock available for ${item.name} is ${item.stock}.`);
-                newQuantity = item.stock;
-                e.target.value = newQuantity;
-            }
-            if (newQuantity > 0) item.quantity = newQuantity;
-            else cart.splice(index, 1);
-            updateCartDisplay();
-        });
-    });
+    const handleQuantityChange = (index, change) => {
+        const item = cart[index];
+        if (!item) return;
+        let newQuantity = item.quantity + change;
 
-    document.querySelectorAll('.cart-item-remove').forEach(button => {
-        button.addEventListener('click', e => {
+        if (newQuantity > item.stock) {
+            alert(`Maximum stock available for ${item.name} is ${item.stock}.`);
+            newQuantity = item.stock;
+        }
+
+        if (newQuantity <= 0) {
+            cart.splice(index, 1);
+        } else {
+            item.quantity = newQuantity;
+        }
+        updateCartDisplay();
+    };
+
+    document.querySelectorAll('.increase-btn').forEach(btn => {
+        btn.addEventListener('click', e => handleQuantityChange(parseInt(e.target.dataset.index), 1));
+    });
+    document.querySelectorAll('.decrease-btn').forEach(btn => {
+        btn.addEventListener('click', e => handleQuantityChange(parseInt(e.target.dataset.index), -1));
+    });
+    document.querySelectorAll('.remove-item-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
             cart.splice(parseInt(e.target.dataset.index), 1);
             updateCartDisplay();
         });
@@ -248,31 +265,18 @@ function addCartItemEventListeners() {
 
 function updateAllTotals() {
     const subtotal = cart.reduce((sum, item) => sum + ((item.sellingPrice || 0) * item.quantity), 0);
-    
     const discountType = discountTypeSelect.value;
     let discountValue = parseFloat(discountValueInput.value) || 0;
     let discountAmount = 0;
 
     if (discountType === 'percent') {
-        if (discountValue > 100) {
-            discountValue = 100;
-            discountValueInput.value = 100;
-        }
         discountAmount = (subtotal * discountValue) / 100;
-    } else { 
-        if (discountValue > subtotal) {
-            discountValue = subtotal;
-            discountValueInput.value = subtotal.toFixed(2); 
-        }
-        discountAmount = discountValue;
+    } else {
+        discountAmount = discountValue > subtotal ? subtotal : discountValue;
     }
-
     const discountedSubtotal = subtotal - discountAmount;
-    
     const tax = gstToggle.checked ? discountedSubtotal * 0.05 : 0;
-    
     const total = discountedSubtotal + tax;
-
     currentTotals = { subtotal, discount: discountAmount, tax, total };
 
     footerTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
@@ -280,77 +284,68 @@ function updateAllTotals() {
     modalDiscountEl.textContent = `- ₹${discountAmount.toFixed(2)}`;
     modalTaxEl.textContent = `₹${tax.toFixed(2)}`;
     modalTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
+
+    calculateReturnAmount();
+    validateFinalBillButton();
 }
 
-function resetCheckoutForm() {
-    customerNameInput.value = '';
-    customerPhoneInput.value = '';
-    customerAddressInput.value = '';
-    discountValueInput.value = '';
-    discountTypeSelect.value = 'percent';
-    gstToggle.checked = true;
-    paymentMethodSelect.value = 'cash';
-    partPaymentDetails.classList.add('hidden');
-    cashAmountInput.value = '';
-    cardAmountInput.value = '';
+function calculateReturnAmount() {
+    const cashReceived = parseFloat(cashReceivedInput.value) || 0;
+    const totalBill = currentTotals.total;
+    const returnAmount = cashReceived >= totalBill ? cashReceived - totalBill : 0;
+    returnAmountDisplay.textContent = `₹${returnAmount.toFixed(2)}`;
+}
+
+function validateFinalBillButton() {
+    let isValid = false;
+    if (cart.length > 0) {
+        const method = paymentMethodSelect.value;
+        if (method === 'cash') {
+            const cashReceived = parseFloat(cashReceivedInput.value) || 0;
+            isValid = cashReceived >= currentTotals.total;
+        } else if (method === 'part-payment') {
+            const cashPaid = parseFloat(cashAmountInput.value) || 0;
+            const cardPaid = parseFloat(cardAmountInput.value) || 0;
+            isValid = Math.abs((cashPaid + cardPaid) - currentTotals.total) < 0.01;
+        } else {
+            isValid = true;
+        }
+    }
+    generateBillBtn.disabled = !isValid;
 }
 
 // ==========================================================
-// --- চেকআউট এবং বিল জেনারেশন (এখানে মূল পরিবর্তন) ---
+// --- চেকআউট এবং বিল জেনারেশন (চূড়ান্ত সংস্করণ) ---
 // ==========================================================
 async function generateFinalBill() {
-    if (cart.length === 0 || !currentUserId) return;
-    
+    if (!preCheckoutValidation()) {
+        return;
+    }
+
     generateBillBtn.disabled = true;
     generateBillBtn.textContent = 'Processing...';
 
-    const customerDetails = {
-        name: customerNameInput.value.trim() || 'Walk-in Customer',
-        phone: customerPhoneInput.value.trim(),
-        address: customerAddressInput.value.trim()
-    };
-
-    const paymentMethod = paymentMethodSelect.value;
     const sale = {
-        items: cart.map(item => ({ 
-            id: item.id, 
-            name: item.name, 
-            quantity: item.quantity, 
-            price: item.sellingPrice || 0,
-            category: item.category || 'N/A'
-        })),
-        subtotal: currentTotals.subtotal,
-        discount: currentTotals.discount,
-        tax: currentTotals.tax,
-        total: currentTotals.total,
-        paymentMethod: paymentMethod,
+        items: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.sellingPrice || 0, category: item.category || 'N/A' })),
+        ...currentTotals,
+        paymentMethod: paymentMethodSelect.value,
         gstApplied: gstToggle.checked,
-        customerDetails: customerDetails,
+        customerDetails: { name: customerNameInput.value.trim() || 'Walk-in Customer', phone: customerPhoneInput.value.trim(), address: customerAddressInput.value.trim() },
         createdAt: serverTimestamp(),
-        
-        // ===== START: নতুন তথ্য যোগ করা হয়েছে =====
-        discountType: discountTypeSelect.value,
-        discountValue: parseFloat(discountValueInput.value) || 0,
-        gstRate: 5 // GST রেট (ভবিষ্যতে পরিবর্তন করার জন্য)
-        // ===== END: নতুন তথ্য যোগ করা হয়েছে =====
+        discountDetails: { type: discountTypeSelect.value, value: parseFloat(discountValueInput.value) || 0 },
+        gstRate: 5
     };
-
-    if (paymentMethod === 'part-payment') {
-        const cashPaid = parseFloat(cashAmountInput.value) || 0;
-        const cardPaid = parseFloat(cardAmountInput.value) || 0;
-        if ((cashPaid + cardPaid).toFixed(2) !== currentTotals.total.toFixed(2)) {
-            alert('Part payment amounts do not match the total bill. Please check.');
-            generateBillBtn.disabled = false;
-            generateBillBtn.textContent = 'Generate Bill & Finalize';
-            return;
-        }
-        sale.paymentBreakdown = { cash: cashPaid, card_or_online: cardPaid };
+    
+    if (sale.paymentMethod === 'part-payment') {
+        sale.paymentBreakdown = { cash: parseFloat(cashAmountInput.value) || 0, card_or_online: parseFloat(cardAmountInput.value) || 0 };
+    } else if (sale.paymentMethod === 'cash') {
+        const cashReceived = parseFloat(cashReceivedInput.value) || 0;
+        sale.paymentBreakdown = { cashReceived, changeReturned: cashReceived - sale.total };
     }
 
     try {
         const batch = writeBatch(db);
-        const salesRef = collection(db, 'shops', currentUserId, 'sales');
-        const newSaleRef = doc(salesRef);
+        const newSaleRef = doc(collection(db, 'shops', currentUserId, 'sales'));
         batch.set(newSaleRef, sale);
 
         for (const item of cart) {
@@ -359,22 +354,63 @@ async function generateFinalBill() {
         }
         await batch.commit();
 
-        const printUrl = `print.html?saleId=${newSaleRef.id}`;
+        // ===== START: সমস্যার সমাধান এখানে =====
+        const newSaleId = newSaleRef.id;
+        const printUrl = `print.html?saleId=${newSaleId}`;
         window.open(printUrl, '_blank');
+        // ===== END: সমাধান =====
         
-        cart = [];
-        updateCartDisplay();
-        checkoutModal.classList.add('hidden');
-        resetCheckoutForm();
+        resetAfterSale();
         await initializeProducts();
 
     } catch (error) {
         console.error("Error during checkout: ", error);
-        alert('Checkout failed. Please try again.');
+        alert(`Checkout failed. Error: ${error.message}`);
     } finally {
         generateBillBtn.disabled = false;
         generateBillBtn.textContent = 'Generate Bill & Finalize';
     }
+}
+
+function preCheckoutValidation() {
+    if (cart.length === 0) {
+        alert("Cart is empty. Please add products to proceed.");
+        return false;
+    }
+    const method = paymentMethodSelect.value;
+    if (method === 'cash' && (parseFloat(cashReceivedInput.value) || 0) < currentTotals.total) {
+        alert("Cash received is less than the total amount. Please enter a valid amount.");
+        cashReceivedInput.focus();
+        return false;
+    }
+    if (method === 'part-payment') {
+        const cashPaid = parseFloat(cashAmountInput.value) || 0;
+        const cardPaid = parseFloat(cardAmountInput.value) || 0;
+        if (Math.abs((cashPaid + cardPaid) - currentTotals.total) > 0.01) {
+            alert("Part payment amounts do not match the total bill.");
+            return false;
+        }
+    }
+    return true;
+}
+
+function resetAfterSale() {
+    cart = [];
+    updateCartDisplay();
+    checkoutModal.classList.add('hidden');
+    
+    [customerNameInput, customerPhoneInput, customerAddressInput, discountValueInput, cashReceivedInput, cashAmountInput, cardAmountInput].forEach(input => input.value = '');
+    discountTypeSelect.value = 'percent';
+    gstToggle.checked = true;
+    paymentMethodSelect.value = 'cash';
+    handlePaymentMethodChange();
+}
+
+function handlePaymentMethodChange() {
+    const method = paymentMethodSelect.value;
+    cashPaymentDetails.classList.toggle('hidden', method !== 'cash');
+    partPaymentDetails.classList.toggle('hidden', method !== 'part-payment');
+    updateAllTotals();
 }
 
 // ==========================================================
@@ -385,47 +421,50 @@ function setupEventListeners() {
     productSearchInput.addEventListener('keydown', handleSearchEnter);
 
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.search-box')) searchResultsContainer.style.display = 'none';
+        if (!e.target.closest('.search-box')) {
+            searchResultsContainer.style.display = 'none';
+        }
     });
 
     categoryProductListContainer.addEventListener('click', (e) => {
         const card = e.target.closest('.product-card');
         if (card) {
-            const productId = card.dataset.productId;
-            const productToAdd = allProducts.find(p => p.id === productId);
+            const productToAdd = allProducts.find(p => p.id === card.dataset.productId);
             if (productToAdd) addToCart(productToAdd);
         }
     });
 
     proceedToCheckoutBtn.addEventListener('click', () => {
-        updateAllTotals();
-        checkoutModal.classList.remove('hidden');
+        if (cart.length > 0) {
+            updateAllTotals();
+            checkoutModal.classList.remove('hidden');
+        }
     });
 
-    closeModalBtn.addEventListener('click', () => {
-        checkoutModal.classList.add('hidden');
-        resetCheckoutForm();
-    });
-
+    closeModalBtn.addEventListener('click', () => checkoutModal.classList.add('hidden'));
     checkoutModal.addEventListener('click', (e) => {
         if (e.target === checkoutModal) {
             checkoutModal.classList.add('hidden');
-            resetCheckoutForm();
         }
     });
     
-    gstToggle.addEventListener('change', updateAllTotals);
-    discountTypeSelect.addEventListener('change', updateAllTotals);
-    discountValueInput.addEventListener('input', updateAllTotals);
-
-    paymentMethodSelect.addEventListener('change', (e) => {
-        partPaymentDetails.classList.toggle('hidden', e.target.value !== 'part-payment');
+    [gstToggle, discountTypeSelect, discountValueInput].forEach(el => el.addEventListener('input', updateAllTotals));
+    
+    paymentMethodSelect.addEventListener('change', handlePaymentMethodChange);
+    
+    cashReceivedInput.addEventListener('input', () => {
+        calculateReturnAmount();
+        validateFinalBillButton();
+    });
+    
+    [cashAmountInput, cardAmountInput].forEach(el => {
+        el.addEventListener('input', validateFinalBillButton);
     });
 
     generateBillBtn.addEventListener('click', generateFinalBill);
 
-    logoutBtn.addEventListener('click', async () => {
-        await signOut(auth);
+    logoutBtn.addEventListener('click', () => {
+        signOut(auth).catch(error => console.error("Logout error", error));
     });
 
     mobileMenuBtn.addEventListener('click', () => {
