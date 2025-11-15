@@ -13,6 +13,8 @@
     <!-- CSS ফাইল -->
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="inventory.css">
+    <!-- নতুন: প্রিন্টিং এর জন্য CSS ফাইল লিঙ্ক করা হলো -->
+    <link rel="stylesheet" href="print-styles.css">
 </head>
 <body>
 
@@ -127,8 +129,64 @@
     <div id="status-message-container"></div>
 
     <!-- ======================================================== -->
-    <!-- Firebase এবং কাস্টম JS -->
+    <!-- START: বারকোড প্রিন্টিং এর জন্য যুক্ত করা অংশ -->
     <!-- ======================================================== -->
+
+    <!-- টেমপ্লেট বেছে নেওয়ার জন্য Modal -->
+    <div id="template-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close-button">&times;</span>
+            <h2>Choose a Label Template</h2>
+            <p>Select a design to print your selected products.</p>
+            <div id="template-choices" class="template-grid">
+                
+                <!-- Template 1: Standard -->
+                <div class="template-card" data-template-id="template-1">
+                    <div class="template-preview">
+                        <p style="font-size: 8px; font-weight: bold; text-align: center; margin: 0;">Product Name Here</p>
+                        <svg class="preview-barcode"></svg>
+                        <p style="font-size: 7px; text-align: center; margin: 0;">123456789</p>
+                        <p style="font-size: 8px; font-weight: bold; text-align: center; margin: 0;">Price: ₹XX.XX</p>
+                    </div>
+                    <p class="template-name">Standard</p>
+                </div>
+
+                <!-- Template 2: Price Focused -->
+                <div class="template-card" data-template-id="template-2">
+                    <div class="template-preview">
+                        <p style="font-size: 10px; font-weight: bold; text-align: center; margin: 0;">₹XX.XX</p>
+                        <p style="font-size: 6px; text-align: center; margin: 0;">Product Name</p>
+                        <svg class="preview-barcode"></svg>
+                        <p style="font-size: 6px; text-align: center; margin: 0;">123456789</p>
+                    </div>
+                    <p class="template-name">Price Focused</p>
+                </div>
+
+                <!-- Template 3: Minimalist -->
+                <div class="template-card" data-template-id="template-3">
+                    <div class="template-preview" style="justify-content: center;">
+                        <svg class="preview-barcode"></svg>
+                        <p style="font-size: 7px; text-align: center; margin: 0;">123456789</p>
+                    </div>
+                    <p class="template-name">Minimalist</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- প্রিন্ট করার জন্য একটি অদৃশ্য কন্টেইনার -->
+    <div id="print-area" class="print-only"></div>
+
+    <!-- JsBarcode লাইব্রেরি -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+    <!-- ======================================================== -->
+    <!-- END: বারকোড প্রিন্টিং এর জন্য যুক্ত করা অংশ -->
+    <!-- ======================================================== -->
+
+
+    <!-- Firebase এবং কাস্টম JS -->
     <script type="importmap">
     {
       "imports": {

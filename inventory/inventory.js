@@ -1,31 +1,34 @@
-// inventory/inventory.js (ক্যাটেগরি ফিল্টার সমাধান সহ চূড়ান্ত ভার্সন)
-
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
 // =================================================================
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, orderBy, query } from 'firebase/firestore';
-import { printSingleBarcode, printMultipleBarcodes } from './printer.js'; 
+// এখন আমরা printer.js থেকে নতুন ফাংশনগুলো ইম্পোর্ট করব
+import { showTemplateModal } from './printer.js'; 
 
+// =================================================================
 // --- DOM Elements ---
+// =================================================================
 const inventoryBody = document.getElementById('inventory-tbody');
 const searchInput = document.getElementById('search-inventory');
 const categoryFilter = document.getElementById('category-filter');
 const paginationContainer = document.getElementById('pagination-container');
 const editModal = document.getElementById('edit-modal');
 const editForm = document.getElementById('edit-form');
-const closeModalBtn = document.querySelector('.close-button');
+const closeModalBtn = editModal.querySelector('.close-button'); // এডিট Modal-এর ক্লোজ বাটন
 const logoutBtn = document.getElementById('logout-btn');
 const statusMessageContainer = document.getElementById('status-message-container');
 const selectAllCheckbox = document.getElementById('select-all-checkbox');
 const printSelectedBtn = document.getElementById('print-selected-btn');
 const printAllFilteredBtn = document.getElementById('print-all-filtered-btn');
 
+// =================================================================
 // --- Global State ---
+// =================================================================
 let allProducts = [];
 let filteredProducts = [];
-let uniqueCategories = new Set();
+let uniqueCategories = new Set(); // এটি এখন আর সরাসরি ব্যবহৃত হচ্ছে না, কিন্তু রাখা যেতে পারে
 const ROWS_PER_PAGE = 10;
 let currentPage = 1;
 const LOW_STOCK_THRESHOLD = 10;
@@ -56,6 +59,8 @@ function loadInventory() {
     const productsQuery = query(productsCollectionRef, orderBy("name"));
 
     unsubscribe = onSnapshot(productsQuery, (querySnapshot) => {
+        const currentSelectedCategory = categoryFilter.value; // ফিল্টার করার আগে বর্তমান ক্যাটেগরি সেভ করুন
+        
         allProducts = [];
         const newCategories = new Set();
         querySnapshot.forEach((doc) => {
@@ -64,18 +69,13 @@ function loadInventory() {
             if (product.category) newCategories.add(product.category);
         });
         
-        // ক্যাটেগরি লিস্ট আপডেট করা
-        updateCategoryFilter(newCategories);
-        // সবশেষে ফিল্টার ও রেন্ডার করা
+        updateCategoryFilter(newCategories, currentSelectedCategory);
         applyFiltersAndRender(); 
     });
 }
 
 function applyFiltersAndRender(resetPage = false) {
-    // যদি ফিল্টার পরিবর্তন হয়, তাহলে প্রথম পেজে চলে যাবে
-    if (resetPage) {
-        currentPage = 1;
-    }
+    if (resetPage) currentPage = 1;
 
     const searchTerm = searchInput.value.toLowerCase().trim();
     const selectedCategory = categoryFilter.value;
@@ -115,26 +115,22 @@ function renderTable(products) {
             <td class="action-buttons">
                 <button class="btn-edit action-btn" data-id="${product.id}">Edit</button>
                 <button class="btn-delete action-btn" data-id="${product.id}">Delete</button>
-                <button class="btn-print action-btn" data-barcode="${product.barcode}" data-name="${product.name}" data-price="${product.sellingPrice || 0}">Print Label</button>
+                <button class="btn-print action-btn" data-id="${product.id}">Print Label</button>
             </td>
         `;
         inventoryBody.appendChild(row);
     });
 }
 
-// এই ফাংশনটির নাম এবং লজিক উন্নত করা হয়েছে
-function updateCategoryFilter(newCategories) {
-    const currentOptions = new Set(Array.from(categoryFilter.options).map(opt => opt.value));
-    
+function updateCategoryFilter(newCategories, currentSelectedCategory) {
+    const options = ['<option value="">All Categories</option>'];
     newCategories.forEach(category => {
-        if (category && !currentOptions.has(category)) {
-            const option = document.createElement('option');
-            option.value = category;
-            option.textContent = category;
-            categoryFilter.appendChild(option);
-        }
+        const isSelected = category === currentSelectedCategory ? 'selected' : '';
+        options.push(`<option value="${category}" ${isSelected}>${category}</option>`);
     });
+    categoryFilter.innerHTML = options.join('');
 }
+
 
 function setupPagination() {
     paginationContainer.innerHTML = '';
@@ -148,7 +144,7 @@ function setupPagination() {
         if (i === currentPage) btn.classList.add('active');
         btn.addEventListener('click', () => {
             currentPage = i;
-            applyFiltersAndRender(false); // পেজিনেশন ক্লিকের জন্য পেজ রিসেট হবে না
+            applyFiltersAndRender(false);
         });
         paginationContainer.appendChild(btn);
     }
@@ -175,19 +171,20 @@ function setupEventListeners() {
         const target = e.target;
         if (!target) return;
 
+        const productId = target.dataset.id;
+        const product = allProducts.find(p => p.id === productId);
+
         if (target.matches('.btn-edit')) {
-            const productId = target.dataset.id;
-            const product = allProducts.find(p => p.id === productId);
-            if (product) { /* ... edit modal logic ... */ }
+            if (product) openEditModal(product); // এডিট modal খোলার জন্য ফাংশন
         } else if (target.matches('.btn-delete')) {
-            const productId = target.dataset.id;
-            if (confirm('Are you sure?')) { /* ... delete logic ... */ }
+            if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
+                deleteProduct(productId); // ডিলিট করার জন্য ফাংশন
+            }
         } else if (target.matches('.btn-print')) {
-            const { barcode, name, price } = target.dataset;
-            if (barcode && barcode !== 'N/A') {
-                printSingleBarcode(barcode, name, parseFloat(price).toFixed(2));
+            if (product && product.barcode && product.barcode !== 'N/A') {
+                showTemplateModal([product]); // এখন একটি প্রোডাক্টের জন্য প্রিন্ট Modal দেখানো হবে
             } else {
-                alert('Barcode not available.');
+                alert('Barcode not available for this product.');
             }
         }
     });
@@ -199,22 +196,22 @@ function setupEventListeners() {
             return;
         }
         const productsToPrint = allProducts.filter(p => selectedIds.includes(p.id));
-        printMultipleBarcodes(productsToPrint);
+        showTemplateModal(productsToPrint); // নির্বাচিত সব প্রোডাক্টের জন্য প্রিন্ট Modal
     });
 
     printAllFilteredBtn.addEventListener('click', () => {
         if (filteredProducts.length === 0) {
-            alert('No products to print.');
+            alert('No products to print in the current filter.');
             return;
         }
-        printMultipleBarcodes(filteredProducts);
+        showTemplateModal(filteredProducts); // ফিল্টার করা সব প্রোডাক্টের জন্য প্রিন্ট Modal
     });
 
     selectAllCheckbox.addEventListener('change', (e) => {
         document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = e.target.checked);
     });
 
-    editForm.addEventListener('submit', async (e) => { /* ... edit form submission logic ... */ });
+    editForm.addEventListener('submit', handleEditFormSubmit); // ফর্ম সাবমিট হ্যান্ডেল করার ফাংশন
 
     closeModalBtn.addEventListener('click', () => editModal.style.display = 'none');
     window.addEventListener('click', (e) => {
@@ -223,4 +220,53 @@ function setupEventListeners() {
     logoutBtn.addEventListener('click', async () => await signOut(auth));
 
     setupEventListeners.executed = true;
+}
+
+
+// =================================================================
+// --- Helper Functions for Actions (Edit, Delete) ---
+// =================================================================
+
+function openEditModal(product) {
+    document.getElementById('edit-product-id').value = product.id;
+    document.getElementById('edit-name').value = product.name || '';
+    document.getElementById('edit-category').value = product.category || '';
+    document.getElementById('edit-cp').value = product.costPrice || 0;
+    document.getElementById('edit-sp').value = product.sellingPrice || 0;
+    document.getElementById('edit-stock').value = product.stock || 0;
+    document.getElementById('edit-barcode').value = product.barcode || '';
+    editModal.style.display = 'flex';
+}
+
+async function handleEditFormSubmit(e) {
+    e.preventDefault();
+    const productId = document.getElementById('edit-product-id').value;
+    const updatedProduct = {
+        name: document.getElementById('edit-name').value,
+        category: document.getElementById('edit-category').value,
+        costPrice: parseFloat(document.getElementById('edit-cp').value),
+        sellingPrice: parseFloat(document.getElementById('edit-sp').value),
+        stock: parseInt(document.getElementById('edit-stock').value),
+    };
+    
+    try {
+        const productRef = doc(db, 'shops', currentUserId, 'inventory', productId);
+        await updateDoc(productRef, updatedProduct);
+        showStatus('Product updated successfully!');
+        editModal.style.display = 'none';
+    } catch (error) {
+        console.error("Error updating document: ", error);
+        showStatus('Failed to update product.', 'error');
+    }
+}
+
+async function deleteProduct(productId) {
+    try {
+        const productRef = doc(db, 'shops', currentUserId, 'inventory', productId);
+        await deleteDoc(productRef);
+        showStatus('Product deleted successfully.');
+    } catch (error) {
+        console.error("Error deleting document: ", error);
+        showStatus('Failed to delete product.', 'error');
+    }
 }
