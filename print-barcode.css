@@ -169,24 +169,41 @@ body {
 
 /* --- NEW TEMPLATES --- */
 
-/* Template 11: Dual Sticker (4x1 inch) */
+/* --- NEW TEMPLATES --- */
+
+/* Template 11: Dual Sticker (4x1 inch) - UPDATED FOR RELIABLE PRINTING */
 .template-11 {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    padding: 1mm;
+    position: relative; /* This is crucial for absolute positioning of children */
+    box-sizing: border-box;
 }
 .template-11 .inner-sticker {
-    width: 48%;
+    box-sizing: border-box;
+    width: 50%; /* Each sticker takes half the width */
     height: 100%;
+    position: absolute; /* Position explicitly */
+    top: 0;
+    
+    /* Internal layout of the sticker */
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
     text-align: center;
+    padding: 1mm;
 }
+/* Position the two stickers side-by-side */
+.template-11 .inner-sticker:nth-child(1) {
+    left: 0;
+}
+.template-11 .inner-sticker:nth-child(2) {
+    left: 50%;
+}
+
 .template-11 .product-name { font-size: 7pt; }
 .template-11 .price { font-size: 9pt; }
-.template-11 svg { height: 45%; }
+.template-11 svg { height: 45%; max-width: 95%; }
+
+
 
 
 /* Template 12: Jewelry Tag (Long and thin) */
