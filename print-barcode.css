@@ -13,7 +13,8 @@ body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    min-width: 300px;
+    min-width: 350px;
+    align-self: flex-start;
 }
 
 #print-controls h1 {
@@ -41,10 +42,36 @@ body {
     border: 1px solid #ccc;
 }
 
-#custom-size-inputs input {
+#custom-size-inputs input[type="number"] {
     width: 45%;
     display: inline-block;
 }
+
+.margin-controls-container {
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+.margin-controls-container p {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 0;
+    margin-bottom: 10px;
+    text-align: center;
+    background: #eef;
+    padding: 5px;
+    border-radius: 4px;
+}
+.margin-controls-container label {
+    display: inline-block;
+    width: auto;
+    margin-right: 5px;
+}
+.margin-controls-container input {
+    width: 60px !important;
+    margin-right: 10px;
+}
+
 
 #print-button {
     width: 100%;
@@ -81,13 +108,18 @@ body {
     text-align: center;
     font-family: 'Arial Narrow', Arial, sans-serif;
     color: #000;
+    position: relative; /* For margin adjustments */
 }
 
-/* *** পরিবর্তন: দোকানের নাম হাইড করা হলো *** */
-.sticker .shop-name {
-    display: none;
+/* Style for when sticker is focused for margin adjustment */
+.sticker:focus {
+    border: 2px solid #007bff;
+    outline: none;
+    cursor: move;
 }
 
+
+.sticker .shop-name { display: none; }
 .sticker .product-name {
     font-size: 9pt;
     font-weight: bold;
@@ -96,97 +128,95 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.sticker .price {
-    font-size: 12pt;
-    font-weight: bold;
-}
-.sticker svg {
-    width: 100%;
-    height: auto;
-}
+.sticker .price { font-size: 12pt; font-weight: bold; }
+.sticker svg { width: 100%; height: auto; }
 
 /* --- Template Styles --- */
-
-/* Template 1: Standard Horizontal */
-.template-1 {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 2px;
-}
+/* Existing templates 1-10 */
+.template-1 { display: flex; flex-direction: column; justify-content: center; padding: 2px; }
 .template-1 .product-name { font-size: 10pt; }
 .template-1 .price { font-size: 11pt; }
 .template-1 svg { height: 50%; }
-
-/* Template 2: Compact with Price */
-.template-2 {
-    padding: 3px;
-    display: flex;
-    flex-direction: column;
-}
+.template-2 { padding: 3px; display: flex; flex-direction: column; }
 .template-2 .product-name { font-size: 8pt; }
 .template-2 .price { font-size: 11pt; }
 .template-2 svg { flex-grow: 1; }
-
-/* Template 3: Balanced */
 .template-3 { padding: 4px; }
 .template-3 .price { margin-top: 2px; }
-
-/* Template 4: Larger with details */
 .template-4 { padding: 5px; display: flex; flex-direction: column; }
 .template-4 .product-name { font-size: 11pt; }
 .template-4 .price { font-size: 14pt; }
 .template-4 svg { flex-grow: 1; }
-
-/* Template 5: Price Focus */
-.template-5 {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
-    padding: 2px;
-}
+.template-5 { display: grid; grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; padding: 2px; }
 .template-5 .price { grid-row: 1; font-size: 14pt; }
 .template-5 .barcode-container { grid-row: 2; }
 .template-5 .product-name { grid-row: 3; font-size: 7pt; }
-
-/* Template 6: Wide layout */
-.template-6 {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px;
-}
+.template-6 { display: flex; align-items: center; gap: 5px; padding: 4px; }
 .template-6 .details { flex-grow: 1; text-align: left; }
 .template-6 .barcode-container { width: 60%; }
-
-/* Template 7: Very Small */
 .template-7 { padding: 1px; }
 .template-7 .product-name { display: none; }
 .template-7 .price { font-size: 8pt; }
-
-/* Template 8: Square */
 .template-8 { padding: 5px; display: flex; flex-direction: column; justify-content: space-around; }
-
-/* Template 9: Large Horizontal with side details */
-.template-9 {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    align-items: center;
-    padding: 5px;
-    gap: 5px;
-}
+.template-9 { display: grid; grid-template-columns: 2fr 1fr; align-items: center; padding: 5px; gap: 5px; }
 .template-9 .details { text-align: right; }
 .template-9 .price { font-size: 18pt; }
-
-/* Template 10: Portrait */
-.template-10 {
-    display: flex;
-    flex-direction: column;
-    padding: 4px;
-}
+.template-10 { display: flex; flex-direction: column; padding: 4px; }
 .template-10 .price { font-size: 14pt; order: 1; }
 .template-10 .product-name { font-size: 10pt; order: 2; }
 .template-10 .barcode-container { order: 3; flex-grow: 1; }
+
+
+/* --- NEW TEMPLATES --- */
+
+/* Template 11: Dual Sticker (4x1 inch) */
+.template-11 {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 1mm;
+}
+.template-11 .inner-sticker {
+    width: 48%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+.template-11 .product-name { font-size: 7pt; }
+.template-11 .price { font-size: 9pt; }
+.template-11 svg { height: 45%; }
+
+
+/* Template 12: Jewelry Tag (Long and thin) */
+.template-12 {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2mm;
+    text-align: center;
+}
+.template-12 .price { font-size: 10pt; }
+.template-12 .product-name { font-size: 7pt; white-space: normal; line-height: 1; }
+.template-12 .barcode-container { margin: 1mm 0; }
+.template-12 svg { height: 35%; }
+
+
+/* Template 13: Two-Line Product Name */
+.template-13 {
+    padding: 3mm;
+    display: flex;
+    flex-direction: column;
+}
+.template-13 .product-name {
+    white-space: normal; /* Allow wrapping */
+    height: 35%; /* Allocate space for two lines */
+    font-size: 8pt;
+    line-height: 1.2;
+}
+.template-13 .price { font-size: 11pt; }
+.template-13 .barcode-container { flex-grow: 1; }
 
 /* --- Print Styles --- */
 @media print {
@@ -200,6 +230,7 @@ body {
     }
     #print-area {
         display: block;
+        margin: 0;
     }
     .sticker {
         border: none;

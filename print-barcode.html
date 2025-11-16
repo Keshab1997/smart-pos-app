@@ -24,15 +24,27 @@
                 <option value="template-8" data-width="50" data-height="50">Template 8 (50mm x 50mm - Square)</option>
                 <option value="template-9" data-width="100" data-height="50">Template 9 (100mm x 50mm - Large)</option>
                 <option value="template-10" data-width="40" data-height="60">Template 10 (40mm x 60mm - Portrait)</option>
+                <option value="template-11" data-width="102" data-height="25">Template 11 (4"x1" - Dual Sticker)</option>
+                <option value="template-12" data-width="76" data-height="25">Template 12 (Jewelry Tag)</option>
+                <option value="template-13" data-width="50" data-height="35">Template 13 (Two-Line Name)</option>
                 <option value="custom">Custom Size</option>
             </select>
         </div>
 
         <div id="custom-size-inputs" class="control-group" style="display: none;">
-            <label>Width (mm):</label>
-            <input type="number" id="custom-width" value="50">
-            <label>Height (mm):</label>
-            <input type="number" id="custom-height" value="25">
+            <div>
+                <label>Width (mm):</label>
+                <input type="number" id="custom-width" value="50">
+                <label>Height (mm):</label>
+                <input type="number" id="custom-height" value="25">
+            </div>
+            <div id="margin-controls" class="margin-controls-container">
+                 <p>Click on preview and use Arrow Keys (↑↓←→) to adjust margin.</p>
+                 <label>Top:</label> <input type="number" id="margin-top" value="0">
+                 <label>Right:</label> <input type="number" id="margin-right" value="0">
+                 <label>Bottom:</label> <input type="number" id="margin-bottom" value="0">
+                 <label>Left:</label> <input type="number" id="margin-left" value="0">
+            </div>
         </div>
 
         <div class="control-group">
