@@ -1,0 +1,88 @@
+/* Filter container styles */
+.filter-container {
+    margin-bottom: 2rem;
+}
+
+.filter-container h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+#filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-end;
+}
+
+#filter-form .form-group {
+    margin-bottom: 0;
+}
+
+#filter-form input,
+#filter-form select {
+    width: 180px; /* Adjust width as needed */
+}
+
+/* Chart container styling */
+.chart-container {
+    position: relative;
+    height: 350px; /* Give a fixed height to charts */
+    padding: 1rem;
+}
+
+/* Expense table styles */
+.expense-table-container {
+    width: 100%;
+    overflow-x: auto; /* For responsiveness on small screens */
+    margin-top: 1rem;
+}
+
+#expense-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+#expense-table th,
+#expense-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#expense-table thead tr {
+    background-color: #f7f7f9;
+    color: #333;
+    font-weight: 600;
+}
+
+#expense-table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #filter-form {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    #filter-form input,
+    #filter-form select {
+        width: 100%;
+    }
+
+    .kpi-cards {
+        grid-template-columns: 1fr 1fr; /* Two columns on tablets */
+    }
+}
+
+@media (max-width: 480px) {
+    .kpi-cards {
+        grid-template-columns: 1fr; /* Single column on mobile */
+    }
+}
