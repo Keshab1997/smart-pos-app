@@ -35,10 +35,14 @@ body {
     max-width: 76mm;
     width: 100%;
     margin: 20px auto;
-    /* পরিবর্তন: মূল প্যাডিং কমানো হয়েছে */
-    padding: 10px; 
+    /* পরিবর্তন: বামে প্যাডিং কমানো হলো */
+    padding-left: 5px;  /* বাম দিকের প্যাডিং কমানো হলো */
+    padding-right: 5px; /* ডান দিকের প্যাডিংও সামঞ্জস্যপূর্ণ রাখা হলো */
+    padding-top: 10px;
+    padding-bottom: 10px;
     background-color: #fff;
     box-shadow: 0 0 10px rgba(0,0,0,0.15);
+    box-sizing: border-box; /* এটি নিশ্চিত করে যে প্যাডিং প্রস্থের ভেতরেই থাকবে */
 }
 
 /* --- হেডার: দোকানের তথ্য --- */
