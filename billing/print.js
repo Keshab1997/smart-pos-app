@@ -126,11 +126,15 @@ async function loadAndPrintBill() {
 
             const paymentBreakdown = saleData.paymentBreakdown;
             if (paymentBreakdown) {
-                if (saleData.paymentMethod === 'cash') {
-                    document.getElementById('cash-payment-info').style.display = 'block';
-                    document.getElementById('cash-received').textContent = `₹${(paymentBreakdown.cashReceived || 0).toFixed(2)}`;
-                    document.getElementById('change-returned').textContent = `₹${(paymentBreakdown.changeReturned || 0).toFixed(2)}`;
-                } else if (saleData.paymentMethod === 'part-payment') {
+                // ===========================================
+// === নতুন এবং সংশোধিত কোড (Hide Cash Info) ===
+// ===========================================
+if (saleData.paymentMethod === 'cash') {
+    // নিচের লাইনগুলো কমেন্ট আউট করে দেওয়া হয়েছে যাতে এই অংশটি আর না দেখায়
+    // document.getElementById('cash-payment-info').style.display = 'block';
+    // document.getElementById('cash-received').textContent = `₹${(paymentBreakdown.cashReceived || 0).toFixed(2)}`;
+    // document.getElementById('change-returned').textContent = `₹${(paymentBreakdown.changeReturned || 0).toFixed(2)}`;
+} else if (saleData.paymentMethod === 'part-payment') {
                     document.getElementById('part-payment-info').style.display = 'block';
                     document.getElementById('cash-paid').textContent = `₹${(paymentBreakdown.cash || 0).toFixed(2)}`;
                     document.getElementById('card-paid').textContent = `₹${(paymentBreakdown.card_or_online || 0).toFixed(2)}`;
