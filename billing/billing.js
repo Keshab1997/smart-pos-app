@@ -1,4 +1,4 @@
-// billing/billing.js - Profit/Loss Logic Restored & Barcode Scan Perfected (v3.3)
+// billing/billing.js - কাস্টমার ইনপুট সমস্যা সমাধান এবং বারকোড স্ক্যান উন্নত করা হয়েছে (v3.4)
 
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
@@ -76,12 +76,12 @@ async function initializeProducts() {
         const inventoryRef = collection(db, 'shops', currentUserId, 'inventory');
         const q = query(inventoryRef, orderBy('name'));
         const querySnapshot = await getDocs(q);
-        // এখানে purchasePrice সহ সকল ডেটা লোড করা হচ্ছে
+        // purchasePrice সহ সকল ডেটা লোড করা হচ্ছে
         allProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         displayProductsByCategory();
     } catch (error) {
         console.error("Error initializing products: ", error);
-        categoryProductListContainer.innerHTML = `<p class="error-message">Failed to load products. Check console for details.</p>`;
+        categoryProductListContainer.innerHTML = `<p class="error-message">Failed to load products. Please refresh.</p>`;
     }
 }
 
@@ -121,7 +121,7 @@ function displayProductsByCategory() {
 }
 
 // =========================================================================================
-// === পরিবর্তন: প্রোডাক্ট সার্চ এবং বারকোড হ্যান্ডলিং (প্রফিট/লস লজিক পুনরুদ্ধার করা হয়েছে) ===
+// === প্রোডাক্ট সার্চ এবং বারকোড হ্যান্ডলিং ===
 // =========================================================================================
 function handleSearch(e) {
     const searchText = e.target.value.trim().toLowerCase();
@@ -140,7 +140,6 @@ function handleSearch(e) {
             const div = document.createElement('div');
             div.classList.add('search-result-item');
             div.innerHTML = `<span>${product.name}</span> <span>₹${(product.sellingPrice || 0).toFixed(2)}</span>`;
-            // এখানে সরাসরি 'product' অবজেক্ট পাস করা হচ্ছে
             div.addEventListener('click', () => addProductToCart(product));
             searchResultsContainer.appendChild(div);
         });
@@ -152,7 +151,6 @@ function handleSearch(e) {
 
 function handleBarcodeScan(barcode) {
     if (!barcode) return;
-    // ডেটাবেসে না খুঁজে, লোড করা allProducts অ্যারে থেকে খোঁজা হচ্ছে
     const product = allProducts.find(p => p.barcode === barcode);
     if (product) {
         addProductToCart(product);
@@ -162,7 +160,6 @@ function handleBarcodeScan(barcode) {
     productSearchInput.value = '';
 }
 
-// এই ফাংশনটি এখন সরাসরি product object নেয়, যা purchasePrice সহ সকল ডেটা নিশ্চিত করে
 function addProductToCart(product) {
     addToCart(product);
     productSearchInput.value = '';
@@ -187,7 +184,7 @@ function addToCart(product) {
             alert(`Cannot add more. Stock limit for '${product.name}' reached!`);
         }
     } else {
-        // এখানে purchasePrice সহ সম্পূর্ণ product অবজেক্ট কার্টে যোগ হচ্ছে
+        // purchasePrice সহ সম্পূর্ণ product অবজেক্ট কার্টে যোগ হচ্ছে
         cart.push({ ...product, quantity: 1 });
     }
     updateCartDisplay();
@@ -312,7 +309,7 @@ async function generateFinalBill() {
             items: cart.map(item => ({ 
                 id: item.id, name: item.name, quantity: item.quantity, 
                 price: item.sellingPrice || 0, category: item.category || 'N/A',
-                // এই লাইনটি আপনার প্রফিট/লস হিসাবের জন্য সবচেয়ে জরুরি
+                // এই লাইনটি প্রফিট/লস হিসাবের জন্য সবচেয়ে জরুরি
                 purchasePrice: item.purchasePrice || item.costPrice || 0 
             })),
             ...currentTotals,
@@ -385,26 +382,41 @@ function handlePaymentMethodChange() {
 }
 
 // ==========================================================
-// --- সব ইভেন্ট লিসেনার সেটআপ ---
+// --- সব ইভেন্ট লিসেনার সেটআপ (সংশোধিত) ---
 // ==========================================================
 function setupEventListeners() {
     productSearchInput.addEventListener('input', handleSearch);
     
+    // === START: সংশোধিত keydown ইভেন্ট লিসেনার ===
     document.addEventListener('keydown', (e) => {
-        if (document.activeElement !== productSearchInput && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        const activeEl = document.activeElement;
+        const isTypingInInput = activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA';
+
+        // যদি কোনো ইনপুট ফিল্ডে টাইপ না করা হয়, তবেই সার্চ বারে ফোকাস করুন
+        // এটি বারকোড স্ক্যানারের জন্য সুবিধাজনক
+        if (!isTypingInInput && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            e.preventDefault(); // কিছু ব্রাউজারে পেজ স্ক্রল হওয়া আটকাতে পারে
             productSearchInput.focus();
+            productSearchInput.value = e.key; // টাইপ করা অক্ষরটি ইনপুটে বসিয়ে দেওয়া
         }
-        if (e.key === 'Enter' && document.activeElement === productSearchInput) {
+
+        // বারকোড বা সার্চের জন্য Enter কী হ্যান্ডেল করা
+        if (e.key === 'Enter' && activeEl === productSearchInput) {
             e.preventDefault();
             const searchTerm = productSearchInput.value.trim();
             if (searchTerm) {
-                // এখানে বারকোড স্ক্যানের জন্য তৈরি নতুন ফাংশনটি কল করা হচ্ছে
                 handleBarcodeScan(searchTerm);
             }
         }
     });
+    // === END: সংশোধিত keydown ইভেন্ট লিসেনার ===
 
-    document.addEventListener('click', e => { if (!e.target.closest('.search-box')) searchResultsContainer.style.display = 'none'; });
+    document.addEventListener('click', e => { 
+        if (!e.target.closest('.search-box')) {
+            searchResultsContainer.style.display = 'none';
+        } 
+    });
+
     categoryProductListContainer.addEventListener('click', e => {
         const card = e.target.closest('.product-card');
         if (card) {
@@ -417,15 +429,24 @@ function setupEventListeners() {
         if (cart.length > 0) {
             updateAllTotals();
             checkoutModal.classList.remove('hidden');
+            // মডাল খোলার পর ব্যবহারকারীর সুবিধার জন্য কাস্টমার নেম ফিল্ডে ফোকাস করা
+            customerNameInput.focus(); 
         }
     });
 
     closeModalBtn.addEventListener('click', () => checkoutModal.classList.add('hidden'));
-    checkoutModal.addEventListener('click', e => { if (e.target === checkoutModal) checkoutModal.classList.add('hidden'); });
+    checkoutModal.addEventListener('click', e => { 
+        if (e.target === checkoutModal) {
+            checkoutModal.classList.add('hidden');
+        }
+    });
     
     [gstToggle, discountTypeSelect, discountValueInput].forEach(el => el.addEventListener('input', updateAllTotals));
     paymentMethodSelect.addEventListener('change', handlePaymentMethodChange);
-    cashReceivedInput.addEventListener('input', () => { calculateReturnAmount(); validateFinalBillButton(); });
+    cashReceivedInput.addEventListener('input', () => { 
+        calculateReturnAmount(); 
+        validateFinalBillButton(); 
+    });
     [cashAmountInput, cardAmountInput].forEach(el => el.addEventListener('input', validateFinalBillButton));
 
     generateBillBtn.addEventListener('click', generateFinalBill);
