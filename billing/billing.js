@@ -1,4 +1,4 @@
-// billing/billing.js - কাস্টমার ইনপুট সমস্যা সমাধান এবং বারকোড স্ক্যান উন্নত করা হয়েছে (v3.4)
+// billing/billing.js - ডিসকাউন্ট সাবটোটালের বেশি না হওয়ার নিয়ম যোগ করা হয়েছে (v3.7)
 
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
@@ -76,7 +76,6 @@ async function initializeProducts() {
         const inventoryRef = collection(db, 'shops', currentUserId, 'inventory');
         const q = query(inventoryRef, orderBy('name'));
         const querySnapshot = await getDocs(q);
-        // purchasePrice সহ সকল ডেটা লোড করা হচ্ছে
         allProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         displayProductsByCategory();
     } catch (error) {
@@ -153,11 +152,12 @@ function handleBarcodeScan(barcode) {
     if (!barcode) return;
     const product = allProducts.find(p => p.barcode === barcode);
     if (product) {
-        addProductToCart(product);
+        addToCart(product);
+        productSearchInput.value = '';
+        searchResultsContainer.style.display = 'none';
     } else {
         alert(`No product found with barcode: "${barcode}"`);
     }
-    productSearchInput.value = '';
 }
 
 function addProductToCart(product) {
@@ -168,10 +168,7 @@ function addProductToCart(product) {
 }
 
 function addToCart(product) {
-    if (!product || !product.id) {
-        console.error("Invalid product object passed to addToCart:", product);
-        return;
-    }
+    if (!product || !product.id) return;
     if (product.stock <= 0) {
         alert(`'${product.name}' is out of stock!`);
         return;
@@ -184,7 +181,6 @@ function addToCart(product) {
             alert(`Cannot add more. Stock limit for '${product.name}' reached!`);
         }
     } else {
-        // purchasePrice সহ সম্পূর্ণ product অবজেক্ট কার্টে যোগ হচ্ছে
         cart.push({ ...product, quantity: 1 });
     }
     updateCartDisplay();
@@ -223,14 +219,19 @@ function addCartItemEventListeners() {
         const item = cart.find(i => i.id === productId);
         if (!item) return;
         let newQuantity = item.quantity + change;
-        if (newQuantity > item.stock) {
-            alert(`Maximum stock for ${item.name} is ${item.stock}.`);
-            newQuantity = item.stock;
+        const productFromStock = allProducts.find(p => p.id === productId);
+        if (newQuantity > productFromStock.stock) {
+            alert(`Maximum stock for ${item.name} is ${productFromStock.stock}.`);
+            newQuantity = productFromStock.stock;
         }
-        if (newQuantity <= 0) cart = cart.filter(i => i.id !== productId);
-        else item.quantity = newQuantity;
+        if (newQuantity <= 0) {
+            cart = cart.filter(i => i.id !== productId);
+        } else {
+            item.quantity = newQuantity;
+        }
         updateCartDisplay();
     };
+
     document.querySelectorAll('.cart-item').forEach(el => {
         el.querySelector('.increase-btn').onclick = e => handleQuantityChange(e.target.dataset.id, 1);
         el.querySelector('.decrease-btn').onclick = e => handleQuantityChange(e.target.dataset.id, -1);
@@ -241,41 +242,93 @@ function addCartItemEventListeners() {
     });
 }
 
+// ==============================================================
+// --- START: টোটাল, ডিসকাউন্ট, এবং পেমেন্ট ক্যালকুলেশন (ডিসকাউন্ট সীমাবদ্ধ করা হয়েছে) ---
+// ==============================================================
 function updateAllTotals() {
     const subtotal = cart.reduce((sum, item) => sum + (item.sellingPrice || 0) * item.quantity, 0);
     const discountType = discountTypeSelect.value;
-    let discountValue = parseFloat(discountValueInput.value) || 0;
-    let discountAmount = discountType === 'percent' ? (subtotal * discountValue) / 100 : Math.min(discountValue, subtotal);
+    let discountValue = parseFloat(discountValueInput.value);
+    if (isNaN(discountValue) || discountValue < 0) {
+        discountValue = 0;
+    }
+
+    // ===== START: নতুন নিয়ম যোগ করা হয়েছে =====
+    if (discountType === 'percent') {
+        // পার্সেন্টেজ 100 এর বেশি হতে পারবে না
+        if (discountValue > 100) {
+            discountValue = 100;
+            discountValueInput.value = 100; // ইনপুট ফিল্ড আপডেট করা হলো
+        }
+    } else { // amount
+        // অ্যামাউন্ট সাবটোটালের বেশি হতে পারবে না
+        if (discountValue > subtotal && subtotal > 0) {
+            discountValue = subtotal;
+            discountValueInput.value = subtotal.toFixed(2); // ইনপুট ফিল্ড আপডেট করা হলো
+        }
+    }
+    // ===== END: নতুন নিয়ম যোগ করা হয়েছে =====
+
+    let discountAmount = 0;
+    if (discountType === 'percent') {
+        discountAmount = (subtotal * discountValue) / 100;
+    } else { // amount
+        discountAmount = discountValue;
+    }
+    
+    // চূড়ান্ত একটি চেক যাতে কোনোভাবেই ডিসকাউন্ট সাবটোটালকে না ছাড়ায়
+    if (discountAmount > subtotal) {
+        discountAmount = subtotal;
+    }
+    
     const discountedSubtotal = subtotal - discountAmount;
     const tax = gstToggle.checked ? discountedSubtotal * 0.05 : 0;
     const total = discountedSubtotal + tax;
+
     currentTotals = { subtotal, discount: discountAmount, tax, total };
 
+    // UI আপডেট
     footerTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
     modalSubtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
     modalDiscountEl.textContent = `- ₹${discountAmount.toFixed(2)}`;
     modalTaxEl.textContent = `₹${tax.toFixed(2)}`;
     modalTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
-    calculateReturnAmount();
-    validateFinalBillButton();
+
+    updatePaymentDetails();
 }
 
-function calculateReturnAmount() {
-    const cashReceived = parseFloat(cashReceivedInput.value) || 0;
-    const returnAmount = cashReceived >= currentTotals.total ? cashReceived - currentTotals.total : 0;
-    returnAmountDisplay.textContent = `₹${returnAmount.toFixed(2)}`;
+function updatePaymentDetails() {
+    const method = paymentMethodSelect.value;
+    if (method === 'cash') {
+        const cashReceived = parseFloat(cashReceivedInput.value);
+        let returnAmount = 0;
+        if (!isNaN(cashReceived) && cashReceived >= currentTotals.total) {
+            returnAmount = cashReceived - currentTotals.total;
+        }
+        returnAmountDisplay.textContent = `₹${returnAmount.toFixed(2)}`;
+    }
+    validateFinalBillButton();
 }
 
 function validateFinalBillButton() {
     let isValid = false;
     if (cart.length > 0) {
         const method = paymentMethodSelect.value;
-        if (method === 'cash') isValid = cashReceivedInput.value.trim() === '' || (parseFloat(cashReceivedInput.value) || 0) >= currentTotals.total;
-        else if (method === 'part-payment') isValid = Math.abs(((parseFloat(cashAmountInput.value) || 0) + (parseFloat(cardAmountInput.value) || 0)) - currentTotals.total) < 0.01;
-        else isValid = true;
+        const total = currentTotals.total;
+        if (method === 'cash') {
+            const cashReceived = parseFloat(cashReceivedInput.value);
+            isValid = isNaN(cashReceived) || cashReceived >= total;
+        } else if (method === 'part-payment') {
+            const cashAmount = parseFloat(cashAmountInput.value) || 0;
+            const cardAmount = parseFloat(cardAmountInput.value) || 0;
+            isValid = Math.abs((cashAmount + cardAmount) - total) < 0.01;
+        } else {
+            isValid = true;
+        }
     }
     generateBillBtn.disabled = !isValid;
 }
+// --- END: টোটাল, ডিসকাউন্ট, এবং পেমেন্ট ক্যালকুলেশন ---
 
 // ==========================================================
 // --- বিল নম্বর জেনারেশন ও বিল জেনারেশন ---
@@ -306,11 +359,10 @@ async function generateFinalBill() {
         const newBillNo = await getNextBillNumber();
         const sale = {
             billNo: newBillNo,
-            items: cart.map(item => ({ 
-                id: item.id, name: item.name, quantity: item.quantity, 
+            items: cart.map(item => ({
+                id: item.id, name: item.name, quantity: item.quantity,
                 price: item.sellingPrice || 0, category: item.category || 'N/A',
-                // এই লাইনটি প্রফিট/লস হিসাবের জন্য সবচেয়ে জরুরি
-                purchasePrice: item.purchasePrice || item.costPrice || 0 
+                purchasePrice: item.purchasePrice || item.costPrice || 0
             })),
             ...currentTotals,
             paymentMethod: paymentMethodSelect.value,
@@ -320,9 +372,11 @@ async function generateFinalBill() {
             discountDetails: { type: discountTypeSelect.value, value: parseFloat(discountValueInput.value) || 0 },
             gstRate: 5
         };
+
         if (sale.paymentMethod === 'cash') {
-            const cashReceived = isNaN(parseFloat(cashReceivedInput.value)) ? sale.total : parseFloat(cashReceivedInput.value);
-            sale.paymentBreakdown = { cashReceived, changeReturned: cashReceived - sale.total };
+            const cashReceived = parseFloat(cashReceivedInput.value);
+            const finalCashReceived = isNaN(cashReceived) ? sale.total : cashReceived;
+            sale.paymentBreakdown = { cashReceived: finalCashReceived, changeReturned: finalCashReceived - sale.total };
         } else if (sale.paymentMethod === 'part-payment') {
             sale.paymentBreakdown = { cash: parseFloat(cashAmountInput.value) || 0, card_or_online: parseFloat(cardAmountInput.value) || 0 };
         }
@@ -351,10 +405,13 @@ function preCheckoutValidation() {
         return false;
     }
     const method = paymentMethodSelect.value;
-    if (method === 'cash' && cashReceivedInput.value.trim() !== '' && (parseFloat(cashReceivedInput.value) || 0) < currentTotals.total) {
-        alert("Cash received is less than total amount.");
-        cashReceivedInput.focus();
-        return false;
+    if (method === 'cash') {
+        const cashReceived = parseFloat(cashReceivedInput.value);
+        if (!isNaN(cashReceived) && cashReceived < currentTotals.total) {
+            alert("Cash received is less than total amount.");
+            cashReceivedInput.focus();
+            return false;
+        }
     }
     if (method === 'part-payment' && Math.abs(((parseFloat(cashAmountInput.value) || 0) + (parseFloat(cardAmountInput.value) || 0)) - currentTotals.total) > 0.01) {
         alert("Part payment amounts do not match total bill.");
@@ -386,21 +443,17 @@ function handlePaymentMethodChange() {
 // ==========================================================
 function setupEventListeners() {
     productSearchInput.addEventListener('input', handleSearch);
-    
-    // === START: সংশোধিত keydown ইভেন্ট লিসেনার ===
+
     document.addEventListener('keydown', (e) => {
         const activeEl = document.activeElement;
         const isTypingInInput = activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA';
 
-        // যদি কোনো ইনপুট ফিল্ডে টাইপ না করা হয়, তবেই সার্চ বারে ফোকাস করুন
-        // এটি বারকোড স্ক্যানারের জন্য সুবিধাজনক
         if (!isTypingInInput && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-            e.preventDefault(); // কিছু ব্রাউজারে পেজ স্ক্রল হওয়া আটকাতে পারে
+            e.preventDefault();
             productSearchInput.focus();
-            productSearchInput.value = e.key; // টাইপ করা অক্ষরটি ইনপুটে বসিয়ে দেওয়া
+            productSearchInput.value += e.key;
         }
 
-        // বারকোড বা সার্চের জন্য Enter কী হ্যান্ডেল করা
         if (e.key === 'Enter' && activeEl === productSearchInput) {
             e.preventDefault();
             const searchTerm = productSearchInput.value.trim();
@@ -409,12 +462,11 @@ function setupEventListeners() {
             }
         }
     });
-    // === END: সংশোধিত keydown ইভেন্ট লিসেনার ===
 
-    document.addEventListener('click', e => { 
+    document.addEventListener('click', e => {
         if (!e.target.closest('.search-box')) {
             searchResultsContainer.style.display = 'none';
-        } 
+        }
     });
 
     categoryProductListContainer.addEventListener('click', e => {
@@ -429,25 +481,22 @@ function setupEventListeners() {
         if (cart.length > 0) {
             updateAllTotals();
             checkoutModal.classList.remove('hidden');
-            // মডাল খোলার পর ব্যবহারকারীর সুবিধার জন্য কাস্টমার নেম ফিল্ডে ফোকাস করা
-            customerNameInput.focus(); 
+            customerNameInput.focus();
         }
     });
 
     closeModalBtn.addEventListener('click', () => checkoutModal.classList.add('hidden'));
-    checkoutModal.addEventListener('click', e => { 
+    checkoutModal.addEventListener('click', e => {
         if (e.target === checkoutModal) {
             checkoutModal.classList.add('hidden');
         }
     });
     
-    [gstToggle, discountTypeSelect, discountValueInput].forEach(el => el.addEventListener('input', updateAllTotals));
-    paymentMethodSelect.addEventListener('change', handlePaymentMethodChange);
-    cashReceivedInput.addEventListener('input', () => { 
-        calculateReturnAmount(); 
-        validateFinalBillButton(); 
+    [gstToggle, discountTypeSelect, discountValueInput, cashReceivedInput, cashAmountInput, cardAmountInput].forEach(el => {
+        el.addEventListener('input', updateAllTotals);
     });
-    [cashAmountInput, cardAmountInput].forEach(el => el.addEventListener('input', validateFinalBillButton));
+    
+    paymentMethodSelect.addEventListener('change', handlePaymentMethodChange);
 
     generateBillBtn.addEventListener('click', generateFinalBill);
     logoutBtn.addEventListener('click', () => signOut(auth).catch(error => console.error("Logout error", error)));
