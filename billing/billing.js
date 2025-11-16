@@ -1,4 +1,4 @@
-// billing/billing.js - Fully Updated (v3.0)
+// billing/billing.js - Fully Updated with COGS fix (v3.1)
 
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
@@ -163,26 +163,22 @@ function handleSearch(e) {
     searchResultsContainer.style.display = 'block';
 }
 
-// ✅ NEW: বারকোড স্ক্যান হ্যান্ডেল করার জন্য উন্নত ফাংশন
 function handleSearchEnter(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
         const searchTerm = productSearchInput.value.trim();
         if (!searchTerm) return;
 
-        // বারকোড দিয়ে সরাসরি প্রোডাক্ট খোঁজা
         const productByBarcode = allProducts.find(p => p.barcode === searchTerm);
         if (productByBarcode) {
             addProductToCart(productByBarcode);
-            return; // পণ্য পাওয়া গেলে আর কিছু করার দরকার নেই
+            return;
         }
 
-        // যদি বারকোড না মেলে, তাহলে সার্চ রেজাল্টের প্রথম আইটেম যোগ করা
         const firstResult = searchResultsContainer.querySelector('.search-result-item');
         if (firstResult && firstResult.textContent !== 'No products found.') {
             firstResult.click();
         } else {
-             // যদি কোনো রেজাল্ট না পাওয়া যায়, ব্যবহারকারীকে জানানো
              alert(`No product found with barcode or name: "${searchTerm}"`);
              productSearchInput.select();
         }
@@ -314,7 +310,6 @@ function calculateReturnAmount() {
     returnAmountDisplay.textContent = `₹${returnAmount.toFixed(2)}`;
 }
 
-// ✅ UPDATED: ক্যাশ রিসিভড ফিল্ড খালি থাকলেও বাটন সক্রিয় হবে
 function validateFinalBillButton() {
     let isValid = false;
     if (cart.length > 0) {
@@ -332,7 +327,7 @@ function validateFinalBillButton() {
             const cardPaid = parseFloat(cardAmountInput.value) || 0;
             isValid = Math.abs((cashPaid + cardPaid) - currentTotals.total) < 0.01;
         } else {
-            isValid = true; // For 'card', 'online' etc.
+            isValid = true;
         }
     }
     generateBillBtn.disabled = !isValid;
@@ -341,7 +336,6 @@ function validateFinalBillButton() {
 // ==========================================================
 // --- বিল নম্বর জেনারেশন ---
 // ==========================================================
-// ✅ NEW: ক্রমিক বিল নম্বর জেনারেট করার জন্য ফাংশন
 async function getNextBillNumber() {
     if (!currentUserId) throw new Error("User not authenticated.");
     const counterRef = doc(db, 'shops', currentUserId, 'metadata', 'counters');
@@ -357,11 +351,9 @@ async function getNextBillNumber() {
             transaction.set(counterRef, { lastBillNumber: nextBillNumber }, { merge: true });
             return nextBillNumber;
         });
-        // নম্বরটিকে একটি নির্দিষ্ট ফরম্যাটে (যেমন: 00001) রূপান্তর করা
         return String(newBillNumber).padStart(5, '0');
     } catch (error) {
         console.error("Error getting next bill number: ", error);
-        // একটি ফলব্যাক নম্বর জেনারেট করা, যাতে কাজ বন্ধ না হয়
         return `E-${Date.now().toString().slice(-6)}`;
     }
 }
@@ -369,7 +361,6 @@ async function getNextBillNumber() {
 // ==========================================================
 // --- চেকআউট এবং বিল জেনারেশন ---
 // ==========================================================
-// ✅ UPDATED: বিল নম্বর এবং ক্যাশ পেমেন্ট লজিক সহ চূড়ান্ত ফাংশন
 async function generateFinalBill() {
     if (!preCheckoutValidation()) {
         return;
@@ -379,12 +370,21 @@ async function generateFinalBill() {
     generateBillBtn.textContent = 'Processing...';
 
     try {
-        // নতুন বিল নম্বর পাওয়া
         const newBillNo = await getNextBillNumber();
         
         const sale = {
-            billNo: newBillNo, // বিল নম্বর যোগ করা হলো
-            items: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.sellingPrice || 0, category: item.category || 'N/A' })),
+            billNo: newBillNo,
+            // ================== START: THE FIX IS HERE ==================
+            items: cart.map(item => ({ 
+                id: item.id, 
+                name: item.name, 
+                quantity: item.quantity, 
+                price: item.sellingPrice || 0, 
+                category: item.category || 'N/A',
+                // This line ensures Cost of Goods Sold can be calculated
+                purchasePrice: item.purchasePrice || item.costPrice || 0 
+            })),
+            // =================== END: THE FIX IS HERE ===================
             ...currentTotals,
             paymentMethod: paymentMethodSelect.value,
             gstApplied: gstToggle.checked,
@@ -397,7 +397,7 @@ async function generateFinalBill() {
         if (sale.paymentMethod === 'cash') {
             let cashReceived = parseFloat(cashReceivedInput.value);
             if (isNaN(cashReceived) || cashReceivedInput.value.trim() === '') {
-                cashReceived = sale.total; // যদি ইনপুট খালি থাকে
+                cashReceived = sale.total;
             }
             sale.paymentBreakdown = { 
                 cashReceived: cashReceived, 
@@ -433,7 +433,6 @@ async function generateFinalBill() {
     }
 }
 
-// ✅ UPDATED: ভ্যালিডেশন লজিক
 function preCheckoutValidation() {
     if (cart.length === 0) {
         alert("Cart is empty. Please add products to proceed.");
