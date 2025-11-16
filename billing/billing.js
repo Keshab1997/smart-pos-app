@@ -1,4 +1,4 @@
-// billing/billing.js - Fully Updated with Barcode Scanner & COGS fix (v3.2)
+// billing/billing.js - Profit/Loss Logic Restored & Barcode Scan Perfected (v3.3)
 
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
@@ -18,21 +18,15 @@ const categoryProductListContainer = document.getElementById('category-product-l
 const cartItemsContainer = document.getElementById('cart-items');
 const footerTotalAmountEl = document.getElementById('footer-total-amount');
 const proceedToCheckoutBtn = document.getElementById('proceed-to-checkout-btn');
-
-// --- চেকআউট মডাল এলিমেন্টস ---
 const checkoutModal = document.getElementById('checkout-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const modalSubtotalEl = document.getElementById('modal-subtotal');
 const gstToggle = document.getElementById('gst-toggle');
 const modalTaxEl = document.getElementById('modal-tax');
 const modalTotalAmountEl = document.getElementById('modal-total-amount');
-
-// --- ডিসকাউন্টের জন্য রেফারেন্স ---
 const discountTypeSelect = document.getElementById('discount-type');
 const discountValueInput = document.getElementById('discount-value');
 const modalDiscountEl = document.getElementById('modal-discount');
-
-// --- পেমেন্ট, কাস্টমার এবং অন্যান্য UI এলিমেন্টস ---
 const paymentMethodSelect = document.getElementById('payment-method-select');
 const partPaymentDetails = document.getElementById('part-payment-details');
 const cashPaymentDetails = document.getElementById('cash-payment-details');
@@ -55,12 +49,9 @@ let cart = [];
 let allProducts = [];
 let currentTotals = { subtotal: 0, discount: 0, tax: 0, total: 0 };
 let currentUserId = null;
-let barcodeBuffer = ''; // বারকোড স্ক্যানারের দ্রুত ইনপুটের জন্য বাফার
-let barcodeTimer = null;
-
 
 // ==========================================================
-// --- Authentication ---
+// --- Authentication & Initialization ---
 // ==========================================================
 onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -71,9 +62,6 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// ==========================================================
-// --- প্রাথমিক ফাংশন ---
-// ==========================================================
 function initializeBillingPage() {
     updateCartDisplay();
     initializeProducts();
@@ -88,6 +76,7 @@ async function initializeProducts() {
         const inventoryRef = collection(db, 'shops', currentUserId, 'inventory');
         const q = query(inventoryRef, orderBy('name'));
         const querySnapshot = await getDocs(q);
+        // এখানে purchasePrice সহ সকল ডেটা লোড করা হচ্ছে
         allProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         displayProductsByCategory();
     } catch (error) {
@@ -109,8 +98,7 @@ function displayProductsByCategory() {
         return acc;
     }, {});
     categoryProductListContainer.innerHTML = '';
-    const sortedCategories = Object.keys(productsByCategory).sort();
-    sortedCategories.forEach(category => {
+    Object.keys(productsByCategory).sort().forEach(category => {
         const categoryGroup = document.createElement('div');
         categoryGroup.classList.add('category-group');
         categoryGroup.innerHTML = `<h4 class="category-name">${category}</h4>`;
@@ -120,13 +108,10 @@ function displayProductsByCategory() {
             const productCard = document.createElement('div');
             productCard.classList.add('product-card');
             productCard.dataset.productId = product.id;
-            const price = product.sellingPrice || 0;
-            const stockClass = product.stock <= 10 ? 'low-stock' : '';
-
             productCard.innerHTML = `
                 <span class="product-card-name">${product.name}</span>
-                <span class="product-card-price">₹${price.toFixed(2)}</span>
-                <div class="product-card-stock ${stockClass}">Stock: ${product.stock}</div>
+                <span class="product-card-price">₹${(product.sellingPrice || 0).toFixed(2)}</span>
+                <div class="product-card-stock ${product.stock <= 10 ? 'low-stock' : ''}">Stock: ${product.stock}</div>
             `;
             productGrid.appendChild(productCard);
         });
@@ -135,12 +120,12 @@ function displayProductsByCategory() {
     });
 }
 
-// =================================================================
-// --- প্রোডাক্ট সার্চ এবং বারকোড হ্যান্ডলিং (গুরুত্বপূর্ণ পরিবর্তন) ---
-// =================================================================
+// =========================================================================================
+// === পরিবর্তন: প্রোডাক্ট সার্চ এবং বারকোড হ্যান্ডলিং (প্রফিট/লস লজিক পুনরুদ্ধার করা হয়েছে) ===
+// =========================================================================================
 function handleSearch(e) {
     const searchText = e.target.value.trim().toLowerCase();
-    if (searchText.length < 1) {
+    if (searchText.length < 2) {
         searchResultsContainer.style.display = 'none';
         return;
     }
@@ -152,11 +137,11 @@ function handleSearch(e) {
     searchResultsContainer.innerHTML = '';
     if (matchedProducts.length > 0) {
         matchedProducts.forEach(product => {
-            const price = product.sellingPrice || 0;
             const div = document.createElement('div');
             div.classList.add('search-result-item');
-            div.innerHTML = `<span>${product.name}</span> <span>₹${price.toFixed(2)}</span>`;
-            div.addEventListener('click', () => addProductToCart(product.id));
+            div.innerHTML = `<span>${product.name}</span> <span>₹${(product.sellingPrice || 0).toFixed(2)}</span>`;
+            // এখানে সরাসরি 'product' অবজেক্ট পাস করা হচ্ছে
+            div.addEventListener('click', () => addProductToCart(product));
             searchResultsContainer.appendChild(div);
         });
     } else {
@@ -165,36 +150,32 @@ function handleSearch(e) {
     searchResultsContainer.style.display = 'block';
 }
 
-async function handleBarcodeScan(barcode) {
+function handleBarcodeScan(barcode) {
     if (!barcode) return;
-
-    // Firebase থেকে সরাসরি বারকোড দিয়ে প্রোডাক্ট খোঁজা
-    const productsRef = collection(db, 'shops', currentUserId, 'inventory');
-    const q = query(productsRef, where("barcode", "==", barcode));
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-        const productDoc = querySnapshot.docs[0];
-        addProductToCart(productDoc.id);
+    // ডেটাবেসে না খুঁজে, লোড করা allProducts অ্যারে থেকে খোঁজা হচ্ছে
+    const product = allProducts.find(p => p.barcode === barcode);
+    if (product) {
+        addProductToCart(product);
     } else {
         alert(`No product found with barcode: "${barcode}"`);
     }
-    // ইনপুট ফিল্ড খালি করা
     productSearchInput.value = '';
 }
 
-function addProductToCart(productId) {
-    const product = allProducts.find(p => p.id === productId);
-    if (product) {
-        addToCart(product);
-        productSearchInput.value = '';
-        searchResultsContainer.style.display = 'none';
-        productSearchInput.focus();
-    }
+// এই ফাংশনটি এখন সরাসরি product object নেয়, যা purchasePrice সহ সকল ডেটা নিশ্চিত করে
+function addProductToCart(product) {
+    addToCart(product);
+    productSearchInput.value = '';
+    searchResultsContainer.style.display = 'none';
+    productSearchInput.focus();
 }
 
 function addToCart(product) {
-    if (!product.stock || product.stock <= 0) {
+    if (!product || !product.id) {
+        console.error("Invalid product object passed to addToCart:", product);
+        return;
+    }
+    if (product.stock <= 0) {
         alert(`'${product.name}' is out of stock!`);
         return;
     }
@@ -206,6 +187,7 @@ function addToCart(product) {
             alert(`Cannot add more. Stock limit for '${product.name}' reached!`);
         }
     } else {
+        // এখানে purchasePrice সহ সম্পূর্ণ product অবজেক্ট কার্টে যোগ হচ্ছে
         cart.push({ ...product, quantity: 1 });
     }
     updateCartDisplay();
@@ -215,27 +197,20 @@ function addToCart(product) {
 // --- কার্ট ম্যানেজমেন্ট এবং UI আপডেট ---
 // ==========================================================
 function updateCartDisplay() {
-    cartItemsContainer.innerHTML = '';
-    if (cart.length === 0) {
-        cartItemsContainer.innerHTML = '<p class="empty-cart-message">Your cart is empty.</p>';
-    } else {
-        cart.sort((a, b) => (a.name > b.name) ? 1 : -1); // নামের ক্রমানুসারে সাজানো
-        cart.forEach((item, index) => {
+    cartItemsContainer.innerHTML = cart.length === 0 ? '<p class="empty-cart-message">Your cart is empty.</p>' : '';
+    if (cart.length > 0) {
+        cart.sort((a, b) => a.name.localeCompare(b.name));
+        cart.forEach(item => {
             const cartItemEl = document.createElement('div');
             cartItemEl.className = 'cart-item';
-            const itemTotal = (item.sellingPrice || 0) * item.quantity;
-
             cartItemEl.innerHTML = `
-                <div class="item-info">
-                    <span class="item-name">${item.name}</span>
-                    <span class="item-price">₹${(item.sellingPrice || 0).toFixed(2)}</span>
-                </div>
+                <div class="item-info"><span class="item-name">${item.name}</span><span class="item-price">₹${(item.sellingPrice || 0).toFixed(2)}</span></div>
                 <div class="item-controls">
                     <button class="quantity-btn decrease-btn" data-id="${item.id}">-</button>
-                    <input type="number" class="quantity-input" value="${item.quantity}" data-id="${item.id}" readonly>
+                    <input type="number" class="quantity-input" value="${item.quantity}" readonly>
                     <button class="quantity-btn increase-btn" data-id="${item.id}">+</button>
                 </div>
-                <div class="item-total">₹${itemTotal.toFixed(2)}</div>
+                <div class="item-total">₹${((item.sellingPrice || 0) * item.quantity).toFixed(2)}</div>
                 <button class="remove-item-btn" data-id="${item.id}">&times;</button>
             `;
             cartItemsContainer.prepend(cartItemEl);
@@ -251,38 +226,29 @@ function addCartItemEventListeners() {
         const item = cart.find(i => i.id === productId);
         if (!item) return;
         let newQuantity = item.quantity + change;
-
         if (newQuantity > item.stock) {
-            alert(`Maximum stock available for ${item.name} is ${item.stock}.`);
+            alert(`Maximum stock for ${item.name} is ${item.stock}.`);
             newQuantity = item.stock;
         }
-        if (newQuantity <= 0) {
-            cart = cart.filter(i => i.id !== productId);
-        } else {
-            item.quantity = newQuantity;
-        }
+        if (newQuantity <= 0) cart = cart.filter(i => i.id !== productId);
+        else item.quantity = newQuantity;
         updateCartDisplay();
     };
-
-    document.querySelectorAll('.increase-btn').forEach(btn => btn.onclick = e => handleQuantityChange(e.target.dataset.id, 1));
-    document.querySelectorAll('.decrease-btn').forEach(btn => btn.onclick = e => handleQuantityChange(e.target.dataset.id, -1));
-    document.querySelectorAll('.remove-item-btn').forEach(btn => btn.onclick = e => {
-        cart = cart.filter(i => i.id !== e.target.dataset.id);
-        updateCartDisplay();
+    document.querySelectorAll('.cart-item').forEach(el => {
+        el.querySelector('.increase-btn').onclick = e => handleQuantityChange(e.target.dataset.id, 1);
+        el.querySelector('.decrease-btn').onclick = e => handleQuantityChange(e.target.dataset.id, -1);
+        el.querySelector('.remove-item-btn').onclick = e => {
+            cart = cart.filter(i => i.id !== e.target.dataset.id);
+            updateCartDisplay();
+        };
     });
 }
 
 function updateAllTotals() {
-    const subtotal = cart.reduce((sum, item) => sum + ((item.sellingPrice || 0) * item.quantity), 0);
+    const subtotal = cart.reduce((sum, item) => sum + (item.sellingPrice || 0) * item.quantity, 0);
     const discountType = discountTypeSelect.value;
     let discountValue = parseFloat(discountValueInput.value) || 0;
-    let discountAmount = 0;
-
-    if (discountType === 'percent') {
-        discountAmount = (subtotal * discountValue) / 100;
-    } else {
-        discountAmount = discountValue > subtotal ? subtotal : discountValue;
-    }
+    let discountAmount = discountType === 'percent' ? (subtotal * discountValue) / 100 : Math.min(discountValue, subtotal);
     const discountedSubtotal = subtotal - discountAmount;
     const tax = gstToggle.checked ? discountedSubtotal * 0.05 : 0;
     const total = discountedSubtotal + tax;
@@ -293,15 +259,13 @@ function updateAllTotals() {
     modalDiscountEl.textContent = `- ₹${discountAmount.toFixed(2)}`;
     modalTaxEl.textContent = `₹${tax.toFixed(2)}`;
     modalTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
-
     calculateReturnAmount();
     validateFinalBillButton();
 }
 
 function calculateReturnAmount() {
     const cashReceived = parseFloat(cashReceivedInput.value) || 0;
-    const totalBill = currentTotals.total;
-    const returnAmount = cashReceived >= totalBill ? cashReceived - totalBill : 0;
+    const returnAmount = cashReceived >= currentTotals.total ? cashReceived - currentTotals.total : 0;
     returnAmountDisplay.textContent = `₹${returnAmount.toFixed(2)}`;
 }
 
@@ -309,43 +273,33 @@ function validateFinalBillButton() {
     let isValid = false;
     if (cart.length > 0) {
         const method = paymentMethodSelect.value;
-        if (method === 'cash') {
-            const cashReceivedValue = cashReceivedInput.value.trim();
-            isValid = cashReceivedValue === '' || (parseFloat(cashReceivedValue) || 0) >= currentTotals.total;
-        } else if (method === 'part-payment') {
-            const cashPaid = parseFloat(cashAmountInput.value) || 0;
-            const cardPaid = parseFloat(cardAmountInput.value) || 0;
-            isValid = Math.abs((cashPaid + cardPaid) - currentTotals.total) < 0.01;
-        } else {
-            isValid = true;
-        }
+        if (method === 'cash') isValid = cashReceivedInput.value.trim() === '' || (parseFloat(cashReceivedInput.value) || 0) >= currentTotals.total;
+        else if (method === 'part-payment') isValid = Math.abs(((parseFloat(cashAmountInput.value) || 0) + (parseFloat(cardAmountInput.value) || 0)) - currentTotals.total) < 0.01;
+        else isValid = true;
     }
     generateBillBtn.disabled = !isValid;
 }
 
 // ==========================================================
-// --- বিল নম্বর জেনারেশন ---
+// --- বিল নম্বর জেনারেশন ও বিল জেনারেশন ---
 // ==========================================================
 async function getNextBillNumber() {
     if (!currentUserId) throw new Error("User not authenticated.");
     const counterRef = doc(db, 'shops', currentUserId, 'metadata', 'counters');
     try {
-        return await runTransaction(db, async (transaction) => {
+        return await runTransaction(db, async transaction => {
             const counterDoc = await transaction.get(counterRef);
-            const lastBillNumber = (counterDoc.exists() && counterDoc.data().lastBillNumber) ? counterDoc.data().lastBillNumber : 0;
+            const lastBillNumber = counterDoc.exists() ? counterDoc.data().lastBillNumber || 0 : 0;
             const nextBillNumber = lastBillNumber + 1;
             transaction.set(counterRef, { lastBillNumber: nextBillNumber }, { merge: true });
             return String(nextBillNumber).padStart(5, '0');
         });
     } catch (error) {
-        console.error("Error getting next bill number: ", error);
+        console.error("Error getting next bill number:", error);
         return `E-${Date.now().toString().slice(-6)}`;
     }
 }
 
-// ==========================================================
-// --- চেকআউট এবং বিল জেনারেশন ---
-// ==========================================================
 async function generateFinalBill() {
     if (!preCheckoutValidation()) return;
     generateBillBtn.disabled = true;
@@ -358,6 +312,7 @@ async function generateFinalBill() {
             items: cart.map(item => ({ 
                 id: item.id, name: item.name, quantity: item.quantity, 
                 price: item.sellingPrice || 0, category: item.category || 'N/A',
+                // এই লাইনটি আপনার প্রফিট/লস হিসাবের জন্য সবচেয়ে জরুরি
                 purchasePrice: item.purchasePrice || item.costPrice || 0 
             })),
             ...currentTotals,
@@ -368,13 +323,9 @@ async function generateFinalBill() {
             discountDetails: { type: discountTypeSelect.value, value: parseFloat(discountValueInput.value) || 0 },
             gstRate: 5
         };
-        
         if (sale.paymentMethod === 'cash') {
-            let cashReceived = parseFloat(cashReceivedInput.value);
-            sale.paymentBreakdown = { 
-                cashReceived: (isNaN(cashReceived) || cashReceivedInput.value.trim() === '') ? sale.total : cashReceived,
-                changeReturned: (isNaN(cashReceived) || cashReceivedInput.value.trim() === '') ? 0 : cashReceived - sale.total 
-            };
+            const cashReceived = isNaN(parseFloat(cashReceivedInput.value)) ? sale.total : parseFloat(cashReceivedInput.value);
+            sale.paymentBreakdown = { cashReceived, changeReturned: cashReceived - sale.total };
         } else if (sale.paymentMethod === 'part-payment') {
             sale.paymentBreakdown = { cash: parseFloat(cashAmountInput.value) || 0, card_or_online: parseFloat(cardAmountInput.value) || 0 };
         }
@@ -382,20 +333,15 @@ async function generateFinalBill() {
         const batch = writeBatch(db);
         const newSaleRef = doc(collection(db, 'shops', currentUserId, 'sales'));
         batch.set(newSaleRef, sale);
-
-        for (const item of cart) {
-            const productRef = doc(db, 'shops', currentUserId, 'inventory', item.id);
-            batch.update(productRef, { stock: increment(-item.quantity) });
-        }
+        cart.forEach(item => batch.update(doc(db, 'shops', currentUserId, 'inventory', item.id), { stock: increment(-item.quantity) }));
         await batch.commit();
 
         window.open(`print.html?saleId=${newSaleRef.id}`, '_blank');
         resetAfterSale();
         await initializeProducts();
-
     } catch (error) {
-        console.error("Error during checkout: ", error);
-        alert(`Checkout failed. Error: ${error.message}`);
+        console.error("Error during checkout:", error);
+        alert(`Checkout failed: ${error.message}`);
     } finally {
         generateBillBtn.disabled = false;
         generateBillBtn.textContent = 'Generate Bill & Finalize';
@@ -404,17 +350,17 @@ async function generateFinalBill() {
 
 function preCheckoutValidation() {
     if (cart.length === 0) {
-        alert("Cart is empty. Please add products to proceed.");
+        alert("Cart is empty.");
         return false;
     }
     const method = paymentMethodSelect.value;
     if (method === 'cash' && cashReceivedInput.value.trim() !== '' && (parseFloat(cashReceivedInput.value) || 0) < currentTotals.total) {
-        alert("Cash received is less than the total amount.");
+        alert("Cash received is less than total amount.");
         cashReceivedInput.focus();
         return false;
     }
     if (method === 'part-payment' && Math.abs(((parseFloat(cashAmountInput.value) || 0) + (parseFloat(cardAmountInput.value) || 0)) - currentTotals.total) > 0.01) {
-        alert("Part payment amounts do not match the total bill.");
+        alert("Part payment amounts do not match total bill.");
         return false;
     }
     return true;
@@ -422,12 +368,12 @@ function preCheckoutValidation() {
 
 function resetAfterSale() {
     cart = [];
-    updateCartDisplay();
     checkoutModal.classList.add('hidden');
     [customerNameInput, customerPhoneInput, customerAddressInput, discountValueInput, cashReceivedInput, cashAmountInput, cardAmountInput, productSearchInput].forEach(input => input.value = '');
     discountTypeSelect.value = 'percent';
     gstToggle.checked = true;
     paymentMethodSelect.value = 'cash';
+    updateCartDisplay();
     handlePaymentMethodChange();
 }
 
@@ -442,38 +388,28 @@ function handlePaymentMethodChange() {
 // --- সব ইভেন্ট লিসেনার সেটআপ ---
 // ==========================================================
 function setupEventListeners() {
-    // --- বারকোড স্ক্যানার এবং ম্যানুয়াল ইনপুটের জন্য একটি মাত্র লিসেনার ---
     productSearchInput.addEventListener('input', handleSearch);
     
-    // বারকোড স্ক্যানারের জন্য বিশেষ হ্যান্ডলিং
     document.addEventListener('keydown', (e) => {
-        // যদি ইনপুট ফিল্ড ফোকাসে না থাকে, তাহলে ফোকাস করা
-        if (document.activeElement !== productSearchInput && e.key.length === 1 && !e.ctrlKey && !e.altKey) {
+        if (document.activeElement !== productSearchInput && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
             productSearchInput.focus();
         }
-
-        // এন্টার কী প্রেস হলে
-        if (e.key === 'Enter') {
-            if (document.activeElement === productSearchInput) {
-                e.preventDefault();
-                const searchTerm = productSearchInput.value.trim();
-                if(searchTerm) {
-                    handleBarcodeScan(searchTerm);
-                }
+        if (e.key === 'Enter' && document.activeElement === productSearchInput) {
+            e.preventDefault();
+            const searchTerm = productSearchInput.value.trim();
+            if (searchTerm) {
+                // এখানে বারকোড স্ক্যানের জন্য তৈরি নতুন ফাংশনটি কল করা হচ্ছে
+                handleBarcodeScan(searchTerm);
             }
         }
     });
 
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.search-box')) {
-            searchResultsContainer.style.display = 'none';
-        }
-    });
-
-    categoryProductListContainer.addEventListener('click', (e) => {
+    document.addEventListener('click', e => { if (!e.target.closest('.search-box')) searchResultsContainer.style.display = 'none'; });
+    categoryProductListContainer.addEventListener('click', e => {
         const card = e.target.closest('.product-card');
         if (card) {
-            addProductToCart(card.dataset.productId);
+            const product = allProducts.find(p => p.id === card.dataset.productId);
+            if (product) addProductToCart(product);
         }
     });
 
@@ -485,7 +421,7 @@ function setupEventListeners() {
     });
 
     closeModalBtn.addEventListener('click', () => checkoutModal.classList.add('hidden'));
-    checkoutModal.addEventListener('click', (e) => { if (e.target === checkoutModal) checkoutModal.classList.add('hidden'); });
+    checkoutModal.addEventListener('click', e => { if (e.target === checkoutModal) checkoutModal.classList.add('hidden'); });
     
     [gstToggle, discountTypeSelect, discountValueInput].forEach(el => el.addEventListener('input', updateAllTotals));
     paymentMethodSelect.addEventListener('change', handlePaymentMethodChange);
