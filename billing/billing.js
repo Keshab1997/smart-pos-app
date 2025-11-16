@@ -1,4 +1,4 @@
-// billing/billing.js - Fully Updated with COGS fix (v3.1)
+// billing/billing.js - Fully Updated with Barcode Scanner & COGS fix (v3.2)
 
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
@@ -6,7 +6,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
-    collection, doc, getDocs, query, orderBy, writeBatch, serverTimestamp, increment, runTransaction, getDoc
+    collection, doc, getDocs, getDoc, query, where, orderBy, writeBatch, serverTimestamp, increment, runTransaction
 } from 'firebase/firestore';
 
 // ==========================================================
@@ -55,6 +55,8 @@ let cart = [];
 let allProducts = [];
 let currentTotals = { subtotal: 0, discount: 0, tax: 0, total: 0 };
 let currentUserId = null;
+let barcodeBuffer = ''; // বারকোড স্ক্যানারের দ্রুত ইনপুটের জন্য বাফার
+let barcodeTimer = null;
 
 
 // ==========================================================
@@ -133,9 +135,9 @@ function displayProductsByCategory() {
     });
 }
 
-// ==========================================================
-// --- প্রোডাক্ট সার্চ এবং কার্টে যোগ করা ---
-// ==========================================================
+// =================================================================
+// --- প্রোডাক্ট সার্চ এবং বারকোড হ্যান্ডলিং (গুরুত্বপূর্ণ পরিবর্তন) ---
+// =================================================================
 function handleSearch(e) {
     const searchText = e.target.value.trim().toLowerCase();
     if (searchText.length < 1) {
@@ -154,7 +156,7 @@ function handleSearch(e) {
             const div = document.createElement('div');
             div.classList.add('search-result-item');
             div.innerHTML = `<span>${product.name}</span> <span>₹${price.toFixed(2)}</span>`;
-            div.addEventListener('click', () => addProductToCart(product));
+            div.addEventListener('click', () => addProductToCart(product.id));
             searchResultsContainer.appendChild(div);
         });
     } else {
@@ -163,33 +165,32 @@ function handleSearch(e) {
     searchResultsContainer.style.display = 'block';
 }
 
-function handleSearchEnter(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        const searchTerm = productSearchInput.value.trim();
-        if (!searchTerm) return;
+async function handleBarcodeScan(barcode) {
+    if (!barcode) return;
 
-        const productByBarcode = allProducts.find(p => p.barcode === searchTerm);
-        if (productByBarcode) {
-            addProductToCart(productByBarcode);
-            return;
-        }
+    // Firebase থেকে সরাসরি বারকোড দিয়ে প্রোডাক্ট খোঁজা
+    const productsRef = collection(db, 'shops', currentUserId, 'inventory');
+    const q = query(productsRef, where("barcode", "==", barcode));
+    const querySnapshot = await getDocs(q);
 
-        const firstResult = searchResultsContainer.querySelector('.search-result-item');
-        if (firstResult && firstResult.textContent !== 'No products found.') {
-            firstResult.click();
-        } else {
-             alert(`No product found with barcode or name: "${searchTerm}"`);
-             productSearchInput.select();
-        }
+    if (!querySnapshot.empty) {
+        const productDoc = querySnapshot.docs[0];
+        addProductToCart(productDoc.id);
+    } else {
+        alert(`No product found with barcode: "${barcode}"`);
     }
+    // ইনপুট ফিল্ড খালি করা
+    productSearchInput.value = '';
 }
 
-function addProductToCart(product) {
-    addToCart(product);
-    productSearchInput.value = '';
-    searchResultsContainer.style.display = 'none';
-    productSearchInput.focus();
+function addProductToCart(productId) {
+    const product = allProducts.find(p => p.id === productId);
+    if (product) {
+        addToCart(product);
+        productSearchInput.value = '';
+        searchResultsContainer.style.display = 'none';
+        productSearchInput.focus();
+    }
 }
 
 function addToCart(product) {
@@ -218,6 +219,7 @@ function updateCartDisplay() {
     if (cart.length === 0) {
         cartItemsContainer.innerHTML = '<p class="empty-cart-message">Your cart is empty.</p>';
     } else {
+        cart.sort((a, b) => (a.name > b.name) ? 1 : -1); // নামের ক্রমানুসারে সাজানো
         cart.forEach((item, index) => {
             const cartItemEl = document.createElement('div');
             cartItemEl.className = 'cart-item';
@@ -229,12 +231,12 @@ function updateCartDisplay() {
                     <span class="item-price">₹${(item.sellingPrice || 0).toFixed(2)}</span>
                 </div>
                 <div class="item-controls">
-                    <button class="quantity-btn decrease-btn" data-index="${index}">-</button>
-                    <input type="number" class="quantity-input" value="${item.quantity}" data-index="${index}" readonly>
-                    <button class="quantity-btn increase-btn" data-index="${index}">+</button>
+                    <button class="quantity-btn decrease-btn" data-id="${item.id}">-</button>
+                    <input type="number" class="quantity-input" value="${item.quantity}" data-id="${item.id}" readonly>
+                    <button class="quantity-btn increase-btn" data-id="${item.id}">+</button>
                 </div>
                 <div class="item-total">₹${itemTotal.toFixed(2)}</div>
-                <button class="remove-item-btn" data-index="${index}">&times;</button>
+                <button class="remove-item-btn" data-id="${item.id}">&times;</button>
             `;
             cartItemsContainer.prepend(cartItemEl);
         });
@@ -245,8 +247,8 @@ function updateCartDisplay() {
 }
 
 function addCartItemEventListeners() {
-    const handleQuantityChange = (index, change) => {
-        const item = cart[index];
+    const handleQuantityChange = (productId, change) => {
+        const item = cart.find(i => i.id === productId);
         if (!item) return;
         let newQuantity = item.quantity + change;
 
@@ -254,26 +256,19 @@ function addCartItemEventListeners() {
             alert(`Maximum stock available for ${item.name} is ${item.stock}.`);
             newQuantity = item.stock;
         }
-
         if (newQuantity <= 0) {
-            cart.splice(index, 1);
+            cart = cart.filter(i => i.id !== productId);
         } else {
             item.quantity = newQuantity;
         }
         updateCartDisplay();
     };
 
-    document.querySelectorAll('.increase-btn').forEach(btn => {
-        btn.addEventListener('click', e => handleQuantityChange(parseInt(e.target.dataset.index), 1));
-    });
-    document.querySelectorAll('.decrease-btn').forEach(btn => {
-        btn.addEventListener('click', e => handleQuantityChange(parseInt(e.target.dataset.index), -1));
-    });
-    document.querySelectorAll('.remove-item-btn').forEach(btn => {
-        btn.addEventListener('click', e => {
-            cart.splice(parseInt(e.target.dataset.index), 1);
-            updateCartDisplay();
-        });
+    document.querySelectorAll('.increase-btn').forEach(btn => btn.onclick = e => handleQuantityChange(e.target.dataset.id, 1));
+    document.querySelectorAll('.decrease-btn').forEach(btn => btn.onclick = e => handleQuantityChange(e.target.dataset.id, -1));
+    document.querySelectorAll('.remove-item-btn').forEach(btn => btn.onclick = e => {
+        cart = cart.filter(i => i.id !== e.target.dataset.id);
+        updateCartDisplay();
     });
 }
 
@@ -316,12 +311,7 @@ function validateFinalBillButton() {
         const method = paymentMethodSelect.value;
         if (method === 'cash') {
             const cashReceivedValue = cashReceivedInput.value.trim();
-            if (cashReceivedValue === '') {
-                isValid = true;
-            } else {
-                const cashReceived = parseFloat(cashReceivedValue) || 0;
-                isValid = cashReceived >= currentTotals.total;
-            }
+            isValid = cashReceivedValue === '' || (parseFloat(cashReceivedValue) || 0) >= currentTotals.total;
         } else if (method === 'part-payment') {
             const cashPaid = parseFloat(cashAmountInput.value) || 0;
             const cardPaid = parseFloat(cardAmountInput.value) || 0;
@@ -339,19 +329,14 @@ function validateFinalBillButton() {
 async function getNextBillNumber() {
     if (!currentUserId) throw new Error("User not authenticated.");
     const counterRef = doc(db, 'shops', currentUserId, 'metadata', 'counters');
-
     try {
-        const newBillNumber = await runTransaction(db, async (transaction) => {
+        return await runTransaction(db, async (transaction) => {
             const counterDoc = await transaction.get(counterRef);
-            let lastBillNumber = 0;
-            if (counterDoc.exists() && counterDoc.data().lastBillNumber) {
-                lastBillNumber = counterDoc.data().lastBillNumber;
-            }
+            const lastBillNumber = (counterDoc.exists() && counterDoc.data().lastBillNumber) ? counterDoc.data().lastBillNumber : 0;
             const nextBillNumber = lastBillNumber + 1;
             transaction.set(counterRef, { lastBillNumber: nextBillNumber }, { merge: true });
-            return nextBillNumber;
+            return String(nextBillNumber).padStart(5, '0');
         });
-        return String(newBillNumber).padStart(5, '0');
     } catch (error) {
         console.error("Error getting next bill number: ", error);
         return `E-${Date.now().toString().slice(-6)}`;
@@ -362,29 +347,19 @@ async function getNextBillNumber() {
 // --- চেকআউট এবং বিল জেনারেশন ---
 // ==========================================================
 async function generateFinalBill() {
-    if (!preCheckoutValidation()) {
-        return;
-    }
-
+    if (!preCheckoutValidation()) return;
     generateBillBtn.disabled = true;
     generateBillBtn.textContent = 'Processing...';
 
     try {
         const newBillNo = await getNextBillNumber();
-        
         const sale = {
             billNo: newBillNo,
-            // ================== START: THE FIX IS HERE ==================
             items: cart.map(item => ({ 
-                id: item.id, 
-                name: item.name, 
-                quantity: item.quantity, 
-                price: item.sellingPrice || 0, 
-                category: item.category || 'N/A',
-                // This line ensures Cost of Goods Sold can be calculated
+                id: item.id, name: item.name, quantity: item.quantity, 
+                price: item.sellingPrice || 0, category: item.category || 'N/A',
                 purchasePrice: item.purchasePrice || item.costPrice || 0 
             })),
-            // =================== END: THE FIX IS HERE ===================
             ...currentTotals,
             paymentMethod: paymentMethodSelect.value,
             gstApplied: gstToggle.checked,
@@ -396,12 +371,9 @@ async function generateFinalBill() {
         
         if (sale.paymentMethod === 'cash') {
             let cashReceived = parseFloat(cashReceivedInput.value);
-            if (isNaN(cashReceived) || cashReceivedInput.value.trim() === '') {
-                cashReceived = sale.total;
-            }
             sale.paymentBreakdown = { 
-                cashReceived: cashReceived, 
-                changeReturned: cashReceived - sale.total 
+                cashReceived: (isNaN(cashReceived) || cashReceivedInput.value.trim() === '') ? sale.total : cashReceived,
+                changeReturned: (isNaN(cashReceived) || cashReceivedInput.value.trim() === '') ? 0 : cashReceived - sale.total 
             };
         } else if (sale.paymentMethod === 'part-payment') {
             sale.paymentBreakdown = { cash: parseFloat(cashAmountInput.value) || 0, card_or_online: parseFloat(cardAmountInput.value) || 0 };
@@ -417,10 +389,7 @@ async function generateFinalBill() {
         }
         await batch.commit();
 
-        const newSaleId = newSaleRef.id;
-        const printUrl = `print.html?saleId=${newSaleId}`;
-        window.open(printUrl, '_blank');
-        
+        window.open(`print.html?saleId=${newSaleRef.id}`, '_blank');
         resetAfterSale();
         await initializeProducts();
 
@@ -439,20 +408,14 @@ function preCheckoutValidation() {
         return false;
     }
     const method = paymentMethodSelect.value;
-
     if (method === 'cash' && cashReceivedInput.value.trim() !== '' && (parseFloat(cashReceivedInput.value) || 0) < currentTotals.total) {
-        alert("Cash received is less than the total amount. Please enter a valid amount.");
+        alert("Cash received is less than the total amount.");
         cashReceivedInput.focus();
         return false;
     }
-
-    if (method === 'part-payment') {
-        const cashPaid = parseFloat(cashAmountInput.value) || 0;
-        const cardPaid = parseFloat(cardAmountInput.value) || 0;
-        if (Math.abs((cashPaid + cardPaid) - currentTotals.total) > 0.01) {
-            alert("Part payment amounts do not match the total bill.");
-            return false;
-        }
+    if (method === 'part-payment' && Math.abs(((parseFloat(cashAmountInput.value) || 0) + (parseFloat(cardAmountInput.value) || 0)) - currentTotals.total) > 0.01) {
+        alert("Part payment amounts do not match the total bill.");
+        return false;
     }
     return true;
 }
@@ -461,8 +424,7 @@ function resetAfterSale() {
     cart = [];
     updateCartDisplay();
     checkoutModal.classList.add('hidden');
-    
-    [customerNameInput, customerPhoneInput, customerAddressInput, discountValueInput, cashReceivedInput, cashAmountInput, cardAmountInput].forEach(input => input.value = '');
+    [customerNameInput, customerPhoneInput, customerAddressInput, discountValueInput, cashReceivedInput, cashAmountInput, cardAmountInput, productSearchInput].forEach(input => input.value = '');
     discountTypeSelect.value = 'percent';
     gstToggle.checked = true;
     paymentMethodSelect.value = 'cash';
@@ -480,8 +442,27 @@ function handlePaymentMethodChange() {
 // --- সব ইভেন্ট লিসেনার সেটআপ ---
 // ==========================================================
 function setupEventListeners() {
+    // --- বারকোড স্ক্যানার এবং ম্যানুয়াল ইনপুটের জন্য একটি মাত্র লিসেনার ---
     productSearchInput.addEventListener('input', handleSearch);
-    productSearchInput.addEventListener('keydown', handleSearchEnter);
+    
+    // বারকোড স্ক্যানারের জন্য বিশেষ হ্যান্ডলিং
+    document.addEventListener('keydown', (e) => {
+        // যদি ইনপুট ফিল্ড ফোকাসে না থাকে, তাহলে ফোকাস করা
+        if (document.activeElement !== productSearchInput && e.key.length === 1 && !e.ctrlKey && !e.altKey) {
+            productSearchInput.focus();
+        }
+
+        // এন্টার কী প্রেস হলে
+        if (e.key === 'Enter') {
+            if (document.activeElement === productSearchInput) {
+                e.preventDefault();
+                const searchTerm = productSearchInput.value.trim();
+                if(searchTerm) {
+                    handleBarcodeScan(searchTerm);
+                }
+            }
+        }
+    });
 
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.search-box')) {
@@ -492,8 +473,7 @@ function setupEventListeners() {
     categoryProductListContainer.addEventListener('click', (e) => {
         const card = e.target.closest('.product-card');
         if (card) {
-            const productToAdd = allProducts.find(p => p.id === card.dataset.productId);
-            if (productToAdd) addToCart(productToAdd);
+            addProductToCart(card.dataset.productId);
         }
     });
 
@@ -505,32 +485,14 @@ function setupEventListeners() {
     });
 
     closeModalBtn.addEventListener('click', () => checkoutModal.classList.add('hidden'));
-    checkoutModal.addEventListener('click', (e) => {
-        if (e.target === checkoutModal) {
-            checkoutModal.classList.add('hidden');
-        }
-    });
+    checkoutModal.addEventListener('click', (e) => { if (e.target === checkoutModal) checkoutModal.classList.add('hidden'); });
     
     [gstToggle, discountTypeSelect, discountValueInput].forEach(el => el.addEventListener('input', updateAllTotals));
-    
     paymentMethodSelect.addEventListener('change', handlePaymentMethodChange);
-    
-    cashReceivedInput.addEventListener('input', () => {
-        calculateReturnAmount();
-        validateFinalBillButton();
-    });
-    
-    [cashAmountInput, cardAmountInput].forEach(el => {
-        el.addEventListener('input', validateFinalBillButton);
-    });
+    cashReceivedInput.addEventListener('input', () => { calculateReturnAmount(); validateFinalBillButton(); });
+    [cashAmountInput, cardAmountInput].forEach(el => el.addEventListener('input', validateFinalBillButton));
 
     generateBillBtn.addEventListener('click', generateFinalBill);
-
-    logoutBtn.addEventListener('click', () => {
-        signOut(auth).catch(error => console.error("Logout error", error));
-    });
-
-    mobileMenuBtn.addEventListener('click', () => {
-        mainNavLinks.classList.toggle('mobile-nav-active');
-    });
+    logoutBtn.addEventListener('click', () => signOut(auth).catch(error => console.error("Logout error", error)));
+    mobileMenuBtn.addEventListener('click', () => mainNavLinks.classList.toggle('mobile-nav-active'));
 }
