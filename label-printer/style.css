@@ -41,64 +41,32 @@ h1 {
     border-radius: 5px;
 }
 
-#product-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#product-list li {
-    padding: 10px 12px;
-    cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-#product-list li:last-child {
-    border-bottom: none;
-}
-
-#product-list li:hover {
-    background-color: #f5f5f5;
-}
-
-#product-list li.selected {
-    background-color: #e0eaff;
-    font-weight: 500;
-}
-
-#product-list li .product-name {
-    flex-grow: 1;
-}
-
-#product-list li .product-barcode {
-    font-size: 0.8rem;
-    color: #666;
-}
-
-.selection-counter {
-    margin-top: 15px;
-    text-align: center;
-    font-weight: 500;
-}
+#product-list { list-style: none; padding: 0; margin: 0; }
+#product-list li { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px; }
+#product-list li:last-child { border-bottom: none; }
+#product-list li:hover { background-color: #f5f5f5; }
+#product-list li.selected { background-color: #e0eaff; font-weight: 500; }
+#product-list li .product-name { flex-grow: 1; }
+#product-list li .product-barcode { font-size: 0.8rem; color: #666; }
+.selection-counter { margin-top: 15px; text-align: center; font-weight: 500; }
 
 /* Middle Panel: Settings */
-.middle-panel .form-group {
-    margin-bottom: 20px;
-}
+.middle-panel .form-group { margin-bottom: 15px; }
+
 #template-settings {
     background-color: #f9f9f9;
     border: 1px solid #eee;
     padding: 15px;
     border-radius: 5px;
-    min-height: 100px;
+    min-height: 80px;
+    transition: all 0.3s ease;
 }
+
+#custom-size-settings h4 { margin-top: 0; margin-bottom: 10px; }
 
 /* Right Panel: Preview */
 .right-panel {
-    align-items: center;
+    justify-content: space-between;
 }
 
 .preview-area {
@@ -111,6 +79,7 @@ h1 {
     align-items: center;
     padding: 20px;
     overflow: auto;
+    min-height: 300px;
 }
 
 .preview-label {
@@ -118,41 +87,43 @@ h1 {
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
     position: relative;
     overflow: hidden;
-    flex-shrink: 0; /* Prevent shrinking in flex container */
+    flex-shrink: 0;
+    touch-action: none;
 }
 
-.preview-item {
+.draggable-item {
     position: absolute;
+    padding: 2px;
+    border: 1px dashed transparent;
+    cursor: move;
     font-family: Arial, sans-serif;
-    font-size: 10px;
     line-height: 1;
     white-space: nowrap;
+    box-sizing: border-box;
 }
 
-.preview-item.barcode svg {
-    display: block;
-}
+.draggable-item:hover { border-color: #a0c4ff; }
+.draggable-item.selected { border: 2px solid #007bff; z-index: 10; }
+.draggable-item.barcode svg { display: block; }
 
-.print-actions {
-    margin-top: 20px;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+.printer-settings-area { margin-top: 20px; width: 100%;}
+
+.print-actions { margin-top: 20px; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+.print-actions .form-group { margin-bottom: 0; }
+
+/* Properties Panel */
+#properties-panel { border-top: 1px solid #eee; padding-top: 15px; }
+#properties-panel h4 { margin-top: 0; }
+#properties-panel p { margin: 0 0 10px; font-size: 14px; }
+
+/* Utility class */
+.hidden { display: none !important; }
 
 /* Responsive */
 @media (max-width: 1200px) {
-    .printer-layout {
-        grid-template-columns: 1fr 1.5fr;
-    }
-    .left-panel {
-        grid-column: 1 / -1;
-        max-height: 400px;
-    }
+    .printer-layout { grid-template-columns: 1fr 1.5fr; }
+    .left-panel { grid-column: 1 / -1; max-height: 400px; }
 }
 @media (max-width: 768px) {
-    .printer-layout {
-        grid-template-columns: 1fr;
-    }
+    .printer-layout { grid-template-columns: 1fr; }
 }

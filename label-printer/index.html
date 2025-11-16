@@ -11,8 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     
     <!-- CSS Files -->
-    <link rel="stylesheet" href="../css/global.css"> <!-- Global styles -->
-    <link rel="stylesheet" href="style.css"> <!-- Page-specific styles -->
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -31,7 +31,7 @@
 
     <!-- Main Content -->
     <main class="container">
-        <h1>Barcode Label Printer</h1>
+        <h1>Interactive Label Printer</h1>
 
         <div class="printer-layout">
             <!-- Left Panel: Product Selection -->
@@ -40,7 +40,6 @@
                 <input type="text" id="search-product" placeholder="Search products..." class="form-control">
                 <div class="product-list-container">
                     <ul id="product-list">
-                        <!-- Products will be loaded here by JS -->
                         <p>Loading products...</p>
                     </ul>
                 </div>
@@ -49,34 +48,95 @@
 
             <!-- Middle Panel: Template and Settings -->
             <div class="middle-panel card">
-                <h2>2. Choose Template & Settings</h2>
+                <h2>2. Template & Properties</h2>
                 <div class="form-group">
                     <label for="template-select">Label Template:</label>
                     <select id="template-select" class="form-control"></select>
                 </div>
+                
                 <div id="template-settings">
-                    <!-- Template specific settings will be shown here -->
+                    <p id="template-description"></p>
+                    <div id="custom-size-settings" class="hidden">
+                        <h4>Custom Label Settings</h4>
+                        <div class="form-group-inline">
+                            <div class="form-group">
+                                <label for="custom-width">Width (mm):</label>
+                                <input type="number" id="custom-width" class="form-control" value="50" min="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="custom-height">Height (mm):</label>
+                                <input type="number" id="custom-height" class="form-control" value="25" min="10">
+                            </div>
+                        </div>
+                        <div class="form-group-inline">
+                            <div class="form-group">
+                                <label for="custom-columns">Stickers/Row:</label>
+                                <input type="number" id="custom-columns" class="form-control" value="1" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="custom-columngap">Gap (mm):</label>
+                                <input type="number" id="custom-columngap" class="form-control" value="2" min="0">
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
                 <hr>
-                <h2>Printer Settings</h2>
-                <div class="form-group-inline">
-                     <div class="form-group">
-                        <label for="printer-vid">Vendor ID (Hex):</label>
-                        <input type="text" id="printer-vid" class="form-control" value="1F94" placeholder="e.g., 1F94">
+
+                <div id="properties-panel" class="hidden">
+                    <h4>Selected Item Properties</h4>
+                    <p><strong>Item:</strong> <span id="prop-item-name"></span></p>
+                    <div class="form-group-inline">
+                        <div class="form-group">
+                            <label for="prop-x">X (mm):</label>
+                            <input type="number" id="prop-x" class="form-control" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="prop-y">Y (mm):</label>
+                            <input type="number" id="prop-y" class="form-control" step="0.1">
+                        </div>
                     </div>
-                     <div class="form-group">
-                        <label for="printer-pid">Product ID (Hex):</label>
-                        <input type="text" id="printer-pid" class="form-control" value="2001" placeholder="e.g., 2001">
+                    <div id="text-properties" class="hidden">
+                        <div class="form-group">
+                            <label for="prop-fontsize">Font Size:</label>
+                            <input type="number" id="prop-fontsize" class="form-control" min="1">
+                        </div>
+                    </div>
+                    <div id="barcode-properties" class="hidden">
+                         <div class="form-group-inline">
+                            <div class="form-group">
+                                <label for="prop-width">Width (mm):</label>
+                                <input type="number" id="prop-width" class="form-control" step="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="prop-height">Height (mm):</label>
+                                <input type="number" id="prop-height" class="form-control" step="1">
+                            </div>
+                        </div>
                     </div>
                 </div>
-                 <button id="save-settings-btn" class="btn btn-secondary">Save Settings</button>
             </div>
 
             <!-- Right Panel: Preview and Print -->
             <div class="right-panel card">
                 <h2>3. Preview & Print</h2>
                 <div class="preview-area">
-                    <p>Select a template to see a preview.</p>
+                    <p>Select a product and template to see a preview.</p>
+                </div>
+                <div class="printer-settings-area">
+                    <hr>
+                    <h2>Printer Settings</h2>
+                    <div class="form-group-inline">
+                        <div class="form-group">
+                            <label for="printer-vid">Vendor ID (Hex):</label>
+                            <input type="text" id="printer-vid" class="form-control" placeholder="e.g., 1203">
+                        </div>
+                        <div class="form-group">
+                            <label for="printer-pid">Product ID (Hex):</label>
+                            <input type="text" id="printer-pid" class="form-control" placeholder="e.g., 0272">
+                        </div>
+                    </div>
+                    <button id="save-settings-btn" class="btn btn-secondary">Save Settings</button>
                 </div>
                 <div class="print-actions">
                     <div class="form-group">
@@ -92,8 +152,11 @@
     <!-- Status Message Container -->
     <div id="status-message-container"></div>
     
-    <!-- Firebase and JS -->
+    <!-- Third-party Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+    <!-- Firebase and Custom JS -->
     <script type="importmap">
     {
       "imports": {
