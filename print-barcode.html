@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Barcode Sticker</title>
+    <link rel="stylesheet" href="print-barcode.css">
+</head>
+<body>
+
+    <div id="print-controls">
+        <h1>Print Barcode Sticker</h1>
+        
+        <div class="control-group">
+            <label for="template-select">Select Template:</label>
+            <select id="template-select">
+                <option value="template-1" data-width="50" data-height="25">Template 1 (50mm x 25mm)</option>
+                <option value="template-2" data-width="40" data-height="30">Template 2 (40mm x 30mm)</option>
+                <option value="template-3" data-width="50" data-height="30">Template 3 (50mm x 30mm)</option>
+                <option value="template-4" data-width="60" data-height="40">Template 4 (60mm x 40mm)</option>
+                <option value="template-5" data-width="38" data-height="25">Template 5 (38mm x 25mm - Price Focus)</option>
+                <option value="template-6" data-width="70" data-height="30">Template 6 (70mm x 30mm - Wide)</option>
+                <option value="template-7" data-width="30" data-height="20">Template 7 (30mm x 20mm - Small)</option>
+                <option value="template-8" data-width="50" data-height="50">Template 8 (50mm x 50mm - Square)</option>
+                <option value="template-9" data-width="100" data-height="50">Template 9 (100mm x 50mm - Large)</option>
+                <option value="template-10" data-width="40" data-height="60">Template 10 (40mm x 60mm - Portrait)</option>
+                <option value="custom">Custom Size</option>
+            </select>
+        </div>
+
+        <div id="custom-size-inputs" class="control-group" style="display: none;">
+            <label>Width (mm):</label>
+            <input type="number" id="custom-width" value="50">
+            <label>Height (mm):</label>
+            <input type="number" id="custom-height" value="25">
+        </div>
+
+        <div class="control-group">
+            <label for="copies-input">Number of Copies:</label>
+            <input type="number" id="copies-input" value="1" min="1">
+        </div>
+
+        <button id="print-button">Print</button>
+    </div>
+
+    <div id="print-area">
+        <!-- Sticker preview will be rendered here by JavaScript -->
+    </div>
+
+    <!-- JsBarcode Library -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="print-barcode.js"></script>
+
+</body>
+</html>

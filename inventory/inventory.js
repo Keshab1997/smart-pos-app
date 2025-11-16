@@ -1,11 +1,12 @@
+// inventory.js (সম্পূর্ণ সংশোধিত এবং label-editor ছাড়া)
+
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
 // =================================================================
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, orderBy, query } from 'firebase/firestore';
-// *** পরিবর্তন ১: printer.js থেকে নতুন 'printCustomLabels' ফাংশনটি ইম্পোর্ট করা হলো ***
-import { printCustomLabels } from './printer.js'; 
+// *** পরিবর্তন: label-editor.js ইম্পোর্ট লাইনটি সরিয়ে দেওয়া হয়েছে ***
 
 // =================================================================
 // --- DOM Elements ---
@@ -16,32 +17,19 @@ const categoryFilter = document.getElementById('category-filter');
 const paginationContainer = document.getElementById('pagination-container');
 const editModal = document.getElementById('edit-modal');
 const editForm = document.getElementById('edit-form');
-const closeModalBtn = editModal.querySelector('.close-button');
 const logoutBtn = document.getElementById('logout-btn');
 const statusMessageContainer = document.getElementById('status-message-container');
 const selectAllCheckbox = document.getElementById('select-all-checkbox');
-
-// *** পরিবর্তন ২: HTML এর নতুন বাটন এবং মডাল এর এলিমেন্ট যুক্ত করা হলো ***
 const printSelectedBtn = document.getElementById('print-selected-btn');
 const printCategoryBtn = document.getElementById('print-category-btn');
-const customSizeModal = document.getElementById('custom-size-modal');
-const customSizeForm = document.getElementById('custom-size-form');
-const customSizeModalCloseBtn = customSizeModal.querySelector('.close-button');
-const labelWidthInput = document.getElementById('label-width');
-const labelHeightInput = document.getElementById('label-height');
-
 
 // =================================================================
 // --- Global State ---
 // =================================================================
-let allProducts = [];
-let filteredProducts = [];
-const ROWS_PER_PAGE = 10;
-let currentPage = 1;
-const LOW_STOCK_THRESHOLD = 10;
-let currentUserId = null;
-let unsubscribe;
-let productsToPrint = []; // *** পরিবর্তন ৩: প্রিন্ট করার জন্য প্রোডাক্টগুলো এখানে সাময়িকভাবে রাখা হবে ***
+let allProducts = [], filteredProducts = [];
+let currentPage = 1, currentUserId = null, unsubscribe;
+const ROWS_PER_PAGE = 10, LOW_STOCK_THRESHOLD = 10;
+let hasEventListenersSetup = false;
 
 // =================================================================
 // --- Authentication & Initialization ---
@@ -50,281 +38,180 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserId = user.uid;
         loadInventory();
-        setupEventListeners();
+        if (!hasEventListenersSetup) setupEventListeners();
     } else {
         window.location.href = '../index.html';
     }
 });
 
 // =================================================================
-// --- Core Functions (Data loading & Rendering) - কোনো পরিবর্তন নেই ---
+// --- Core Functions (Data loading & Rendering) ---
 // =================================================================
 function loadInventory() {
     if (!currentUserId) return;
     if (unsubscribe) unsubscribe();
-
-    const productsCollectionRef = collection(db, 'shops', currentUserId, 'inventory');
-    const productsQuery = query(productsCollectionRef, orderBy("name"));
-
-    unsubscribe = onSnapshot(productsQuery, (querySnapshot) => {
-        const currentSelectedCategory = categoryFilter.value;
-        allProducts = [];
-        const newCategories = new Set();
-        querySnapshot.forEach((doc) => {
-            const product = { id: doc.id, ...doc.data() };
-            allProducts.push(product);
-            if (product.category) newCategories.add(product.category);
-        });
-        updateCategoryFilter(newCategories, currentSelectedCategory);
-        applyFiltersAndRender();
+    const productsRef = collection(db, 'shops', currentUserId, 'inventory');
+    const q = query(productsRef, orderBy("name"));
+    unsubscribe = onSnapshot(q, (snapshot) => {
+        const currentCategory = categoryFilter.value;
+        allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const categories = new Set(allProducts.map(p => p.category).filter(Boolean));
+        updateCategoryFilter(categories, currentCategory);
+        applyFiltersAndRender(false);
     });
 }
 
-function applyFiltersAndRender(resetPage = false) {
+function applyFiltersAndRender(resetPage = true) {
     if (resetPage) currentPage = 1;
-
-    const searchTerm = searchInput.value.toLowerCase().trim();
-    const selectedCategory = categoryFilter.value;
-
-    filteredProducts = allProducts.filter(p => {
-        const name = p.name || '';
-        const barcode = p.barcode || '';
-        const category = p.category || '';
-        const matchesSearch = !searchTerm || name.toLowerCase().includes(searchTerm) || barcode.toLowerCase().includes(searchTerm);
-        const matchesCategory = !selectedCategory || category === selectedCategory;
-        return matchesSearch && matchesCategory;
-    });
-
+    const term = searchInput.value.toLowerCase().trim();
+    const category = categoryFilter.value;
+    filteredProducts = allProducts.filter(p => 
+        (!term || (p.name || '').toLowerCase().includes(term) || (p.barcode || '').toLowerCase().includes(term)) &&
+        (!category || p.category === category)
+    );
+    renderTable();
     setupPagination();
-    const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
-    const paginatedProducts = filteredProducts.slice(startIndex, startIndex + ROWS_PER_PAGE);
-    renderTable(paginatedProducts);
 }
 
-function renderTable(products) {
-    inventoryBody.innerHTML = '';
-    if (products.length === 0) {
-        inventoryBody.innerHTML = '<tr><td colspan="8" class="loading-cell">No products found.</td></tr>';
-        return;
-    }
-    products.forEach(product => {
-        const row = document.createElement('tr');
-        if (product.stock <= LOW_STOCK_THRESHOLD) row.classList.add('low-stock');
-        row.innerHTML = `
-            <td><input type="checkbox" class="product-checkbox" data-id="${product.id}"></td>
-            <td>${product.name || 'N/A'}</td>
-            <td>${product.category || 'N/A'}</td>
-            <td>${(product.costPrice || 0).toFixed(2)}</td>
-            <td>${(product.sellingPrice || 0).toFixed(2)}</td>
-            <td>${product.stock || 0}</td>
-            <td>${product.barcode || 'N/A'}</td>
-            <td class="action-buttons">
-                <button class="btn-edit action-btn" data-id="${product.id}">Edit</button>
-                <button class="btn-delete action-btn" data-id="${product.id}">Delete</button>
-                <button class="btn-print action-btn" data-id="${product.id}">Print</button>
-            </td>
-        `;
-        inventoryBody.appendChild(row);
-    });
+function renderTable() {
+    const start = (currentPage - 1) * ROWS_PER_PAGE;
+    const paginated = filteredProducts.slice(start, start + ROWS_PER_PAGE);
+    inventoryBody.innerHTML = paginated.length === 0 
+        ? '<tr><td colspan="8" class="loading-cell">No products found.</td></tr>'
+        : paginated.map(p => `
+            <tr class="${p.stock <= LOW_STOCK_THRESHOLD ? 'low-stock' : ''}">
+                <td><input type="checkbox" class="product-checkbox" data-id="${p.id}"></td>
+                <td>${p.name || 'N/A'}</td><td>${p.category || 'N/A'}</td>
+                <td>${(p.costPrice || 0).toFixed(2)}</td><td>${(p.sellingPrice || 0).toFixed(2)}</td>
+                <td>${p.stock || 0}</td><td>${p.barcode || 'N/A'}</td>
+                <td class="action-buttons">
+                    <button class="btn btn-sm btn-edit" data-id="${p.id}" title="Edit">Edit</button>
+                    <button class="btn btn-sm btn-delete" data-id="${p.id}" title="Delete">Delete</button>
+                    
+                    <!-- *** পরিবর্তন: 'Print' বাটন এখন openPrintPage ফাংশনকে কল করবে *** -->
+                    <button class="btn btn-sm btn-print" onclick="openPrintPage('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.sellingPrice}')" title="Print Barcode">Print</button>
+                </td>
+            </tr>`).join('');
 }
 
-function updateCategoryFilter(newCategories, currentSelectedCategory) {
-    const options = ['<option value="">All Categories</option>'];
-    newCategories.forEach(category => {
-        const isSelected = category === currentSelectedCategory ? 'selected' : '';
-        options.push(`<option value="${category}" ${isSelected}>${category}</option>`);
-    });
+function updateCategoryFilter(categories, selectedValue) {
+    const options = ['<option value="">All Categories</option>', ...[...categories].map(cat => `<option value="${cat}" ${cat === selectedValue ? 'selected' : ''}>${cat}</option>`)];
     categoryFilter.innerHTML = options.join('');
 }
 
 function setupPagination() {
-    paginationContainer.innerHTML = '';
     const pageCount = Math.ceil(filteredProducts.length / ROWS_PER_PAGE);
-    if (pageCount <= 1) return;
-    for (let i = 1; i <= pageCount; i++) {
-        const btn = document.createElement('button');
-        btn.innerText = i;
-        btn.className = 'pagination-btn';
-        if (i === currentPage) btn.classList.add('active');
-        btn.addEventListener('click', () => {
-            currentPage = i;
-            applyFiltersAndRender(false);
-        });
-        paginationContainer.appendChild(btn);
-    }
+    paginationContainer.innerHTML = Array.from({ length: pageCount }, (_, i) => `<button class="pagination-btn ${i + 1 === currentPage ? 'active' : ''}" data-page="${i + 1}">${i + 1}</button>`).join('');
 }
 
 function showStatus(message, type = 'success') {
-    const statusDiv = document.createElement('div');
-    statusDiv.className = `status ${type}`;
-    statusDiv.textContent = message;
-    statusMessageContainer.appendChild(statusDiv);
-    setTimeout(() => statusDiv.remove(), 4000);
+    const div = document.createElement('div');
+    div.className = `status-message ${type}`;
+    div.textContent = message;
+    statusMessageContainer.appendChild(div);
+    setTimeout(() => div.remove(), 4000);
 }
 
 // =================================================================
 // --- Event Listeners ---
 // =================================================================
 function setupEventListeners() {
-    if (setupEventListeners.executed) return;
+    hasEventListenersSetup = true;
 
     searchInput.addEventListener('input', () => applyFiltersAndRender(true));
     categoryFilter.addEventListener('change', () => applyFiltersAndRender(true));
+    
+    paginationContainer.addEventListener('click', (e) => {
+        if(e.target.matches('.pagination-btn')) {
+            currentPage = parseInt(e.target.dataset.page, 10);
+            applyFiltersAndRender(false);
+        }
+    });
 
     inventoryBody.addEventListener('click', (e) => {
-        const target = e.target;
+        const target = e.target.closest('button');
         if (!target) return;
-        const productId = target.dataset.id;
-        if (!productId) return;
         
-        const product = allProducts.find(p => p.id === productId);
+        // Print বাটন এর জন্য আলাদা ফাংশন (openPrintPage) ব্যবহার হচ্ছে, তাই এখানে আর হ্যান্ডেল করার প্রয়োজন নেই।
+        if (target.matches('.btn-print')) return;
+
+        const product = allProducts.find(p => p.id === target.dataset.id);
         if (!product) return;
 
-        if (target.matches('.btn-edit')) {
-            openEditModal(product);
-        } else if (target.matches('.btn-delete')) {
-            if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
-                deleteProduct(productId);
-            }
-        } 
-        // *** পরিবর্তন ৪: টেবিলের একটি প্রোডাক্ট প্রিন্ট করার জন্য লজিক আপডেট ***
-        else if (target.matches('.btn-print')) {
-            openCustomSizeModal([product]); // একটি প্রোডাক্টের অ্যারে পাস করা হলো
-        }
+        if (target.matches('.btn-edit')) openEditModal(product);
+        else if (target.matches('.btn-delete')) { if (confirm(`Delete "${product.name}"?`)) deleteProduct(product.id); } 
     });
-
-    // *** পরিবর্তন ৫: নতুন প্রিন্ট বাটনগুলোর জন্য ইভেন্ট লিসেনার ***
     
-    // 'Print Selected' বাটনের জন্য
+    // *** পরিবর্তন: এই বাটনগুলো এখন আর লেবেল এডিটর খুলবে না। এদেরকে ডিজেবল করে দেওয়া যেতে পারে বা নতুন কার্যকারিতা দেওয়া যেতে পারে। আপাতত অ্যালার্ট দেখানো হচ্ছে। ***
     printSelectedBtn.addEventListener('click', () => {
-        const selectedProducts = getSelectedProducts();
-        if (selectedProducts.length === 0) {
-            alert('Please select products to print.');
-            return;
-        }
-        openCustomSizeModal(selectedProducts);
+        alert('This feature (Print Selected) is currently disabled. Please print barcodes one by one.');
     });
 
-    // 'Print by Category' বাটনের জন্য
     printCategoryBtn.addEventListener('click', () => {
-        const selectedCategory = categoryFilter.value;
-        if (!selectedCategory) {
-            alert('Please select a category first to print.');
-            return;
-        }
-        if (filteredProducts.length === 0) {
-            alert('No products found in the selected category.');
-            return;
-        }
-        // filteredProducts এ বর্তমানে সিলেক্ট করা ক্যাটাগরির সব প্রোডাক্ট আছে
-        openCustomSizeModal(filteredProducts);
+        alert('This feature (Print by Category) is currently disabled. Please print barcodes one by one.');
     });
 
-    selectAllCheckbox.addEventListener('change', (e) => {
-        document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = e.target.checked);
-    });
+    selectAllCheckbox.addEventListener('change', (e) => inventoryBody.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = e.target.checked));
 
-    // *** পরিবর্তন ৬: কাস্টম সাইজ মডালের ফর্ম এবং বাটনগুলোর জন্য ইভেন্ট লিসেনার ***
-    customSizeForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const width = labelWidthInput.value;
-        const height = labelHeightInput.value;
-
-        if (!width || !height || width <= 0 || height <= 0) {
-            alert('Please provide valid width and height in mm.');
-            return;
-        }
-
-        if (productsToPrint.length > 0) {
-            // printer.js এর ফাংশনকে কল করা হবে width, height সহ
-            printCustomLabels(productsToPrint, width, height);
-        }
-        
-        // কাজ শেষে মডাল বন্ধ করা এবং ফর্ম রিসেট করা
-        customSizeModal.style.display = 'none';
-        customSizeForm.reset();
-        productsToPrint = []; // অ্যারে খালি করা
-    });
-
-    // মডাল বন্ধ করার জন্য
-    customSizeModalCloseBtn.addEventListener('click', () => {
-        customSizeModal.style.display = 'none';
-    });
-    
-    window.addEventListener('click', (e) => {
-        if (e.target === customSizeModal) {
-            customSizeModal.style.display = 'none';
-        }
-        if (e.target === editModal) {
-            editModal.style.display = 'none';
-        }
-    });
-
+    // Edit Modal Logic
+    editModal.querySelector('.close-button').addEventListener('click', () => editModal.style.display = 'none');
+    window.addEventListener('click', (e) => { if (e.target === editModal) editModal.style.display = 'none'; });
     editForm.addEventListener('submit', handleEditFormSubmit);
-    logoutBtn.addEventListener('click', async () => await signOut(auth));
 
-    setupEventListeners.executed = true;
+    logoutBtn.addEventListener('click', () => signOut(auth));
 }
 
 // =================================================================
-// --- Helper Functions for Actions ---
+// --- Helper Functions ---
 // =================================================================
 
-// *** পরিবর্তন ৭: সাইজ মডাল খোলার জন্য নতুন Helper Function ***
-function openCustomSizeModal(products) {
-    if (!products || products.length === 0) {
-        console.error("No products provided to print.");
-        return;
-    }
-    productsToPrint = products; // প্রিন্ট করার জন্য প্রোডাক্টগুলো গ্লোবাল ভ্যারিয়েবলে সেট করা
-    customSizeModal.style.display = 'flex'; // মডালটি দেখানো
-    labelWidthInput.focus(); // width ইনপুটে ফোকাস করা
+// *** নতুন ফাংশন যোগ করা হলো ***
+// এই ফাংশনটি নতুন টেমপ্লেট-ভিত্তিক প্রিন্ট পেজ খুলবে
+function openPrintPage(id, name, price) {
+    // URL এ ডেটা encode করে পাঠানো হচ্ছে যাতে স্পেশাল ক্যারেক্টার (যেমন ', ", &) সমস্যা না করে
+    const url = `../print-barcode.html?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}`;
+    
+    // নতুন উইন্ডোতে প্রিন্ট পেজ ওপেন করা
+    window.open(url, '_blank', 'width=800,height=600');
 }
+// openPrintPage ফাংশনটিকে গ্লোবাল স্কোপে যুক্ত করা হচ্ছে যাতে HTML থেকে সরাসরি কল করা যায়
+window.openPrintPage = openPrintPage;
 
 function getSelectedProducts() {
-    const selectedIds = Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.dataset.id);
-    return allProducts.filter(p => selectedIds.includes(p.id));
+    const ids = Array.from(inventoryBody.querySelectorAll('.product-checkbox:checked')).map(cb => cb.dataset.id);
+    return allProducts.filter(p => ids.includes(p.id));
 }
 
 function openEditModal(product) {
-    document.getElementById('edit-product-id').value = product.id;
-    document.getElementById('edit-name').value = product.name || '';
-    document.getElementById('edit-category').value = product.category || '';
-    document.getElementById('edit-cp').value = product.costPrice || 0;
-    document.getElementById('edit-sp').value = product.sellingPrice || 0;
-    document.getElementById('edit-stock').value = product.stock || 0;
-    document.getElementById('edit-barcode').value = product.barcode || '';
+    editForm.reset();
+    Object.entries({
+        'edit-product-id': product.id, 'edit-name': product.name, 'edit-category': product.category,
+        'edit-cp': product.costPrice, 'edit-sp': product.sellingPrice, 'edit-stock': product.stock,
+        'edit-barcode': product.barcode
+    }).forEach(([id, value]) => { document.getElementById(id).value = value || ''; });
     editModal.style.display = 'flex';
 }
 
 async function handleEditFormSubmit(e) {
     e.preventDefault();
-    const productId = document.getElementById('edit-product-id').value;
-    const updatedProduct = {
-        name: document.getElementById('edit-name').value,
-        category: document.getElementById('edit-category').value,
+    const id = document.getElementById('edit-product-id').value;
+    const data = {
+        name: document.getElementById('edit-name').value.trim(),
+        category: document.getElementById('edit-category').value.trim(),
         costPrice: parseFloat(document.getElementById('edit-cp').value),
         sellingPrice: parseFloat(document.getElementById('edit-sp').value),
-        stock: parseInt(document.getElementById('edit-stock').value),
+        stock: parseInt(document.getElementById('edit-stock').value, 10),
     };
     try {
-        const productRef = doc(db, 'shops', currentUserId, 'inventory', productId);
-        await updateDoc(productRef, updatedProduct);
+        await updateDoc(doc(db, 'shops', currentUserId, 'inventory', id), data);
         showStatus('Product updated successfully!');
         editModal.style.display = 'none';
-    } catch (error) {
-        console.error("Error updating document: ", error);
-        showStatus('Failed to update product.', 'error');
-    }
+    } catch (error) { showStatus('Failed to update product.', 'error'); }
 }
 
-async function deleteProduct(productId) {
+async function deleteProduct(id) {
     try {
-        const productRef = doc(db, 'shops', currentUserId, 'inventory', productId);
-        await deleteDoc(productRef);
+        await deleteDoc(doc(db, 'shops', currentUserId, 'inventory', id));
         showStatus('Product deleted successfully.');
-    } catch (error) {
-        console.error("Error deleting document: ", error);
-        showStatus('Failed to delete product.', 'error');
-    }
+    } catch (error) { showStatus('Failed to delete product.', 'error'); }
 }

@@ -1,4 +1,4 @@
-// billing/billing.js
+// billing/billing.js - Fully Updated (v3.0)
 
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
@@ -6,7 +6,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
-    collection, doc, getDocs, query, orderBy, writeBatch, serverTimestamp, increment
+    collection, doc, getDocs, query, orderBy, writeBatch, serverTimestamp, increment, runTransaction, getDoc
 } from 'firebase/firestore';
 
 // ==========================================================
@@ -133,7 +133,9 @@ function displayProductsByCategory() {
     });
 }
 
-// ... প্রোডাক্ট সার্চ এবং কার্টে যোগ করার ফাংশনগুলো অপরিবর্তিত ...
+// ==========================================================
+// --- প্রোডাক্ট সার্চ এবং কার্টে যোগ করা ---
+// ==========================================================
 function handleSearch(e) {
     const searchText = e.target.value.trim().toLowerCase();
     if (searchText.length < 1) {
@@ -161,12 +163,28 @@ function handleSearch(e) {
     searchResultsContainer.style.display = 'block';
 }
 
+// ✅ NEW: বারকোড স্ক্যান হ্যান্ডেল করার জন্য উন্নত ফাংশন
 function handleSearchEnter(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
+        const searchTerm = productSearchInput.value.trim();
+        if (!searchTerm) return;
+
+        // বারকোড দিয়ে সরাসরি প্রোডাক্ট খোঁজা
+        const productByBarcode = allProducts.find(p => p.barcode === searchTerm);
+        if (productByBarcode) {
+            addProductToCart(productByBarcode);
+            return; // পণ্য পাওয়া গেলে আর কিছু করার দরকার নেই
+        }
+
+        // যদি বারকোড না মেলে, তাহলে সার্চ রেজাল্টের প্রথম আইটেম যোগ করা
         const firstResult = searchResultsContainer.querySelector('.search-result-item');
         if (firstResult && firstResult.textContent !== 'No products found.') {
             firstResult.click();
+        } else {
+             // যদি কোনো রেজাল্ট না পাওয়া যায়, ব্যবহারকারীকে জানানো
+             alert(`No product found with barcode or name: "${searchTerm}"`);
+             productSearchInput.select();
         }
     }
 }
@@ -296,27 +314,62 @@ function calculateReturnAmount() {
     returnAmountDisplay.textContent = `₹${returnAmount.toFixed(2)}`;
 }
 
+// ✅ UPDATED: ক্যাশ রিসিভড ফিল্ড খালি থাকলেও বাটন সক্রিয় হবে
 function validateFinalBillButton() {
     let isValid = false;
     if (cart.length > 0) {
         const method = paymentMethodSelect.value;
         if (method === 'cash') {
-            const cashReceived = parseFloat(cashReceivedInput.value) || 0;
-            isValid = cashReceived >= currentTotals.total;
+            const cashReceivedValue = cashReceivedInput.value.trim();
+            if (cashReceivedValue === '') {
+                isValid = true;
+            } else {
+                const cashReceived = parseFloat(cashReceivedValue) || 0;
+                isValid = cashReceived >= currentTotals.total;
+            }
         } else if (method === 'part-payment') {
             const cashPaid = parseFloat(cashAmountInput.value) || 0;
             const cardPaid = parseFloat(cardAmountInput.value) || 0;
             isValid = Math.abs((cashPaid + cardPaid) - currentTotals.total) < 0.01;
         } else {
-            isValid = true;
+            isValid = true; // For 'card', 'online' etc.
         }
     }
     generateBillBtn.disabled = !isValid;
 }
 
 // ==========================================================
-// --- চেকআউট এবং বিল জেনারেশন (চূড়ান্ত সংস্করণ) ---
+// --- বিল নম্বর জেনারেশন ---
 // ==========================================================
+// ✅ NEW: ক্রমিক বিল নম্বর জেনারেট করার জন্য ফাংশন
+async function getNextBillNumber() {
+    if (!currentUserId) throw new Error("User not authenticated.");
+    const counterRef = doc(db, 'shops', currentUserId, 'metadata', 'counters');
+
+    try {
+        const newBillNumber = await runTransaction(db, async (transaction) => {
+            const counterDoc = await transaction.get(counterRef);
+            let lastBillNumber = 0;
+            if (counterDoc.exists() && counterDoc.data().lastBillNumber) {
+                lastBillNumber = counterDoc.data().lastBillNumber;
+            }
+            const nextBillNumber = lastBillNumber + 1;
+            transaction.set(counterRef, { lastBillNumber: nextBillNumber }, { merge: true });
+            return nextBillNumber;
+        });
+        // নম্বরটিকে একটি নির্দিষ্ট ফরম্যাটে (যেমন: 00001) রূপান্তর করা
+        return String(newBillNumber).padStart(5, '0');
+    } catch (error) {
+        console.error("Error getting next bill number: ", error);
+        // একটি ফলব্যাক নম্বর জেনারেট করা, যাতে কাজ বন্ধ না হয়
+        return `E-${Date.now().toString().slice(-6)}`;
+    }
+}
+
+// ==========================================================
+// --- চেকআউট এবং বিল জেনারেশন ---
+// ==========================================================
+// ✅ UPDATED: বিল নম্বর এবং ক্যাশ পেমেন্ট লজিক সহ চূড়ান্ত ফাংশন
 async function generateFinalBill() {
     if (!preCheckoutValidation()) {
         return;
@@ -325,25 +378,35 @@ async function generateFinalBill() {
     generateBillBtn.disabled = true;
     generateBillBtn.textContent = 'Processing...';
 
-    const sale = {
-        items: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.sellingPrice || 0, category: item.category || 'N/A' })),
-        ...currentTotals,
-        paymentMethod: paymentMethodSelect.value,
-        gstApplied: gstToggle.checked,
-        customerDetails: { name: customerNameInput.value.trim() || 'Walk-in Customer', phone: customerPhoneInput.value.trim(), address: customerAddressInput.value.trim() },
-        createdAt: serverTimestamp(),
-        discountDetails: { type: discountTypeSelect.value, value: parseFloat(discountValueInput.value) || 0 },
-        gstRate: 5
-    };
-    
-    if (sale.paymentMethod === 'part-payment') {
-        sale.paymentBreakdown = { cash: parseFloat(cashAmountInput.value) || 0, card_or_online: parseFloat(cardAmountInput.value) || 0 };
-    } else if (sale.paymentMethod === 'cash') {
-        const cashReceived = parseFloat(cashReceivedInput.value) || 0;
-        sale.paymentBreakdown = { cashReceived, changeReturned: cashReceived - sale.total };
-    }
-
     try {
+        // নতুন বিল নম্বর পাওয়া
+        const newBillNo = await getNextBillNumber();
+        
+        const sale = {
+            billNo: newBillNo, // বিল নম্বর যোগ করা হলো
+            items: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.sellingPrice || 0, category: item.category || 'N/A' })),
+            ...currentTotals,
+            paymentMethod: paymentMethodSelect.value,
+            gstApplied: gstToggle.checked,
+            customerDetails: { name: customerNameInput.value.trim() || 'Walk-in Customer', phone: customerPhoneInput.value.trim(), address: customerAddressInput.value.trim() },
+            createdAt: serverTimestamp(),
+            discountDetails: { type: discountTypeSelect.value, value: parseFloat(discountValueInput.value) || 0 },
+            gstRate: 5
+        };
+        
+        if (sale.paymentMethod === 'cash') {
+            let cashReceived = parseFloat(cashReceivedInput.value);
+            if (isNaN(cashReceived) || cashReceivedInput.value.trim() === '') {
+                cashReceived = sale.total; // যদি ইনপুট খালি থাকে
+            }
+            sale.paymentBreakdown = { 
+                cashReceived: cashReceived, 
+                changeReturned: cashReceived - sale.total 
+            };
+        } else if (sale.paymentMethod === 'part-payment') {
+            sale.paymentBreakdown = { cash: parseFloat(cashAmountInput.value) || 0, card_or_online: parseFloat(cardAmountInput.value) || 0 };
+        }
+
         const batch = writeBatch(db);
         const newSaleRef = doc(collection(db, 'shops', currentUserId, 'sales'));
         batch.set(newSaleRef, sale);
@@ -354,11 +417,9 @@ async function generateFinalBill() {
         }
         await batch.commit();
 
-        // ===== START: সমস্যার সমাধান এখানে =====
         const newSaleId = newSaleRef.id;
         const printUrl = `print.html?saleId=${newSaleId}`;
         window.open(printUrl, '_blank');
-        // ===== END: সমাধান =====
         
         resetAfterSale();
         await initializeProducts();
@@ -372,17 +433,20 @@ async function generateFinalBill() {
     }
 }
 
+// ✅ UPDATED: ভ্যালিডেশন লজিক
 function preCheckoutValidation() {
     if (cart.length === 0) {
         alert("Cart is empty. Please add products to proceed.");
         return false;
     }
     const method = paymentMethodSelect.value;
-    if (method === 'cash' && (parseFloat(cashReceivedInput.value) || 0) < currentTotals.total) {
+
+    if (method === 'cash' && cashReceivedInput.value.trim() !== '' && (parseFloat(cashReceivedInput.value) || 0) < currentTotals.total) {
         alert("Cash received is less than the total amount. Please enter a valid amount.");
         cashReceivedInput.focus();
         return false;
     }
+
     if (method === 'part-payment') {
         const cashPaid = parseFloat(cashAmountInput.value) || 0;
         const cardPaid = parseFloat(cardAmountInput.value) || 0;

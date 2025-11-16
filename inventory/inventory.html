@@ -10,16 +10,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- CSS ফাইল -->
+    <!-- CSS Files -->
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="inventory.css">
-    <!-- প্রিন্টিং এর জন্য CSS ফাইল -->
-    <link rel="stylesheet" href="print-styles.css">
 </head>
 <body>
 
     <!-- ======================================================= -->
-    <!-- START: Navbar -->
+    <!-- Navbar -->
     <!-- ======================================================= -->
     <header class="main-header">
         <nav class="container">
@@ -38,34 +36,32 @@
             </button>
         </nav>
     </header>
-    <!-- ======================================================= -->
-    <!-- END: Navbar -->
-    <!-- ======================================================= -->
 
+    <!-- ======================================================= -->
+    <!-- Main Content -->
+    <!-- ======================================================= -->
     <main class="container">
         <h1>Inventory Management</h1>
 
-        <!-- ফিল্টার এবং প্রিন্ট কন্ট্রোলস -->
+        <!-- Filter and Print Controls -->
         <section class="card filter-controls-section">
             <div class="filter-controls">
                 <input type="text" id="search-inventory" placeholder="Search by name or barcode..." class="form-control">
                 <select id="category-filter" class="form-control"></select>
             </div>
-            <!-- START: পরিবর্তিত প্রিন্ট কন্ট্রোলস -->
             <div class="print-controls">
                 <button id="print-selected-btn" class="btn btn-primary">Print Selected</button>
                 <button id="print-category-btn" class="btn btn-secondary">Print by Category</button>
             </div>
-            <!-- END: পরিবর্তিত প্রিন্ট কন্ট্রোলস -->
         </section>
 
-        <!-- ইনভেন্টরি টেবিল -->
+        <!-- Inventory Table -->
         <section class="card">
             <div class="table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th><input type="checkbox" id="select-all-checkbox" title="Select/Deselect All on this page"></th>
+                            <th><input type="checkbox" id="select-all-checkbox" title="Select/Deselect All"></th>
                             <th>Name</th>
                             <th>Category</th>
                             <th>Cost Price (₹)</th>
@@ -76,20 +72,21 @@
                         </tr>
                     </thead>
                     <tbody id="inventory-tbody">
-                        <!-- জাভাস্ক্রিপ্ট দিয়ে ডেটা এখানে লোড হবে -->
                         <tr>
                             <td colspan="8" class="loading-cell">Loading inventory...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div id="pagination-container" class="pagination">
-                <!-- পেজিনেশন বাটন এখানে লোড হবে -->
-            </div>
+            <div id="pagination-container" class="pagination"></div>
         </section>
     </main>
 
-    <!-- প্রোডাক্ট এডিট করার জন্য Modal -->
+    <!-- ======================================================= -->
+    <!-- Modals -->
+    <!-- ======================================================= -->
+
+    <!-- Product Edit Modal -->
     <div id="edit-modal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -127,47 +124,65 @@
         </div>
     </div>
     
-    <!-- স্ট্যাটাস মেসেজ দেখানোর জন্য কন্টেইনার -->
+    <!-- Status Message Container -->
     <div id="status-message-container"></div>
 
     <!-- ======================================================== -->
-    <!-- START: বারকোড প্রিন্টিং এর জন্য নতুন Modal -->
+    <!-- START: Advanced Barcode Label Editor Modal -->
     <!-- ======================================================== -->
-
-    <!-- লেবেলের কাস্টম সাইজ দেওয়ার জন্য নতুন Modal -->
-    <div id="custom-size-modal" class="modal">
-        <div class="modal-content" style="max-width: 400px;">
+    <div id="label-editor-modal" class="modal">
+        <div class="modal-content" style="max-width: 95vw; max-height: 95vh; width: auto;">
             <span class="close-button">&times;</span>
-            <h2>Set Label Size</h2>
-            <p>Provide width and height for each label in millimeters (mm).</p>
-            <form id="custom-size-form">
-                <div class="form-group-inline">
-                    <div class="form-group">
-                        <label for="label-width">Width (mm):</label>
-                        <input type="number" id="label-width" class="form-control" placeholder="e.g., 40" required min="10">
+            <h2>Barcode Label Editor</h2>
+            
+            <div class="editor-layout">
+                <!-- Sidebar for Tools and Properties -->
+                <div class="editor-sidebar">
+                    <h3>Label Properties</h3>
+                    <div class="form-group-inline">
+                        <div class="form-group">
+                            <label for="editor-label-width">Width (mm):</label>
+                            <input type="number" id="editor-label-width" class="form-control" value="50">
+                        </div>
+                        <div class="form-group">
+                            <label for="editor-label-height">Height (mm):</label>
+                            <input type="number" id="editor-label-height" class="form-control" value="30">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="label-height">Height (mm):</label>
-                        <input type="number" id="label-height" class="form-control" placeholder="e.g., 30" required min="10">
+                    <hr>
+                    <h3>Selected Item Properties</h3>
+                    <div id="properties-panel" class="properties-panel">
+                        <p>Select an item on the label to edit.</p>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Proceed to Print</button>
-            </form>
+
+                <!-- Main Editor Canvas -->
+                <div class="editor-main">
+                    <div id="label-canvas-container">
+                        <div id="label-canvas">
+                            <!-- Draggable items will be rendered here by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="editor-print-btn" class="btn btn-success">Print Labels</button>
+            </div>
         </div>
     </div>
 
-    <!-- প্রিন্ট করার জন্য একটি অদৃশ্য কন্টেইনার -->
-    <div id="print-area" class="print-only"></div>
+    <!-- Invisible container for final printing -->
+    <div id="print-area"></div>
 
-    <!-- JsBarcode লাইব্রেরি -->
+    <!-- ======================================================== -->
+    <!-- Scripts -->
+    <!-- ======================================================== -->
+    <!-- Third-party Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 
-    <!-- ======================================================== -->
-    <!-- END: বারকোড প্রিন্টিং এর জন্য যুক্ত করা অংশ -->
-    <!-- ======================================================== -->
-
-
-    <!-- Firebase এবং কাস্টম JS -->
+    <!-- Firebase and Custom JS -->
     <script type="importmap">
     {
       "imports": {
@@ -179,6 +194,7 @@
     </script>
     <script type="module" src="../js/firebase-config.js"></script>
     <script type="module" src="inventory.js"></script>
+    <!-- Label editor's logic will be imported into inventory.js -->
 
 </body>
 </html>

@@ -60,18 +60,30 @@ body {
     font-weight: 600;
     margin: 0 0 5px 0;
 }
+/* পরিবর্তন: ব্যবহারকারীর অনুরোধ অনুযায়ী ফন্ট সাইজ ও বোল্ড করা হয়েছে */
 .shop-header .shop-address, .shop-header .shop-contact, .shop-header .shop-gstin {
-    font-size: 9pt;
-    margin: 3px 0;
+    font-size: 11pt; /* আগে 9pt ছিল */
+    font-weight: bold; /* বোল্ড করা হয়েছে */
+    margin: 4px 0;
 }
 
 /* --- বিল এবং কাস্টমারের তথ্য --- */
-.bill-info, .customer-details {
+.bill-info {
     padding-bottom: 8px;
     margin-bottom: 8px;
     border-bottom: 1px dashed #555;
     font-size: 9.5pt;
 }
+
+/* পরিবর্তন: ব্যবহারকারীর অনুরোধ অনুযায়ী ফন্ট সাইজ ও বোল্ড করা হয়েছে */
+.customer-details {
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed #555;
+    font-size: 12pt;   /* আগে 9.5pt ছিল */
+    font-weight: bold; /* বোল্ড করা হয়েছে */
+}
+
 .bill-info div, .customer-details p {
     display: flex;
     justify-content: space-between;
@@ -81,7 +93,7 @@ body {
     justify-content: flex-start;
 }
 .customer-details strong {
-    min-width: 50px;
+    min-width: 60px; /* সামান্য বাড়ানো হলো */
 }
 
 /* --- আইটেম টেবিল --- */

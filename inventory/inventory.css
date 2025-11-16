@@ -1,11 +1,11 @@
 /* inventory.css (সম্পূর্ণ আপডেটেড) */
 
 /* ================================== */
-/* --- ফিল্টার এবং প্রিন্ট কন্ট্রোলস --- */
+/* --- Filter and Print Controls --- */
 /* ================================== */
 .filter-controls-section {
     display: flex;
-    flex-wrap: wrap; /* ছোট স্ক্রিনের জন্য wrap হবে */
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 1.5rem;
@@ -15,14 +15,14 @@
 
 .filter-controls {
     display: flex;
-    flex-grow: 1; /* যতটা সম্ভব জায়গা নেবে */
+    flex-grow: 1;
     gap: 1rem;
-    flex-wrap: wrap; /* বাটনগুলো নিচে চলে আসবে যদি জায়গা না থাকে */
+    flex-wrap: wrap;
 }
 
 #search-inventory {
-    flex-grow: 1; /* সার্চ বক্সকে বেশি জায়গা দেবে */
-    min-width: 250px; /* একটি ন্যূনতম প্রস্থ */
+    flex-grow: 1;
+    min-width: 250px;
 }
 
 .print-controls {
@@ -31,10 +31,10 @@
 }
 
 /* ============================ */
-/* --- টেবিল স্টাইল --- */
+/* --- Table Styles --- */
 /* ============================ */
 .table-responsive {
-    overflow-x: auto; /* ছোট স্ক্রিনে টেবিল স্ক্রল করা যাবে */
+    overflow-x: auto;
 }
 
 .data-table {
@@ -46,12 +46,12 @@
     padding: 0.9rem 1rem;
     text-align: left;
     border-bottom: 1px solid #e0e0e0;
-    vertical-align: middle; /* কন্টেন্টকে উল্লম্বভাবে মাঝে রাখবে */
+    vertical-align: middle;
 }
 
 .data-table thead th {
     background-color: #f8f9fa;
-    font-weight: 600; /* ফন্টকে একটু মোটা করা হলো */
+    font-weight: 600;
     color: #495057;
 }
 
@@ -59,17 +59,12 @@
     background-color: #f1f8ff;
 }
 
-/* লোডিং এবং এরর সেলের জন্য স্টাইল */
-.loading-cell, .error-cell {
+.loading-cell {
     text-align: center !important;
     padding: 3rem 1rem !important;
     color: #6c757d;
 }
-.error-cell {
-    color: #dc3545;
-}
 
-/* লো-স্টক হাইলাইট */
 .low-stock {
     background-color: #fff5f5 !important;
     color: #c53030;
@@ -79,33 +74,21 @@
 }
 
 /* ============================ */
-/* --- অ্যাকশন বাটন --- */
+/* --- Action Buttons --- */
 /* ============================ */
 .action-buttons {
     display: flex;
     gap: 0.5rem;
-    flex-wrap: nowrap; /* বাটনগুলো যেন এক লাইনে থাকে */
+    flex-wrap: nowrap;
 }
 
-.action-btn {
+.btn-sm { /* Small button variant for table actions */
     padding: 0.4rem 0.8rem;
-    border-radius: 5px;
     font-size: 0.85rem;
-    white-space: nowrap; /* বাটনের টেক্সট যেন না ভাঙে */
 }
-
-/* বিভিন্ন বাটনের রঙ (global.css থেকে আসতে পারে, তবে এখানেও রাখা হলো) */
-.btn-edit { background-color: #1e90ff; color: white; }
-.btn-delete { background-color: #dc3545; color: white; }
-.btn-print { background-color: #28a745; color: white; }
-
-.btn-edit:hover { background-color: #187bcd; }
-.btn-delete:hover { background-color: #c82333; }
-.btn-print:hover { background-color: #218838; }
-
 
 /* ============================ */
-/* --- পেজিনেশন স্টাইল --- */
+/* --- Pagination Styles --- */
 /* ============================ */
 .pagination {
     margin-top: 1.5rem;
@@ -114,7 +97,7 @@
     gap: 0.5rem;
 }
 
-.pagination button {
+.pagination button, .pagination-btn {
     padding: 0.5rem 1rem;
     border: 1px solid #dee2e6;
     background-color: white;
@@ -123,18 +106,18 @@
     transition: background-color 0.2s;
 }
 
-.pagination button:hover {
+.pagination button:hover, .pagination-btn:hover {
     background-color: #f1f1f1;
 }
 
-.pagination button.active {
-    background-color: var(--primary-color, #007bff); /* global.css থেকে primary color ব্যবহার করবে */
+.pagination button.active, .pagination-btn.active {
+    background-color: var(--primary-color, #007bff);
     color: white;
     border-color: var(--primary-color, #007bff);
 }
 
 /* ============================ */
-/* --- এডিট মোডাল স্টাইল --- */
+/* --- Generic Modal Styles --- */
 /* ============================ */
 .modal {
     display: none;
@@ -146,16 +129,18 @@
     height: 100%;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(3px); /* ব্যাকগ্রাউন্ডে ব্লার ইফেক্ট */
+    backdrop-filter: blur(3px);
+    justify-content: center;
+    align-items: center;
 }
 
 .modal-content {
     background-color: #fff;
-    margin: 8% auto;
+    margin: 5% auto;
     padding: 2rem;
     border-radius: 8px;
     width: 90%;
-    max-width: 550px;
+    max-width: 550px; /* Default max-width */
     position: relative;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
@@ -174,53 +159,111 @@
     color: #333;
 }
 
+.modal h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
 #edit-form {
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
 }
-/* ===================================== */
-/* START: Template Modal Styles */
-/* ===================================== */
 
-.template-grid {
+/* ========================================= */
+/* --- Advanced Label Editor Modal Styles --- */
+/* ========================================= */
+#label-editor-modal .modal-content {
+    max-width: 95vw;
+    width: auto;
+}
+
+.editor-layout {
     display: flex;
     gap: 20px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
+    margin-top: 1rem;
+    flex-wrap: wrap; /* For smaller screens */
 }
-.template-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
+
+.editor-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: #f8f9fa;
     padding: 15px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    width: 150px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
 }
-.template-card:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-3px);
-}
-.template-preview {
-    border: 1px dashed #ccc;
-    height: 75px;
-    width: 100%;
-    margin-bottom: 10px;
-    padding: 5px;
+
+.editor-main {
+    flex-grow: 1;
+    background: #e9ecef;
+    border: 1px solid #ccc;
+    padding: 20px;
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    background-color: #fff;
+    min-height: 60vh;
+    border-radius: 6px;
 }
-.template-name {
-    font-weight: 600;
-    color: var(--primary-color);
+
+#label-canvas-container {
+    overflow: auto;
 }
-.preview-barcode {
-    width: 80%;
-    height: 25px;
+
+#label-canvas {
+    background: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.15);
+    position: relative; /* Crucial for positioning draggable items */
+    transform-origin: top left;
+}
+
+/* Draggable Items on Canvas */
+.draggable-item {
+    position: absolute;
+    touch-action: none;
+    user-select: none;
+    box-sizing: border-box;
+    border: 1px dashed transparent;
+    cursor: grab;
+    padding: 2px;
+}
+.draggable-item:hover {
+    border-color: rgba(0, 123, 255, 0.5);
+}
+.draggable-item.interact-grab, .draggable-item.selected {
+    border: 1px solid #007bff;
+    cursor: grabbing;
+}
+
+.draggable-item .barcode-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Properties Panel in Sidebar */
+.properties-panel {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #dee2e6;
+}
+.properties-panel .form-group {
+    margin-bottom: 10px;
+}
+.properties-panel p {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Modal Actions (e.g., Print button) */
+.modal-actions {
+    text-align: right;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+/* Invisible area for final print rendering */
+#print-area {
+    display: none;
 }
