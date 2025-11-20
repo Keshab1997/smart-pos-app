@@ -23,28 +23,29 @@ const textPropertiesEl = document.getElementById('text-properties'), barcodeProp
 const propFontSizeInput = document.getElementById('prop-fontsize'), propWidthInput = document.getElementById('prop-width');
 const propHeightInput = document.getElementById('prop-height');
 
-// --- Templates Definition ---
+// --- Templates Definition (এখানে নতুন ডিজাইন যোগ করা হয়েছে) ---
 const templates = {
+    // --- আপনার আগের ডিজাইন ---
     'custom': {
         name: 'Custom Size...', width: 50, height: 25, columns: 1, columnGap: 2,
         items: [
             { placeholder: 'name', type: 'text', x: 2, y: 3, options: { font: 'TSS24.BF2', size: 1 } },
             { placeholder: 'price', type: 'text', x: 2, y: 10, options: { font: 'TSS24.BF2', size: 1, prefix: 'Price: ' } },
-            { placeholder: 'barcode', type: 'barcode', x: 2, y: 15, options: { type: '128', height: 8, human_readable: 0 } }
+            { placeholder: 'barcode', type: 'barcode', x: 2, y: 15, options: { type: '128', height: 8, human_readable: 0, width: 46 } }
         ]
     },
     '50x25_2_col': {
         name: '50x25mm - 2 Columns (Jewellery)', width: 50, height: 25, columns: 2, columnGap: 3,
         items: [
-            { placeholder: 'name', type: 'text', x: 2, y: 3, options: { font: '1', size: 1 } },
-            { placeholder: 'price', type: 'text', x: 2, y: 12, options: { font: '1', size: 2, prefix: 'Rs.' } }
+            { placeholder: 'name', type: 'text', x: 1, y: 3, options: { font: '1', size: 1 } },
+            { placeholder: 'price', type: 'text', x: 1, y: 12, options: { font: '1', size: 2, prefix: 'Rs.' } }
         ]
     },
     '40x30_1_col_detailed': {
         name: '40x30mm - 1 Column Detailed', width: 40, height: 30, columns: 1, columnGap: 0,
         items: [
             { placeholder: 'name', type: 'text', x: 2, y: 3, options: { font: '2', size: 1 } },
-            { placeholder: 'barcode', type: 'barcode', x: 2, y: 10, options: { type: '128', height: 12, human_readable: 1 } },
+            { placeholder: 'barcode', type: 'barcode', x: 2, y: 10, options: { type: '128', height: 12, human_readable: 1, width: 36 } },
             { placeholder: 'price', type: 'text', x: 2, y: 25, options: { font: '2', size: 1, prefix: 'Price: ' } }
         ]
     },
@@ -52,10 +53,107 @@ const templates = {
         name: '4" x 1" - 2 Columns', width: 101.6, height: 25.4, columns: 2, columnGap: 4,
         items: [
             { placeholder: 'name', type: 'text', x: 2, y: 3, options: { font: '2', size: 1 } },
-            { placeholder: 'barcode', type: 'barcode', x: 2, y: 10, options: { type: '128', height: 8, human_readable: 1 } },
+            { placeholder: 'barcode', type: 'barcode', x: 2, y: 10, options: { type: '128', height: 8, human_readable: 1, width: 45 } },
             { placeholder: 'price', type: 'text', x: 30, y: 3, options: { font: '2', size: 1, prefix: 'Rs. ' } },
         ]
-    }
+    },
+
+    // --- নতুন যোগ করা ডিজাইন (New Designs Added Here) ---
+    
+    // 1. ছোট সাইজের সাধারণ ডিজাইন
+    '30x20_1_col_simple': {
+        name: '30x20mm - 1 Col Simple', width: 30, height: 20, columns: 1, columnGap: 2,
+        items: [
+            { placeholder: 'name', type: 'text', x: 2, y: 2, options: { font: '1', size: 1 } },
+            { placeholder: 'barcode', type: 'barcode', x: 2, y: 8, options: { type: '128', height: 8, human_readable: 0, width: 26 } },
+            { placeholder: 'price', type: 'text', x: 15, y: 16, options: { font: '1', size: 2, prefix: 'Tk ' } }
+        ]
+    },
+    
+    // 2. ৩ কলামের জুয়েলারি ট্যাগ
+    '75x25_3_col_jewellery': {
+        name: '75x25mm - 3 Columns Jewellery', width: 75, height: 25, columns: 3, columnGap: 2.5,
+        items: [
+            { placeholder: 'name', type: 'text', x: 1, y: 3, options: { font: '1', size: 1 } },
+            { placeholder: 'price', type: 'text', x: 1, y: 14, options: { font: '2', size: 1, prefix: 'Tk-' } },
+            { placeholder: 'barcode', type: 'barcode', x: 1, y: 8, options: { type: '128', height: 5, human_readable: 0, width: 21 } }
+        ]
+    },
+
+    // 3. একটি স্ট্যান্ডার্ড রিটেইল ট্যাগ
+    '58x40_1_col_retail': {
+        name: '58x40mm - Standard Retail', width: 58, height: 40, columns: 1, columnGap: 2,
+        items: [
+            { placeholder: 'shopName', type: 'text', x: 15, y: 3, options: { font: 'TSS24.BF2', size: 1, text: 'Your Shop Name' } }, // Static Text Example
+            { placeholder: 'name', type: 'text', x: 3, y: 10, options: { font: '2', size: 1 } },
+            { placeholder: 'barcode', type: 'barcode', x: 3, y: 16, options: { type: '128', height: 12, human_readable: 1, width: 52 } },
+            { placeholder: 'price', type: 'text', x: 3, y: 33, options: { font: 'TSS24.BF2', size: 2, prefix: 'Price: ' } }
+        ]
+    },
+
+    // 4. পাশে বারকোড সহ ডিজাইন
+    '70x30_1_col_side_barcode': {
+        name: '70x30mm - Side Barcode', width: 70, height: 30, columns: 1, columnGap: 2,
+        items: [
+            { placeholder: 'name', type: 'text', x: 3, y: 5, options: { font: '2', size: 2 } },
+            { placeholder: 'price', type: 'text', x: 3, y: 18, options: { font: 'TSS24.BF2', size: 1, prefix: 'BDT: ' } },
+            { placeholder: 'barcode', type: 'barcode', x: 38, y: 5, options: { type: '128', height: 20, human_readable: 0, width: 30 } }
+        ]
+    },
+
+    // 5. ২ কলামের বিস্তারিত ট্যাগ
+    '80x50_2_col_detailed': {
+        name: '80x50mm - 2 Col Detailed', width: 80, height: 50, columns: 2, columnGap: 4,
+        items: [
+            { placeholder: 'name', type: 'text', x: 1, y: 5, options: { font: '1', size: 1 } },
+            { placeholder: 'barcode', type: 'barcode', x: 1, y: 12, options: { type: '128', height: 10, human_readable: 1, width: 36 } },
+            { placeholder: 'price', type: 'text', x: 1, y: 28, options: { font: '2', size: 1, prefix: 'Price: ' } },
+            { placeholder: 'customField1', type: 'text', x: 1, y: 40, options: { font: '1', size: 1, prefix: 'Code: ' } } // Custom field example
+        ]
+    },
+    
+    // 6. বড় সাইজের লেবেল
+    '100x50_large_format': {
+        name: '100x50mm - Large Format', width: 100, height: 50, columns: 1, columnGap: 3,
+        items: [
+            { placeholder: 'shopName', type: 'text', x: 25, y: 5, options: { font: 'TSS24.BF2', size: 2, text: 'My Awesome Store' } },
+            { placeholder: 'name', type: 'text', x: 5, y: 20, options: { font: '2', size: 2, prefix: 'Item: ' } },
+            { placeholder: 'barcode', type: 'barcode', x: 5, y: 30, options: { type: '128', height: 15, human_readable: 1, width: 90 } },
+            { placeholder: 'price', type: 'text', x: 60, y: 20, options: { font: 'TSS24.BF2', size: 2, prefix: 'Tk. ' } }
+        ]
+    },
+    
+    // 7. শুধুমাত্র বারকোড এবং দাম
+    '40x20_price_barcode': {
+        name: '40x20mm - Barcode & Price', width: 40, height: 20, columns: 1, columnGap: 2,
+        items: [
+            { placeholder: 'barcode', type: 'barcode', x: 2, y: 2, options: { type: '128', height: 10, human_readable: 1, width: 36 } },
+            { placeholder: 'price', type: 'text', x: 2, y: 15, options: { font: '2', size: 1, prefix: 'Price: ' } }
+        ]
+    },
+    // এই কোড দুটি আপনার templates অবজেক্টের শেষে যোগ করুন
+
+'4x1_inch_2_col_simple': {
+    name: '4" x 1" - 2 Col Simple (নাম ও বারকোড)',
+    width: 101.6, height: 25.4, columns: 2, columnGap: 3,
+    items: [
+        { placeholder: 'name', type: 'text', x: 2, y: 3, options: { font: '2', size: 1 } },
+        { placeholder: 'barcode', type: 'barcode', x: 2, y: 10, options: { type: '128', height: 12, human_readable: 1, width: 45 } },
+        { placeholder: 'price', type: 'text', x: 25, y: 3, options: { font: 'TSS24.BF2', size: 1, prefix: 'Tk. ' } }
+    ]
+},
+
+'4x1_inch_2_col_detailed': {
+    name: '4" x 1" - 2 Col Detailed (দোকানের নাম সহ)',
+    width: 101.6, height: 25.4, columns: 2, columnGap: 3,
+    items: [
+        { placeholder: 'shopName', type: 'text', x: 8, y: 2, options: { font: '1', size: 1, text: 'Your Shop Name' } },
+        { placeholder: 'name', type: 'text', x: 2, y: 8, options: { font: '2', size: 1 } },
+        { placeholder: 'price', type: 'text', x: 32, y: 8, options: { font: '2', size: 2, prefix: 'PRICE ' } },
+        { placeholder: 'barcode', type: 'barcode', x: 2, y: 15, options: { type: '128', height: 8, human_readable: 0, width: 46 } }
+    ]
+}
+    
 };
 
 // --- Initialization ---
@@ -233,11 +331,18 @@ function createDraggableItem(item, product, index) {
 
 function updateItemContent(div, item, product) {
     div.innerHTML = '';
-    let value = (item.options.prefix || '') + (product[item.placeholder] || (item.placeholder === 'price' ? (product.sellingPrice || 0).toFixed(2) : ''));
+    // Handle dynamic and static text
+    let value = '';
+    if (item.options.text) { // For static text like 'shopName'
+        value = item.options.text;
+    } else {
+        let productValue = product[item.placeholder] || (item.placeholder === 'price' ? (product.sellingPrice || 0).toFixed(2) : '');
+        value = (item.options.prefix || '') + productValue;
+    }
     
     if (item.type === 'text') {
         div.textContent = value;
-        const fontSize = (item.options.font && item.options.font.includes('TSS') ? 24 : 8) * item.options.size;
+        const fontSize = (item.options.font && item.options.font.includes('TSS') ? 24 : 8) * (item.options.size || 1);
         div.style.fontSize = `${fontSize * previewScale / dotsPerMm}px`;
     } 
     else if (item.type === 'barcode' && product.barcode) {
@@ -248,21 +353,22 @@ function updateItemContent(div, item, product) {
             JsBarcode(svg, product.barcode, {
                 format: "CODE128",
                 displayValue: item.options.human_readable === 1,
-                width: 2,
-                height: 40,
+                width: 2, // This is relative, actual width is controlled by div style
+                height: 40, // This is relative, actual height is controlled by div style
                 margin: 0,
                 font: "Arial",
                 fontSize: 12
             });
             Object.assign(div.style, {
-                width: `${item.options.width * previewScale}px`,
-                height: `${item.options.height * previewScale}px`
+                width: `${(item.options.width || 30) * previewScale}px`,
+                height: `${(item.options.height || 10) * previewScale}px`
             });
         } catch (e) {
             div.innerHTML = '<span>Invalid Barcode</span>';
         }
     }
 }
+
 
 function selectItem(index) {
     document.querySelectorAll('.draggable-item.selected').forEach(el => el.classList.remove('selected'));
@@ -301,16 +407,20 @@ function updateSelectedItemProperty(prop, value) {
         'x': (d, v) => d.x = v,
         'y': (d, v) => d.y = v,
         'fontsize': (d, v) => d.options.size = v,
-        'width': (d, v) => d.options.width = v,
-        'height': (d, v) => d.options.height = v,
+        'width': (d, v) => { d.options.width = v; },
+        'height': (d, v) => { d.options.height = v; },
     };
     if (propMap[prop]) {
         propMap[prop](itemData, val);
     }
     
     updatePreview();
-    setTimeout(() => selectItem(index), 50);
+    setTimeout(() => {
+        selectItem(index);
+        document.querySelectorAll(`.draggable-item[data-index='${index}']`).forEach(el => el.classList.add('selected'));
+    }, 50);
 }
+
 
 function handleKeyboardShortcuts(e) {
     if (!selectedItem || !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
@@ -327,7 +437,10 @@ function handleKeyboardShortcuts(e) {
     };
     keyAction[e.key]();
     updatePreview();
-    setTimeout(() => selectItem(index), 50);
+    setTimeout(() => {
+        selectItem(index);
+        document.querySelectorAll(`.draggable-item[data-index='${index}']`).forEach(el => el.classList.add('selected'));
+    }, 50);
 }
 
 // --- Printing Logic ---
@@ -352,7 +465,15 @@ function generateTSPL(product) {
         currentLabelItems.forEach(item => {
             const x_dot = Math.round(offsetX + item.x * dotsPerMm);
             const y_dot = Math.round(item.y * dotsPerMm);
-            let value = (item.options.prefix || '') + (product[item.placeholder] || (item.placeholder === 'price' ? (product.sellingPrice || 0).toFixed(2) : ''));
+            
+            // Handle dynamic and static text for TSPL
+            let value = '';
+            if (item.options.text) {
+                value = item.options.text;
+            } else {
+                let productValue = product[item.placeholder] || (item.placeholder === 'price' ? (product.sellingPrice || 0).toFixed(2) : '');
+                 value = (item.options.prefix || '') + productValue;
+            }
             value = value ? value.toString().replace(/"/g, '""') : '';
 
             if (item.type === 'text') {
@@ -360,6 +481,9 @@ function generateTSPL(product) {
             } 
             else if (item.type === 'barcode' && product.barcode) {
                 const barcodeHeightDots = Math.round(item.options.height * dotsPerMm);
+                const barcodeWidthDots = Math.round((item.options.width || 30) * dotsPerMm); // Fallback width
+                // For TSPL, barcode width is controlled by module width (the last two numbers, e.g., 2,4)
+                // We'll use a standard module width and let the height define the size primarily.
                 tspl += `BARCODE ${x_dot},${y_dot},"${item.options.type}",${barcodeHeightDots},${item.options.human_readable},0,2,4,"${product.barcode}"\n`;
             }
         });
