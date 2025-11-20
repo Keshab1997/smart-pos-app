@@ -30,27 +30,30 @@
             <h1>Add New Products</h1>
             <p>Fill the table below to add multiple products at once. Barcode will be generated automatically.</p>
             
-            <form id="add-products-form">
-                <table id="products-table">
-                    <thead>
-                        <tr>
-                            <th>Product Name</th>
-                            <th>Category</th>
-                            <th>Cost Price (CP)</th>
-                            <th>Selling Price (SP)</th>
-                            <th>Initial Stock</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="products-tbody">
-                        <!-- জাভাস্ক্রিপ্ট দিয়ে সারি এখানে যোগ হবে -->
-                    </tbody>
-                </table>
-                <div class="table-actions">
-                    <button type="button" id="add-row-btn" class="btn">Add More Rows</button>
-                    <button type="submit" class="btn btn-primary">Save All Products</button>
-                </div>
-            </form>
+           <!-- ... অন্যান্য HTML কোড ... -->
+<form id="add-products-form">
+    <table>
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Cost Price (CP)</th>
+                <th>Selling Price (SP)</th>
+                <th>Barcode </th> <!-- <<<<<< নতুন কলাম -->
+                <th>Initial Stock</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="products-tbody">
+            <!-- জাভাস্ক্রিপ্ট দিয়ে এখানে সারি যোগ হবে -->
+        </tbody>
+    </table>
+    <div class="form-actions">
+        <button type="button" id="add-row-btn" class="btn btn-secondary">Add More Rows</button>
+        <button type="submit" class="btn btn-primary">Save All Products</button>
+    </div>
+</form>
+<!-- ... অন্যান্য HTML কোড ... -->
             <p id="status-message"></p>
         </div>
 
