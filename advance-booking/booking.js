@@ -3,12 +3,14 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, query, where, orderBy, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 
 let currentUserId = null;
+let allBookings = []; // সব বুকিং ডেটা এখানে জমা থাকবে
 
 // --- অথেন্টিকেশন চেক ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserId = user.uid;
-        loadBookings();
+        loadBookings(); // ডেটা লোড শুরু
+        setupSearchListener(); // সার্চ অপশন চালু
     } else {
         window.location.href = '../index.html';
     }
@@ -19,112 +21,145 @@ document.getElementById('booking-form').addEventListener('submit', async (e) => 
     e.preventDefault();
     if (!currentUserId) return;
 
-    // বাটন ডিজেবল করা (যাতে ডবল ক্লিক না হয়)
     const saveBtn = document.querySelector('.save-btn');
     const originalText = saveBtn.textContent;
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
 
     const data = {
-        customerName: document.getElementById('b-name').value,
-        phone: document.getElementById('b-phone').value,
+        customerName: document.getElementById('b-name').value.trim(),
+        phone: document.getElementById('b-phone').value.trim(),
         description: document.getElementById('b-desc').value,
         estimatedTotal: parseFloat(document.getElementById('b-total').value) || 0,
         advancePaid: parseFloat(document.getElementById('b-advance').value) || 0,
         deliveryDate: document.getElementById('b-date').value,
-        status: 'Pending', // Status flow: Pending -> Ready -> Billed
+        status: 'Pending',
         createdAt: serverTimestamp()
     };
 
     try {
-        // ১. ডেটাবেসে সেভ করা
         const docRef = await addDoc(collection(db, 'shops', currentUserId, 'bookings'), data);
-        
-        // ২. ফর্ম খালি করা
         e.target.reset();
-
-        // ৩. প্রিন্ট স্লিপ ওপেন করা (নতুন উইন্ডোতে)
         window.open(`booking-print.html?id=${docRef.id}`, '_blank');
-
     } catch (error) {
         console.error("Error:", error);
-        alert("Failed to save booking. Please check console.");
+        alert("Failed to save booking.");
     } finally {
-        // বাটন আবার সচল করা
         saveBtn.disabled = false;
         saveBtn.textContent = originalText;
     }
 });
 
-// --- বুকিং লিস্ট লোড করা ---
+// --- বুকিং ডেটা ফায়ারবেস থেকে আনা ---
 function loadBookings() {
     const q = query(collection(db, 'shops', currentUserId, 'bookings'), orderBy('createdAt', 'desc'));
     
     onSnapshot(q, (snapshot) => {
-        const tbody = document.getElementById('booking-table-body');
-        tbody.innerHTML = '';
-        
-        if (snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No active bookings found.</td></tr>';
-            return;
-        }
-
+        allBookings = []; // লিস্ট ক্লিয়ার করা
         snapshot.forEach(docSnap => {
-            const book = docSnap.data();
-            // যদি "Billed" হয়ে যায় (অর্থাৎ ডেলিভারি শেষ), তাহলে আর লিস্টে দেখানোর দরকার নেই
-            if (book.status === 'Billed') return; 
-
-            const row = document.createElement('tr');
-            
-            // স্ট্যাটাস অনুযায়ী ক্লাসের রং ঠিক করা
-            const statusClass = book.status === 'Ready' ? 'status-ready' : 'status-pending';
-            
-            // অ্যাকশন বাটন লজিক
-            let actionButtons = '';
-            
-            // ১. প্রিন্ট বাটন (সব সময় থাকবে)
-            actionButtons += `<button class="action-btn btn-print" onclick="printSlip('${docSnap.id}')" style="background:#6c757d; color:white;">Print</button> `;
-
-            // ২. স্ট্যাটাস বাটন (Pending হলে Ready অপশন, Ready হলে Bill অপশন)
-            if (book.status === 'Pending') {
-                actionButtons += `<button class="action-btn btn-ready" onclick="updateStatus('${docSnap.id}', 'Ready')">Mark Ready</button>`;
-            } else if (book.status === 'Ready') {
-                actionButtons += `<button class="action-btn btn-bill" onclick="finalizeToBill('${docSnap.id}')">Final Bill</button>`;
+            const data = docSnap.data();
+            if (data.status !== 'Billed') { // যেগুলো বিল হয়ে গেছে সেগুলো বাদ
+                allBookings.push({ id: docSnap.id, ...data });
             }
-
-            row.innerHTML = `
-                <td>${book.deliveryDate}</td>
-                <td><strong>${book.customerName}</strong><br><small>${book.phone}</small></td>
-                <td>${book.description}</td>
-                <td>₹${book.advancePaid}</td>
-                <td><span class="status-badge ${statusClass}" style="padding:5px 10px; border-radius:15px; font-size:0.8rem; font-weight:bold;">${book.status}</span></td>
-                <td>${actionButtons}</td>
-            `;
-            tbody.appendChild(row);
         });
+        // প্রথমবার সব ডেটা রেন্ডার করা
+        renderTable(allBookings);
     });
 }
 
-// --- প্রিন্ট ফাংশন (লিস্টের বাটন থেকে কল করার জন্য) ---
+// --- সার্চ সেটআপ (আপনার চাওয়া অনুযায়ী) ---
+function setupSearchListener() {
+    const searchInput = document.getElementById('search-booking');
+    
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        
+        if (!searchTerm) {
+            // সার্চবক্স খালি থাকলে সব নরমাল ভাবে দেখাবে
+            renderTable(allBookings);
+            return;
+        }
+
+        // ফিল্টারিং এবং সর্টিং লজিক
+        const matches = [];
+        const others = [];
+
+        allBookings.forEach(booking => {
+            const name = booking.customerName.toLowerCase();
+            const phone = booking.phone.toLowerCase();
+
+            // নাম বা ফোনে মিললে matches-এ যাবে, না হলে others-এ
+            if (name.includes(searchTerm) || phone.includes(searchTerm)) {
+                matches.push({ ...booking, isMatch: true }); // স্পেশাল ফ্ল্যাগ দেওয়া হলো
+            } else {
+                others.push({ ...booking, isMatch: false });
+            }
+        });
+
+        // যারা ম্যাচ করেছে তারা সবার উপরে থাকবে
+        const sortedList = [...matches, ...others];
+        renderTable(sortedList);
+    });
+}
+
+// --- টেবিলে ডেটা দেখানো (Rendering) ---
+function renderTable(bookingList) {
+    const tbody = document.getElementById('booking-table-body');
+    tbody.innerHTML = '';
+    
+    if (bookingList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No active bookings found.</td></tr>';
+        return;
+    }
+
+    bookingList.forEach(book => {
+        const row = document.createElement('tr');
+        
+        // যদি সার্চে ম্যাচ করে, তাহলে ব্যাকগ্রাউন্ড হলুদ হবে
+        if (book.isMatch) {
+            row.style.backgroundColor = '#fff3cd'; // হালকা হলুদ হাইলাইট
+            row.style.borderLeft = '5px solid #ffc107';
+        }
+
+        const statusClass = book.status === 'Ready' ? 'status-ready' : 'status-pending';
+        
+        // বাটন লজিক
+        let actionButtons = `<button class="action-btn btn-print" onclick="printSlip('${book.id}')" style="background:#6c757d; color:white;">Print</button> `;
+        
+        if (book.status === 'Pending') {
+            actionButtons += `<button class="action-btn btn-ready" onclick="updateStatus('${book.id}', 'Ready')">Mark Ready</button>`;
+        } else if (book.status === 'Ready') {
+            actionButtons += `<button class="action-btn btn-bill" onclick="finalizeToBill('${book.id}')">Final Bill</button>`;
+        }
+
+        row.innerHTML = `
+            <td>${book.deliveryDate}</td>
+            <td><strong>${book.customerName}</strong><br><small>${book.phone}</small></td>
+            <td>${book.description}</td>
+            <td>₹${book.advancePaid}</td>
+            <td><span class="status-badge ${statusClass}" style="padding:5px 10px; border-radius:15px; font-size:0.8rem; font-weight:bold;">${book.status}</span></td>
+            <td>${actionButtons}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// --- গ্লোবাল ফাংশনস (HTML থেকে কল করার জন্য) ---
 window.printSlip = (id) => {
     window.open(`booking-print.html?id=${id}`, '_blank');
 };
 
-// --- স্ট্যাটাস আপডেট (Pending -> Ready) ---
 window.updateStatus = async (id, status) => {
     if(confirm("Is the product ready for delivery?")) {
         try {
             await updateDoc(doc(db, 'shops', currentUserId, 'bookings', id), { status: status });
         } catch (error) {
-            console.error("Error updating status:", error);
-            alert("Failed to update status.");
+            console.error("Error:", error);
         }
     }
 };
 
-// --- বিলিং পেজে ডেটা পাঠানো (Booking -> Billing) ---
 window.finalizeToBill = async (id) => {
-    // আমরা এই আইডিটা sessionStorage এ রেখে billing পেজে পাঠাবো
     sessionStorage.setItem('pending_booking_id', id);
     window.location.href = '../billing/billing.html';
 };
