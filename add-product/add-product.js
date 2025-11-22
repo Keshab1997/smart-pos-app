@@ -8,9 +8,8 @@ import {
     auth,
     collection,
     doc,
-    writeBatch, // এটি এখন আর ব্যবহৃত হচ্ছে না, ট্রানজ্যাকশন ব্যবহার করা হয়েছে
     Timestamp,
-    runTransaction // <<<<<<<<<<< নতুন: ট্রানজ্যাকশনের জন্য এটি ইম্পোর্ট করা হয়েছে
+    runTransaction
 } from '../js/firebase-config.js';
 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -44,11 +43,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ফাংশনসমূহ ---
     function addProductRow() {
         const row = document.createElement('tr');
+        // =======================================================================
+        // <<<<<<<<<<< পরিবর্তন ১: বারকোড ইনপুটের জন্য নতুন <td> যোগ করা হয়েছে
+        // =======================================================================
         row.innerHTML = `
             <td><input type="text" class="product-name" placeholder="e.g., Lux Soap" required></td>
             <td><input type="text" class="product-category" placeholder="e.g., Cosmetics" required></td>
             <td><input type="number" step="0.01" class="product-cp" placeholder="0.00" required></td>
             <td><input type="number" step="0.01" class="product-sp" placeholder="0.00" required></td>
+            <td><input type="text" class="product-barcode" placeholder="Scan or type barcode"></td>
             <td><input type="number" class="product-stock" placeholder="0" required></td>
             <td><button type="button" class="btn btn-danger remove-row-btn">X</button></td>
         `;
@@ -69,13 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         barcodesContainer.innerHTML = '';
         products.forEach(product => {
             const wrapper = document.createElement('div');
-            // =========================================================
-            // <<<<<<<<<<< পরিবর্তন শুরু: বারকোড wrapper এর ক্লাস পরিবর্তন করা হয়েছে প্রিন্টের সুবিধার জন্য
-            // =========================================================
             wrapper.className = 'barcode-item';
-            // =========================================================
-            // >>>>>>>>>>> পরিবর্তন শেষ
-            // =========================================================
             
             wrapper.innerHTML = `
                 <p class="product-name-print">${product.name}</p>
@@ -84,13 +81,15 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             const svgElement = wrapper.querySelector('.barcode-svg');
 
-            // product.id এখন আমাদের তৈরি করা ছোট সংখ্যা (e.g., "1001")
-            JsBarcode(svgElement, product.id, {
+            // =======================================================================
+            // <<<<<<<<<<< পরিবর্তন ২: product.id এর পরিবর্তে product.barcode ব্যবহার করা হয়েছে
+            // =======================================================================
+            JsBarcode(svgElement, product.barcode, {
                 format: "CODE128",
-                displayValue: true, // বারকোডের নিচে সংখ্যা দেখাবে
+                displayValue: true,
                 fontSize: 14,
-                width: 1.5, // বারকোডের লাইনের ঘনত্ব
-                height: 40, // বারকোডের উচ্চতা
+                width: 1.5,
+                height: 40,
                 margin: 5
             });
             barcodesContainer.appendChild(wrapper);
@@ -127,11 +126,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const category = row.querySelector('.product-category').value.trim();
                 const cp = parseFloat(row.querySelector('.product-cp').value);
                 const sp = parseFloat(row.querySelector('.product-sp').value);
+                // =======================================================================
+                // <<<<<<<<<<< পরিবর্তন ৩: বারকোড ফিল্ড থেকে ভ্যালু পড়া হচ্ছে
+                // =======================================================================
+                const barcode = row.querySelector('.product-barcode').value.trim();
                 const stock = parseInt(row.querySelector('.product-stock').value, 10);
+                
                 if (!category || isNaN(cp) || isNaN(sp) || isNaN(stock) || cp < 0 || sp < 0 || stock < 0) {
                     allRowsValid = false;
                 } else {
-                    productsToProcess.push({ name, category, costPrice: cp, sellingPrice: sp, stock });
+                    // productsToProcess অ্যারেতে বারকোড সহ পুশ করা হচ্ছে
+                    productsToProcess.push({ name, category, costPrice: cp, sellingPrice: sp, stock, barcode });
                 }
             }
         });
@@ -143,51 +148,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // =========================================================================
-        // <<<<<<<<<<< পরিবর্তন শুরু: নতুন সাংখ্যিক বারকোড আইডি জেনারেশন লজিক
+        // <<<<<<<<<<< পরিবর্তন ৪: মূল ট্রানজ্যাকশন লজিক আপডেট করা হয়েছে
         // =========================================================================
         try {
             const productsForBarcodeDisplay = [];
             let totalInventoryCost = 0;
             let productNamesForExpense = [];
             
-            // একটি মেটাডেটা ডকুমেন্ট রেফারেন্স, যেখানে আমরা সর্বশেষ আইডি নম্বর রাখব
             const metadataRef = doc(db, 'shops', currentUserId, '_metadata', 'counters');
 
-            // ট্রানজ্যাকশন ব্যবহার করে ডেটা পড়া এবং লেখা হবে
             await runTransaction(db, async (transaction) => {
                 const metadataDoc = await transaction.get(metadataRef);
-                
-                // যদি কাউন্টার না থাকে তবে 1000 থেকে শুরু হবে (অর্থাৎ প্রথম আইডি হবে 1001)
                 let lastProductId = metadataDoc.exists() ? metadataDoc.data().lastProductId || 1000 : 1000;
 
                 for (const product of productsToProcess) {
-                    lastProductId++; // আইডি ১ করে বাড়ানো হলো
-                    const newNumericId = String(lastProductId); // সংখ্যাকে স্ট্রিং-এ পরিণত করা হলো
+                    let finalBarcode;
 
-                    // নতুন প্রোডাক্টের রেফারেন্স তৈরি করা হলো সাংখ্যিক আইডি দিয়ে
-                    const newProductRef = doc(db, 'shops', currentUserId, 'inventory', newNumericId);
+                    // যদি ব্যবহারকারী বারকোড দিয়ে থাকে, তবে সেটি ব্যবহার করা হবে
+                    if (product.barcode) {
+                        finalBarcode = product.barcode;
+                    } else {
+                        // অন্যথায়, নতুন আইডি অটো-জেনারেট করা হবে
+                        lastProductId++;
+                        finalBarcode = String(lastProductId);
+                    }
+
+                    // প্রোডাক্টের ডকুমেন্ট আইডি হিসেবে finalBarcode ব্যবহার করা হবে
+                    const newProductRef = doc(db, 'shops', currentUserId, 'inventory', finalBarcode);
 
                     const dataToSave = {
-                        ...product,
-                        barcode: newNumericId, // বারকোড হিসেবে নতুন সাংখ্যিক আইডি সেভ করা হলো
+                        name: product.name,
+                        category: product.category,
+                        costPrice: product.costPrice,
+                        sellingPrice: product.sellingPrice,
+                        stock: product.stock,
+                        barcode: finalBarcode, // বারকোড ফিল্ডেও finalBarcode সেভ হবে
                         createdAt: Timestamp.now()
                     };
 
-                    // ট্রানজ্যাকশনের মাধ্যমে প্রোডাক্ট সেভ করা
                     transaction.set(newProductRef, dataToSave);
                     
-                    // বারকোড প্রদর্শনের জন্য ডেটা প্রস্তুত করা
-                    productsForBarcodeDisplay.push({ id: newNumericId, name: product.name, sp: product.sellingPrice });
+                    // বারকোড প্রদর্শনের জন্য finalBarcode সহ ডেটা প্রস্তুত করা
+                    productsForBarcodeDisplay.push({ barcode: finalBarcode, name: product.name, sp: product.sellingPrice });
                     
-                    // খরচের হিসাব
                     totalInventoryCost += product.costPrice * product.stock;
                     productNamesForExpense.push(`${product.name} (x${product.stock})`);
                 }
 
-                // খরচের হিসাব যোগ করা (যদি থাকে)
+                // খরচের হিসাব যোগ করা
                 if (totalInventoryCost > 0) {
-                    const expensesCol = collection(db, 'shops', currentUserId, 'expenses');
-                    const expenseRef = doc(expensesCol); // খরচের জন্য অটো-আইডি ঠিক আছে
+                    const expenseRef = doc(collection(db, 'shops', currentUserId, 'expenses'));
                     const expenseData = {
                         description: `Inventory purchase: ${productNamesForExpense.join(', ')}`,
                         amount: totalInventoryCost,
@@ -213,9 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
             saveButton.disabled = false;
             saveButton.textContent = 'Save All Products';
         }
-        // =========================================================================
-        // >>>>>>>>>>> পরিবর্তন শেষ
-        // =========================================================================
     });
 
     productsTbody.addEventListener('click', (e) => {
