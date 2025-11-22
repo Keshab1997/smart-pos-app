@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Slip</title>
+    <!-- মেইন ফোল্ডার থেকে আপনার দেওয়া CSS টি লিঙ্ক করছি -->
+    <link rel="stylesheet" href="../billing/print.css"> 
+    <style>
+        /* বুকিং স্লিপের জন্য কিছু স্পেশাল স্টাইল */
+        .booking-title {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            border-bottom: 1px dashed #000;
+            padding: 5px 0;
+            margin-bottom: 10px;
+        }
+        .item-desc {
+            font-size: 12pt;
+            font-weight: bold;
+            padding: 10px 0;
+            border-bottom: 1px dotted #000;
+        }
+        .delivery-highlight {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 10px;
+            text-align: center;
+            border: 2px solid #000;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <!-- দোকানের নাম (JS দিয়ে লোড হবে) -->
+        <header id="shop-details-container" class="shop-header">
+            <h1 class="shop-name">Loading...</h1>
+        </header>
+        
+        <div class="booking-title">ADVANCE BOOKING SLIP</div>
+
+        <!-- বুকিং ইনফো -->
+        <section class="bill-info">
+            <div><strong>Booking No:</strong> <span id="booking-no">...</span></div>
+            <div><strong>Date:</strong> <span id="booking-date">...</span></div>
+        </section>
+
+        <!-- কাস্টমার ডিটেইলস -->
+        <section class="customer-details">
+            <p><strong>Customer:</strong> <span id="c-name"></span></p>
+            <p><strong>Phone:</strong> <span id="c-phone"></span></p>
+        </section>
+        
+        <!-- আইটেম বিবরণ -->
+        <div style="margin-top: 10px; font-weight: bold;">Item Description:</div>
+        <div class="item-desc" id="item-desc">
+            <!-- বিবরণ এখানে বসবে -->
+        </div>
+
+        <!-- টাকার হিসাব -->
+        <section class="totals-section">
+            <div class="summary-line">
+                <span>Estimated Total</span>
+                <span id="est-total"></span>
+            </div>
+            
+            <div class="summary-line grand-total">
+                <strong>Advance Paid</strong>
+                <strong id="adv-paid"></strong>
+            </div>
+
+            <div class="summary-line" style="margin-top: 5px;">
+                <span>Balance Due</span>
+                <span id="balance-due"></span>
+            </div>
+        </section>
+
+        <!-- ডেলিভারি তারিখ -->
+        <div class="delivery-highlight">
+            Delivery: <span id="del-date"></span>
+        </div>
+
+        <!-- ফুটার -->
+        <footer class="receipt-footer">
+            <p>Please bring this slip for delivery.</p>
+            <p>Thank you!</p>
+        </footer>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      }
+    }
+    </script>
+    <script type="module" src="../js/firebase-config.js"></script>
+    <script type="module" src="booking-print.js"></script>
+</body>
+</html>

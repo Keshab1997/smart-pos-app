@@ -1,4 +1,4 @@
-// billing/billing.js - ডিসকাউন্ট সাবটোটালের বেশি না হওয়ার নিয়ম যোগ করা হয়েছে (v3.7)
+// billing/billing.js - With Advance Booking Integration (v4.0)
 
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
@@ -6,7 +6,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
-    collection, doc, getDocs, getDoc, query, where, orderBy, writeBatch, serverTimestamp, increment, runTransaction
+    collection, doc, getDocs, getDoc, updateDoc, query, where, orderBy, writeBatch, serverTimestamp, increment, runTransaction
 } from 'firebase/firestore';
 
 // ==========================================================
@@ -47,8 +47,10 @@ const mainNavLinks = document.querySelector('header nav .nav-links');
 // ==========================================================
 let cart = [];
 let allProducts = [];
-let currentTotals = { subtotal: 0, discount: 0, tax: 0, total: 0 };
+// currentTotals এ advancePaid এবং payableTotal যোগ করা হয়েছে
+let currentTotals = { subtotal: 0, discount: 0, tax: 0, total: 0, advancePaid: 0, payableTotal: 0 };
 let currentUserId = null;
+let bookingData = null; // বুকিং ডেটার জন্য ভেরিয়েবল
 
 // ==========================================================
 // --- Authentication & Initialization ---
@@ -67,6 +69,45 @@ function initializeBillingPage() {
     initializeProducts();
     setupEventListeners();
     handlePaymentMethodChange();
+    
+    // বুকিং চেক করা (যদি অ্যাডভান্স বুকিং পেজ থেকে এসে থাকে)
+    checkPendingBooking();
+}
+
+// ==========================================================
+// --- বুকিং ইন্টিগ্রেশন ফাংশন ---
+// ==========================================================
+async function checkPendingBooking() {
+    const bookingId = sessionStorage.getItem('pending_booking_id');
+    if (!bookingId || !currentUserId) return;
+
+    try {
+        const docRef = doc(db, 'shops', currentUserId, 'bookings', bookingId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            // স্ট্যাটাস যদি অলরেডি বিল্ড হয়, তাহলে ইগনোর করুন
+            if (data.status === 'Billed') {
+                sessionStorage.removeItem('pending_booking_id');
+                return;
+            }
+
+            bookingData = { id: docSnap.id, ...data };
+            
+            // কাস্টমার ইনফো অটো-ফিল করা
+            customerNameInput.value = bookingData.customerName || '';
+            customerPhoneInput.value = bookingData.phone || '';
+            
+            // ইউজারকে নোটিফিকেশন দেওয়া
+            alert(`Booking Detected for: ${bookingData.customerName}\nAdvance Paid: ₹${bookingData.advancePaid}`);
+            
+            // টোটাল আপডেট করা যাতে মডালে অ্যাডভান্স দেখায়
+            updateAllTotals();
+        }
+    } catch (error) {
+        console.error("Error loading booking:", error);
+    }
 }
 
 async function initializeProducts() {
@@ -243,67 +284,75 @@ function addCartItemEventListeners() {
 }
 
 // ==============================================================
-// --- START: টোটাল, ডিসকাউন্ট, এবং পেমেন্ট ক্যালকুলেশন (ডিসকাউন্ট সীমাবদ্ধ করা হয়েছে) ---
+// --- START: টোটাল, ডিসকাউন্ট, এবং পেমেন্ট ক্যালকুলেশন ---
 // ==============================================================
 function updateAllTotals() {
     const subtotal = cart.reduce((sum, item) => sum + (item.sellingPrice || 0) * item.quantity, 0);
     const discountType = discountTypeSelect.value;
     let discountValue = parseFloat(discountValueInput.value);
-    if (isNaN(discountValue) || discountValue < 0) {
-        discountValue = 0;
-    }
+    if (isNaN(discountValue) || discountValue < 0) discountValue = 0;
 
-    // ===== START: নতুন নিয়ম যোগ করা হয়েছে =====
     if (discountType === 'percent') {
-        // পার্সেন্টেজ 100 এর বেশি হতে পারবে না
         if (discountValue > 100) {
             discountValue = 100;
-            discountValueInput.value = 100; // ইনপুট ফিল্ড আপডেট করা হলো
+            discountValueInput.value = 100;
         }
-    } else { // amount
-        // অ্যামাউন্ট সাবটোটালের বেশি হতে পারবে না
+    } else { 
         if (discountValue > subtotal && subtotal > 0) {
             discountValue = subtotal;
-            discountValueInput.value = subtotal.toFixed(2); // ইনপুট ফিল্ড আপডেট করা হলো
+            discountValueInput.value = subtotal.toFixed(2);
         }
     }
-    // ===== END: নতুন নিয়ম যোগ করা হয়েছে =====
 
-    let discountAmount = 0;
-    if (discountType === 'percent') {
-        discountAmount = (subtotal * discountValue) / 100;
-    } else { // amount
-        discountAmount = discountValue;
-    }
-    
-    // চূড়ান্ত একটি চেক যাতে কোনোভাবেই ডিসকাউন্ট সাবটোটালকে না ছাড়ায়
-    if (discountAmount > subtotal) {
-        discountAmount = subtotal;
-    }
+    let discountAmount = (discountType === 'percent') ? (subtotal * discountValue) / 100 : discountValue;
+    if (discountAmount > subtotal) discountAmount = subtotal;
     
     const discountedSubtotal = subtotal - discountAmount;
     const tax = gstToggle.checked ? discountedSubtotal * 0.05 : 0;
     const total = discountedSubtotal + tax;
 
-    currentTotals = { subtotal, discount: discountAmount, tax, total };
+    // === ADVANCE ADJUSTMENT LOGIC ===
+    let advancePaid = 0;
+    const advanceRow = document.getElementById('advance-row'); // HTML এ এই ID টি থাকতে হবে
+    const modalAdvanceEl = document.getElementById('modal-advance');
+
+    if (bookingData && bookingData.advancePaid > 0) {
+        advancePaid = bookingData.advancePaid;
+        if (advanceRow) {
+            advanceRow.style.display = 'flex';
+            modalAdvanceEl.textContent = `- ₹${advancePaid.toFixed(2)}`;
+        }
+    } else {
+        if (advanceRow) advanceRow.style.display = 'none';
+    }
+
+    // Payable Total (cannot be negative)
+    const payableTotal = Math.max(0, total - advancePaid);
+
+    currentTotals = { subtotal, discount: discountAmount, tax, total, advancePaid, payableTotal };
 
     // UI আপডেট
-    footerTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
+    footerTotalAmountEl.textContent = `₹${total.toFixed(2)}`; // এখানে গ্র্যান্ড টোটাল (বিল এমাউন্ট)
     modalSubtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
     modalDiscountEl.textContent = `- ₹${discountAmount.toFixed(2)}`;
     modalTaxEl.textContent = `₹${tax.toFixed(2)}`;
-    modalTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
+    
+    // মডালে আমরা কাস্টমারকে কত দিতে হবে সেটা দেখাবো
+    modalTotalAmountEl.textContent = `₹${payableTotal.toFixed(2)}`;
 
     updatePaymentDetails();
 }
 
 function updatePaymentDetails() {
     const method = paymentMethodSelect.value;
+    // এখানে আমরা payableTotal ব্যবহার করবো, কারণ কাস্টমার এটাই দেবে
+    const amountToPay = currentTotals.payableTotal;
+
     if (method === 'cash') {
         const cashReceived = parseFloat(cashReceivedInput.value);
         let returnAmount = 0;
-        if (!isNaN(cashReceived) && cashReceived >= currentTotals.total) {
-            returnAmount = cashReceived - currentTotals.total;
+        if (!isNaN(cashReceived) && cashReceived >= amountToPay) {
+            returnAmount = cashReceived - amountToPay;
         }
         returnAmountDisplay.textContent = `₹${returnAmount.toFixed(2)}`;
     }
@@ -314,14 +363,15 @@ function validateFinalBillButton() {
     let isValid = false;
     if (cart.length > 0) {
         const method = paymentMethodSelect.value;
-        const total = currentTotals.total;
+        const amountToPay = currentTotals.payableTotal;
+
         if (method === 'cash') {
             const cashReceived = parseFloat(cashReceivedInput.value);
-            isValid = isNaN(cashReceived) || cashReceived >= total;
+            isValid = isNaN(cashReceived) || cashReceived >= amountToPay;
         } else if (method === 'part-payment') {
             const cashAmount = parseFloat(cashAmountInput.value) || 0;
             const cardAmount = parseFloat(cardAmountInput.value) || 0;
-            isValid = Math.abs((cashAmount + cardAmount) - total) < 0.01;
+            isValid = Math.abs((cashAmount + cardAmount) - amountToPay) < 0.01;
         } else {
             isValid = true;
         }
@@ -364,19 +414,29 @@ async function generateFinalBill() {
                 price: item.sellingPrice || 0, category: item.category || 'N/A',
                 purchasePrice: item.purchasePrice || item.costPrice || 0
             })),
-            ...currentTotals,
+            // নতুন ডেটা স্ট্রাকচার
+            subtotal: currentTotals.subtotal,
+            discount: currentTotals.discount,
+            tax: currentTotals.tax,
+            total: currentTotals.total, // বিল এমাউন্ট
+            advanceAdjusted: currentTotals.advancePaid, // অ্যাডভান্স
+            finalPaidAmount: currentTotals.payableTotal, // কাস্টমার যা দিল
+            
             paymentMethod: paymentMethodSelect.value,
             gstApplied: gstToggle.checked,
             customerDetails: { name: customerNameInput.value.trim() || 'Walk-in Customer', phone: customerPhoneInput.value.trim(), address: customerAddressInput.value.trim() },
             createdAt: serverTimestamp(),
             discountDetails: { type: discountTypeSelect.value, value: parseFloat(discountValueInput.value) || 0 },
-            gstRate: 5
+            gstRate: 5,
+            bookingId: bookingData ? bookingData.id : null // বুকিং আইডি লিঙ্ক করা
         };
+
+        const amountToPay = currentTotals.payableTotal;
 
         if (sale.paymentMethod === 'cash') {
             const cashReceived = parseFloat(cashReceivedInput.value);
-            const finalCashReceived = isNaN(cashReceived) ? sale.total : cashReceived;
-            sale.paymentBreakdown = { cashReceived: finalCashReceived, changeReturned: finalCashReceived - sale.total };
+            const finalCashReceived = isNaN(cashReceived) ? amountToPay : cashReceived;
+            sale.paymentBreakdown = { cashReceived: finalCashReceived, changeReturned: finalCashReceived - amountToPay };
         } else if (sale.paymentMethod === 'part-payment') {
             sale.paymentBreakdown = { cash: parseFloat(cashAmountInput.value) || 0, card_or_online: parseFloat(cardAmountInput.value) || 0 };
         }
@@ -385,7 +445,20 @@ async function generateFinalBill() {
         const newSaleRef = doc(collection(db, 'shops', currentUserId, 'sales'));
         batch.set(newSaleRef, sale);
         cart.forEach(item => batch.update(doc(db, 'shops', currentUserId, 'inventory', item.id), { stock: increment(-item.quantity) }));
+        
+        // === যদি বুকিং থেকে এসে থাকে, তবে বুকিং স্ট্যাটাস আপডেট করা ===
+        if(bookingData && bookingData.id) {
+            const bookingRef = doc(db, 'shops', currentUserId, 'bookings', bookingData.id);
+            batch.update(bookingRef, { status: 'Billed' });
+        }
+
         await batch.commit();
+
+        // সেশন ক্লিয়ার করা
+        if(bookingData) {
+            sessionStorage.removeItem('pending_booking_id');
+            bookingData = null;
+        }
 
         window.open(`print.html?saleId=${newSaleRef.id}`, '_blank');
         resetAfterSale();
@@ -405,16 +478,18 @@ function preCheckoutValidation() {
         return false;
     }
     const method = paymentMethodSelect.value;
+    const amountToPay = currentTotals.payableTotal;
+
     if (method === 'cash') {
         const cashReceived = parseFloat(cashReceivedInput.value);
-        if (!isNaN(cashReceived) && cashReceived < currentTotals.total) {
-            alert("Cash received is less than total amount.");
+        if (!isNaN(cashReceived) && cashReceived < amountToPay) {
+            alert("Cash received is less than payable amount.");
             cashReceivedInput.focus();
             return false;
         }
     }
-    if (method === 'part-payment' && Math.abs(((parseFloat(cashAmountInput.value) || 0) + (parseFloat(cardAmountInput.value) || 0)) - currentTotals.total) > 0.01) {
-        alert("Part payment amounts do not match total bill.");
+    if (method === 'part-payment' && Math.abs(((parseFloat(cashAmountInput.value) || 0) + (parseFloat(cardAmountInput.value) || 0)) - amountToPay) > 0.01) {
+        alert("Part payment amounts do not match payable amount.");
         return false;
     }
     return true;
@@ -427,6 +502,11 @@ function resetAfterSale() {
     discountTypeSelect.value = 'percent';
     gstToggle.checked = true;
     paymentMethodSelect.value = 'cash';
+    
+    // Advance row লুকিয়ে ফেলা
+    const advanceRow = document.getElementById('advance-row');
+    if(advanceRow) advanceRow.style.display = 'none';
+
     updateCartDisplay();
     handlePaymentMethodChange();
 }
@@ -439,7 +519,7 @@ function handlePaymentMethodChange() {
 }
 
 // ==========================================================
-// --- সব ইভেন্ট লিসেনার সেটআপ (সংশোধিত) ---
+// --- সব ইভেন্ট লিসেনার সেটআপ ---
 // ==========================================================
 function setupEventListeners() {
     productSearchInput.addEventListener('input', handleSearch);
@@ -481,7 +561,8 @@ function setupEventListeners() {
         if (cart.length > 0) {
             updateAllTotals();
             checkoutModal.classList.remove('hidden');
-            customerNameInput.focus();
+            // যদি বুকিং থেকে নাম না এসে থাকে, তাহলে ফোকাস করবে
+            if(!customerNameInput.value) customerNameInput.focus();
         }
     });
 

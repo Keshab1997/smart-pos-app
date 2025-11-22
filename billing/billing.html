@@ -27,6 +27,9 @@
             <ul class="nav-links">
                 <li><a href="../dashboard.html">Dashboard</a></li>
                 <li><a href="billing.html" class="active">Billing</a></li>
+                <!-- নতুন লিঙ্ক যোগ করা হয়েছে -->
+                <li><a href="../advance-booking/index.html">Bookings</a></li> 
+                
                 <li><a href="../inventory/inventory.html">Inventory</a></li>
                 <li><a href="../add-product/add-product.html">Add Product</a></li>
                 <li><a href="../sales-report/report.html">Sales Report</a></li>
@@ -134,6 +137,16 @@
                         </span>
                         <span id="modal-tax">₹0.00</span>
                     </div>
+
+                    <!-- =========================================== -->
+                    <!-- START: Advance Booking Adjustment Row -->
+                    <!-- =========================================== -->
+                    <div class="summary-row" id="advance-row" style="display: none; color: #d63384; font-weight: 600;">
+                        <span>Less Advance:</span>
+                        <span id="modal-advance">₹0.00</span>
+                    </div>
+                    <!-- END: Advance Booking Adjustment Row -->
+
                     <hr>
                     <div class="summary-row total-row">
                         <span>Grand Total:</span>
@@ -153,10 +166,10 @@
                 </div>
 
                 <!-- ============================================== -->
-                <!-- ===== START: পেমেন্ট ডিটেইলস (নতুন আপডেট) ===== -->
+                <!-- ===== START: পেমেন্ট ডিটেইলস ===== -->
                 <!-- ============================================== -->
                 <div class="payment-details-wrapper">
-                    <!-- ক্যাশ পেমেন্টের জন্য (ডিফল্টভাবে লুকানো থাকবে) -->
+                    <!-- ক্যাশ পেমেন্টের জন্য -->
                     <div id="cash-payment-details" class="hidden">
                         <div class="payment-input-group">
                             <label for="cash-received">Cash Received:</label>
@@ -168,7 +181,7 @@
                         </div>
                     </div>
 
-                    <!-- পার্ট পেমেন্টের জন্য (ডিফল্টভাবে লুকানো থাকবে) -->
+                    <!-- পার্ট পেমেন্টের জন্য -->
                     <div id="part-payment-details" class="hidden">
                         <div class="payment-input-group">
                             <label for="cash-amount">Cash Amount:</label>
