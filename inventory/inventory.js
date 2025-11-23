@@ -1,16 +1,11 @@
-// inventory.js (সম্পূর্ণ সংশোধিত এবং label-editor ছাড়া)
+// inventory.js
 
-// =================================================================
-// --- মডিউল ইম্পোর্ট ---
-// =================================================================
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, onSnapshot, doc, deleteDoc, updateDoc, orderBy, query } from 'firebase/firestore';
-// *** পরিবর্তন: label-editor.js ইম্পোর্ট লাইনটি সরিয়ে দেওয়া হয়েছে ***
+// এখানে getDocs এবং where ইম্পোর্ট করা হয়েছে
+import { collection, onSnapshot, doc, deleteDoc, updateDoc, orderBy, query, where, getDocs } from 'firebase/firestore';
 
-// =================================================================
 // --- DOM Elements ---
-// =================================================================
 const inventoryBody = document.getElementById('inventory-tbody');
 const searchInput = document.getElementById('search-inventory');
 const categoryFilter = document.getElementById('category-filter');
@@ -23,17 +18,13 @@ const selectAllCheckbox = document.getElementById('select-all-checkbox');
 const printSelectedBtn = document.getElementById('print-selected-btn');
 const printCategoryBtn = document.getElementById('print-category-btn');
 
-// =================================================================
 // --- Global State ---
-// =================================================================
 let allProducts = [], filteredProducts = [];
 let currentPage = 1, currentUserId = null, unsubscribe;
 const ROWS_PER_PAGE = 10, LOW_STOCK_THRESHOLD = 10;
 let hasEventListenersSetup = false;
 
-// =================================================================
-// --- Authentication & Initialization ---
-// =================================================================
+// --- Authentication ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserId = user.uid;
@@ -44,9 +35,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// =================================================================
-// --- Core Functions (Data loading & Rendering) ---
-// =================================================================
+// --- Core Functions ---
 function loadInventory() {
     if (!currentUserId) return;
     if (unsubscribe) unsubscribe();
@@ -87,8 +76,6 @@ function renderTable() {
                 <td class="action-buttons">
                     <button class="btn btn-sm btn-edit" data-id="${p.id}" title="Edit">Edit</button>
                     <button class="btn btn-sm btn-delete" data-id="${p.id}" title="Delete">Delete</button>
-                    
-                    <!-- *** পরিবর্তন: 'Print' বাটন এখন openPrintPage ফাংশনকে কল করবে *** -->
                     <button class="btn btn-sm btn-print" onclick="openPrintPage('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.sellingPrice}')" title="Print Barcode">Print</button>
                 </td>
             </tr>`).join('');
@@ -112,9 +99,7 @@ function showStatus(message, type = 'success') {
     setTimeout(() => div.remove(), 4000);
 }
 
-// =================================================================
 // --- Event Listeners ---
-// =================================================================
 function setupEventListeners() {
     hasEventListenersSetup = true;
 
@@ -131,8 +116,6 @@ function setupEventListeners() {
     inventoryBody.addEventListener('click', (e) => {
         const target = e.target.closest('button');
         if (!target) return;
-        
-        // Print বাটন এর জন্য আলাদা ফাংশন (openPrintPage) ব্যবহার হচ্ছে, তাই এখানে আর হ্যান্ডেল করার প্রয়োজন নেই।
         if (target.matches('.btn-print')) return;
 
         const product = allProducts.find(p => p.id === target.dataset.id);
@@ -142,71 +125,101 @@ function setupEventListeners() {
         else if (target.matches('.btn-delete')) { if (confirm(`Delete "${product.name}"?`)) deleteProduct(product.id); } 
     });
     
-    // *** পরিবর্তন: এই বাটনগুলো এখন আর লেবেল এডিটর খুলবে না। এদেরকে ডিজেবল করে দেওয়া যেতে পারে বা নতুন কার্যকারিতা দেওয়া যেতে পারে। আপাতত অ্যালার্ট দেখানো হচ্ছে। ***
     printSelectedBtn.addEventListener('click', () => {
-        alert('This feature (Print Selected) is currently disabled. Please print barcodes one by one.');
+        alert('Please print barcodes one by one using the Print button.');
     });
 
     printCategoryBtn.addEventListener('click', () => {
-        alert('This feature (Print by Category) is currently disabled. Please print barcodes one by one.');
+        alert('Please print barcodes one by one using the Print button.');
     });
 
     selectAllCheckbox.addEventListener('change', (e) => inventoryBody.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = e.target.checked));
 
-    // Edit Modal Logic
     editModal.querySelector('.close-button').addEventListener('click', () => editModal.style.display = 'none');
     window.addEventListener('click', (e) => { if (e.target === editModal) editModal.style.display = 'none'; });
+    
     editForm.addEventListener('submit', handleEditFormSubmit);
 
     logoutBtn.addEventListener('click', () => signOut(auth));
 }
 
-// =================================================================
 // --- Helper Functions ---
-// =================================================================
-
-// *** নতুন ফাংশন যোগ করা হলো ***
-// এই ফাংশনটি নতুন টেমপ্লেট-ভিত্তিক প্রিন্ট পেজ খুলবে
 function openPrintPage(id, name, price) {
-    // URL এ ডেটা encode করে পাঠানো হচ্ছে যাতে স্পেশাল ক্যারেক্টার (যেমন ', ", &) সমস্যা না করে
     const url = `../print-barcode.html?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}`;
-    
-    // নতুন উইন্ডোতে প্রিন্ট পেজ ওপেন করা
     window.open(url, '_blank', 'width=800,height=600');
 }
-// openPrintPage ফাংশনটিকে গ্লোবাল স্কোপে যুক্ত করা হচ্ছে যাতে HTML থেকে সরাসরি কল করা যায়
 window.openPrintPage = openPrintPage;
-
-function getSelectedProducts() {
-    const ids = Array.from(inventoryBody.querySelectorAll('.product-checkbox:checked')).map(cb => cb.dataset.id);
-    return allProducts.filter(p => ids.includes(p.id));
-}
 
 function openEditModal(product) {
     editForm.reset();
     Object.entries({
-        'edit-product-id': product.id, 'edit-name': product.name, 'edit-category': product.category,
-        'edit-cp': product.costPrice, 'edit-sp': product.sellingPrice, 'edit-stock': product.stock,
+        'edit-product-id': product.id, 
+        'edit-name': product.name, 
+        'edit-category': product.category,
+        'edit-cp': product.costPrice, 
+        'edit-sp': product.sellingPrice, 
+        'edit-stock': product.stock,
         'edit-barcode': product.barcode
     }).forEach(([id, value]) => { document.getElementById(id).value = value || ''; });
     editModal.style.display = 'flex';
 }
 
+// =======================================================================
+// <<<<<<<<<<< গুরুত্বপূর্ণ পরিবর্তন: এডিট সাবমিট ফাংশন >>>>>>>>>>>
+// =======================================================================
 async function handleEditFormSubmit(e) {
     e.preventDefault();
     const id = document.getElementById('edit-product-id').value;
+    
+    const newName = document.getElementById('edit-name').value.trim();
+    const newCategory = document.getElementById('edit-category').value.trim();
+    const newCP = parseFloat(document.getElementById('edit-cp').value);
+    const newSP = parseFloat(document.getElementById('edit-sp').value);
+    const newStock = parseInt(document.getElementById('edit-stock').value, 10);
+
     const data = {
-        name: document.getElementById('edit-name').value.trim(),
-        category: document.getElementById('edit-category').value.trim(),
-        costPrice: parseFloat(document.getElementById('edit-cp').value),
-        sellingPrice: parseFloat(document.getElementById('edit-sp').value),
-        stock: parseInt(document.getElementById('edit-stock').value, 10),
+        name: newName,
+        category: newCategory,
+        costPrice: newCP,
+        sellingPrice: newSP,
+        stock: newStock,
     };
+
     try {
+        // ১. ইনভেন্টরি আপডেট করা
         await updateDoc(doc(db, 'shops', currentUserId, 'inventory', id), data);
-        showStatus('Product updated successfully!');
+
+        // ২. এক্সপেন্স আপডেট করা (যদি CP বা Stock পরিবর্তন হয়)
+        // আমরা 'relatedProductId' ফিল্ড দিয়ে এক্সপেন্স খুঁজব যা আমরা add-product এ সেট করেছি
+        const expensesRef = collection(db, 'shops', currentUserId, 'expenses');
+        const q = query(expensesRef, where("relatedProductId", "==", id));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            // যদি এক্সপেন্স পাওয়া যায়, সেটি আপডেট করুন
+            querySnapshot.forEach(async (docSnap) => {
+                const expenseRef = doc(db, 'shops', currentUserId, 'expenses', docSnap.id);
+                
+                // নতুন খরচ = নতুন CP * নতুন Stock
+                const newTotalAmount = newCP * newStock;
+
+                await updateDoc(expenseRef, {
+                    amount: newTotalAmount,
+                    description: `Inventory purchase: ${newName}` // নাম পাল্টালে এখানেও পাল্টাবে
+                });
+                console.log("Linked expense updated successfully");
+            });
+        } else {
+            console.log("No linked expense found (Maybe old product).");
+        }
+
+        showStatus('Product and associated Expense updated!');
         editModal.style.display = 'none';
-    } catch (error) { showStatus('Failed to update product.', 'error'); }
+
+    } catch (error) {
+        console.error("Update Error:", error);
+        showStatus('Failed to update product.', 'error'); 
+    }
 }
 
 async function deleteProduct(id) {
