@@ -1,8 +1,11 @@
-// print.js - Updated with Robust Shortener (AllOrigins Proxy + is.gd)
+// print.js - Super Fast Link Generation (Background Process)
 
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+
+// গ্লোবাল ভেরিয়েবল যাতে লিংক আগে থেকেই রেডি থাকে
+let readyShortLink = null;
 
 async function loadAndPrintBill() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -14,8 +17,35 @@ async function loadAndPrintBill() {
         return;
     }
 
+    // --- লিংক জেনারেটর ফাংশন (আলাদা করা হয়েছে) ---
+    const startLinkGeneration = async (longUrl) => {
+        try {
+            console.log("Starting background link generation...");
+            // is.gd (Via AllOrigins Proxy)
+            const isGdUrl = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(isGdUrl)}`;
+            
+            const response = await fetch(proxyUrl);
+            if (response.ok) {
+                const text = await response.text();
+                if(text.startsWith('http')) {
+                    readyShortLink = text.trim();
+                    console.log("Short link ready:", readyShortLink);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error("Primary shortener failed, trying backup...");
+        }
+
+        // যদি প্রথমটা ফেইল করে, তাহলে অরিজিনাল লিংকটাই রেখে দেবে
+        readyShortLink = longUrl;
+    };
+
+
     const fetchAndRenderBill = async (userId, isPublicView) => {
         try {
+            // ১. ডাটা নিয়ে আসা
             const [saleDocSnap, shopDocSnap] = await Promise.all([
                 getDoc(doc(db, 'shops', userId, 'sales', saleId)),
                 getDoc(doc(db, 'shops', userId))
@@ -24,6 +54,14 @@ async function loadAndPrintBill() {
             if (!saleDocSnap.exists()) {
                 document.body.innerHTML = `<h1>Error: Bill not found or Link Expired.</h1>`;
                 return;
+            }
+
+            // ২. ডাটা পাওয়ার সাথে সাথেই লিংক তৈরি শুরু করে দেব (প্রিন্টের জন্য অপেক্ষা করব না)
+            if (!isPublicView) {
+                const currentUrl = window.location.href.split('?')[0];
+                const longUrl = `${currentUrl}?saleId=${saleId}&uid=${userId}`;
+                // ব্যাকগ্রাউন্ডে লিংক জেনারেট শুরু:
+                startLinkGeneration(longUrl);
             }
 
             const saleData = saleDocSnap.data();
@@ -145,48 +183,29 @@ async function loadAndPrintBill() {
             }
 
             // ============================================================
-            // === প্রিন্ট এবং Short Link (is.gd + AllOrigins Proxy) ===
+            // === ফাস্ট শেয়ারিং লজিক ===
             // ============================================================
             
             if (!isPublicView) {
                 window.onafterprint = async function() { 
                     if (waCustomerPhone) {
+                        // ১. কনফার্মেশন চাইলাম
                         let sendWA = confirm("Print complete. Send Bill on WhatsApp?");
                         
                         if (sendWA) {
+                            // ২. লিংক রেডি আছে কিনা চেক করি
+                            // যদি কোনো কারণে লিংক জেনারেট হতে দেরি হয়, আমরা অরিজিনাল লিংক ব্যবহার করব
+                            // কিন্তু পেজ লোড হওয়ার ১-১.৫ সেকেন্ডের মধ্যে ছোট লিংক হয়ে যাওয়ার কথা
                             const currentUrl = window.location.href.split('?')[0];
                             const longUrl = `${currentUrl}?saleId=${saleId}&uid=${userId}`;
                             
-                            let shortLink = longUrl; // ডিফল্ট (যদি শর্টনার কাজ না করে)
-                            
-                            try {
-                                document.title = "Creating Link..."; // ইউজারকে বোঝানো হচ্ছে কাজ চলছে
-                                
-                                // === NEW PROXY METHOD (AllOrigins) ===
-                                // is.gd সরাসরি কাজ করে না, তাই আমরা AllOrigins দিয়ে রিকোয়েস্ট পাঠাচ্ছি
-                                const isGdUrl = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
-                                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(isGdUrl)}`;
-                                
-                                const response = await fetch(proxyUrl);
-                                
-                                if (response.ok) {
-                                    const text = await response.text();
-                                    // চেক করা হচ্ছে লিংকটা ভ্যালিড কিনা
-                                    if(text.startsWith('http')) {
-                                        shortLink = text.trim(); // সফলভাবে শর্ট লিংক পাওয়া গেছে
-                                    }
-                                }
-                            } catch (err) {
-                                console.error("Shortener failed:", err);
-                                // ফেইল করলে লং লিংক যাবে, কিছু করার নেই
-                            }
-                            
-                            document.title = "Bill Receipt"; 
+                            // যদি readyShortLink তৈরি হয়ে থাকে, সেটা ব্যবহার করব। নাহলে লং লিংক।
+                            const finalLink = readyShortLink ? readyShortLink : longUrl;
 
                             let message = `*INVOICE from ${waShopName}*\n`;
                             message += `Bill No: ${waBillNo}\n`;
                             message += `Amount: ₹${waGrandTotal}\n\n`;
-                            message += `View Bill: ${shortLink}\n\n`; 
+                            message += `View Bill: ${finalLink}\n\n`; 
                             message += `Thank you!`;
 
                             let cleanPhone = waCustomerPhone.replace(/[^0-9]/g, ''); 
@@ -203,7 +222,9 @@ async function loadAndPrintBill() {
                     }
                 };
 
-                setTimeout(() => window.print(), 800);
+                // প্রিন্ট একটু দেরিতে দিচ্ছি (1.2 সেকেন্ড) যাতে লিংকটা তৈরি হওয়ার সময় পায়
+                // কাস্টমার এটা টের পাবে না কারণ পেজ লোড হতেও একটু সময় লাগে।
+                setTimeout(() => window.print(), 1200);
             }
 
         } catch (error) {
