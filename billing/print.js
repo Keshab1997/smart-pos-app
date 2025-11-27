@@ -3,38 +3,36 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
 async function loadAndPrintBill() {
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            document.body.innerHTML = '<h1>Authentication Error: Please log in to view the bill.</h1>';
-            return;
-        }
+    const urlParams = new URLSearchParams(window.location.search);
+    const saleId = urlParams.get('saleId');
+    const urlUid = urlParams.get('uid'); // কাস্টমার লিংকের জন্য UID চেক
 
-        const userId = user.uid;
-        const urlParams = new URLSearchParams(window.location.search);
-        const saleId = urlParams.get('saleId');
+    if (!saleId) {
+        document.body.innerHTML = '<h1>Error: Bill ID not found in the URL.</h1>';
+        return;
+    }
 
-        if (!saleId) {
-            document.body.innerHTML = '<h1>Error: Bill ID not found in the URL.</h1>';
-            return;
-        }
-
+    // ফাংশন: বিল ডাটা নিয়ে আসা এবং দেখানো
+    const fetchAndRenderBill = async (userId, isPublicView) => {
         try {
             const [saleDocSnap, shopDocSnap] = await Promise.all([
                 getDoc(doc(db, 'shops', userId, 'sales', saleId)),
                 getDoc(doc(db, 'shops', userId))
             ]);
 
-            // === WhatsApp ভেরিয়েবল ===
+            if (!saleDocSnap.exists()) {
+                document.body.innerHTML = `<h1>Error: Bill not found or Link Expired.</h1>`;
+                return;
+            }
+
+            // === WhatsApp ভেরিয়েবল ===
             let waCustomerPhone = '';
             let waShopName = 'Shop';
             let waBillNo = saleId.substring(0, 8).toUpperCase();
-            
-            // বিস্তারিত হিসাবের জন্য ভেরিয়েবল
             let waSubtotal = '0.00';
             let waDiscount = '0.00';
             let waTax = '0.00';
             let waGrandTotal = '0.00';
-            let waItemListText = ''; // আইটেম লিস্টের জন্য
             let waDate = '';
 
             // === দোকানের তথ্য ===
@@ -43,7 +41,7 @@ async function loadAndPrintBill() {
 
             if (shopDocSnap.exists()) {
                 const shopData = shopDocSnap.data();
-                waShopName = shopData.shopName || 'Shop'; 
+                waShopName = shopData.shopName || 'Shop';
 
                 const shopHtml = `
                     <h1 class="shop-name">${shopData.shopName || 'Your Shop Name'}</h1>
@@ -54,17 +52,11 @@ async function loadAndPrintBill() {
                     </p>
                     ${shopData.shopGstin ? `<p class="shop-gstin">GSTIN: ${shopData.shopGstin}</p>` : ''}
                 `;
-                if(shopHeaderContainer) shopHeaderContainer.innerHTML = shopHtml;
+                if (shopHeaderContainer) shopHeaderContainer.innerHTML = shopHtml;
             }
 
-            if (!saleDocSnap.exists()) {
-                document.body.innerHTML = `<h1>Error: Bill not found.</h1>`;
-                return;
-            }
-            
             const saleData = saleDocSnap.data();
-            
-            // ডাটা স্টোর করা হচ্ছে WhatsApp এর জন্য
+
             waSubtotal = (saleData.subtotal || 0).toFixed(2);
             waDiscount = (saleData.discount || 0).toFixed(2);
             waTax = (saleData.tax || 0).toFixed(2);
@@ -80,12 +72,12 @@ async function loadAndPrintBill() {
             // === কাস্টমার তথ্য ===
             const customerContainer = document.getElementById('customer-details-container');
             const { name, phone, address } = saleData.customerDetails || {};
-            
+
             if (name && name.toLowerCase() !== 'walk-in customer') {
                 customerContainer.style.display = 'block';
                 document.getElementById('customer-name').textContent = name;
                 if (phone) {
-                    waCustomerPhone = phone; 
+                    waCustomerPhone = phone;
                     document.getElementById('customer-phone-p').style.display = 'block';
                     document.getElementById('customer-phone').textContent = phone;
                 }
@@ -95,14 +87,12 @@ async function loadAndPrintBill() {
                 }
             }
 
-            // === আইটেম লিস্ট প্রসেসিং ===
+            // === আইটেম লিস্ট ===
             const itemsTbody = document.getElementById('receipt-items');
             itemsTbody.innerHTML = '';
-            
-            saleData.items.forEach((item, index) => {
+
+            saleData.items.forEach((item) => {
                 const itemTotal = (item.quantity * (item.price || 0));
-                
-                // ১. HTML টেবিলের জন্য
                 const row = itemsTbody.insertRow();
                 row.innerHTML = `
                     <td>${item.name}</td>
@@ -110,11 +100,6 @@ async function loadAndPrintBill() {
                     <td class="right">${(item.price || 0).toFixed(2)}</td>
                     <td class="right">${itemTotal.toFixed(2)}</td>
                 `;
-
-                // ২. WhatsApp টেক্সট এর জন্য (বিস্তারিত ফরম্যাট)
-                // ফরম্যাট: 1. Product Name
-                //           2 x 50.00 = 100.00
-                waItemListText += `${index + 1}. ${item.name}\n   ${item.quantity} x ${item.price} = ₹${itemTotal.toFixed(2)}\n`;
             });
 
             // === টোটাল এবং অন্যান্য হিসাব ===
@@ -142,66 +127,73 @@ async function loadAndPrintBill() {
             }
 
             // ============================================================
-            // === DETAILED WHATSAPP BILL LOGIC ===
+            // === শুধুমাত্র মালিক প্রিন্ট বা শেয়ার করতে পারবে ===
             // ============================================================
+            
+            // যদি এটা পাবলিক ভিউ হয় (কাস্টমার দেখছে), তাহলে প্রিন্ট ডায়ালগ অটোমেটিক ওপেন হবে না, ম্যানুয়াল বাটন থাকতে পারে।
+            // কিন্তু আপনার আগের লজিক অনুযায়ী যদি মালিক ওপেন করে:
+            
+            if (!isPublicView) {
+                window.onafterprint = function() {
+                    if (waCustomerPhone) {
+                        let sendWA = confirm("Print complete. Do you want to send the BILL LINK on WhatsApp?");
+                        
+                        if (sendWA) {
+                            // --- অনলাইন বিল লিংক তৈরি ---
+                            // বর্তমান URL এর সাথে uid যোগ করা হচ্ছে যাতে কাস্টমার লগইন ছাড়াই দেখতে পারে
+                            const currentUrl = window.location.href.split('?')[0]; // মূল ফাইলের পাথ (print.html)
+                            const billLink = `${currentUrl}?saleId=${saleId}&uid=${userId}`;
 
-            window.onafterprint = function() {
-                if (waCustomerPhone) {
-                    let sendWA = confirm("Print complete. Do you want to send the detailed bill on WhatsApp?");
-                    
-                    if (sendWA) {
-                        // --- মেসেজ তৈরি শুরু ---
-                        let message = `*INVOICE*\n`;
-                        message += `*${waShopName}*\n`;
-                        message += `Date: ${waDate}\n`;
-                        message += `Bill No: ${waBillNo}\n`;
-                        message += `--------------------------------\n`;
-                        
-                        // আইটেম লিস্ট যোগ করা
-                        message += `*ITEMS:*\n`;
-                        message += waItemListText;
-                        message += `--------------------------------\n`;
-                        
-                        // বিস্তারিত হিসাব যোগ করা
-                        message += `Subtotal: ₹${waSubtotal}\n`;
-                        
-                        if (parseFloat(waDiscount) > 0) {
-                            message += `Discount: - ₹${waDiscount}\n`;
+                            // --- মেসেজ তৈরি ---
+                            let message = `*INVOICE from ${waShopName}*\n`;
+                            message += `Date: ${waDate}\n`;
+                            message += `Bill No: ${waBillNo}\n`;
+                            message += `Amount: ₹${waGrandTotal}\n\n`;
+                            message += `📄 *Click to view your detailed bill:* \n${billLink}\n\n`;
+                            message += `Thank you for shopping with us!`;
+
+                            // --- ফোন নাম্বার প্রসেসিং ---
+                            let cleanPhone = waCustomerPhone.replace(/[^0-9]/g, ''); 
+                            if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+
+                            // --- WhatsApp এ পাঠানো ---
+                            let url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+                            window.location.href = url; 
+                            
+                        } else {
+                            window.close();
                         }
-                        
-                        if (parseFloat(waTax) > 0) {
-                            message += `Tax (GST): ₹${waTax}\n`;
-                        }
-
-                        message += `--------------------------------\n`;
-                        message += `*GRAND TOTAL: ₹${waGrandTotal}*\n`;
-                        message += `--------------------------------\n`;
-                        message += `Thank you! Visit Again.`;
-
-                        // --- ফোন নাম্বার প্রসেসিং ---
-                        let cleanPhone = waCustomerPhone.replace(/[^0-9]/g, ''); 
-                        if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
-
-                        // --- লিঙ্ক তৈরি এবং রিডাইরেক্ট ---
-                        let url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-                        window.location.href = url; 
-                        
                     } else {
                         window.close();
                     }
-                } else {
-                    window.close();
-                }
-            };
+                };
 
-            // প্রিন্ট ডায়ালগ ওপেন
-            setTimeout(() => window.print(), 500);
+                // অটোমেটিক প্রিন্ট (শুধুমাত্র মালিকের জন্য)
+                setTimeout(() => window.print(), 800);
+            }
 
         } catch (error) {
             console.error("Error fetching bill details: ", error);
             document.body.innerHTML = `<h1>Failed to load bill details.</h1>`;
         }
-    });
+    };
+
+    // === মেইন লজিক: পাবলিক ভিউ না মালিক ভিউ ===
+    
+    // ১. যদি URL এ 'uid' থাকে, তার মানে এটি কাস্টমার লিংক (লগইন চেক দরকার নেই)
+    if (urlUid) {
+        fetchAndRenderBill(urlUid, true); // true = isPublicView
+    } 
+    // ২. যদি 'uid' না থাকে, তার মানে মালিক ড্যাশবোর্ড থেকে খুলেছে (লগইন চেক দরকার)
+    else {
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                fetchAndRenderBill(user.uid, false); // false = isOwnerView
+            } else {
+                document.body.innerHTML = '<h1>Authentication Error: Please log in to view the bill.</h1>';
+            }
+        });
+    }
 }
 
 window.addEventListener('DOMContentLoaded', loadAndPrintBill);
