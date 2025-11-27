@@ -14,7 +14,7 @@
     <!-- CSS -->
     <link rel="stylesheet" href="css/global.css">
     
-    <!-- নতুন কার্ডের জন্য স্টাইল (ঐচ্ছিক) -->
+    <!-- নতুন কার্ডের জন্য স্টাইল (ঐচ্ছিক - যদি global.css এ না থাকে) -->
     <style>
         .kpi-card.canceled {
             border-left-color: #fd7e14; /* কমলা রঙ */
@@ -33,8 +33,7 @@
             <ul id="main-nav-links">
                 <li><a href="dashboard.html" class="active">Dashboard</a></li>
                 <li><a href="billing/billing.html">Billing</a></li>
-                <li><a href="advance-booking/index.html">
-                    Bookings</a></li>
+                <li><a href="advance-booking/index.html">Bookings</a></li>
                 <li><a href="inventory/inventory.html">Inventory</a></li>
                 <li><a href="add-product/add-product.html">Add Product</a></li>
                 <li><a href="sales-report/report.html">Sales Report</a></li>
@@ -53,6 +52,26 @@
     <main class="container dashboard">
         <h1>Dashboard</h1>
         
+        <!-- ===== START: নতুন ওয়েলকাম সেকশন (New Feature) ===== -->
+        <section class="welcome-card">
+            <div class="user-info">
+                <div class="profile-image-container">
+                    <!-- ডিফল্ট ছবি, স্ক্রিপ্ট লোড হলে ইউজারের ছবি আসবে -->
+                    <img id="user-profile-pic" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profile">
+                </div>
+                <div class="user-details">
+                    <h2 id="greeting-msg">Hello!</h2> <!-- এখানে Good Morning/Evening আসবে -->
+                    <p class="shop-name" id="display-shop-name">Loading Shop Name...</p>
+                    <p class="user-email" id="display-user-email">Loading email...</p>
+                </div>
+            </div>
+            <div class="time-weather-info">
+                <div id="current-time" class="clock">--:--:--</div>
+                <div id="current-date" class="date">Loading Date...</div>
+            </div>
+        </section>
+        <!-- ===== END: নতুন ওয়েলকাম সেকশন ===== -->
+
         <!-- KPI কার্ডস (Key Performance Indicators) -->
         <section class="kpi-cards">
             <div class="kpi-card sales">
@@ -63,12 +82,12 @@
                 <h3>Today's Profit</h3>
                 <p id="today-profit">₹0.00</p>
             </div>
-            <!-- ===== START: নতুন যোগ করা কার্ড ===== -->
+            <!-- ===== START: ক্যানসেল কার্ড ===== -->
             <div class="kpi-card canceled">
                 <h3>Today's Canceled</h3>
                 <p id="today-canceled">₹0.00</p>
             </div>
-            <!-- ===== END: নতুন যোগ করা কার্ড ===== -->
+            <!-- ===== END: ক্যানসেল কার্ড ===== -->
             <div class="kpi-card expense">
                 <h3>Today's Expenses</h3>
                 <p id="today-expenses">₹0.00</p>
@@ -87,7 +106,7 @@
                 <canvas id="salesProfitChart"></canvas>
             </div>
 
-            <!-- ক্যাটেগরি অনুযায়ী সেলস পাই চার্ট -->
+            <!-- ক্যাটেগরি অনুযায়ী সেলস পাই চার্ট -->
             <div class="card chart-container">
                 <h3>Sales by Category</h3>
                 <canvas id="categoryPieChart"></canvas>
@@ -122,7 +141,6 @@
 
     <!-- নতুন খরচ যোগ করার মডাল (Popup) -->
     <div id="expense-modal" class="modal-overlay hidden">
-        <!-- (মডালের বাকি অংশ অপরিবর্তিত) -->
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Add a New Expense</h2>

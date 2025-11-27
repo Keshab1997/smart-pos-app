@@ -315,3 +315,113 @@ body {
 
 .main-footer-credit .container p { margin: 5px 0; color: #adb5bd; }
 .main-footer-credit strong { color: #ffffff; font-weight: 600; }
+/* =========================================
+   DASHBOARD WELCOME SECTION (NEW)
+   ========================================= */
+
+   .welcome-card {
+    background: linear-gradient(135deg, #4e54c8, #8f94fb); /* সুন্দর নীল-বেগুনি গ্রেডিয়েন্ট */
+    color: #ffffff;
+    padding: 25px 30px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between; /* দুই পাশে কন্টেন্ট রাখবে */
+    align-items: center;
+    margin-bottom: 30px; /* নিচের কার্ড থেকে দূরত্ব */
+    box-shadow: 0 10px 25px rgba(78, 84, 200, 0.2); /* শ্যাডো */
+    position: relative;
+    overflow: hidden;
+}
+
+/* --- বাম পাশ: ইউজার ইনফো --- */
+.welcome-card .user-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.welcome-card .profile-image-container img {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%; /* গোল ছবি */
+    border: 3px solid rgba(255, 255, 255, 0.4); /* হালকা বর্ডার */
+    object-fit: cover;
+    background-color: #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.welcome-card .user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.welcome-card .user-details h2 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.welcome-card .user-details .shop-name {
+    margin: 4px 0 2px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.welcome-card .user-details .user-email {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+}
+
+/* --- ডান পাশ: ঘড়ি ও তারিখ --- */
+.welcome-card .time-weather-info {
+    text-align: right;
+}
+
+.welcome-card .clock {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    font-variant-numeric: tabular-nums; /* সংখ্যা নড়াচড়া করবে না */
+}
+
+.welcome-card .date {
+    font-size: 1rem;
+    margin-top: 5px;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+}
+
+/* =========================================
+   RESPONSIVE DESIGN (মোবাইলের জন্য)
+   ========================================= */
+@media (max-width: 768px) {
+    .welcome-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .welcome-card .user-info {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .welcome-card .time-weather-info {
+        text-align: center;
+        width: 100%;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        padding-top: 15px;
+    }
+    
+    .welcome-card .clock {
+        font-size: 2rem;
+    }
+}
