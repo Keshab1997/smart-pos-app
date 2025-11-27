@@ -124,7 +124,7 @@ let templates = {
                     type: 'text', 
                     x: 32, 
                     y: 7,    // নামের নিচে
-                    options: { font: '2', size: 1, prefix: 'Tk. ', rotation: 0 } 
+                    options: { font: '2', size: 1, prefix: 'Rs. ', rotation: 0 } 
                 },
     
                 // --- অংশ ২: বারকোড (ডান পাশের অংশ - 35mm) ---
