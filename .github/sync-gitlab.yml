@@ -1,0 +1,27 @@
+name: Sync to GitLab
+
+on:
+  push:
+    branches:
+      - main        # আপনার ব্রাঞ্চ যদি 'master' হয় তবে এখানে 'master' লিখবেন
+  workflow_dispatch: # ম্যানুয়ালি রান করার অপশন
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Push to GitLab
+        env:
+          # আমরা সিক্রেট থেকে টোকেনটি নিচ্ছি
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          # আপনার রিপোজিটরির লিংক কনফিগার করা হচ্ছে
+          git remote add gitlab https://oauth2:$GITLAB_TOKEN@gitlab.com/Keshab1997/smart-pos-app.git
+          
+          # গিটল্যাবে কোড পুশ করা হচ্ছে (main ব্রাঞ্চ)
+          git push gitlab main --force
