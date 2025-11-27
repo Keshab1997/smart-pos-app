@@ -1,4 +1,4 @@
-// print.js - Updated: Numeric Bill No + is.gd Short Link (No Ads/Preview)
+// print.js - Updated with Robust Shortener (AllOrigins Proxy + is.gd)
 
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -14,7 +14,6 @@ async function loadAndPrintBill() {
         return;
     }
 
-    // ফাংশন: বিল ডাটা নিয়ে আসা এবং দেখানো
     const fetchAndRenderBill = async (userId, isPublicView) => {
         try {
             const [saleDocSnap, shopDocSnap] = await Promise.all([
@@ -32,7 +31,6 @@ async function loadAndPrintBill() {
             // === WhatsApp ভেরিয়েবল ===
             let waCustomerPhone = '';
             let waShopName = 'Shop';
-            // ডাটাবেস থেকে বিল নম্বর নেওয়া (1000, 1001...), না থাকলে ID
             let waBillNo = saleData.billNo ? saleData.billNo : saleId.substring(0, 8).toUpperCase();
 
             let waSubtotal = (saleData.subtotal || 0).toFixed(2);
@@ -61,7 +59,6 @@ async function loadAndPrintBill() {
                 if (shopHeaderContainer) shopHeaderContainer.innerHTML = shopHtml;
             }
 
-            // তারিখ ফরম্যাট
             if (saleData.createdAt) {
                 waDate = saleData.createdAt.toDate ? saleData.createdAt.toDate().toLocaleString('en-IN', {
                     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -106,7 +103,7 @@ async function loadAndPrintBill() {
                 });
             }
 
-            // টোটাল ক্যালকুলেশন ডিসপ্লে
+            // টোটাল
             document.getElementById('receipt-subtotal').textContent = `₹${waSubtotal}`;
             
             if (saleData.discount > 0) {
@@ -124,7 +121,6 @@ async function loadAndPrintBill() {
                 document.getElementById('gst-line').style.display = 'none';
             }
 
-            // Advance Adjustment
             const advanceRow = document.getElementById('advance-row');
             if (saleData.advanceAdjusted > 0) {
                 if(advanceRow) {
@@ -138,7 +134,6 @@ async function loadAndPrintBill() {
 
             document.getElementById('receipt-total').textContent = `₹${(saleData.finalPaidAmount || saleData.total).toFixed(2)}`;
 
-            // পেমেন্ট মেথড
             const paymentMethodText = saleData.paymentMethod ? saleData.paymentMethod.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Cash';
             document.getElementById('payment-method').textContent = paymentMethodText;
 
@@ -150,7 +145,7 @@ async function loadAndPrintBill() {
             }
 
             // ============================================================
-            // === প্রিন্ট এবং WhatsApp শেয়ারিং (is.gd Shortener সহ) ===
+            // === প্রিন্ট এবং Short Link (is.gd + AllOrigins Proxy) ===
             // ============================================================
             
             if (!isPublicView) {
@@ -162,31 +157,32 @@ async function loadAndPrintBill() {
                             const currentUrl = window.location.href.split('?')[0];
                             const longUrl = `${currentUrl}?saleId=${saleId}&uid=${userId}`;
                             
-                            let shortLink = longUrl; // ডিফল্ট হিসেবে বড় লিংক রাখা হলো
+                            let shortLink = longUrl; // ডিফল্ট (যদি শর্টনার কাজ না করে)
                             
                             try {
-                                document.title = "Shortening...";
+                                document.title = "Creating Link..."; // ইউজারকে বোঝানো হচ্ছে কাজ চলছে
                                 
-                                // === is.gd Shortener ব্যবহার করা হচ্ছে (Direct Redirect) ===
-                                // Note: 'corsproxy.io' ব্যবহার করা হচ্ছে ব্রাউজার ব্লক এড়ানোর জন্য
-                                const apiUrl = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
-                                const proxyUrl = `https://corsproxy.io/?` + encodeURIComponent(apiUrl);
+                                // === NEW PROXY METHOD (AllOrigins) ===
+                                // is.gd সরাসরি কাজ করে না, তাই আমরা AllOrigins দিয়ে রিকোয়েস্ট পাঠাচ্ছি
+                                const isGdUrl = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
+                                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(isGdUrl)}`;
                                 
                                 const response = await fetch(proxyUrl);
                                 
                                 if (response.ok) {
                                     const text = await response.text();
+                                    // চেক করা হচ্ছে লিংকটা ভ্যালিড কিনা
                                     if(text.startsWith('http')) {
-                                        shortLink = text.trim(); // ছোট লিংক পাওয়া গেছে (is.gd/xyz)
+                                        shortLink = text.trim(); // সফলভাবে শর্ট লিংক পাওয়া গেছে
                                     }
                                 }
                             } catch (err) {
-                                console.error("Shortener failed, using long URL:", err);
+                                console.error("Shortener failed:", err);
+                                // ফেইল করলে লং লিংক যাবে, কিছু করার নেই
                             }
                             
                             document.title = "Bill Receipt"; 
 
-                            // মেসেজ তৈরি
                             let message = `*INVOICE from ${waShopName}*\n`;
                             message += `Bill No: ${waBillNo}\n`;
                             message += `Amount: ₹${waGrandTotal}\n\n`;
@@ -216,7 +212,6 @@ async function loadAndPrintBill() {
         }
     };
 
-    // অথেনটিকেশন চেক
     if (urlUid) {
         fetchAndRenderBill(urlUid, true); 
     } 
