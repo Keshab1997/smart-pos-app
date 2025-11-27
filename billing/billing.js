@@ -1,4 +1,4 @@
-// billing/billing.js - With Advance Booking Integration (v4.0)
+// billing/billing.js - With Serial Number Starting from 1000 (v4.1)
 
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
@@ -381,22 +381,42 @@ function validateFinalBillButton() {
 // --- END: টোটাল, ডিসকাউন্ট, এবং পেমেন্ট ক্যালকুলেশন ---
 
 // ==========================================================
-// --- বিল নম্বর জেনারেশন ও বিল জেনারেশন ---
+// --- বিল নম্বর জেনারেশন (MODIFIED FOR SERIAL 1000+) ---
 // ==========================================================
 async function getNextBillNumber() {
     if (!currentUserId) throw new Error("User not authenticated.");
     const counterRef = doc(db, 'shops', currentUserId, 'metadata', 'counters');
+    
     try {
         return await runTransaction(db, async transaction => {
             const counterDoc = await transaction.get(counterRef);
-            const lastBillNumber = counterDoc.exists() ? counterDoc.data().lastBillNumber || 0 : 0;
+            
+            let lastBillNumber = 0;
+            if (counterDoc.exists()) {
+                const data = counterDoc.data();
+                lastBillNumber = data.lastBillNumber || 0;
+            }
+
+            // --- লজিক পরিবর্তন ---
+            // যদি বর্তমান নম্বর ৯৯৯-এর কম হয়, আমরা সেটাকে ৯৯৯ ধরে নেব।
+            // এর ফলে পরবর্তী নম্বরটি হবে (৯৯৯ + ১) = ১০০০।
+            if (lastBillNumber < 999) {
+                lastBillNumber = 999;
+            }
+
             const nextBillNumber = lastBillNumber + 1;
+            
+            // ডাটাবেসে নতুন নম্বর আপডেট করা
             transaction.set(counterRef, { lastBillNumber: nextBillNumber }, { merge: true });
-            return String(nextBillNumber).padStart(5, '0');
+            
+            // এখন আর padStart(5, '0') ব্যবহার করছি না, সরাসরি নম্বর স্ট্রিং হিসেবে পাঠাচ্ছি।
+            // উদাহরণ: 1000, 1001, 1002
+            return String(nextBillNumber);
         });
     } catch (error) {
         console.error("Error getting next bill number:", error);
-        return `E-${Date.now().toString().slice(-6)}`;
+        // ব্যাকআপ হিসেবে টাইমস্ট্যাম্প ব্যবহার (যদি নেটওয়ার্ক এরর হয়)
+        return `${Date.now().toString()}`;
     }
 }
 
