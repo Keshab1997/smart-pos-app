@@ -23,12 +23,12 @@ const textPropertiesEl = document.getElementById('text-properties'), barcodeProp
 const propFontSizeInput = document.getElementById('prop-fontsize'), propWidthInput = document.getElementById('prop-width');
 const propHeightInput = document.getElementById('prop-height');
 
-// --- Dynamic Buttons Creation (Save & Delete) ---
+// --- Dynamic Buttons ---
 const saveTemplateBtn = document.createElement('button');
 saveTemplateBtn.textContent = "Save to Cloud";
 saveTemplateBtn.className = "btn-secondary"; 
 saveTemplateBtn.style.marginTop = "10px";
-saveTemplateBtn.style.backgroundColor = "#4CAF50"; // Green
+saveTemplateBtn.style.backgroundColor = "#4CAF50"; 
 saveTemplateBtn.style.color = "white";
 saveTemplateBtn.style.border = "none";
 saveTemplateBtn.style.padding = "5px 10px";
@@ -38,17 +38,16 @@ customSizeSettingsEl.appendChild(saveTemplateBtn);
 const deleteTemplateBtn = document.createElement('button');
 deleteTemplateBtn.textContent = "Delete Template";
 deleteTemplateBtn.style.marginLeft = "10px";
-deleteTemplateBtn.style.backgroundColor = "#f44336"; // Red
+deleteTemplateBtn.style.backgroundColor = "#f44336";
 deleteTemplateBtn.style.color = "white";
 deleteTemplateBtn.style.border = "none";
 deleteTemplateBtn.style.padding = "5px 10px";
 deleteTemplateBtn.style.cursor = "pointer";
-deleteTemplateBtn.classList.add('hidden'); // Hidden initially
-// We append this button next to the dropdown or somewhere appropriate
+deleteTemplateBtn.classList.add('hidden'); 
 templateSelectEl.parentNode.insertBefore(deleteTemplateBtn, templateSelectEl.nextSibling);
 
 
-// --- Templates Definition (Base Templates) ---
+// --- Templates Definition ---
 let templates = {
     'custom': {
         name: 'Create Custom Size...', width: 50, height: 25, columns: 1, columnGap: 2,
@@ -58,7 +57,96 @@ let templates = {
             { placeholder: 'barcode', type: 'barcode', x: 2, y: 15, options: { type: '128', height: 8, human_readable: 0, width: 46 } }
         ]
     },
-    // --- আপনার "সাদা কালো" স্পেশাল টেমপ্লেট ---
+    
+    // --- NEW: True-Ally 100mm x 15mm (Horizontal/No Rotation) ---
+    '100x15_jewelry_horizontal': {
+        name: 'True-Ally 100mm x 15mm (Jewelry Horizontal)', 
+        width: 100,  // এখানে Width 100 ধরা হয়েছে যাতে সোজা প্রিন্ট হয়
+        height: 15,  // Height 15mm
+        columns: 1, 
+        columnGap: 0,
+        items: [
+            // --- বাম পাশ (Left Wing): নাম এবং দাম ---
+            // Rotation 0 (সোজা থাকবে)
+            { 
+                placeholder: 'name', 
+                type: 'text', 
+                x: 5,   // বাম থেকে ৫ মিমি সরে
+                y: 3,   // উপর থেকে ৩ মিমি নিচে
+                options: { font: '2', size: 1, rotation: 0 } 
+            },
+            { 
+                placeholder: 'price', 
+                type: 'text', 
+                x: 5, 
+                y: 8,   // নামের নিচে
+                options: { font: '2', size: 1, prefix: 'Tk. ', rotation: 0 } 
+            },
+
+            // --- ডান পাশ (Right Wing): বারকোড ---
+            // মাঝখানের লেজ (Tail) বাদ দিয়ে ডান পাশে বারকোড বসবে।
+            // 100mm এর মধ্যে আনুমানিক 55mm বা 60mm এর পর।
+            { 
+                placeholder: 'barcode', 
+                type: 'barcode', 
+                x: 60,  // ডান দিকে সরে যাবে
+                y: 2,   // উপর থেকে ২ মিমি নিচে
+                options: { 
+                    type: '128', 
+                    height: 8,  // বারকোডের উচ্চতা
+                    human_readable: 0, // সংখ্যা দেখাবে না (জায়গা বাঁচানোর জন্য)
+                    width: 1,   // চিকন বারকোড
+                    rotation: 0 // সোজা থাকবে (No 90 degree)
+                } 
+            }
+        ]
+    },
+        // --- এই অংশটুকু আপনার templates অবজেক্টের ভেতরে পেস্ট করুন ---
+    
+        '100x15_jewelry_image_spec': {
+            name: 'Jewelry Tag 100x15mm (Tail 30mm + Body 70mm)', 
+            width: 100,  // মোট দৈর্ঘ্য ১০০ মিমি
+            height: 15,  // উচ্চতা ১৫ মিমি
+            columns: 1, 
+            columnGap: 0,
+            items: [
+                // --- অংশ ১: নাম এবং দাম (মাঝখানের অংশ - 35mm) ---
+                // টেইল ৩০ মিমি, তাই আমরা লেখা শুরু করব ৩২ মিমি থেকে।
+                { 
+                    placeholder: 'name', 
+                    type: 'text', 
+                    x: 32,   // 30mm (Tail) + 2mm Margin
+                    y: 2,    
+                    options: { font: '2', size: 1, rotation: 0 } 
+                },
+                { 
+                    placeholder: 'price', 
+                    type: 'text', 
+                    x: 32, 
+                    y: 7,    // নামের নিচে
+                    options: { font: '2', size: 1, prefix: 'Tk. ', rotation: 0 } 
+                },
+    
+                // --- অংশ ২: বারকোড (ডান পাশের অংশ - 35mm) ---
+                // ৩০ মিমি (টেইল) + ৩৫ মিমি (অংশ ১) = ৬৫ মিমি। 
+                // তাই বারকোড শুরু হবে ৬৫ মিমির পরে (ধরি ৬৭ মিমি)।
+                { 
+                    placeholder: 'barcode', 
+                    type: 'barcode', 
+                    x: 67,  // 65mm + 2mm Margin
+                    y: 2,   
+                    options: { 
+                        type: '128', 
+                        height: 7,  // বারকোড খুব বেশি বড় করা যাবে না
+                        human_readable: 0, // জায়গা কম তাই বারকোডের নিচে সংখ্যা অফ রাখা ভালো
+                        width: 1,   // জুয়েলারি ট্যাগের জন্য চিকন বার (Narrow bar 1) জরুরি
+                        rotation: 0 
+                    } 
+                }
+            ]
+        },
+
+    // --- আগের টেমপ্লেট ---
     '101x25_2_col_special': {
         name: '101x25mm - 2 Col (Sada Kalo Layout)', width: 101.6, height: 25.4, columns: 2, columnGap: 2,
         items: [
@@ -90,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             currentUserID = user.uid;
             loadPrinterSettings();
-            loadUserTemplates(); // Load templates from Firebase
+            loadUserTemplates(); 
             fetchProducts();
         } else {
             window.location.href = '../index.html';
@@ -100,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('input', renderProductList);
     templateSelectEl.addEventListener('change', handleTemplateChange);
     
-    // If in custom mode, update preview on input change
     [customWidthInput, customHeightInput, customColumnsInput, customColumnGapInput].forEach(el => el.addEventListener('input', () => { 
         if(templateSelectEl.value === 'custom') updatePreview(); 
     }));
@@ -109,34 +196,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     printBtn.addEventListener('click', handlePrint);
     saveSettingsBtn.addEventListener('click', savePrinterSettings);
-    saveTemplateBtn.addEventListener('click', saveCustomTemplateToFirebase); // Firebase Save
-    deleteTemplateBtn.addEventListener('click', deleteCustomTemplateFromFirebase); // Firebase Delete
+    saveTemplateBtn.addEventListener('click', saveCustomTemplateToFirebase);
+    deleteTemplateBtn.addEventListener('click', deleteCustomTemplateFromFirebase);
     document.addEventListener('keydown', handleKeyboardShortcuts);
 });
 
-// --- Firebase Template Management ---
-
+// --- Functions (No Change Here) ---
 async function loadUserTemplates() {
     if (!currentUserID) return;
     try {
-        // Assuming stored in: shops/{uid}/templates
         const q = query(collection(db, 'shops', currentUserID, 'templates'));
         const querySnapshot = await getDocs(q);
-        
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            // Add to local templates object with a flag
-            templates[doc.id] = { 
-                ...data, 
-                isCustom: true, // Flag to identify it's a user template
-                firebaseID: doc.id 
-            };
+            templates[doc.id] = { ...data, isCustom: true, firebaseID: doc.id };
         });
         populateTemplates();
     } catch (error) {
         console.error("Error loading templates:", error);
-        showStatus("Failed to load saved templates", "error");
-        populateTemplates(); // Populate defaults anyway
+        populateTemplates();
     }
 }
 
@@ -145,70 +223,49 @@ async function saveCustomTemplateToFirebase() {
         alert("Please switch to 'Create Custom Size' to save a new template.");
         return;
     }
-
     const name = prompt("Enter a name for your new template:");
     if (!name) return;
-
     const newTemplate = {
         name: name,
         width: parseFloat(customWidthInput.value) || 50,
         height: parseFloat(customHeightInput.value) || 25,
         columns: parseInt(customColumnsInput.value) || 1,
         columnGap: parseFloat(customColumnGapInput.value) || 2,
-        items: JSON.parse(JSON.stringify(currentLabelItems)), // Save current layout
+        items: JSON.parse(JSON.stringify(currentLabelItems)),
         createdAt: new Date()
     };
-
     try {
         const docRef = await addDoc(collection(db, 'shops', currentUserID, 'templates'), newTemplate);
-        
-        // Update Local State
-        templates[docRef.id] = { 
-            ...newTemplate, 
-            isCustom: true, 
-            firebaseID: docRef.id 
-        };
-
+        templates[docRef.id] = { ...newTemplate, isCustom: true, firebaseID: docRef.id };
         populateTemplates();
-        templateSelectEl.value = docRef.id; // Select the new one
+        templateSelectEl.value = docRef.id;
         handleTemplateChange();
-        
         showStatus("Template saved to cloud!", "success");
     } catch (error) {
         console.error("Error saving template:", error);
-        showStatus("Failed to save template.", "error");
     }
 }
 
 async function deleteCustomTemplateFromFirebase() {
     const id = templateSelectEl.value;
     const template = templates[id];
-
     if (!template || !template.isCustom) {
         alert("You can only delete custom saved templates.");
         return;
     }
-
     if (confirm(`Are you sure you want to delete '${template.name}'?`)) {
         try {
             await deleteDoc(doc(db, 'shops', currentUserID, 'templates', id));
-            
-            // Remove from local state
             delete templates[id];
-            
             populateTemplates();
             templateSelectEl.value = 'custom';
             handleTemplateChange();
-            
             showStatus("Template deleted.", "success");
         } catch (error) {
             console.error("Error deleting template:", error);
-            showStatus("Failed to delete template.", "error");
         }
     }
 }
-
-// --- Standard Functions ---
 
 async function fetchProducts() {
     if (!currentUserID) return;
@@ -257,7 +314,6 @@ function toggleProductSelection(product, liElement) {
 
 function populateTemplates() {
     templateSelectEl.innerHTML = '';
-    // Base templates first, then custom ones
     Object.keys(templates).forEach(key => {
         const option = document.createElement('option');
         option.value = key;
@@ -274,18 +330,13 @@ function handleTemplateChange() {
     customSizeSettingsEl.classList.toggle('hidden', !isCustomMode);
     templateDescriptionEl.classList.toggle('hidden', isCustomMode);
 
-    // Show/Hide Delete Button
-    if (t && t.isCustom) {
-        deleteTemplateBtn.classList.remove('hidden');
-    } else {
-        deleteTemplateBtn.classList.add('hidden');
-    }
+    if (t && t.isCustom) { deleteTemplateBtn.classList.remove('hidden'); } 
+    else { deleteTemplateBtn.classList.add('hidden'); }
 
     if (!isCustomMode) {
         templateDescriptionEl.textContent = `Size: ${t.width}mm x ${t.height}mm. ${t.columns > 1 ? t.columns + ' stickers.' : ''}`;
         currentLabelItems = JSON.parse(JSON.stringify(t.items)); 
     } else {
-        // Switching TO custom mode, keep items empty unless already working on it
         if(currentLabelItems.length === 0) currentLabelItems = JSON.parse(JSON.stringify(t.items));
     }
     updatePreview();
@@ -376,9 +427,8 @@ function createDraggableItem(item, product, index) {
 function updateItemContent(div, item, product) {
     div.innerHTML = '';
     let value = '';
-    if (item.options.text) { 
-        value = item.options.text;
-    } else {
+    if (item.options.text) { value = item.options.text; } 
+    else {
         let productValue = product[item.placeholder] || '';
         if (item.placeholder === 'price' && product.sellingPrice) {
             productValue = parseFloat(product.sellingPrice).toFixed(2);
@@ -411,9 +461,7 @@ function updateItemContent(div, item, product) {
                 width: `${(item.options.width || 30) * previewScale}px`,
                 height: `${(item.options.height || 10) * previewScale}px`
             });
-        } catch (e) {
-            div.innerHTML = '<span>Invalid Barcode</span>';
-        }
+        } catch (e) { div.innerHTML = '<span>Invalid Barcode</span>'; }
     }
 }
 
@@ -429,17 +477,11 @@ function updatePropertiesPanel(itemData) {
     propItemNameEl.textContent = itemData.placeholder.charAt(0).toUpperCase() + itemData.placeholder.slice(1);
     propXInput.value = itemData.x.toFixed(1);
     propYInput.value = itemData.y.toFixed(1);
-    
     const isText = itemData.type === 'text';
     textPropertiesEl.classList.toggle('hidden', !isText);
     barcodePropertiesEl.classList.toggle('hidden', isText);
-
-    if (isText) {
-        propFontSizeInput.value = itemData.options.size;
-    } else {
-        propWidthInput.value = itemData.options.width;
-        propHeightInput.value = itemData.options.height;
-    }
+    if (isText) { propFontSizeInput.value = itemData.options.size; } 
+    else { propWidthInput.value = itemData.options.width; propHeightInput.value = itemData.options.height; }
 }
 
 function updateSelectedItemProperty(prop, value) {
@@ -447,7 +489,6 @@ function updateSelectedItemProperty(prop, value) {
     const index = selectedItem.index;
     const itemData = currentLabelItems[index];
     const val = parseFloat(value);
-
     const propMap = {
         'x': (d, v) => d.x = v,
         'y': (d, v) => d.y = v,
@@ -455,15 +496,9 @@ function updateSelectedItemProperty(prop, value) {
         'width': (d, v) => { d.options.width = v; },
         'height': (d, v) => { d.options.height = v; },
     };
-    if (propMap[prop]) {
-        propMap[prop](itemData, val);
-    }
-    
+    if (propMap[prop]) { propMap[prop](itemData, val); }
     updatePreview();
-    setTimeout(() => {
-        selectItem(index);
-        document.querySelectorAll(`.draggable-item[data-index='${index}']`).forEach(el => el.classList.add('selected'));
-    }, 50);
+    setTimeout(() => { selectItem(index); document.querySelectorAll(`.draggable-item[data-index='${index}']`).forEach(el => el.classList.add('selected')); }, 50);
 }
 
 function handleKeyboardShortcuts(e) {
@@ -472,7 +507,6 @@ function handleKeyboardShortcuts(e) {
     const index = selectedItem.index;
     const itemData = currentLabelItems[index];
     const step = e.shiftKey ? 1.0 : 0.2; 
-    
     const keyAction = {
         'ArrowUp': () => itemData.y -= step,
         'ArrowDown': () => itemData.y += step,
@@ -481,13 +515,10 @@ function handleKeyboardShortcuts(e) {
     };
     keyAction[e.key]();
     updatePreview();
-    setTimeout(() => {
-        selectItem(index);
-        document.querySelectorAll(`.draggable-item[data-index='${index}']`).forEach(el => el.classList.add('selected'));
-    }, 50);
+    setTimeout(() => { selectItem(index); document.querySelectorAll(`.draggable-item[data-index='${index}']`).forEach(el => el.classList.add('selected')); }, 50);
 }
 
-// --- Printing Logic ---
+// --- Printing Logic (Horizontal, No Rotation) ---
 function generateTSPL(product) {
     let template = JSON.parse(JSON.stringify(templates[templateSelectEl.value]));
     
@@ -505,7 +536,6 @@ function generateTSPL(product) {
     
     let tspl = `SIZE ${template.width} mm, ${template.height} mm\nGAP 2 mm, 0 mm\nCLS\n`;
     
-    // Use current editor items if custom/editing, otherwise template defaults
     const itemsToPrint = (templateSelectEl.value === 'custom' || templates[templateSelectEl.value].isCustom) ? currentLabelItems : template.items;
 
     for (let i = 0; i < template.columns; i++) {
@@ -513,6 +543,9 @@ function generateTSPL(product) {
         itemsToPrint.forEach(item => {
             const x_dot = Math.round(offsetX + item.x * dotsPerMm);
             const y_dot = Math.round(item.y * dotsPerMm);
+            
+            // Rotation is usually 0 now
+            const rotation = item.options.rotation || 0;
             
             let value = '';
             if (item.options.text) {
@@ -527,11 +560,21 @@ function generateTSPL(product) {
             value = value ? value.toString().replace(/"/g, '""') : '';
 
             if (item.type === 'text') {
-                tspl += `TEXT ${x_dot},${y_dot},"${item.options.font}",0,${item.options.size},${item.options.size},"${value}"\n`;
+                tspl += `TEXT ${x_dot},${y_dot},"${item.options.font}",${rotation},${item.options.size},${item.options.size},"${value}"\n`;
             } 
             else if (item.type === 'barcode' && product.barcode) {
                 const barcodeHeightDots = Math.round(item.options.height * dotsPerMm);
-                tspl += `BARCODE ${x_dot},${y_dot},"${item.options.type}",${barcodeHeightDots},${item.options.human_readable},0,2,4,"${product.barcode}"\n`;
+                
+                // Jewelry Tag: Narrow bar
+                let narrow = 2;
+                let wide = 4;
+
+                if (templateSelectEl.value.includes('jewelry')) {
+                    narrow = 1;
+                    wide = 2; 
+                }
+                
+                tspl += `BARCODE ${x_dot},${y_dot},"${item.options.type}",${barcodeHeightDots},${item.options.human_readable},${rotation},${narrow},${wide},"${product.barcode}"\n`;
             }
         });
     }
@@ -566,7 +609,6 @@ async function handlePrint() {
     }
 }
 
-// --- Settings & Utility ---
 function savePrinterSettings() {
     localStorage.setItem('printerVID', vidInput.value);
     localStorage.setItem('printerPID', pidInput.value);
@@ -580,7 +622,6 @@ function loadPrinterSettings() {
 
 function showStatus(message, type = 'success') {
     const container = document.getElementById('status-message-container');
-    // If container doesn't exist (sometimes not in HTML), just alert as fallback or create it
     if(!container) {
         if(type === 'error') alert(message);
         return;
