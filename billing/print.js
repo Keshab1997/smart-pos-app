@@ -126,37 +126,50 @@ async function loadAndPrintBill() {
                 document.getElementById('card-paid').textContent = `₹${(paymentBreakdown.card_or_online || 0).toFixed(2)}`;
             }
 
-            // ============================================================
+                        // ============================================================
             // === শুধুমাত্র মালিক প্রিন্ট বা শেয়ার করতে পারবে ===
             // ============================================================
             
-            // যদি এটা পাবলিক ভিউ হয় (কাস্টমার দেখছে), তাহলে প্রিন্ট ডায়ালগ অটোমেটিক ওপেন হবে না, ম্যানুয়াল বাটন থাকতে পারে।
-            // কিন্তু আপনার আগের লজিক অনুযায়ী যদি মালিক ওপেন করে:
-            
             if (!isPublicView) {
-                window.onafterprint = function() {
+                window.onafterprint = async function() { // এখানে async যোগ করা হয়েছে
                     if (waCustomerPhone) {
                         let sendWA = confirm("Print complete. Do you want to send the BILL LINK on WhatsApp?");
                         
                         if (sendWA) {
-                            // --- অনলাইন বিল লিংক তৈরি ---
-                            // বর্তমান URL এর সাথে uid যোগ করা হচ্ছে যাতে কাস্টমার লগইন ছাড়াই দেখতে পারে
-                            const currentUrl = window.location.href.split('?')[0]; // মূল ফাইলের পাথ (print.html)
-                            const billLink = `${currentUrl}?saleId=${saleId}&uid=${userId}`;
+                            // ১. অরিজিনাল বড় লিংক তৈরি
+                            const currentUrl = window.location.href.split('?')[0];
+                            const longUrl = `${currentUrl}?saleId=${saleId}&uid=${userId}`;
 
-                            // --- মেসেজ তৈরি ---
+                            // ২. লিংক ছোট করার ফাংশন (TinyURL)
+                            let shortLink = longUrl; // ডিফল্ট হিসেবে বড় লিংকই থাকবে যদি API ফেইল করে
+                            
+                            try {
+                                // লোডিং মেসেজ (অপশনাল, কনসোলে দেখার জন্য)
+                                document.title = "Generating Short Link...";
+                                
+                                const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+                                if (response.ok) {
+                                    shortLink = await response.text(); // ছোট লিংক পাওয়া গেল
+                                }
+                            } catch (err) {
+                                console.error("Error shortening URL:", err);
+                                // এরর হলে অরিজিনাল বড় লিংকটাই যাবে
+                            }
+                            
+                            document.title = "Bill Receipt"; // টাইটেল আগের অবস্থায়
+
+                            // ৩. মেসেজ তৈরি
                             let message = `*INVOICE from ${waShopName}*\n`;
-                            message += `Date: ${waDate}\n`;
                             message += `Bill No: ${waBillNo}\n`;
                             message += `Amount: ₹${waGrandTotal}\n\n`;
-                            message += `📄 *Click to view your detailed bill:* \n${billLink}\n\n`;
-                            message += `Thank you for shopping with us!`;
+                            message += `View Bill: ${shortLink}\n\n`; // এখানে ছোট লিংক বসবে
+                            message += `Thank you!`;
 
-                            // --- ফোন নাম্বার প্রসেসিং ---
+                            // ৪. ফোন নাম্বার প্রসেসিং
                             let cleanPhone = waCustomerPhone.replace(/[^0-9]/g, ''); 
                             if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
 
-                            // --- WhatsApp এ পাঠানো ---
+                            // ৫. WhatsApp এ পাঠানো
                             let url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
                             window.location.href = url; 
                             
@@ -168,7 +181,7 @@ async function loadAndPrintBill() {
                     }
                 };
 
-                // অটোমেটিক প্রিন্ট (শুধুমাত্র মালিকের জন্য)
+                // অটোমেটিক প্রিন্ট
                 setTimeout(() => window.print(), 800);
             }
 
