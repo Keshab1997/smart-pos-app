@@ -51,10 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function showStatus(message, type) {
         statusMessage.textContent = message;
         statusMessage.className = `status ${type}`;
+        const time = type === 'error' ? 8000 : 5000;
         setTimeout(() => {
             statusMessage.textContent = '';
             statusMessage.className = 'status';
-        }, 5000);
+        }, time);
     }
 
     function displayBarcodes(products) {
@@ -69,14 +70,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="product-price-print">Price: ₹${product.sp.toFixed(2)}</p>
             `;
             const svgElement = wrapper.querySelector('.barcode-svg');
-            JsBarcode(svgElement, product.barcode, {
-                format: "CODE128",
-                displayValue: true,
-                fontSize: 14,
-                width: 1.5,
-                height: 40,
-                margin: 5
-            });
+            try {
+                JsBarcode(svgElement, product.barcode, {
+                    format: "CODE128",
+                    displayValue: true,
+                    fontSize: 14,
+                    width: 1.5,
+                    height: 40,
+                    margin: 5
+                });
+            } catch (e) {
+                console.error("Barcode generation failed", e);
+            }
             barcodesContainer.appendChild(wrapper);
         });
     }
@@ -92,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const saveButton = form.querySelector('button[type="submit"]');
         saveButton.disabled = true;
-        saveButton.textContent = 'Saving...';
+        saveButton.textContent = 'Checking & Saving...';
         
         const rows = productsTbody.querySelectorAll('tr');
         if (rows.length === 0) {
@@ -132,8 +137,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const metadataRef = doc(db, 'shops', currentUserId, '_metadata', 'counters');
 
             await runTransaction(db, async (transaction) => {
+                // ধাপ ১: রিড অপারেশন (Reads)
+                // ------------------------------------------------
                 const metadataDoc = await transaction.get(metadataRef);
                 let lastProductId = metadataDoc.exists() ? metadataDoc.data().lastProductId || 1000 : 1000;
+
+                // টেম্পোরারি অ্যারে ডেটা প্রসেসিংয়ের জন্য
+                const processQueue = [];
 
                 for (const product of productsToProcess) {
                     let finalBarcode;
@@ -144,51 +154,98 @@ document.addEventListener('DOMContentLoaded', () => {
                         finalBarcode = String(lastProductId);
                     }
 
-                    const newProductRef = doc(db, 'shops', currentUserId, 'inventory', finalBarcode);
+                    const productRef = doc(db, 'shops', currentUserId, 'inventory', finalBarcode);
+                    // আমরা এখানে শুধুমাত্র রিড করছি, রাইট করছি না
+                    const productSnapshot = await transaction.get(productRef);
 
-                    const dataToSave = {
-                        name: product.name,
-                        category: product.category,
-                        costPrice: product.costPrice,
-                        sellingPrice: product.sellingPrice,
-                        stock: product.stock,
-                        barcode: finalBarcode,
-                        createdAt: Timestamp.now()
-                    };
+                    processQueue.push({
+                        productData: product,
+                        ref: productRef,
+                        snapshot: productSnapshot,
+                        finalBarcode: finalBarcode
+                    });
+                }
 
-                    transaction.set(newProductRef, dataToSave);
-                    
-                    // === পরিবর্তন: প্রতিটি প্রোডাক্টের জন্য আলাদা Expense তৈরি করা হচ্ছে ===
-                    // যাতে পরে এডিট করলে এই নির্দিষ্ট খরচটা খুঁজে পাওয়া যায়
-                    if (product.costPrice > 0 && product.stock > 0) {
-                        const totalCost = product.costPrice * product.stock;
+                // ধাপ ২: রাইট অপারেশন (Writes)
+                // ------------------------------------------------
+                // সব রিড শেষ, এখন আমরা নিরাপদে রাইট করতে পারি
+                for (const item of processQueue) {
+                    const { productData, ref, snapshot, finalBarcode } = item;
+
+                    if (snapshot.exists()) {
+                        // === STRICT VALIDATION ===
+                        const dbData = snapshot.data();
+
+                        if (dbData.name.trim().toLowerCase() !== productData.name.trim().toLowerCase()) {
+                            throw new Error(`MISMATCH: Barcode '${finalBarcode}' is for '${dbData.name}', NOT '${productData.name}'.`);
+                        }
+                        if (dbData.category.trim().toLowerCase() !== productData.category.trim().toLowerCase()) {
+                            throw new Error(`CATEGORY MISMATCH: Barcode '${finalBarcode}' belongs to category '${dbData.category}'.`);
+                        }
+                        if (Number(dbData.costPrice) !== Number(productData.costPrice)) {
+                            throw new Error(`CP MISMATCH: '${productData.name}' (Barcode ${finalBarcode}) has CP: ${dbData.costPrice}. Entered: ${productData.costPrice}.`);
+                        }
+                        if (Number(dbData.sellingPrice) !== Number(productData.sellingPrice)) {
+                            throw new Error(`SP MISMATCH: '${productData.name}' (Barcode ${finalBarcode}) has SP: ${dbData.sellingPrice}. Entered: ${productData.sellingPrice}.`);
+                        }
+                        
+                        // স্টক আপডেট
+                        const newStockTotal = parseInt(dbData.stock || 0) + productData.stock;
+                        transaction.update(ref, {
+                            stock: newStockTotal,
+                            lastUpdated: Timestamp.now()
+                        });
+
+                    } else {
+                        // নতুন প্রোডাক্ট তৈরি
+                        const dataToSave = {
+                            name: productData.name,
+                            category: productData.category,
+                            costPrice: productData.costPrice,
+                            sellingPrice: productData.sellingPrice,
+                            stock: productData.stock,
+                            barcode: finalBarcode,
+                            createdAt: Timestamp.now()
+                        };
+                        transaction.set(ref, dataToSave);
+                    }
+
+                    // Expense তৈরি (প্রত্যেকটি আলাদা রেফারেন্স হবে)
+                    if (productData.costPrice > 0 && productData.stock > 0) {
+                        const totalCost = productData.costPrice * productData.stock;
                         const expenseRef = doc(collection(db, 'shops', currentUserId, 'expenses'));
                         
                         const expenseData = {
-                            description: `Inventory purchase: ${product.name}`,
+                            description: `Purchase: ${productData.name} (Qty: ${productData.stock})`,
                             amount: totalCost,
                             category: 'inventory_purchase',
                             date: Timestamp.now(),
-                            relatedProductId: finalBarcode // এই লাইনটি দিয়ে আমরা লিংক করলাম
+                            relatedProductId: finalBarcode
                         };
                         transaction.set(expenseRef, expenseData);
                     }
-                    // ==============================================================
 
-                    productsForBarcodeDisplay.push({ barcode: finalBarcode, name: product.name, sp: product.sellingPrice });
+                    productsForBarcodeDisplay.push({ barcode: finalBarcode, name: productData.name, sp: productData.sellingPrice });
                 }
 
+                // শেষে কাউন্টার আপডেট
                 transaction.set(metadataRef, { lastProductId: lastProductId }, { merge: true });
             });
 
-            showStatus(`${productsForBarcodeDisplay.length} products saved & expenses updated!`, 'success');
+            showStatus(`${productsForBarcodeDisplay.length} products saved successfully!`, 'success');
             displayBarcodes(productsForBarcodeDisplay);
             productsTbody.innerHTML = '';
             addProductRow();
 
         } catch (error) {
-            console.error("Error in transaction: ", error);
-            showStatus(`Failed to save data: ${error.message}`, 'error');
+            console.error("Transaction failed: ", error);
+            let msg = error.message;
+            if (msg.includes('MISMATCH')) {
+                msg = msg.replace('Error: ', '');
+            } else {
+                msg = "Failed to save data. " + msg;
+            }
+            showStatus(msg, 'error');
         } finally {
             saveButton.disabled = false;
             saveButton.textContent = 'Save All Products';
