@@ -1,69 +1,62 @@
-
 /* ============================================================= */
-/* print.css - Final Layout with Increased Font Sizes (v6.1)     */
+/* print.css - Mobile Friendly Card View + Thermal Print (v7.0) */
 /* ============================================================= */
 
+/* --- ১. প্রিন্টার পেজ সেটআপ (শুধুমাত্র প্রিন্টের জন্য কাজ করবে) --- */
 @page {
     size: 80mm auto;
-    margin: 3mm; 
+    margin: 0; /* প্রিন্টারে মার্জিন ০ রাখা ভালো, কন্টেন্ট দিয়ে নিয়ন্ত্রণ করব */
 }
 
-/* --- বেসিক সেটআপ --- */
+/* --- ২. বেসিক সেটআপ এবং মোবাইল স্ক্রিন ভিউ --- */
 html, body {
     width: 100%;
+    height: 100%;
     margin: 0;
     padding: 0;
     font-family: 'Arial Narrow', 'Arial', sans-serif;
-    background-color: #f0f0f0;
+    /* মোবাইলে অ্যাপের মতো ফিল দেওয়ার জন্য ব্যাকগ্রাউন্ড কালার */
+    background-color: #eef2f5; 
     color: #000;
+    /* বিলটি স্ক্রিনের মাঝখানে আনার জন্য */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; 
 }
 
-@media print {
-    body { background-color: #fff; }
-    .receipt { box-shadow: none; margin: 0; }
-    * { background: transparent !important; color: #000 !important; text-shadow: none !important; box-shadow: none !important; }
-}
-
-/* --- রশিদের প্রধান কন্টেইনার --- */
+/* --- ৩. রশিদের মেইন কন্টেইনার (মোবাইল কার্ড স্টাইল) --- */
 .receipt {
-    width: 72mm;
-    margin: 0 auto;
-    padding: 0;
+    /* স্ক্রিন ভিউ: মোবাইলে সুন্দর কার্ডের মতো দেখাবে */
+    width: 100%;
+    max-width: 400px; /* মোবাইলে এর চেয়ে চওড়া হবে না */
+    margin: 20px auto;
+    padding: 15px; /* স্ক্রিনে একটু ফাঁকা জায়গা থাকবে */
     background-color: #fff;
     box-sizing: border-box;
+    /* শ্যাডো এবং গোল কোণা (অ্যাপ স্টাইল) */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
 }
 
-/* 
- * === পরিবর্তন ১: দোকানের তথ্যের ফন্ট সাইজ বাড়ানো হয়েছে === 
- */
+/* ============================================================= */
+/* ৪. ভিতরের সব ডিজাইন (আপনার v6.1 ফন্ট সাইজ এবং লেআউট)         */
+/* ============================================================= */
+
+/* দোকানের তথ্য */
 .shop-header { text-align: center; padding-bottom: 10px; border-bottom: 2px solid #000; margin-bottom: 10px; }
 .shop-header .shop-name {
-    font-size: 24pt; /* আগে 18pt ছিল */
-    font-weight: 700; /* 600 থেকে 700 করা হলো */
+    font-size: 24pt; 
+    font-weight: 700; 
     margin: 0 0 5px 0;
     line-height: 1.2;
 }
 .shop-header .shop-address, .shop-header .shop-contact, .shop-header .shop-gstin {
-    font-size: 12pt; /* আগে 10pt ছিল */
+    font-size: 12pt; 
     font-weight: bold;
     margin: 4px 0;
 }
 
-/* 
- * === পরিবর্তন ২: বিল ও কাস্টমার তথ্যের ফন্ট সাইজ বাড়ানো হয়েছে ===
- */
-.bill-info, .customer-details { padding: 8px 0; margin-bottom: 8px; border-bottom: 1px dashed #555; }
-.bill-info {
-    font-size: 11pt; /* আগে 9.5pt ছিল */
-    font-weight: bold;
-}
-.customer-details {
-    font-size: 12pt; /* আগে 11pt ছিল */
-    font-weight: bold;
-}
-/* ======================================= */
-/* === নতুন এবং সংশোধিত কোড (Alignment) === */
-/* ======================================= */
+/* বিল ও কাস্টমার তথ্য */
 .bill-info, .customer-details { 
     padding: 8px 0; 
     margin-bottom: 8px; 
@@ -78,64 +71,58 @@ html, body {
     font-weight: bold;
 }
 
-/* এই অংশটি মূল পরিবর্তন */
+/* অ্যালাইনমেন্ট ঠিক করা */
 .bill-info div, .customer-details p { 
     display: flex;
-    justify-content: flex-start; /* 'space-between' এর পরিবর্তে 'flex-start' */
+    justify-content: flex-start; 
     margin: 4px 0; 
 }
 .bill-info strong, .customer-details strong {
-    min-width: 80px; /* লেবেলগুলোর জন্য একটি নির্দিষ্ট প্রস্থ দেওয়া হলো */
+    min-width: 80px; 
     display: inline-block;
 }
 
-/* 
- * === পরিবর্তন ৩: আইটেম টেবিলের ফন্ট সাইজ বাড়ানো হয়েছে ===
- */
+/* আইটেম টেবিল */
 .items-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
 .items-table thead { border-top: 1.5px solid #000; border-bottom: 1.5px solid #000; }
 .items-table th, .items-table td { padding: 5px 2px; vertical-align: top; }
 .items-table th {
-    font-size: 10pt; /* আগে 9pt ছিল */
+    font-size: 10pt; 
     text-align: left;
     font-weight: 700;
     text-transform: uppercase;
 }
 .items-table td {
-    font-size: 11.5pt; /* আগে 10.5pt ছিল */
+    font-size: 11.5pt; 
     font-weight: bold;
     border-bottom: 1px dotted #999;
 }
 .items-table tbody tr:last-child td { border-bottom: none; }
 
-/* অ্যালাইনমেন্ট ক্লাস */
+/* টেবিল কলাম সাইজ */
 .items-table .center { text-align: center; }
 .items-table .right { text-align: right; font-feature-settings: "tnum"; }
-
-/* কলামের প্রস্থ অ্যাডজাস্ট করা হয়েছে বড় ফন্টের জন্য */
-.items-table .item-col { width: 48%; } /* আইটেম কলামকে বেশি জায়গা দেওয়া হলো */
+.items-table .item-col { width: 48%; } 
 .items-table .qty-col { width: 12%; text-align: center; }
 .items-table .rate-col { width: 20%; text-align: right; }
 .items-table .total-col { width: 20%; text-align: right; }
 
-/* 
- * === পরিবর্তন ৪: মোট হিসাবের ফন্ট সাইজ বাড়ানো হয়েছে ===
- */
+/* মোট হিসাব */
 .totals-section { margin-top: 10px; padding: 10px 2px 0 2px; border-top: 1.5px solid #000; }
 .summary-line {
     display: flex;
     justify-content: space-between;
     padding: 4px 0;
-    font-size: 11pt; /* আগে 10pt ছিল */
-    font-weight: bold; /* লেখাগুলো বোল্ড করা হলো */
+    font-size: 11pt; 
+    font-weight: bold; 
 }
 .separator { border: none; border-top: 1px dashed #555; margin: 5px 0; }
 .grand-total {
-    font-size: 16pt; /* আগে 14pt ছিল */
+    font-size: 16pt; 
     font-weight: 700;
 }
 
-/* পেমেন্টের বিস্তারিত */
+/* পেমেন্ট এবং ফুটার */
 .payment-details {
     padding: 10px 0;
     border-top: 1px dashed #555;
@@ -146,9 +133,43 @@ html, body {
     padding-top: 8px;
     border-top: 1px dotted #999;
 }
-
-
-/* --- ফুটার --- */
-.receipt-footer { margin-top: 15px; text-align: center; font-size: 10pt; /* আগে 9pt ছিল */ }
+.receipt-footer { margin-top: 15px; text-align: center; font-size: 10pt; }
 .receipt-footer p { margin: 4px 0; }
 .receipt-footer .powered-by { margin-top: 10px; font-style: italic; color: #555; }
+
+
+/* ============================================================= */
+/* ৫. প্রিন্ট মিডিয়া কোয়েরি (এখানেই আসল ম্যাজিক)                 */
+/* ============================================================= */
+@media print {
+    /* প্রিন্টের সময় ব্যাকগ্রাউন্ড সাদা, কোনো প্যাডিং নেই */
+    body { 
+        background-color: #fff; 
+        display: block; /* flex রিমুভ করা হচ্ছে */
+    }
+
+    /* প্রিন্টের সময় কার্ড স্টাইল রিমুভ এবং থার্মাল সাইজ সেট */
+    .receipt {
+        width: 72mm !important; /* বা 100% */
+        max-width: none !important;
+        margin: 0 auto !important; /* অটো মার্জিন */
+        padding: 0 !important; /* কার্ডের প্যাডিং রিমুভ */
+        box-shadow: none !important; /* শ্যাডো রিমুভ */
+        border-radius: 0 !important; /* রাউন্ড কর্নার রিমুভ */
+        border: none !important;
+    }
+
+    /* সব এলিমেন্টের কালার কালো নিশ্চিত করা */
+    * { 
+        background: transparent !important; 
+        color: #000 !important; 
+        text-shadow: none !important; 
+        box-shadow: none !important; 
+    }
+    
+    /* প্রিন্টের সময় অপ্রয়োজনীয় স্ক্রলবার লুকানো */
+    html, body {
+        height: auto;
+        overflow: hidden;
+    }
+}
