@@ -1,31 +1,259 @@
-/* booking.css */
-body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; margin: 0; }
-header { background: white; padding: 0 24px; height: 70px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-.nav-links { list-style: none; display: flex; gap: 20px; }
-.nav-links a { text-decoration: none; color: #666; font-weight: 500; }
-.nav-links a.active { color: #007bff; }
+/* booking.css - Updated Modern Design */
 
-.booking-container { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; padding: 20px; height: calc(100vh - 80px); }
-.booking-form-section, .booking-list-section { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-y: auto; }
+/* ============================
+   1. CSS ভেরিয়েবল এবং বেসিক সেটআপ
+   ============================ */
+   :root {
+    --primary-color: #007bff;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --danger-color: #dc3545;
+    --text-color: #343a40;
+    --light-text-color: #6c757d;
+    --background-color: #f4f6f9;
+    --white-color: #ffffff;
+    --border-color: #dee2e6;
+    --shadow-sm: 0 2px 5px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 15px rgba(0,0,0,0.08);
+}
 
-h2 { margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+body { 
+    font-family: 'Poppins', sans-serif; 
+    background-color: var(--background-color); 
+    margin: 0; 
+    color: var(--text-color);
+}
 
-.form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; }
-.form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-.form-group.highlight input { border-color: #28a745; background-color: #f0fff4; font-weight: bold; }
+/* ============================
+   2. হেডার এবং নেভিগেশন (Compact & Pill Shape)
+   ============================ */
+header {
+    background-color: var(--white-color);
+    padding: 10px 24px; /* প্যাডিং কমিয়ে স্লিম করা হয়েছে */
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.04);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #f0f0f0;
+}
 
-.save-btn { width: 100%; background: #007bff; color: white; padding: 12px; border: none; border-radius: 5px; font-weight: 600; cursor: pointer; margin-top: 10px; }
-.save-btn:hover { background: #0056b3; }
+.logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+}
 
-/* Table Styles */
-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-th { background-color: #f8f9fa; color: #555; font-weight: 600; }
-.status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; color: white; }
-.status-pending { background-color: #ffc107; color: #333; }
-.status-ready { background-color: #17a2b8; }
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 8px; /* বাটন গ্যাপ */
+    margin: 0;
+    padding: 0;
+    align-items: center;
+}
 
-.action-btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-right: 5px; }
-.btn-ready { background: #17a2b8; color: white; }
-.btn-bill { background: #28a745; color: white; }
+/* বাটন ডিজাইন */
+.nav-links a {
+    text-decoration: none;
+    color: #555;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 30px; /* ক্যাপসুল/Pill শেপ */
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.nav-links a:hover {
+    background-color: #f0f7ff;
+    color: var(--primary-color);
+}
+
+.nav-links a.active {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+}
+
+/* লগআউট বাটন */
+.nav-links li:last-child a {
+    color: var(--danger-color);
+    border: 1px solid rgba(220, 53, 69, 0.2);
+}
+.nav-links li:last-child a:hover {
+    background-color: var(--danger-color);
+    color: var(--white-color);
+}
+
+/* ============================
+   3. মেইন লেআউট
+   ============================ */
+.booking-container { 
+    display: grid; 
+    grid-template-columns: 1fr 2.5fr; /* ফর্ম ছোট, লিস্ট বড় */
+    gap: 24px; 
+    padding: 24px; 
+    max-width: 1600px;
+    margin: 0 auto;
+    /* হেডার ছোট করায় হাইট এডজাস্ট করা হয়েছে */
+    height: calc(100vh - 65px); 
+}
+
+.booking-form-section, .booking-list-section { 
+    background: var(--white-color); 
+    padding: 25px; 
+    border-radius: 12px; 
+    box-shadow: var(--shadow-sm); 
+    overflow-y: auto; 
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #f0f0f0;
+}
+
+h2 { 
+    margin-top: 0; 
+    color: var(--text-color); 
+    border-bottom: 1px solid #eee; 
+    padding-bottom: 15px; 
+    margin-bottom: 20px; 
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+/* ============================
+   4. বুকিং ফর্ম স্টাইল
+   ============================ */
+.form-group { margin-bottom: 18px; }
+
+.form-group label { 
+    display: block; 
+    margin-bottom: 6px; 
+    font-weight: 500; 
+    font-size: 0.9rem; 
+    color: #555;
+}
+
+.form-group input, .form-group textarea { 
+    width: 100%; 
+    padding: 10px 12px; 
+    border: 1px solid var(--border-color); 
+    border-radius: 6px; 
+    box-sizing: border-box; 
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus, .form-group textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* হাইলাইট করা ফিল্ড (Advance Amount) */
+.form-group.highlight input { 
+    border-color: var(--success-color); 
+    background-color: #f8fff9; 
+    font-weight: 600; 
+    color: var(--success-color);
+}
+
+.save-btn { 
+    width: 100%; 
+    background: var(--primary-color); 
+    color: white; 
+    padding: 12px; 
+    border: none; 
+    border-radius: 8px; 
+    font-weight: 600; 
+    cursor: pointer; 
+    margin-top: 10px; 
+    font-size: 1rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+}
+
+.save-btn:hover { 
+    background: #0056b3; 
+    transform: translateY(-2px);
+}
+
+/* ============================
+   5. টেবিল এবং লিস্ট স্টাইল
+   ============================ */
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 0.9rem; 
+}
+
+th, td { 
+    text-align: left; 
+    padding: 14px 12px; 
+    border-bottom: 1px solid #eee; 
+}
+
+th { 
+    background-color: #f8f9fa; 
+    color: #555; 
+    font-weight: 600; 
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+tr:hover {
+    background-color: #f9fbfc;
+}
+
+/* স্ট্যাটাস ব্যাজ */
+.status-badge { 
+    padding: 5px 10px; 
+    border-radius: 20px; 
+    font-size: 0.75rem; 
+    color: white; 
+    font-weight: 500;
+    display: inline-block;
+}
+.status-pending { background-color: var(--warning-color); color: #333; }
+.status-ready { background-color: var(--info-color); }
+.status-delivered { background-color: var(--success-color); }
+
+/* অ্যাকশন বাটনস */
+.action-btn { 
+    padding: 6px 12px; 
+    border: none; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    font-size: 0.8rem; 
+    margin-right: 5px; 
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+.action-btn:hover { opacity: 0.85; }
+
+.btn-ready { background: var(--info-color); color: white; }
+.btn-bill { background: var(--success-color); color: white; }
+.btn-delete { background: #ffe5e5; color: var(--danger-color); } /* ডিলেট বাটন */
+
+/* ============================
+   6. রেসপন্সিভ ডিজাইন
+   ============================ */
+@media (max-width: 992px) {
+    .booking-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    .booking-form-section {
+        order: 1; /* মোবাইলে ফর্ম আগে দেখাবে */
+    }
+    .booking-list-section {
+        order: 2;
+    }
+}

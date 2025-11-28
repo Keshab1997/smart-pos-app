@@ -16,17 +16,110 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Poppins', sans-serif; background-color: var(--background-light); color: var(--text-color); line-height: 1.6; }
 
-/* হেডার এবং নেভিগেশন */
-header { background-color: var(--background-white); padding: 0 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; height: 70px; position: sticky; top: 0; z-index: 1000; }
-.shop-name a, .logo { text-decoration: none; color: var(--text-color); font-size: 1.5rem; font-weight: 700; }
-header nav .nav-links { list-style: none; display: flex; gap: 20px; }
-header nav a { text-decoration: none; color: var(--light-text-color); font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; }
-header nav a:hover, header nav a.active { color: var(--primary-color); background-color: #e9f2ff; }
-#mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; }
+/* =====================================
+   হেডার এবং নেভিগেশন (UPDATED - COMPACT DESIGN)
+   ===================================== */
+header {
+    background-color: var(--background-white);
+    padding: 10px 24px; /* প্যাডিং কমিয়ে স্লিম করা হয়েছে */
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.04);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* height: 70px; বাদ দেওয়া হয়েছে যাতে কন্টেন্ট অনুযায়ী সাইজ নেয় */
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #f0f0f0;
+}
 
-/* প্রধান বিলিং কন্টেইনার */
-.billing-container { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 24px; padding: 24px; max-width: 1800px; margin: 0 auto; height: calc(100vh - 70px); }
-.product-selection, .cart-section { background-color: var(--background-white); border-radius: 12px; box-shadow: var(--shadow); padding: 24px; display: flex; flex-direction: column; overflow: hidden; }
+.shop-name a, .logo {
+    text-decoration: none;
+    color: var(--primary-color);
+    font-size: 1.6rem; /* লোগো সাইজ এডজাস্টেড */
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+header nav .nav-links {
+    list-style: none;
+    display: flex;
+    gap: 8px; /* বাটনগুলোর মাঝখানের গ্যাপ */
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
+/* বাটন ডিজাইন (Pill Shape) */
+header nav a {
+    text-decoration: none;
+    color: #555; 
+    font-size: 13.5px; /* ছোট ও কিউট ফন্ট */
+    font-weight: 600;
+    padding: 8px 16px; /* বাটনের সাইজ */
+    border-radius: 30px; /* ক্যাপসুল শেপ */
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+/* হভার ইফেক্ট */
+header nav a:hover {
+    background-color: #f0f7ff;
+    color: var(--primary-color);
+}
+
+/* একটিভ বাটন (যে পেজে আছেন) */
+header nav a.active {
+    background-color: var(--primary-color);
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+}
+
+/* লগআউট বাটন */
+header nav li:last-child a {
+    color: var(--danger-color);
+    border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+header nav li:last-child a:hover {
+    background-color: var(--danger-color);
+    color: #ffffff;
+}
+
+/* মোবাইল মেনু টগল */
+#mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+
+/* =====================================
+   প্রধান বিলিং লেআউট
+   ===================================== */
+.billing-container { 
+    display: grid; 
+    grid-template-columns: 0.8fr 1.2fr; 
+    gap: 24px; 
+    padding: 24px; 
+    max-width: 1800px; 
+    margin: 0 auto; 
+    /* হেডার ছোট করায় হাইট ক্যালকুলেশন আপডেট করা হয়েছে */
+    height: calc(100vh - 65px); 
+}
+
+.product-selection, .cart-section { 
+    background-color: var(--background-white); 
+    border-radius: 12px; 
+    box-shadow: var(--shadow); 
+    padding: 24px; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+}
 h2 { margin-bottom: 20px; }
 
 /* =====================================
@@ -48,16 +141,16 @@ h2 { margin-bottom: 20px; }
 .product-card { 
     background-color: #fff; border: 1px solid var(--border-color); border-radius: 8px; 
     padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s ease-in-out; 
-    display: flex; flex-direction: column; justify-content: space-between; /* Updated */
-    min-height: 100px; /* Updated */
+    display: flex; flex-direction: column; justify-content: space-between;
+    min-height: 100px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.04); 
-    position: relative; /* স্টকের জন্য দরকার */
+    position: relative;
 }
 .product-card:hover { transform: translateY(-4px); box-shadow: 0 8px 15px rgba(0, 123, 255, 0.15); border-color: var(--primary-color); }
-.product-card-name { font-weight: 500; font-size: 0.9em; color: var(--text-color); width: 100%; word-break: break-word; } /* Updated */
+.product-card-name { font-weight: 500; font-size: 0.9em; color: var(--text-color); width: 100%; word-break: break-word; }
 .product-card-price { font-size: 0.95em; color: var(--primary-color); margin-top: 5px; font-weight: 600; }
 
-/* ===== START: প্রোডাক্ট কার্ডে স্টক দেখানোর জন্য নতুন স্টাইল ===== */
+/* স্টক স্টাইল */
 .product-card-stock {
     font-size: 0.75rem;
     font-weight: 500;
@@ -65,13 +158,9 @@ h2 { margin-bottom: 20px; }
     background-color: var(--light-text-color);
     padding: 2px 6px;
     border-radius: 4px;
-    margin-top: 8px; /* দাম থেকে সামান্য দূরে */
+    margin-top: 8px;
 }
-/* স্টক কম হলে রঙ পরিবর্তন */
-.product-card-stock.low-stock {
-    background-color: var(--danger-color);
-}
-/* ===== END: প্রোডাক্ট কার্ডে স্টক দেখানোর স্টাইল ===== */
+.product-card-stock.low-stock { background-color: var(--danger-color); }
 
 
 /* =====================================
@@ -81,7 +170,7 @@ h2 { margin-bottom: 20px; }
 .empty-cart-message { text-align: center; color: var(--light-text-color); margin: auto; }
 .cart-item { 
     display: grid; 
-    grid-template-columns: 1fr 120px 80px 30px; /* লেআউট আপডেট করা হলো */
+    grid-template-columns: 1fr 120px 80px 30px;
     gap: 15px; 
     align-items: center; 
     padding: 12px 5px; 
@@ -97,7 +186,7 @@ h2 { margin-bottom: 20px; }
 .remove-item-btn { background: none; border: none; color: var(--danger-color); font-size: 1.6rem; line-height: 1; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
 .remove-item-btn:hover { background-color: #fbeae9; }
 
-/* কার্ট ফুটার স্টাইল */
+/* কার্ট ফুটার */
 .cart-footer { margin-top: auto; padding-top: 15px; border-top: 2px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
 .grand-total-display { text-align: left; }
 .grand-total-display .total-label { font-size: 0.9em; color: var(--light-text-color); display: block; }
@@ -133,7 +222,7 @@ h2 { margin-bottom: 20px; }
 .payment-method label { display: block; margin-bottom: 8px; font-weight: 500; }
 #payment-method-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
 
-/* ===== START: ক্যাশ ও পার্ট-পেমেন্ট সেকশনের নতুন স্টাইল ===== */
+/* ক্যাশ ও পার্ট-পেমেন্ট */
 .payment-details-wrapper {
     margin-top: 15px;
     padding-top: 15px;
@@ -145,9 +234,7 @@ h2 { margin-bottom: 20px; }
     align-items: center;
     margin-bottom: 10px;
 }
-.payment-input-group label {
-    font-weight: 500;
-}
+.payment-input-group label { font-weight: 500; }
 .payment-input-group input {
     width: 130px;
     padding: 8px;
@@ -163,31 +250,22 @@ h2 { margin-bottom: 20px; }
     align-items: center;
     margin-top: 10px;
     padding: 10px;
-    background-color: #e9f2ff; /* primary color এর হালকা shade */
+    background-color: #e9f2ff;
     border: 1px solid var(--primary-color);
     border-radius: 6px;
 }
-.return-amount-display span:first-child {
-    font-weight: 600;
-    color: var(--primary-color);
-}
-.return-amount-display span:last-child {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-/* ===== END: ক্যাশ ও পার্ট-পেমেন্ট সেকশনের স্টাইল ===== */
+.return-amount-display span:first-child { font-weight: 600; color: var(--primary-color); }
+.return-amount-display span:last-child { font-size: 1.2rem; font-weight: 700; color: var(--primary-color); }
 
 .modal-footer { border-top: 1px solid var(--border-color); padding: 20px 25px; flex-shrink: 0; }
 .final-bill-btn { width: 100%; padding: 15px; font-size: 1.2rem; }
 
-/* ===== START: Helper ক্লাস (নতুন যোগ করা হয়েছে) ===== */
-.hidden {
-    display: none !important;
-}
-/* ===== END: Helper ক্লাস ===== */
+/* Helper ক্লাস */
+.hidden { display: none !important; }
 
-/* মোবাইল রেসপন্সিভ */
+/* =====================================
+   রেসপন্সিভ ডিজাইন
+   ===================================== */
 @media (max-width: 992px) { 
     .billing-container { grid-template-columns: 1fr; height: auto; }
 }

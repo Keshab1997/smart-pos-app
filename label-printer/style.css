@@ -1,47 +1,337 @@
-body { background-color: #f4f7f9; }
-h1 { margin-bottom: 20px; }
+/* ============================
+   1. CSS ভেরিয়েবল এবং গ্লোবাল সেটআপ
+   ============================ */
+   :root {
+    --primary-color: #007bff;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --text-color: #343a40;
+    --light-text-color: #6c757d;
+    --background-color: #f4f7f9;
+    --white-color: #ffffff;
+    --border-color: #dee2e6;
+    --shadow-sm: 0 2px 6px rgba(0,0,0,0.05);
+}
 
-.printer-layout { display: grid; grid-template-columns: 1fr 1.2fr 1.5fr; gap: 20px; }
-.card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-.card h2 { font-size: 1.2rem; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+body {
+    background-color: var(--background-color);
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    color: var(--text-color);
+    height: 100vh; /* পুরো স্ক্রিন জুুড়ে থাকবে */
+    overflow: hidden; /* বডি স্ক্রল বন্ধ, শুধু প্যানেল স্ক্রল হবে */
+    display: flex;
+    flex-direction: column;
+}
 
-/* Left Panel */
-.left-panel .form-control { margin-bottom: 15px; }
-.product-list-container { flex-grow: 1; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px; }
-#product-list { list-style: none; padding: 0; margin: 0; }
-#product-list li { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px; }
+/* ============================
+   2. হেডার এবং নেভিগেশন (Compact & Pill Shape)
+   ============================ */
+header {
+    background-color: var(--white-color);
+    padding: 10px 24px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.04);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0; /* হেডার ছোট হবে না */
+    z-index: 1000;
+}
+
+.logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #555;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 30px; /* Pill Shape */
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.nav-links a:hover {
+    background-color: #f0f7ff;
+    color: var(--primary-color);
+}
+
+.nav-links a.active {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+}
+
+/* ============================
+   3. মেইন লেআউট (FIXED HEIGHT)
+   ============================ */
+.printer-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr 1.2fr; /* ফিক্সড এবং ফ্লুইড কলাম */
+    gap: 20px;
+    padding: 20px;
+    height: calc(100vh - 70px); /* হেডারের হাইট বাদ দিয়ে বাকি সব */
+    box-sizing: border-box;
+}
+
+/* কার্ড স্টাইল (প্রতিটি কলামের জন্য) */
+.card {
+    background: var(--white-color);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* গ্রিডের পুরো হাইট নেবে */
+    border: 1px solid #eee;
+    overflow: hidden; /* কার্ডের বাইরে কিছু যাবে না */
+}
+
+.card h2 {
+    font-size: 1.1rem;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    color: var(--primary-color);
+    flex-shrink: 0; /* টাইটেল ফিক্সড থাকবে */
+}
+
+/* ============================
+   4. বাম প্যানেল (Product List)
+   ============================ */
+.left-panel .form-control {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.product-list-container {
+    flex-grow: 1;
+    overflow-y: auto; /* শুধু লিস্ট স্ক্রল হবে */
+    border: 1px solid #f0f0f0;
+    border-radius: 6px;
+    min-height: 0; /* ফ্লেক্সবক্স স্ক্রলিং ফিক্স */
+}
+
+#product-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#product-list li {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    transition: background 0.2s;
+}
+
 #product-list li:last-child { border-bottom: none; }
-#product-list li:hover { background-color: #f5f5f5; }
-#product-list li.selected { background-color: #e0eaff; font-weight: 500; }
-#product-list li .product-name { flex-grow: 1; }
-#product-list li .product-barcode { font-size: 0.8rem; color: #666; }
-.selection-counter { margin-top: 15px; text-align: center; font-weight: 500; }
 
-/* Middle Panel */
-.middle-panel .form-group { margin-bottom: 15px; }
-#template-settings { background-color: #f9f9f9; border: 1px solid #eee; padding: 15px; border-radius: 5px; min-height: 80px; transition: all 0.3s ease; }
-#custom-size-settings h4 { margin-top: 0; margin-bottom: 10px; }
+#product-list li:hover {
+    background-color: #f8f9fa;
+}
 
-/* Right Panel */
-.right-panel { justify-content: space-between; }
-.preview-area { width: 100%; flex-grow: 1; background-color: #e9ecef; border: 1px solid #dee2e6; border-radius: 5px; display: flex; justify-content: center; align-items: center; padding: 20px; overflow: auto; min-height: 300px; }
-.preview-label { background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; overflow: hidden; flex-shrink: 0; touch-action: none; background-image: linear-gradient(45deg, #f9f9f9 25%, transparent 25%), linear-gradient(-45deg, #f9f9f9 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f9f9f9 75%), linear-gradient(-45deg, transparent 75%, #f9f9f9 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
-.draggable-item { position: absolute; padding: 1px; border: 1px dashed transparent; cursor: move; font-family: Arial, sans-serif; line-height: 1; white-space: nowrap; box-sizing: border-box; }
-.draggable-item:hover { border-color: #a0c4ff; }
-.draggable-item.selected { border: 2px solid #007bff; z-index: 10; background-color: rgba(0, 123, 255, 0.05); }
-.draggable-item.barcode svg { display: block; background: white; }
+/* সিলেক্ট করা প্রোডাক্ট */
+#product-list li.selected {
+    background-color: #e6f0ff;
+    border-left: 4px solid var(--primary-color);
+}
 
-/* Settings and Actions */
-.printer-settings-area { margin-top: 20px; width: 100%; }
-.print-actions { margin-top: 20px; width: 100%; display: flex; justify-content: space-between; align-items: center; }
-.print-actions .form-group { margin-bottom: 0; }
+#product-list li .product-name {
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+#product-list li .product-barcode {
+    font-size: 0.8rem;
+    color: var(--light-text-color);
+}
 
-/* Properties Panel */
-#properties-panel { border-top: 1px solid #eee; padding-top: 15px; }
-#properties-panel h4 { margin-top: 0; }
-#properties-panel p { margin: 0 0 10px; font-size: 14px; }
+.selection-counter {
+    margin-top: 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+/* ============================
+   5. মাঝখানের প্যানেল (Properties / Edit)
+   ============================ */
+.middle-panel {
+    overflow-y: auto; /* কন্টেন্ট বেশি হলে স্ক্রল হবে */
+}
+
+.middle-panel .form-group {
+    margin-bottom: 15px;
+}
+
+.middle-panel label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.middle-panel select, 
+.middle-panel input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+#template-settings {
+    background-color: #fafafa;
+    border: 1px solid #eee;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+/* Properties Panel (যেটা আগে হারিয়ে যেত) */
+#properties-panel {
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+#properties-panel h4 {
+    margin-top: 0;
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+/* ============================
+   6. ডান প্যানেল (Preview & Print)
+   ============================ */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.preview-area {
+    flex-grow: 1;
+    background-color: #e9ecef;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow: auto;
+    position: relative;
+    /* গ্রিড ব্যাকগ্রাউন্ড প্যাটার্ন */
+    background-image: 
+        linear-gradient(45deg, #e0e0e0 25%, transparent 25%), 
+        linear-gradient(-45deg, #e0e0e0 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #e0e0e0 75%), 
+        linear-gradient(-45deg, transparent 75%, #e0e0e0 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* লেবেল ক্যানভাস */
+.preview-label {
+    background-color: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* ড্রাগ করা আইটেম */
+.draggable-item {
+    position: absolute;
+    padding: 2px;
+    border: 1px dashed transparent;
+    cursor: move;
+    font-family: Arial, sans-serif;
+    line-height: 1;
+    white-space: nowrap;
+}
+.draggable-item:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(0, 123, 255, 0.05);
+}
+.draggable-item.selected {
+    border: 2px solid var(--primary-color);
+    z-index: 10;
+}
+.draggable-item.barcode svg {
+    display: block;
+}
+
+/* প্রিন্ট বাটন এরিয়া */
+.print-actions {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-primary { background-color: var(--primary-color); color: white; }
+.btn-primary:hover { background-color: #0069d9; }
+
 .hidden { display: none !important; }
 
-/* Responsive */
-@media (max-width: 1200px) { .printer-layout { grid-template-columns: 1fr 1.5fr; } .left-panel { grid-column: 1 / -1; max-height: 400px; } }
-@media (max-width: 768px) { .printer-layout { grid-template-columns: 1fr; } }
+/* ============================
+   7. রেসপন্সিভ ডিজাইন
+   ============================ */
+@media (max-width: 1200px) {
+    .printer-layout {
+        grid-template-columns: 1fr 1fr; /* ২ কলাম */
+        height: auto; /* ফিক্সড হাইট বাদ */
+        overflow-y: auto;
+    }
+    body { overflow-y: auto; }
+    .left-panel {
+        grid-column: 1 / -1; /* লিস্ট পুরো জায়গা নেবে */
+        max-height: 400px;
+    }
+    .card { height: auto; min-height: 400px; }
+}
+
+@media (max-width: 768px) {
+    .printer-layout { grid-template-columns: 1fr; } /* ১ কলাম */
+    .nav-links { display: none; } /* মোবাইল মেনু দরকার হলে আলাদা কোড লাগবে */
+}
