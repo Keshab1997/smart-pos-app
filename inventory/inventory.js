@@ -1,9 +1,10 @@
-// inventory.js
-
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-// এখানে getDocs এবং where ইম্পোর্ট করা হয়েছে
-import { collection, onSnapshot, doc, deleteDoc, updateDoc, orderBy, query, where, getDocs } from 'firebase/firestore';
+// Update: Added 'getDoc' to imports for security check
+import { 
+    collection, onSnapshot, doc, deleteDoc, updateDoc, 
+    orderBy, query, where, getDocs, getDoc 
+} from 'firebase/firestore';
 
 // --- DOM Elements ---
 const inventoryBody = document.getElementById('inventory-tbody');
@@ -122,7 +123,10 @@ function setupEventListeners() {
         if (!product) return;
 
         if (target.matches('.btn-edit')) openEditModal(product);
-        else if (target.matches('.btn-delete')) { if (confirm(`Delete "${product.name}"?`)) deleteProduct(product.id); } 
+        else if (target.matches('.btn-delete')) { 
+            // ইউজার কনফার্ম করার পর deleteProduct কল হবে, সেখানে পিন চাইবে
+            if (confirm(`Delete "${product.name}"?`)) deleteProduct(product.id); 
+        } 
     });
     
     printSelectedBtn.addEventListener('click', () => {
@@ -164,13 +168,42 @@ function openEditModal(product) {
     editModal.style.display = 'flex';
 }
 
+// --- PIN VERIFICATION HELPER ---
+async function verifyAdminPIN() {
+    const userPin = prompt("🔒 SECURITY: Enter Master PIN to continue:");
+    if (!userPin) return false;
+
+    try {
+        const settingsRef = doc(db, 'shops', currentUserId, 'settings', 'security');
+        const snap = await getDoc(settingsRef);
+        
+        if (snap.exists()) {
+            if (snap.data().master_pin === userPin) return true;
+        } else {
+             alert("Security PIN not set in database. Please configure 'settings/security'.");
+             return false;
+        }
+        alert("❌ Wrong PIN!");
+        return false;
+    } catch (e) {
+        console.error(e);
+        alert("Error checking PIN.");
+        return false;
+    }
+}
+
 // =======================================================================
-// <<<<<<<<<<< গুরুত্বপূর্ণ পরিবর্তন: এডিট সাবমিট ফাংশন >>>>>>>>>>>
+// <<<<<<<<<<< SECURED EDIT SUBMIT FUNCTION >>>>>>>>>>>
 // =======================================================================
 async function handleEditFormSubmit(e) {
     e.preventDefault();
-    const id = document.getElementById('edit-product-id').value;
     
+    // 1. সিকিউরিটি চেক (Security Check)
+    const isAuthorized = await verifyAdminPIN();
+    if (!isAuthorized) return; // পিন ভুল হলে বা না দিলে এখানে থামবে
+
+    // 2. পিন ঠিক থাকলে বাকি কাজ হবে
+    const id = document.getElementById('edit-product-id').value;
     const newName = document.getElementById('edit-name').value.trim();
     const newCategory = document.getElementById('edit-category').value.trim();
     const newCP = parseFloat(document.getElementById('edit-cp').value);
@@ -186,34 +219,24 @@ async function handleEditFormSubmit(e) {
     };
 
     try {
-        // ১. ইনভেন্টরি আপডেট করা
         await updateDoc(doc(db, 'shops', currentUserId, 'inventory', id), data);
 
-        // ২. এক্সপেন্স আপডেট করা (যদি CP বা Stock পরিবর্তন হয়)
-        // আমরা 'relatedProductId' ফিল্ড দিয়ে এক্সপেন্স খুঁজব যা আমরা add-product এ সেট করেছি
         const expensesRef = collection(db, 'shops', currentUserId, 'expenses');
         const q = query(expensesRef, where("relatedProductId", "==", id));
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-            // যদি এক্সপেন্স পাওয়া যায়, সেটি আপডেট করুন
             querySnapshot.forEach(async (docSnap) => {
                 const expenseRef = doc(db, 'shops', currentUserId, 'expenses', docSnap.id);
-                
-                // নতুন খরচ = নতুন CP * নতুন Stock
                 const newTotalAmount = newCP * newStock;
-
                 await updateDoc(expenseRef, {
                     amount: newTotalAmount,
-                    description: `Inventory purchase: ${newName}` // নাম পাল্টালে এখানেও পাল্টাবে
+                    description: `Inventory purchase: ${newName}`
                 });
-                console.log("Linked expense updated successfully");
             });
-        } else {
-            console.log("No linked expense found (Maybe old product).");
         }
 
-        showStatus('Product and associated Expense updated!');
+        showStatus('Product updated successfully!');
         editModal.style.display = 'none';
 
     } catch (error) {
@@ -222,9 +245,20 @@ async function handleEditFormSubmit(e) {
     }
 }
 
+// =======================================================================
+// <<<<<<<<<<< SECURED DELETE FUNCTION >>>>>>>>>>>
+// =======================================================================
 async function deleteProduct(id) {
+    // 1. সিকিউরিটি চেক (Security Check)
+    const isAuthorized = await verifyAdminPIN();
+    if (!isAuthorized) return; // পিন ভুল হলে ডিলিট হবে না
+
+    // 2. পিন ঠিক থাকলে ডিলিট হবে
     try {
         await deleteDoc(doc(db, 'shops', currentUserId, 'inventory', id));
         showStatus('Product deleted successfully.');
-    } catch (error) { showStatus('Failed to delete product.', 'error'); }
+    } catch (error) { 
+        console.error(error);
+        showStatus('Failed to delete product.', 'error'); 
+    }
 }
