@@ -15,6 +15,7 @@
 
     <!-- CSS ফাইল -->
     <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="report.css">
 
     <!-- PDF Generating Libraries (jsPDF) -->
@@ -52,35 +53,28 @@
         .btn-danger:hover { background-color: #c82333; }
 
         /* Table Buttons */
-        .btn-edit {
-            background-color: #17a2b8; 
-            color: white; 
-            border: none; 
-            padding: 4px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        .btn-cancel {
-            background-color: #dc3545; 
-            color: white; 
-            border: none; 
-            padding: 4px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-        }
+        .btn-edit { background-color: #17a2b8; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
+        .btn-print { background-color: #6c757d; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
+        .btn-delete { background-color: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
         
         .action-buttons { display: flex; gap: 5px; }
         
-        /* Locked Badge */
-        .badge-locked {
-            background-color: #6c757d;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 10px;
+        /* Locked Badge Style */
+        .locked-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .locked-badge {
+            color: #7f8c8d;
             font-size: 11px;
-            display: inline-flex;
+            font-weight: 500;
+            display: flex;
             align-items: center;
             gap: 3px;
+            background: #f1f2f6;
+            padding: 2px 6px;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -145,7 +139,7 @@
                     <i class="fab fa-whatsapp"></i> Share
                 </button>
 
-                <!-- NEW: PDF Download Button -->
+                <!-- PDF Download Button -->
                 <button onclick="downloadPDF()" class="btn btn-danger">
                     <i class="fas fa-file-pdf"></i> Download PDF
                 </button>
@@ -176,13 +170,12 @@
         <section class="sales-table-section card">
             <h3>Detailed Sales History</h3>
             <div class="table-responsive">
-                <!-- ID added for PDF generation -->
                 <table class="sales-table" id="salesTable">
                     <thead>
                         <tr>
-                            <th>Sale ID</th>
+                            <th>Bill Number</th> <!-- Changed from Sale ID -->
                             <th>Sale Date</th>
-                            <th>Items</th> <!-- Shortened for PDF fit -->
+                            <th>Items</th>
                             <th>Names</th>
                             <th>Type</th>
                             <th>Disc.</th>

@@ -1,0 +1,137 @@
+/* css/navbar.css */
+
+/* ============================
+   HEADER CONTAINER
+   ============================ */
+.main-header {
+    background-color: #ffffff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    padding: 10px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #f0f0f0;
+    width: 100%;
+}
+
+.main-header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative; /* মোবাইল মেনুর পজিশনিংয়ের জন্য জরুরি */
+}
+
+/* ============================
+   LOGO STYLES
+   ============================ */
+.logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #007bff; /* Primary Color */
+    text-decoration: none;
+    letter-spacing: -0.5px;
+}
+
+/* ============================
+   DESKTOP NAVIGATION
+   ============================ */
+.main-header nav ul {
+    display: flex;
+    gap: 10px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+}
+
+.main-header nav a {
+    text-decoration: none;
+    color: #555;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 15px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.main-header nav a:hover {
+    background-color: #f0f7ff;
+    color: #007bff;
+}
+
+.main-header nav a.active {
+    background-color: #007bff;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Logout Button Style */
+.main-header nav li:last-child a {
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+}
+.main-header nav li:last-child a:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* ============================
+   MOBILE MENU BUTTON (Hamburger)
+   ============================ */
+#mobile-menu-btn {
+    display: none; /* ডেস্কটপে লুকানো থাকবে */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+}
+
+#mobile-menu-btn svg {
+    stroke: #333; /* আইকনের কালার কালো */
+    stroke-width: 2.5;
+    width: 28px;
+    height: 28px;
+}
+
+/* ============================
+   RESPONSIVE (MOBILE) STYLES
+   ============================ */
+@media (max-width: 992px) { /* ট্যাবলেট এবং মোবাইলের জন্য */
+    
+    /* বাটন দৃশ্যমান করা */
+    #mobile-menu-btn {
+        display: block;
+    }
+
+    /* মেনু লুকানো এবং ডিজাইন */
+    #main-nav-links {
+        display: none; /* শুরুতে লুকানো */
+        flex-direction: column;
+        position: absolute;
+        top: 100%; /* হেডারের ঠিক নিচে */
+        right: 0;
+        width: 250px; /* মেনুর চওড়া */
+        background-color: white;
+        box-shadow: -5px 5px 15px rgba(0,0,0,0.1);
+        padding: 15px;
+        border-radius: 0 0 0 10px;
+        gap: 5px;
+    }
+
+    /* যখন জাভাস্ক্রিপ্ট দিয়ে ক্লাস অ্যাড হবে তখন মেনু দেখাবে */
+    #main-nav-links.mobile-nav-active {
+        display: flex;
+    }
+
+    /* মোবাইল লিংকের স্টাইল */
+    .main-header nav ul li {
+        width: 100%;
+        text-align: right; /* লেখা ডান দিকে থাকবে */
+    }
+
+    .main-header nav a {
+        display: block;
+        padding: 10px 15px;
+        border-radius: 5px;
+    }
+}

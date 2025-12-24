@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,11 +19,16 @@
     <header class="main-header">
         <nav class="container">
             <a href="../dashboard.html" class="logo">Smart POS</a>
-            <ul>
+            <ul id="main-nav-links">
                 <li><a href="../dashboard.html">Dashboard</a></li>
-                <li><a href="index.html" class="active">Label Printer</a></li>
+                <li><a href="../billing/billing.html">Billing</a></li>
                 <li><a href="../inventory/inventory.html">Inventory</a></li>
-                 <li><a href="#" id="logout-btn">Logout</a></li>
+                <li><a href="../add-product/add-product.html">Add Product</a></li>
+                <li><a href="../sales-report/report.html">Sales Report</a></li>
+                <li><a href="../expense/expense.html">Expense</a></li>
+                <li><a href="../sales-report/profit-loss.html">Profit/Loss</a></li>
+                <li><a href="index.html" class="active">Barcodes Print</a></li>
+                <li><a href="#" id="logout-btn">Logout</a></li>
             </ul>
         </nav>
     </header>

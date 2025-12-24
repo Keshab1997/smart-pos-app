@@ -169,7 +169,7 @@ function formatDate(dateObject) {
     return dateObject.toLocaleDateString('en-GB') + ' ' + dateObject.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 }
 
-// --- Render Table (With Security Logic) ---
+// --- Render Table (Updated for Bill Number) ---
 function renderSalesTable(sales) {
     if (!salesTableBody) return;
     salesTableBody.innerHTML = '';
@@ -186,15 +186,27 @@ function renderSalesTable(sales) {
         const discount = sale.discountAmount || sale.discount || 0;
         let payMethod = (sale.paymentMethod || 'Cash').toUpperCase();
 
+        // ===============================================
+        // BILL NUMBER LOGIC (এখানে পরিবর্তন করা হয়েছে)
+        // ===============================================
+        // ১. যদি ডাটাবেসে 'billNumber' বা 'billNo' থাকে, সেটা দেখাবে।
+        // ২. যদি না থাকে, তাহলে ID এর প্রথম ৬ অক্ষর বড় হাতের (Uppercase) করে দেখাবে (যেমন: CRNB9U)।
+        let displayBillNumber = sale.billNumber || sale.billNo;
+        
+        if (!displayBillNumber) {
+            // যদি বিল নাম্বার না পাওয়া যায়, সুন্দর ফরম্যাটে ID দেখাবে
+            displayBillNumber = "#" + sale.id.substring(0, 6).toUpperCase(); 
+        }
+
         const row = document.createElement('tr');
         let actionHTML = '';
 
-        // Icons (SVG)
-        const iconEdit = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/></svg>`;
-        const iconPrint = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/><path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/></svg>`;
-        const iconTrash = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>`;
+        // Icons
+        const iconEdit = `<i class="fa-solid fa-pen"></i>`;
+        const iconPrint = `<i class="fa-solid fa-print"></i>`;
+        const iconTrash = `<i class="fa-solid fa-trash"></i>`;
 
-        // Check Security Condition
+        // Security Check
         const isToday = isTransactionToday(saleDateObj);
 
         if (sale.status === 'canceled') {
@@ -202,6 +214,7 @@ function renderSalesTable(sales) {
             actionHTML = `<span style="color:red; font-weight:bold; font-size:12px;">CANCELED</span>`;
         } else {
             if (isToday) {
+                // আজকের বিল: সব বাটন থাকবে
                 actionHTML = `
                     <div class="action-buttons">
                         <button class="btn-icon btn-edit edit-pay-btn" data-sale-id="${sale.id}" data-current-pay="${sale.paymentMethod}" title="Edit Payment">${iconEdit}</button>
@@ -210,12 +223,18 @@ function renderSalesTable(sales) {
                     </div>
                 `;
             } else {
-                actionHTML = `<span style="color:gray; font-size:12px;"><i class="fas fa-lock"></i> Locked</span>`;
+                // পুরনো বিল: Locked থাকবে, কিন্তু PRINT বাটন থাকবে
+                actionHTML = `
+                    <div class="locked-wrapper">
+                        <div class="locked-badge"><i class="fas fa-lock"></i> Locked</div>
+                        <button class="btn-icon btn-print reprint-btn" data-sale-id="${sale.id}" title="Print Old Bill">${iconPrint}</button>
+                    </div>
+                `;
             }
         }
 
         row.innerHTML = `
-            <td>${sale.id.substring(0, 6)}</td>
+            <td style="font-weight:bold; color:#2c3e50;">${displayBillNumber}</td> <!-- আপডেট করা বিল নম্বর -->
             <td>${saleDateStr}</td>
             <td>${sale.items.length}</td>
             <td title="${itemNames}">${itemNames.length > 25 ? itemNames.substring(0, 25) + '..' : itemNames}</td>
@@ -355,7 +374,7 @@ function sendReportToWhatsApp() {
     window.open(`https://wa.me/?text=${encodedMsg}`, '_blank');
 }
 
-// --- PDF DOWNLOAD FUNCTION (FIXED: Numbers & Layout) ---
+// --- PDF DOWNLOAD FUNCTION (Fixed Bill No Header) ---
 window.downloadPDF = function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -378,7 +397,7 @@ window.downloadPDF = function() {
         theme: 'grid',
         styles: { fontSize: 9, cellPadding: 2 },
         columns: [
-            { header: 'ID', dataKey: 0 },
+            { header: 'Bill No', dataKey: 0 }, // Header changed for PDF
             { header: 'Date', dataKey: 1 },
             { header: 'Items', dataKey: 2 },
             { header: 'Names', dataKey: 3 },
@@ -398,10 +417,9 @@ window.downloadPDF = function() {
         }
     });
 
-    // 3. Summary Section (All 4 Values Cleanly)
+    // 3. Summary Section
     const finalY = doc.lastAutoTable.finalY + 10;
     
-    // Get values and strip '₹' symbol for PDF to prevent glitch
     const cash = filteredCashSalesEl ? filteredCashSalesEl.innerText.replace(/₹/g, '').trim() : '0.00';
     const card = filteredCardSalesEl ? filteredCardSalesEl.innerText.replace(/₹/g, '').trim() : '0.00';
     const discount = filteredTotalDiscountEl ? filteredTotalDiscountEl.innerText.replace(/₹/g, '').trim() : '0.00';
@@ -412,13 +430,11 @@ window.downloadPDF = function() {
     doc.text("Filtered Summary:", 14, finalY);
     doc.setFont(undefined, 'normal');
     
-    // Display nicely formatted summary
     doc.text(`Filtered Cash Sales: Rs. ${cash}`, 14, finalY + 6);
     doc.text(`Filtered Card Sales: Rs. ${card}`, 14, finalY + 11);
     doc.text(`Total Discount:       Rs. ${discount}`, 14, finalY + 16);
     doc.text(`Filtered Canceled:   Rs. ${canceled}`, 14, finalY + 21);
     
-    // Footer
     doc.setFontSize(8);
     doc.text(`Generated: ${new Date().toLocaleString()}`, 14, finalY + 30);
 
