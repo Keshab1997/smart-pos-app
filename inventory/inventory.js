@@ -1,6 +1,5 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-// Update: Added 'getDoc' to imports for security check
 import { 
     collection, onSnapshot, doc, deleteDoc, updateDoc, 
     orderBy, query, where, getDocs, getDoc 
@@ -37,16 +36,37 @@ onAuthStateChanged(auth, (user) => {
 });
 
 // --- Core Functions ---
+
+// UPDATED: Calculates both product types count and total stock quantity
 function loadInventory() {
     if (!currentUserId) return;
     if (unsubscribe) unsubscribe();
+    
     const productsRef = collection(db, 'shops', currentUserId, 'inventory');
     const q = query(productsRef, orderBy("name"));
+    
     unsubscribe = onSnapshot(q, (snapshot) => {
         const currentCategory = categoryFilter.value;
+        
         allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const categories = new Set(allProducts.map(p => p.category).filter(Boolean));
-        updateCategoryFilter(categories, currentCategory);
+
+        // ক্যাটাগরি স্ট্যাটস ক্যালকুলেশন
+        const categoryStats = {};
+        
+        allProducts.forEach(product => {
+            const cat = product.category;
+            const stock = parseInt(product.stock) || 0; // Ensure stock is a number
+
+            if (cat) {
+                if (!categoryStats[cat]) {
+                    categoryStats[cat] = { types: 0, totalStock: 0 };
+                }
+                categoryStats[cat].types += 1;       // কতটি আইটেম এন্ট্রি আছে
+                categoryStats[cat].totalStock += stock; // মোট কত কোয়ান্টিটি আছে
+            }
+        });
+
+        updateCategoryFilter(categoryStats, currentCategory);
         applyFiltersAndRender(false);
     });
 }
@@ -55,6 +75,7 @@ function applyFiltersAndRender(resetPage = true) {
     if (resetPage) currentPage = 1;
     const term = searchInput.value.toLowerCase().trim();
     const category = categoryFilter.value;
+
     filteredProducts = allProducts.filter(p => 
         (!term || (p.name || '').toLowerCase().includes(term) || (p.barcode || '').toLowerCase().includes(term)) &&
         (!category || p.category === category)
@@ -66,14 +87,18 @@ function applyFiltersAndRender(resetPage = true) {
 function renderTable() {
     const start = (currentPage - 1) * ROWS_PER_PAGE;
     const paginated = filteredProducts.slice(start, start + ROWS_PER_PAGE);
+    
     inventoryBody.innerHTML = paginated.length === 0 
         ? '<tr><td colspan="8" class="loading-cell">No products found.</td></tr>'
         : paginated.map(p => `
             <tr class="${p.stock <= LOW_STOCK_THRESHOLD ? 'low-stock' : ''}">
                 <td><input type="checkbox" class="product-checkbox" data-id="${p.id}"></td>
-                <td>${p.name || 'N/A'}</td><td>${p.category || 'N/A'}</td>
-                <td>${(p.costPrice || 0).toFixed(2)}</td><td>${(p.sellingPrice || 0).toFixed(2)}</td>
-                <td>${p.stock || 0}</td><td>${p.barcode || 'N/A'}</td>
+                <td>${p.name || 'N/A'}</td>
+                <td>${p.category || 'N/A'}</td>
+                <td>${(p.costPrice || 0).toFixed(2)}</td>
+                <td>${(p.sellingPrice || 0).toFixed(2)}</td>
+                <td>${p.stock || 0}</td>
+                <td>${p.barcode || 'N/A'}</td>
                 <td class="action-buttons">
                     <button class="btn btn-sm btn-edit" data-id="${p.id}" title="Edit">Edit</button>
                     <button class="btn btn-sm btn-delete" data-id="${p.id}" title="Delete">Delete</button>
@@ -82,8 +107,22 @@ function renderTable() {
             </tr>`).join('');
 }
 
-function updateCategoryFilter(categories, selectedValue) {
-    const options = ['<option value="">All Categories</option>', ...[...categories].map(cat => `<option value="${cat}" ${cat === selectedValue ? 'selected' : ''}>${cat}</option>`)];
+// UPDATED: Displays formatted text in dropdown
+function updateCategoryFilter(categoryStats, selectedValue) {
+    const categories = Object.keys(categoryStats).sort();
+
+    const options = [
+        '<option value="">All Categories</option>',
+        ...categories.map(cat => {
+            const stats = categoryStats[cat];
+            const isSelected = cat === selectedValue ? 'selected' : '';
+            // Display Format: Name (Types: 2 | Stock: 150)
+            // 'Prod' means number of unique items, 'Qty' means total quantity
+            const label = `${cat} (Prod: ${stats.types} | Qty: ${stats.totalStock})`;
+            return `<option value="${cat}" ${isSelected}>${label}</option>`;
+        })
+    ];
+    
     categoryFilter.innerHTML = options.join('');
 }
 
@@ -124,7 +163,6 @@ function setupEventListeners() {
 
         if (target.matches('.btn-edit')) openEditModal(product);
         else if (target.matches('.btn-delete')) { 
-            // ইউজার কনফার্ম করার পর deleteProduct কল হবে, সেখানে পিন চাইবে
             if (confirm(`Delete "${product.name}"?`)) deleteProduct(product.id); 
         } 
     });
@@ -198,11 +236,9 @@ async function verifyAdminPIN() {
 async function handleEditFormSubmit(e) {
     e.preventDefault();
     
-    // 1. সিকিউরিটি চেক (Security Check)
     const isAuthorized = await verifyAdminPIN();
-    if (!isAuthorized) return; // পিন ভুল হলে বা না দিলে এখানে থামবে
+    if (!isAuthorized) return; 
 
-    // 2. পিন ঠিক থাকলে বাকি কাজ হবে
     const id = document.getElementById('edit-product-id').value;
     const newName = document.getElementById('edit-name').value.trim();
     const newCategory = document.getElementById('edit-category').value.trim();
@@ -249,11 +285,9 @@ async function handleEditFormSubmit(e) {
 // <<<<<<<<<<< SECURED DELETE FUNCTION >>>>>>>>>>>
 // =======================================================================
 async function deleteProduct(id) {
-    // 1. সিকিউরিটি চেক (Security Check)
     const isAuthorized = await verifyAdminPIN();
-    if (!isAuthorized) return; // পিন ভুল হলে ডিলিট হবে না
+    if (!isAuthorized) return;
 
-    // 2. পিন ঠিক থাকলে ডিলিট হবে
     try {
         await deleteDoc(doc(db, 'shops', currentUserId, 'inventory', id));
         showStatus('Product deleted successfully.');
