@@ -21,7 +21,8 @@ function createRow() {
     row.innerHTML = `
         <td class="row-number">${rowCount}</td>
         <td><input type="text" class="item-name" placeholder="Item Name"></td>
-        <td><input type="text" class="item-qty" placeholder="e.g. 5 kg"></td> <!-- Qty Field -->
+        <!-- Qty ফিল্ড (ডাটাবেসে সেভ হবে) -->
+        <td><input type="text" class="item-qty" placeholder="e.g. 5 kg"></td> 
         <td><input type="number" class="item-price" placeholder="0" min="0"></td>
         <td><button class="delete-btn">X</button></td>
     `;
@@ -39,6 +40,7 @@ function createRow() {
     tableBody.appendChild(row);
 }
 
+// রো নম্বর আপডেট করা
 function updateRowNumbers() {
     const rows = tableBody.querySelectorAll('tr');
     rows.forEach((row, index) => {
@@ -46,6 +48,7 @@ function updateRowNumbers() {
     });
 }
 
+// টোটাল ক্যালকুলেশন
 function calculateTotal() {
     let total = 0;
     document.querySelectorAll('.item-price').forEach(input => {
@@ -55,9 +58,10 @@ function calculateTotal() {
     grandTotalEl.innerText = total.toFixed(2);
 }
 
+// বাটনে ক্লিক করলে নতুন রো আসবে
 addRowBtn.addEventListener('click', createRow);
 
-// সেভ বাটন (আপডেট করা হয়েছে)
+// সেভ বাটন (Firebase এ ডাটা পাঠানো)
 saveBtn.addEventListener('click', async () => {
     const date = billDateInput.value;
     const billName = billNameInput.value.trim();
@@ -68,15 +72,17 @@ saveBtn.addEventListener('click', async () => {
     let items = [];
     const rows = tableBody.querySelectorAll('tr');
 
+    // টেবিলের প্রতিটি রো থেকে ডাটা নেওয়া হচ্ছে
     rows.forEach(row => {
         const name = row.querySelector('.item-name').value.trim();
-        const qty = row.querySelector('.item-qty').value.trim();
+        const qty = row.querySelector('.item-qty').value.trim(); // Qty নেওয়া হচ্ছে
         const price = row.querySelector('.item-price').value;
 
+        // যদি নাম অথবা দাম কিছু একটা থাকে, তাহলেই লিস্টে যোগ হবে
         if (name || (price && parseFloat(price) > 0)) {
             items.push({
-                itemName: name,
-                itemQty: qty, // Qty সেভ হচ্ছে
+                itemName: name || "Unknown Item",
+                itemQty: qty || "-",  // Qty এখানে অবজেক্টে ঢোকানো হচ্ছে (খালি থাকলে '-' যাবে)
                 itemPrice: parseFloat(price) || 0
             });
         }
@@ -84,23 +90,25 @@ saveBtn.addEventListener('click', async () => {
 
     if (items.length === 0) { alert("Add at least one item!"); return; }
 
+    // বাটন ডিজেবল করা (ডাবল ক্লিক রোধ করতে)
     saveBtn.innerText = "Saving...";
     saveBtn.disabled = true;
 
     try {
+        // ফায়ারবেস কালেকশনে ডকুমেন্ট তৈরি
         await addDoc(collection(db, "purchase_notes_isolated"), {
             date: date,
             billName: billName || "Unnamed Bill",
-            items: items,
+            items: items, // পুরো আইটেম লিস্ট (Qty সহ) সেভ হচ্ছে
             totalAmount: totalAmount,
             createdAt: serverTimestamp()
         });
 
         alert("✅ Saved Successfully!");
-        window.location.reload();
+        window.location.reload(); // পেজ রিলোড
     } catch (error) {
         console.error("Error:", error);
-        alert("Error saving data!");
+        alert("Error saving data: " + error.message);
         saveBtn.innerText = "💾 SAVE RECORD";
         saveBtn.disabled = false;
     }

@@ -4,6 +4,10 @@ const recordsList = document.getElementById('recordsList');
 const filterDateInput = document.getElementById('filterDate');
 const filterBtn = document.getElementById('filterBtn');
 const showAllBtn = document.getElementById('showAllBtn');
+const printBtn = document.getElementById('printBtn');
+
+// বর্তমানে প্রদর্শিত ডাটা স্টোর করার জন্য ভেরিয়েবল
+let currentData = [];
 
 // পেজ লোড হলে সব ডাটা দেখাবে
 window.addEventListener('DOMContentLoaded', () => {
@@ -26,9 +30,19 @@ showAllBtn.addEventListener('click', () => {
     loadRecords();
 });
 
+// প্রিন্ট বাটন ইভেন্ট
+if (printBtn) {
+    printBtn.addEventListener('click', () => {
+        if (currentData.length === 0) {
+            alert("No data available to print!");
+            return;
+        }
+        printReport();
+    });
+}
+
 // ডাটা লোড ফাংশন
 async function loadRecords(dateFilter = null) {
-    // লোডিং এনিমেশন
     recordsList.innerHTML = `
         <div class="loading-state">
             <i class="fas fa-spinner fa-spin"></i>
@@ -47,7 +61,8 @@ async function loadRecords(dateFilter = null) {
 
         const querySnapshot = await getDocs(q);
 
-        recordsList.innerHTML = ''; // আগের লিস্ট ক্লিয়ার
+        recordsList.innerHTML = '';
+        currentData = [];
 
         if (querySnapshot.empty) {
             recordsList.innerHTML = `
@@ -60,6 +75,10 @@ async function loadRecords(dateFilter = null) {
 
         querySnapshot.forEach((doc) => {
             const data = doc.data();
+            currentData.push({
+                id: doc.id,
+                ...data
+            });
             createRecordCard(data, doc.id);
         });
 
@@ -69,13 +88,12 @@ async function loadRecords(dateFilter = null) {
     }
 }
 
-// কার্ড তৈরি করার ফাংশন (ডিজাইন ফিক্স করা হয়েছে)
+// কার্ড তৈরি করার ফাংশন
 function createRecordCard(data, id) {
     const card = document.createElement('div');
     card.className = 'record-card';
-    card.id = `record-${id}`; // ডিলিট করার পর রিমুভ করতে আইডি দরকার
+    card.id = `record-${id}`;
 
-    // আইটেমগুলোর টেবিল রো বানানো
     let itemsHtml = '';
     if (data.items && Array.isArray(data.items)) {
         data.items.forEach((item, index) => {
@@ -90,7 +108,6 @@ function createRecordCard(data, id) {
         });
     }
 
-    // HTML স্ট্রাকচার - CSS এর সাথে মিল রেখে
     card.innerHTML = `
         <div class="record-header" onclick="toggleDetails('${id}')">
             <div class="record-info">
@@ -103,7 +120,6 @@ function createRecordCard(data, id) {
             </div>
         </div>
 
-        <!-- ডিটেইলস কন্টেইনার (লুকানো) -->
         <div class="items-container" id="details-${id}">
             <table class="mini-table">
                 <thead>
@@ -119,7 +135,6 @@ function createRecordCard(data, id) {
                 </tbody>
             </table>
             
-            <!-- ডিলিট বাটন -->
             <button onclick="deleteRecord('${id}')" class="btn-delete-record">
                 <i class="fas fa-trash-alt"></i> Delete Record
             </button>
@@ -129,7 +144,122 @@ function createRecordCard(data, id) {
     recordsList.appendChild(card);
 }
 
-// গ্লোবাল ফাংশন: ডিটেইলস হাইড/শো করার জন্য
+// =======================================================
+//   FULL DETAILS PRINT FUNCTION (UPDATED)
+// =======================================================
+function printReport() {
+    // গ্র্যান্ড টোটাল হিসাব
+    const grandTotal = currentData.reduce((sum, record) => sum + parseFloat(record.totalAmount || 0), 0);
+    const reportDate = filterDateInput.value ? `Date: ${filterDateInput.value}` : "All Records History";
+
+    // প্রিন্ট উইন্ডো সেটআপ
+    const printWindow = window.open('', '', 'height=600,width=800');
+
+    // টেবিলের বডি তৈরি (লুপের মাধ্যমে)
+    let tableContent = '';
+
+    currentData.forEach((record, index) => {
+        // ১. প্রতিটি বিলের হেডার (দোকানের নাম ও তারিখ)
+        tableContent += `
+            <tr class="bill-header-row">
+                <td>${index + 1}</td>
+                <td colspan="3">
+                    <strong>${record.billName}</strong> 
+                    <span style="font-size: 12px; color: #555; margin-left: 10px;">(Date: ${record.date})</span>
+                </td>
+            </tr>
+        `;
+
+        // ২. প্রতিটি বিলের ভেতরের আইটেমগুলোর লুপ
+        if (record.items && record.items.length > 0) {
+            record.items.forEach(item => {
+                tableContent += `
+                    <tr class="item-row">
+                        <td></td> <!-- SL খালি থাকবে -->
+                        <td style="padding-left: 25px;">• ${item.itemName}</td>
+                        <td style="text-align: center;">${item.itemQty || '-'}</td>
+                        <td style="text-align: right;">${item.itemPrice}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // ৩. নির্দিষ্ট বিলের টোটাল
+        tableContent += `
+            <tr class="bill-total-row">
+                <td colspan="3" style="text-align: right;">Bill Total:</td>
+                <td style="text-align: right;">₹ ${record.totalAmount}</td>
+            </tr>
+            <!-- বিলের মাঝখানে একটু গ্যাপ -->
+            <tr><td colspan="4" style="border: none; height: 10px;"></td></tr>
+        `;
+    });
+
+    // প্রিন্ট পেজের HTML ও CSS ডিজাইন
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Detailed Purchase Report</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #333; }
+                h1 { text-align: center; margin-bottom: 5px; color: #2c3e50; }
+                .subtitle { text-align: center; color: #7f8c8d; margin-bottom: 30px; font-size: 14px; }
+                
+                table { width: 100%; border-collapse: collapse; font-size: 13px; }
+                th { background-color: #2c3e50; color: white; padding: 8px; text-align: left; }
+                td { border: 1px solid #ddd; padding: 6px 8px; }
+                
+                /* ডিজাইনের জন্য ক্লাস */
+                .bill-header-row td { background-color: #f0f2f5; font-weight: bold; border-bottom: none; }
+                .item-row td { border-top: none; border-bottom: 1px dotted #eee; color: #444; }
+                .bill-total-row td { font-weight: bold; background-color: #fff; border-top: 1px solid #999; }
+                
+                .grand-total { background-color: #2ecc71 !important; color: white; font-size: 16px; font-weight: bold; }
+                
+                .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #aaa; border-top: 1px solid #eee; padding-top: 10px; }
+            </style>
+        </head>
+        <body>
+            <h1>Purchase Detail Report</h1>
+            <p class="subtitle">Report Filter: ${reportDate}</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th width="5%">SL</th>
+                        <th width="55%">Description / Item Name</th>
+                        <th width="20%" style="text-align: center;">Qty</th>
+                        <th width="20%" style="text-align: right;">Price (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableContent}
+                </tbody>
+                <tfoot>
+                    <tr class="grand-total">
+                        <td colspan="3" style="text-align: right; color: white;">GRAND TOTAL COST:</td>
+                        <td style="text-align: right; color: white;">₹ ${grandTotal.toFixed(2)}</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="footer">
+                Generated via Smart POS • Printed on: ${new Date().toLocaleString()}
+            </div>
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 500);
+}
+
+// ডিটেইলস হাইড/শো ফাংশন
 window.toggleDetails = function(id) {
     const container = document.getElementById(`details-${id}`);
     if (container.style.display === "block") {
@@ -139,18 +269,16 @@ window.toggleDetails = function(id) {
     }
 }
 
-// গ্লোবাল ফাংশন: রেকর্ড ডিলিট করার জন্য
+// রেকর্ড ডিলিট ফাংশন
 window.deleteRecord = async function(id) {
-    // কনফার্মেশন মেসেজ
-    if (!confirm("Are you sure you want to delete this purchase record? This cannot be undone.")) {
+    if (!confirm("Are you sure you want to delete this purchase record?")) {
         return;
     }
 
     try {
-        // ফায়ারবেস থেকে ডিলিট
         await deleteDoc(doc(db, "purchase_notes_isolated", id));
-        
-        // UI থেকে কার্ড রিমুভ (পেজ রিলোড ছাড়া)
+        currentData = currentData.filter(item => item.id !== id);
+
         const cardElement = document.getElementById(`record-${id}`);
         if (cardElement) {
             cardElement.style.transition = "all 0.5s ease";
