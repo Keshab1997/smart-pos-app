@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Note Record</title>
+    <!-- তোমার মেইন CSS ফাইল থাকলে এখানে লিঙ্ক করতে পারো, না হলে নিচের CSS কাজ করবে -->
+    <link rel="stylesheet" href="purchase-record.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <!-- আইকনের জন্য -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- ================= NAVBAR (Updated Paths) ================= -->
+    <header class="main-header">
+        <nav class="nav-container">
+            <!-- ড্যাশবোর্ড লিংক এক ফোল্ডার পিছনে (../) -->
+            <a href="../dashboard.html" class="logo">Smart POS</a>
+            
+            <ul id="main-nav-links">
+                <!-- সব লিংকের আগে ../ যোগ করা হয়েছে যাতে ফোল্ডারের ভেতর থেকে কাজ করে -->
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="../billing/billing.html">Billing</a></li>
+                <li><a href="../advance-booking/index.html">Bookings</a></li>
+                <li><a href="../inventory/inventory.html">Inventory</a></li>
+                <li><a href="../add-product/add-product.html">Add Product</a></li>
+                <li><a href="../sales-report/report.html">Sales Report</a></li>
+                <li><a href="../expense/expense.html">Expense</a></li>
+                <li><a href="../sales-report/profit-loss.html">Profit/Loss</a></li>
+                <li><a href="../shop-details/shop-details.html">Shop Details</a></li> 
+                <li><a href="../label-printer/index.html">Barcode Print</a></li> 
+                <li><a href="#" id="logout-btn">Logout</a></li>
+            </ul>
+
+            <button id="mobile-menu-btn" aria-label="Open Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+        </nav>
+    </header>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <div class="main-content-area">
+        <div class="container">
+            
+            <!-- পেজ হেডার এবং ড্যাশবোর্ড বাটন -->
+            <div class="page-header">
+                <div>
+                    <h2>📝 Purchase Note Entry</h2>
+                    <p class="subtitle">Isolated Record (Not linked to Main Accounts)</p>
+                </div>
+                <a href="purchase-dashboard.html" class="btn btn-outline">
+                    <i class="fas fa-list"></i> View Records List
+                </a>
+            </div>
+            
+            <!-- বিলের তথ্য -->
+            <div class="bill-meta-box">
+                <div class="form-group">
+                    <label>Date (তারিখ):</label>
+                    <input type="date" id="billDate">
+                </div>
+                <div class="form-group" style="flex-grow: 1;">
+                    <label>Supplier / Bill Name (নাম):</label>
+                    <input type="text" id="billName" placeholder="দোকান বা সাপ্লায়ায়ের নাম লিখুন...">
+                </div>
+            </div>
+
+            <!-- এক্সেল স্টাইল টেবিল -->
+            <div class="table-responsive">
+                <table id="excelTable">
+                    <thead>
+                        <tr>
+                            <th width="5%">No.</th>
+                            <th width="45%">Item Name (পণ্যের নাম)</th>
+                            <th width="20%">Qty / Unit (পরিমাণ)</th>
+                            <th width="25%">Price (₹)</th>
+                            <th width="5%">❌</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- জাভাস্ক্রিপ্ট দিয়ে এখানে রো তৈরি হবে -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ফুটার অ্যাকশন -->
+            <div class="footer-actions">
+                <button id="addRowBtn" class="btn btn-blue">
+                    <i class="fas fa-plus"></i> Add Row
+                </button>
+                
+                <div class="total-display">
+                    Total: <span id="grandTotal">0.00</span> ₹
+                </div>
+
+                <button id="saveBtn" class="btn btn-green">
+                    <i class="fas fa-save"></i> SAVE RECORD
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= UNIT SUGGESTION LIST (Comprehensive) ================= -->
+    <datalist id="unitOptions">
+        <!-- সাধারণ একক -->
+        <option value="pcs">
+        <option value="pic">
+        <option value="set">
+        <option value="box">
+        <option value="packet">
+        <option value="bag">
+        <option value="bosta">
+        <option value="carton">
+        <option value="dozon">
+        <option value="pair">
+        
+        <!-- ওজন -->
+        <option value="kg">
+        <option value="gram">
+        <option value="mg">
+        <option value="ton">
+        <option value="mon">
+        <option value="quintal">
+        
+        <!-- দৈর্ঘ্য -->
+        <option value="mtr">
+        <option value="cm">
+        <option value="inch">
+        <option value="feet">
+        <option value="yard">
+        <option value="goj">
+        <option value="km">
+        <option value="rashi">
+        <option value="than">
+        
+        <!-- তরল -->
+        <option value="liter">
+        <option value="ml">
+        <option value="galon">
+    </datalist>
+
+    <script type="module" src="purchase-record.js"></script>
+</body>
+</html>

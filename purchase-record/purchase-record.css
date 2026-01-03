@@ -1,0 +1,270 @@
+/* =========================================
+   PURCHASE RECORD PAGE STYLING
+   File: css/purchase-record.css
+   ========================================= */
+
+/* --- Container & Layout --- */
+.main-content-area {
+    padding: 20px;
+    background-color: #f4f6f9; /* হালকা ধূসর ব্যাকগ্রাউন্ড */
+    min-height: calc(100vh - 60px); /* ন্যাভবার বাদ দিয়ে বাকি হাইট */
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* --- Page Header --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+}
+
+.page-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.5rem;
+}
+
+.page-header .subtitle {
+    margin: 5px 0 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+/* --- Bill Meta Box (Date & Name) --- */
+.bill-meta-box {
+    display: flex;
+    gap: 20px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 20px;
+    flex-wrap: wrap; /* মোবাইলে নিচে নিচে নামবে */
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #34495e;
+    font-size: 0.95rem;
+}
+
+.form-group input {
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* --- Excel Style Table --- */
+.table-responsive {
+    overflow-x: auto; /* ছোট স্ক্রিনে স্ক্রল হবে */
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+}
+
+#excelTable {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    min-width: 600px; /* টেবিল যেন খুব ছোট না হয়ে যায় */
+}
+
+#excelTable thead {
+    background-color: #2c3e50;
+    color: #ffffff;
+}
+
+#excelTable th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 0.95rem;
+    border-right: 1px solid #3e5871;
+}
+
+/* ইনপুট ফিল্ডগুলো যেন সেলের সাথে মিশে থাকে */
+#excelTable td {
+    border: 1px solid #dee2e6;
+    padding: 0; /* প্যাডিং ০ যাতে ইনপুট পুরো জায়গা নেয় */
+}
+
+#excelTable td input {
+    width: 100%;
+    height: 40px; /* ফিক্সড হাইট */
+    border: none;
+    padding: 0 10px;
+    font-size: 0.95rem;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+}
+
+#excelTable td input:focus {
+    background-color: #f0f8ff; /* ফোকাস করলে হালকা নীল */
+}
+
+/* ডিলিট বাটন কলাম */
+#excelTable td.action-cell {
+    text-align: center;
+    padding: 5px;
+    vertical-align: middle;
+}
+
+/* ডিলিট বাটন ডিজাইন (JS দিয়ে তৈরি হবে) */
+.delete-btn {
+    background: #ffeded;
+    color: #dc3545;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-btn:hover {
+    background: #dc3545;
+    color: white;
+}
+
+/* --- Footer Actions --- */
+.footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border-top: 2px solid #e9ecef;
+}
+
+.total-display {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #2c3e50;
+    background: #fff;
+    padding: 8px 20px;
+    border-radius: 30px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.total-display span {
+    color: #27ae60;
+}
+
+/* --- Buttons Styling --- */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* নীল বাটন (Add Row) */
+.btn-blue {
+    background-color: #3498db;
+    color: white;
+}
+.btn-blue:hover {
+    background-color: #2980b9;
+}
+
+/* সবুজ বাটন (Save) */
+.btn-green {
+    background-color: #27ae60;
+    color: white;
+}
+.btn-green:hover {
+    background-color: #219150;
+}
+
+/* আউটলাইন বাটন (View List) */
+.btn-outline {
+    background-color: transparent;
+    border: 1px solid #3498db;
+    color: #3498db;
+}
+.btn-outline:hover {
+    background-color: #3498db;
+    color: white;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .bill-meta-box {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .footer-actions {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .total-display {
+        order: -1; /* টোটালটা মোবাইলে মাঝখানে বা উপরে থাকবে */
+        width: 100%;
+        text-align: center;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .page-header .btn-outline {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+}
