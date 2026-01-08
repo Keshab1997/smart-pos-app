@@ -1,88 +1,253 @@
-/* Filter container styles */
-.filter-container {
-    margin-bottom: 2rem;
+/* expense.css */
+
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3f37c9;
+    --bg-color: #f8f9fa;
+    --white: #ffffff;
+    --text-dark: #2b2d42;
+    --border-color: #ddd;
 }
 
-.filter-container h3 {
+body {
+    background-color: var(--bg-color);
+}
+
+/* --- Entry Form Section --- */
+.add-expense-section {
+    margin-bottom: 20px;
+    padding: 25px;
+}
+
+.add-expense-section h3 {
     margin-top: 0;
-    margin-bottom: 1rem;
+    margin-bottom: 20px;
+    color: var(--text-dark);
     border-bottom: 1px solid #eee;
-    padding-bottom: 0.5rem;
+    padding-bottom: 10px;
 }
 
-#filter-form {
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.form-group {
     display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.input-with-btn {
+    display: flex;
+    gap: 5px;
+}
+
+.input-with-btn select, 
+.input-with-btn input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.btn-icon {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    width: 40px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-icon:hover { background: var(--secondary-color); }
+
+.form-actions {
+    margin-top: 20px;
+    text-align: right;
+}
+
+/* --- Filter & Actions --- */
+.filter-section {
+    padding: 15px 25px;
+    margin-bottom: 20px;
+}
+
+.filter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 1.5rem;
-    align-items: flex-end;
+    gap: 15px;
 }
 
-#filter-form .form-group {
-    margin-bottom: 0;
+.date-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-#filter-form input,
-#filter-form select {
-    width: 180px; /* Adjust width as needed */
+.btn-print {
+    background-color: #2a9d8f;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Chart container styling */
-.chart-container {
-    position: relative;
-    height: 350px; /* Give a fixed height to charts */
-    padding: 1rem;
+.mini-kpi {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #ddd;
+    text-align: right;
+}
+.kpi-box {
+    display: inline-block;
+    font-size: 1.1rem;
+}
+.kpi-box strong {
+    color: #e63946;
+    font-size: 1.4rem;
+    margin-left: 10px;
 }
 
-/* Expense table styles */
-.expense-table-container {
-    width: 100%;
-    overflow-x: auto; /* For responsiveness on small screens */
-    margin-top: 1rem;
+/* --- The Expense Sheet (Table) --- */
+.sheet-container {
+    padding: 30px;
+    background: white;
 }
 
-#expense-table {
+.sheet-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+.sheet-header h2 { margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+.sheet-header p { color: #666; font-style: italic; }
+
+.expense-sheet-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
+    font-family: 'Roboto Mono', monospace; /* Accounting Font */
+    font-size: 0.95rem;
 }
 
-#expense-table th,
-#expense-table td {
+.expense-sheet-table th, 
+.expense-sheet-table td {
     padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #e0e0e0;
+    border: 1px solid #ddd;
 }
 
-#expense-table thead tr {
-    background-color: #f7f7f9;
-    color: #333;
-    font-weight: 600;
+.expense-sheet-table th {
+    background-color: #f1f3f5;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.85rem;
 }
 
-#expense-table tbody tr:hover {
-    background-color: #f1f1f1;
+.expense-sheet-table .text-right { text-align: right; }
+
+/* Date Group Header Row */
+.date-header-row td {
+    background-color: #e9ecef;
+    font-weight: bold;
+    color: var(--text-dark);
+    padding: 8px 15px;
 }
 
-/* Responsive adjustments */
+/* Delete Button */
+.btn-delete {
+    background: #ffebee;
+    color: #d32f2f;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+.btn-delete:hover { background: #ffcdd2; }
+
+/* Sheet Footer (Signature) */
+.sheet-footer {
+    margin-top: 60px;
+    display: none; /* Hidden on screen usually */
+    justify-content: flex-end;
+}
+.signature-area {
+    text-align: center;
+    width: 200px;
+}
+.signature-area .line {
+    border-top: 1px solid #000;
+    margin-bottom: 5px;
+}
+
+/* ========================================= */
+/* --- PRINT STYLES (PDF Generation) --- */
+/* ========================================= */
+@media print {
+    @page { size: A4; margin: 1cm; }
+
+    /* Hide everything except the sheet */
+    .main-header, .no-print, .btn-print, #mobile-menu-btn {
+        display: none !important;
+    }
+
+    body {
+        background-color: white;
+        font-size: 12pt;
+        color: black;
+    }
+
+    .container { width: 100%; max-width: 100%; margin: 0; padding: 0; }
+
+    .sheet-container {
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sheet-header {
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+
+    .expense-sheet-table th {
+        background-color: #ddd !important;
+        color: black !important;
+        border: 1px solid #000;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    .expense-sheet-table td {
+        border: 1px solid #000;
+    }
+
+    .date-header-row td {
+        background-color: #eee !important;
+        border: 1px solid #000;
+        font-weight: bold;
+        -webkit-print-color-adjust: exact;
+    }
+
+    /* Show Signature Line */
+    .sheet-footer { display: flex; }
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-    #filter-form {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-    }
-
-    #filter-form input,
-    #filter-form select {
-        width: 100%;
-    }
-
-    .kpi-cards {
-        grid-template-columns: 1fr 1fr; /* Two columns on tablets */
-    }
-}
-
-@media (max-width: 480px) {
-    .kpi-cards {
-        grid-template-columns: 1fr; /* Single column on mobile */
-    }
+    .form-grid { grid-template-columns: 1fr; }
+    .filter-row { flex-direction: column; align-items: stretch; }
+    .date-filters { flex-direction: column; }
 }

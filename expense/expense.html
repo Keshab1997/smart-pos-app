@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF--8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Analysis - Smart POS</title>
+    <title>Daily Expense Sheet - Smart POS</title>
 
     <!-- Google Fonts & Chart.js -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- CSS -->
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/navbar.css">
-    <link rel="stylesheet" href="../css/dashboard.css">
     <link rel="stylesheet" href="expense.css">
 </head>
 <body>
@@ -31,102 +30,137 @@
                 <li><a href="../add-product/add-product.html">Add Product</a></li>
                 <li><a href="../sales-report/report.html">Sales Report</a></li>
                 <li><a href="../sales-report/profit-loss.html">Profit/Loss</a></li>
-                <li><a href="../shop-details/shop-details.html">Shop Details</a></li> 
                 <li><a href="#" id="logout-btn">Logout</a></li>
             </ul>
             <button id="mobile-menu-btn" aria-label="Open Menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
         </nav>
     </header>
 
     <main class="container">
-        <h1>Expense Analysis</h1>
+        <div class="page-header no-print">
+            <h1>Daily Expense Manager</h1>
+        </div>
 
-        <!-- Filter Section -->
-        <section class="card filter-container">
-            <h3>Filter Expenses</h3>
-            <form id="filter-form">
-                <div class="form-group">
-                    <label for="date-from">From</label>
-                    <input type="date" id="date-from">
+        <!-- ========================================== -->
+        <!-- 1. ADD NEW EXPENSE FORM (Entry Section) -->
+        <!-- ========================================== -->
+        <section class="card add-expense-section no-print">
+            <h3>Add New Expense</h3>
+            <form id="add-expense-form">
+                <div class="form-grid">
+                    <!-- Date -->
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="entry-date" required>
+                    </div>
+
+                    <!-- Category with + Icon -->
+                    <div class="form-group">
+                        <label>Category</label>
+                        <div class="input-with-btn">
+                            <select id="entry-category" required>
+                                <option value="" disabled selected>Select Category</option>
+                                <option value="Inventory Purchase">Inventory Purchase (Stock)</option>
+                                <option value="Shop Rent">Shop Rent</option>
+                                <option value="Electricity Bill">Electricity Bill</option>
+                                <option value="Staff Salary">Staff Salary</option>
+                                <option value="Tea/Snacks">Tea/Snacks</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <button type="button" id="btn-add-category" class="btn-icon" title="Add New Category">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Purpose/Description with + Icon -->
+                    <div class="form-group">
+                        <label>Purpose / Description</label>
+                        <div class="input-with-btn">
+                            <input type="text" id="entry-desc" placeholder="Ex: Bought 50kg Rice" required>
+                            <button type="button" id="btn-add-desc" class="btn-icon" title="Quick Purpose">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Amount -->
+                    <div class="form-group">
+                        <label>Amount (₹)</label>
+                        <input type="number" id="entry-amount" placeholder="0.00" min="0" step="0.01" required>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="date-to">To</label>
-                    <input type="date" id="date-to">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Expense</button>
                 </div>
-                <div class="form-group">
-                    <label for="filter-category">Category</label>
-                    <select id="filter-category">
-                        <option value="all">All Categories</option>
-                        <!-- Categories will be populated by JS -->
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">Apply Filters</button>
-                <button type="reset" id="reset-filters-btn" class="btn btn-secondary">Reset</button>
             </form>
         </section>
 
-        <!-- Summary KPI Cards -->
-        <section class="kpi-cards">
-            <div class="kpi-card expense">
-                <h3>Total Expenses</h3>
-                <p id="total-expense">₹0.00</p>
+        <!-- ========================================== -->
+        <!-- 2. FILTER & SUMMARY SECTION -->
+        <!-- ========================================== -->
+        <section class="filter-section card no-print">
+            <div class="filter-row">
+                <div class="date-filters">
+                    <input type="date" id="filter-date-from" class="form-control">
+                    <span>to</span>
+                    <input type="date" id="filter-date-to" class="form-control">
+                    <button id="btn-apply-filter" class="btn btn-secondary">Filter</button>
+                    <button id="btn-reset-filter" class="btn btn-outline">Reset</button>
+                </div>
+                <div class="print-action">
+                    <button id="btn-print-sheet" class="btn btn-print">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                        Print Sheet
+                    </button>
+                </div>
             </div>
-            <div class="kpi-card profit"> <!-- Using profit style -->
-                <h3>Highest Spending Category</h3>
-                <p id="top-category">N/A</p>
-            </div>
-            <div class="kpi-card sales"> <!-- Using sales style -->
-                <h3>Number of Transactions</h3>
-                <p id="expense-count">0</p>
+            
+            <!-- Mini KPI -->
+            <div class="mini-kpi">
+                <div class="kpi-box">
+                    <span>Total Expense (Selected Period)</span>
+                    <strong id="display-total-expense">₹0.00</strong>
+                </div>
             </div>
         </section>
 
-        <!-- Charts Section -->
-        <section class="dashboard-grid">
-            <div class="card chart-container">
-                <h3>Expenses by Category</h3>
-                <canvas id="categoryPieChart"></canvas>
+        <!-- ========================================== -->
+        <!-- 3. DAILY EXPENSE SHEET (The Table) -->
+        <!-- ========================================== -->
+        <section class="sheet-container card">
+            <div class="sheet-header">
+                <h2>Daily Expense Sheet</h2>
+                <p id="sheet-period-label">All Records</p>
             </div>
-            <div class="card chart-container">
-                <h3>Monthly Expense Trend</h3>
-                <canvas id="monthlyExpenseChart"></canvas>
-            </div>
-        </section>
 
-        <!-- Expense Table Section -->
-        <section class="card">
-            <h3>All Expenses</h3>
-            <div class="expense-table-container">
-                <table id="expense-table">
+            <div class="table-responsive">
+                <table class="expense-sheet-table">
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Description</th>
                             <th>Category</th>
-                            <th>Amount (₹)</th>
+                            <th>Purpose / Details</th>
+                            <th class="text-right">Amount (₹)</th>
+                            <th class="no-print">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="expense-table-body">
-                        <!-- Data will be populated by JS -->
-                        <tr><td colspan="4" style="text-align:center;">Loading expenses...</td></tr>
+                    <tbody id="expense-sheet-body">
+                        <!-- Data will be loaded here -->
                     </tbody>
                 </table>
+            </div>
+            
+            <div class="sheet-footer">
+                <div class="signature-area">
+                    <div class="line"></div>
+                    <p>Accountant / Owner Signature</p>
+                </div>
             </div>
         </section>
 
     </main>
 
-    <!-- Footer -->
-    <footer class="main-footer-credit">
-        <div class="container">
-            <p>Developed with ❤️ by <strong>Keshab Sarkar</strong></p>
-            <p>&copy; 2025 Smart POS. All Rights Reserved.</p>
-        </div>
-    </footer>
-
-    <!-- Firebase Import Map -->
+    <!-- Firebase & JS -->
     <script type="importmap">
     {
       "imports": {
@@ -136,10 +170,7 @@
       }
     }
     </script>
-
-    <!-- Custom JS -->
     <script type="module" src="../js/firebase-config.js"></script>
-    <script src="../js/navbar.js"></script>
     <script type="module" src="expense.js"></script>
 
 </body>

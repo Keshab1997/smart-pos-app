@@ -2,17 +2,17 @@
 
 :root {
     --primary-color: #4361ee;
-    --success-color: #2a9d8f; /* Green */
-    --danger-color: #e63946;  /* Red */
-    --asset-color: #3f37c9;   /* Blue */
+    --success-color: #2a9d8f;
+    --danger-color: #e63946;
+    --asset-color: #3f37c9;
     --dark-text: #2b2d42;
-    --light-bg: #f8f9fa;
     --border-color: #ddd;
+    --bg-color: #f8f9fa;
 }
 
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: #f1f3f5;
+    background-color: var(--bg-color);
     color: var(--dark-text);
 }
 
@@ -41,7 +41,7 @@ body {
 }
 
 /* ========================================= */
-/* --- NEW LEDGER VIEW STYLES --- */
+/* --- LEDGER VIEW (Split Columns) --- */
 /* ========================================= */
 .ledger-container {
     background: white;
@@ -57,10 +57,10 @@ body {
     border-bottom: 2px solid #eee;
     padding-bottom: 15px;
 }
-.statement-header h2 { margin: 0; color: var(--dark-text); text-transform: uppercase; }
+.statement-header h2 { margin: 0; color: var(--dark-text); text-transform: uppercase; letter-spacing: 1px; }
+.company-name { font-weight: 600; margin: 5px 0; }
 .statement-period { color: #666; font-style: italic; margin-top: 5px; }
 
-/* Two Columns Layout */
 .ledger-columns {
     display: flex;
     gap: 30px;
@@ -84,6 +84,7 @@ body {
     font-weight: 600;
     letter-spacing: 1px;
     border-radius: 7px 7px 0 0;
+    text-transform: uppercase;
 }
 
 .income-col .col-header { background-color: var(--success-color); }
@@ -102,6 +103,8 @@ body {
     border-bottom: 1px dashed #eee;
 }
 .ledger-item:last-child { border-bottom: none; }
+.ledger-item span:first-child { color: #555; font-weight: 500; }
+.ledger-item .amount { font-weight: 600; color: #333; }
 
 .col-total {
     padding: 15px 20px;
@@ -116,7 +119,7 @@ body {
 .income-border { border-color: var(--success-color); color: var(--success-color); }
 .expense-border { border-color: var(--danger-color); color: var(--danger-color); }
 
-/* Financial Summary (Profit/Loss & Stock) */
+/* Financial Summary */
 .financial-summary {
     display: flex;
     gap: 20px;
@@ -131,22 +134,16 @@ body {
     color: white;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
-
-.summary-box h4 { margin: 0 0 10px 0; font-weight: 500; opacity: 0.9; }
+.summary-box h4 { margin: 0 0 10px 0; font-weight: 500; opacity: 0.9; text-transform: uppercase; font-size: 0.9rem; }
 .big-amount { margin: 0; font-size: 2rem; font-weight: 700; }
 
-/* Profit State */
 .result-box.profit { background-color: var(--success-color); }
-/* Loss State */
 .result-box.loss { background-color: var(--danger-color); }
-
-.asset-box {
-    background-color: var(--asset-color);
-}
+.asset-box { background-color: var(--asset-color); }
 
 .statement-footer {
     margin-top: 50px;
-    display: none; /* Hidden on screen, visible on print */
+    display: none; 
     justify-content: flex-end;
 }
 .signature-line {
@@ -154,6 +151,52 @@ body {
     border-top: 1px solid #000;
     margin-top: 40px;
     text-align: center;
+}
+
+/* ========================================= */
+/* --- DETAILED EXPENSE TABLE STYLES --- */
+/* ========================================= */
+.detailed-expense-section {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+.detailed-expense-section h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    color: var(--dark-text);
+}
+
+.expense-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    font-family: 'Roboto Mono', monospace;
+}
+
+.expense-details-table th, 
+.expense-details-table td {
+    padding: 10px 15px;
+    border: 1px solid #eee;
+}
+
+.expense-details-table th {
+    background-color: #f1f3f5;
+    font-weight: 600;
+    text-align: left;
+    color: #444;
+}
+
+.expense-details-table .text-right { text-align: right; }
+
+/* Group Header (Date) Style */
+.group-date-row {
+    background-color: #e9ecef;
+    font-weight: bold;
+    color: #333;
 }
 
 /* --- Chart --- */
@@ -165,7 +208,7 @@ body {
 }
 #pnlChart { width: 100% !important; max-height: 300px; }
 
-/* --- Buttons --- */
+/* Buttons */
 .action-buttons { display: flex; gap: 10px; }
 .btn-print { background-color: #6c757d; color: white; }
 
@@ -179,38 +222,64 @@ body {
         display: none !important;
     }
 
-    body { background-color: white; color: black; font-size: 12pt; }
+    body { background-color: white; color: black; font-size: 11pt; }
     .pnl-dashboard { margin: 0; padding: 10px; width: 100%; max-width: 100%; }
 
+    /* Ledger Box */
     .ledger-container {
         box-shadow: none;
         border: 2px solid #000;
-        padding: 20px;
+        padding: 15px;
+        page-break-inside: avoid;
     }
-
-    .ledger-columns { gap: 10px; }
+    .ledger-columns { gap: 10px; margin-bottom: 15px; }
     .ledger-col { border: 1px solid #000; }
-    
     .col-header {
-        background-color: #ddd !important; /* B&W Print Friendly */
+        background-color: #ddd !important;
         color: black !important;
         border-bottom: 1px solid #000;
+        -webkit-print-color-adjust: exact;
     }
-    
     .col-total {
         border-top: 2px solid #000;
         background-color: #eee !important;
         color: black !important;
+        -webkit-print-color-adjust: exact;
     }
 
+    /* Summary Boxes */
     .summary-box {
         border: 2px solid #000;
         background-color: white !important;
         color: black !important;
         box-shadow: none;
+        padding: 10px;
     }
+    .big-amount { font-size: 1.5rem; }
     
-    .statement-footer { display: flex; }
+    .statement-footer { display: flex; margin-top: 30px; }
+
+    /* Detailed Table */
+    .detailed-expense-section {
+        box-shadow: none;
+        padding: 10px 0;
+        border: none;
+        page-break-before: auto;
+    }
+    .expense-details-table th {
+        background-color: #ddd !important;
+        color: black !important;
+        border: 1px solid #000;
+        -webkit-print-color-adjust: exact;
+    }
+    .expense-details-table td {
+        border: 1px solid #000;
+    }
+    .group-date-row {
+        background-color: #eee !important;
+        border: 1px solid #000;
+        -webkit-print-color-adjust: exact;
+    }
 }
 
 @media (max-width: 768px) {

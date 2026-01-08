@@ -63,15 +63,15 @@
         </section>
 
         <!-- ============================================== -->
-        <!-- NEW: Two Column Layout (App & Print View) -->
+        <!-- LEDGER VIEW (Income vs Expense Breakdown) -->
         <!-- ============================================== -->
         <section class="ledger-container card">
             <div class="statement-header">
-                <h2>Profit & Loss Account</h2>
+                <h2>Statement of Profit & Loss</h2>
+                <p class="company-name">Smart POS Store</p>
                 <p class="statement-period">Period: <span id="display-period-range">-- to --</span></p>
             </div>
 
-            <!-- Main Comparison Columns -->
             <div class="ledger-columns">
                 
                 <!-- Income Column -->
@@ -82,7 +82,6 @@
                             <span>Total Sales Revenue</span>
                             <span class="amount" id="disp-revenue">₹0.00</span>
                         </div>
-                        <!-- Future income sources can go here -->
                     </div>
                     <div class="col-total income-border">
                         <span>Total Income</span>
@@ -90,16 +89,11 @@
                     </div>
                 </div>
 
-                <!-- Expense Column -->
+                <!-- Expense Column (Category Wise Breakdown) -->
                 <div class="ledger-col expense-col">
                     <h3 class="col-header">EXPENSES</h3>
                     <div class="col-content" id="expense-list-container">
                         <!-- Items will be injected by JS -->
-                        <div class="ledger-item">
-                            <span>Cost of Goods Sold (Product Cost)</span>
-                            <span class="amount" id="disp-cogs">₹0.00</span>
-                        </div>
-                        <!-- Other expenses will appear here -->
                     </div>
                     <div class="col-total expense-border">
                         <span>Total Expenses</span>
@@ -108,26 +102,45 @@
                 </div>
             </div>
 
-            <!-- Result & Asset Section -->
+            <!-- Financial Result -->
             <div class="financial-summary">
-                
-                <!-- Profit / Loss Box -->
                 <div class="summary-box result-box" id="pnl-result-box">
                     <h4 id="pnl-label">NET PROFIT</h4>
                     <p class="big-amount" id="pnl-amount">₹0.00</p>
                 </div>
-
-                <!-- Stock Asset Box -->
                 <div class="summary-box asset-box">
-                    <h4>CURRENT STOCK VALUE (Asset)</h4>
+                    <h4>Current Stock Value (Asset)</h4>
                     <p class="big-amount" id="stock-asset-amount">₹0.00</p>
                 </div>
-
             </div>
 
             <div class="statement-footer">
                 <p>Authorized Signature</p>
                 <div class="signature-line"></div>
+            </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- NEW: Detailed Expense Sheet (Bottom) -->
+        <!-- ============================================== -->
+        <section class="detailed-expense-section card">
+            <h3>Detailed Expense Breakdown</h3>
+            <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Detailed list of all expenses for the selected period.</p>
+            
+            <div class="table-responsive">
+                <table class="expense-details-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Description / Purpose</th>
+                            <th class="text-right">Amount (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailed-expense-body">
+                        <!-- JS will populate rows here -->
+                    </tbody>
+                </table>
             </div>
         </section>
         

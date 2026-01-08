@@ -1,9 +1,9 @@
-// sales-report/profit-loss.js (v6.0 - Split Column Layout)
+// sales-report/profit-loss.js (v7.0 - Detailed Breakdown View)
 
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
-    collection, getDocs, query, where, Timestamp
+    collection, getDocs, query, where, Timestamp, orderBy
 } from 'firebase/firestore';
 
 // ==========================================================
@@ -12,7 +12,6 @@ import {
 // Ledger Elements
 const dispRevenue = document.getElementById('disp-revenue');
 const dispTotalIncome = document.getElementById('disp-total-income');
-const dispCogs = document.getElementById('disp-cogs');
 const expenseListContainer = document.getElementById('expense-list-container');
 const dispTotalExpense = document.getElementById('disp-total-expense');
 
@@ -22,11 +21,14 @@ const pnlLabel = document.getElementById('pnl-label');
 const pnlAmount = document.getElementById('pnl-amount');
 const stockAssetAmount = document.getElementById('stock-asset-amount');
 
+// Detailed Table
+const detailedExpenseBody = document.getElementById('detailed-expense-body');
+
 const displayPeriodRange = document.getElementById('display-period-range');
 const pnlChartCtx = document.getElementById('pnlChart').getContext('2d');
 let pnlChartInstance;
 
-// Filters
+// Filters & Controls
 const btnToday = document.getElementById('btn-today');
 const btnThisWeek = document.getElementById('btn-this-week');
 const btnThisMonth = document.getElementById('btn-this-month');
@@ -38,7 +40,7 @@ const endDateInput = document.getElementById('end-date');
 
 const logoutBtn = document.getElementById('logout-btn');
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-const mainNavLinks = document.querySelector('header nav .nav-links');
+const mainNavLinks = document.querySelector('header nav ul');
 
 let currentUserId = null;
 
@@ -128,7 +130,7 @@ async function generatePnlReport(startDate, endDate) {
         let totalRevenue = 0;
         let totalCogs = 0;
 
-        // Process Sales
+        // Process Sales (Revenue & COGS)
         salesSnap.forEach(doc => {
             const sale = doc.data();
             if (sale.status === 'canceled') return;
@@ -142,26 +144,38 @@ async function generatePnlReport(startDate, endDate) {
             }
         });
 
-        // Process Expenses
+        // Process Expenses (Categorize & List)
         let totalOtherExpenses = 0;
-        const expenseMap = {};
+        const expenseCategoryMap = {};
+        const detailedExpenses = [];
         
         expensesSnap.forEach(doc => {
             const exp = doc.data();
-            if (exp.category?.toLowerCase() !== 'inventory_purchase') {
+            // Filter out 'Inventory Purchase' to avoid double counting with COGS
+            if (exp.category?.toLowerCase() !== 'inventory purchase') {
                 const amount = exp.amount || 0;
                 totalOtherExpenses += amount;
                 
-                const name = exp.description || exp.category || 'Other';
-                expenseMap[name] = (expenseMap[name] || 0) + amount;
+                // For Category Summary
+                const catName = exp.category || 'Other';
+                expenseCategoryMap[catName] = (expenseCategoryMap[catName] || 0) + amount;
+
+                // For Detailed List
+                detailedExpenses.push({
+                    date: exp.date.toDate(),
+                    category: exp.category,
+                    desc: exp.description,
+                    amount: amount
+                });
             }
         });
 
         const totalExpenses = totalCogs + totalOtherExpenses;
         const netProfit = totalRevenue - totalExpenses;
 
-        // Render UI
-        updateLedgerView(totalRevenue, totalCogs, expenseMap, totalExpenses, netProfit, stockValue);
+        // Update All Views
+        updateLedgerView(totalRevenue, totalCogs, expenseCategoryMap, totalExpenses, netProfit, stockValue);
+        updateDetailedExpenseTable(detailedExpenses);
         updateChart(totalRevenue, totalExpenses, netProfit);
 
     } catch (error) {
@@ -172,26 +186,27 @@ async function generatePnlReport(startDate, endDate) {
 }
 
 // ==========================================================
-// --- UI Update: Split Column View ---
+// --- View 1: Split Column Ledger (Category Breakdown) ---
 // ==========================================================
 function updateLedgerView(revenue, cogs, expenseMap, totalExpenses, netProfit, stockValue) {
     const fmt = n => `₹${n.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
 
     // 1. Income Column
     dispRevenue.textContent = fmt(revenue);
-    dispTotalIncome.textContent = fmt(revenue); // Assuming only sales for now
+    dispTotalIncome.textContent = fmt(revenue);
 
     // 2. Expense Column
-    // Reset list, keeping only COGS at top
     expenseListContainer.innerHTML = `
         <div class="ledger-item">
-            <span>Cost of Goods Sold (Purchase Price)</span>
+            <span>Cost of Goods Sold (Product Cost)</span>
             <span class="amount">${fmt(cogs)}</span>
         </div>
     `;
 
-    // Add other expenses
-    for (const [name, amount] of Object.entries(expenseMap)) {
+    // Sort categories by amount desc
+    const sortedCategories = Object.entries(expenseMap).sort((a, b) => b[1] - a[1]);
+
+    for (const [name, amount] of sortedCategories) {
         expenseListContainer.innerHTML += `
             <div class="ledger-item">
                 <span>${name}</span>
@@ -213,8 +228,54 @@ function updateLedgerView(revenue, cogs, expenseMap, totalExpenses, netProfit, s
         pnlResultBox.className = "summary-box result-box loss";
     }
 
-    // 4. Stock Asset Box
+    // 4. Asset Box
     stockAssetAmount.textContent = fmt(stockValue);
+}
+
+// ==========================================================
+// --- View 2: Detailed Expense Table (Bottom Sheet) ---
+// ==========================================================
+function updateDetailedExpenseTable(expenses) {
+    detailedExpenseBody.innerHTML = '';
+
+    if (expenses.length === 0) {
+        detailedExpenseBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:15px; color:#777;">No expenses found in this period.</td></tr>';
+        return;
+    }
+
+    // Sort by date desc
+    expenses.sort((a, b) => b.date - a.date);
+
+    // Group by Date for better readability
+    const grouped = expenses.reduce((acc, exp) => {
+        const dateStr = exp.date.toLocaleDateString('en-IN', { 
+            weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+        });
+        if (!acc[dateStr]) acc[dateStr] = [];
+        acc[dateStr].push(exp);
+        return acc;
+    }, {});
+
+    // Render grouped expenses
+    for (const [dateStr, dayExpenses] of Object.entries(grouped)) {
+        // Date Header Row
+        const headerRow = document.createElement('tr');
+        headerRow.classList.add('group-date-row');
+        headerRow.innerHTML = `<td colspan="4">${dateStr}</td>`;
+        detailedExpenseBody.appendChild(headerRow);
+
+        // Expense Rows for that day
+        dayExpenses.forEach(exp => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${exp.date.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</td>
+                <td>${exp.category || 'Other'}</td>
+                <td>${exp.desc || 'N/A'}</td>
+                <td class="text-right">₹${exp.amount.toFixed(2)}</td>
+            `;
+            detailedExpenseBody.appendChild(tr);
+        });
+    }
 }
 
 // ==========================================================
