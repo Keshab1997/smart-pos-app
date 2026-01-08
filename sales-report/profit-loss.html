@@ -3,48 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profit & Loss Analysis - Smart POS</title>
+    <title>Profit & Loss - Smart POS</title>
     
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Chart.js CDN -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- CSS ফাইল -->
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="profit-loss.css">
-
-    <!-- নতুন কার্ডের জন্য স্টাইল -->
-    <style>
-        .kpi-card.stock-value {
-            background-color: #e6f7ff;
-            border-left: 5px solid #1890ff;
-        }
-        .kpi-card.loss, .kpi-card.net-loss {
-            background-color: #fff1f0;
-            border-left: 5px solid #f5222d;
-        }
-        .kpi-card.profit, .kpi-card.gross-profit { /* Gross Profit এও profit স্টাইল যুক্ত করা হলো */
-            background-color: #f6ffed;
-            border-left: 5px solid #52c41a;
-        }
-        /* ===== START: নতুন যোগ করা স্টাইল ===== */
-        .kpi-card.canceled {
-            background-color: #fffbe6; /* হালকা হলুদ */
-            border-left: 5px solid #faad14; /* অ্যাম্বার রঙ */
-        }
-        /* ===== END: নতুন যোগ করা স্টাইল ===== */
-    </style>
 </head>
 <body>
 
-    <!-- ======================================================= -->
-    <!-- START: Navbar -->
-    <!-- ======================================================= -->
     <header class="main-header">
         <nav class="container">
             <a href="../dashboard.html" class="logo">Smart POS</a>
@@ -62,15 +32,14 @@
             </button>
         </nav>
     </header>
-    <!-- ======================================================= -->
-    <!-- END: Navbar -->
-    <!-- ======================================================= -->
 
-    <main class="container pnl-dashboard">
-        <h1>Profit & Loss Analysis</h1>
+    <main class="container pnl-dashboard" id="main-content">
+        <div class="page-header no-print">
+            <h1>Profit & Loss Dashboard</h1>
+        </div>
 
-        <!-- ফিল্টার সেকশন -->
-        <section class="filter-section card">
+        <!-- Filter Section -->
+        <section class="filter-section card no-print">
             <div class="time-period-buttons">
                 <button class="btn btn-secondary" id="btn-today">Today</button>
                 <button class="btn btn-secondary active" id="btn-this-week">This Week</button>
@@ -86,65 +55,90 @@
                     <label for="end-date">To Date:</label>
                     <input type="date" id="end-date" class="form-control">
                 </div>
-                <button id="generate-report-btn" class="btn btn-primary">Generate Report</button>            
-            </div>
-        </section>
-
-        <!-- KPI কার্ডস -->
-        <section class="kpi-cards">
-            <div class="kpi-card revenue">
-                <h3>Total Revenue</h3>
-                <p id="total-revenue">₹0.00</p>
-            </div>
-            <div class="kpi-card cogs">
-                <h3>Cost of Goods Sold (COGS)</h3>
-                <p id="total-cogs">₹0.00</p>
-            </div>
-            <!-- ===== START: নতুন যোগ করা কার্ড ===== -->
-            <div class="kpi-card canceled">
-                <h3>Canceled Sales</h3>
-                <p id="total-canceled-sales">₹0.00</p>
-            </div>
-            <!-- ===== END: নতুন যোগ করা কার্ড ===== -->
-            <div class="kpi-card gross-profit">
-                <h3>Gross Profit</h3>
-                <p id="gross-profit">₹0.00</p>
-            </div>
-            <div class="kpi-card stock-value">
-                <h3>Closing Stock Value</h3>
-                <p id="closing-stock-value">₹0.00</p>
-            </div>
-            <div class="kpi-card expenses">
-                <h3>Total Other Expenses</h3>
-                <p id="total-other-expenses">₹0.00</p>
-            </div>
-            <div class="kpi-card" id="net-profit-loss-card">
-                <h3>Net Profit / Loss</h3>
-                <p id="net-profit-loss">₹0.00</p>
-            </div>
-        </section>
-        
-        <!-- চার্ট -->
-        <section class="card">
-            <h3>Summary Chart</h3>
-            <canvas id="pnlChart"></canvas>
-        </section>
-        
-        <!-- খরচের বিস্তারিত তালিকা -->
-        <section class="details-grid">
-            <div class="card">
-                <h3>Other Expenses Details</h3>
-                <div class="table-responsive">
-                    <table class="details-table">
-                        <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
-                        <tbody id="other-expenses-list"></tbody>
-                    </table>
+                <div class="action-buttons">
+                    <button id="generate-report-btn" class="btn btn-primary">Generate</button>
+                    <button id="print-report-btn" class="btn btn-print">Print Report</button>
                 </div>
             </div>
         </section>
+
+        <!-- ============================================== -->
+        <!-- NEW: Two Column Layout (App & Print View) -->
+        <!-- ============================================== -->
+        <section class="ledger-container card">
+            <div class="statement-header">
+                <h2>Profit & Loss Account</h2>
+                <p class="statement-period">Period: <span id="display-period-range">-- to --</span></p>
+            </div>
+
+            <!-- Main Comparison Columns -->
+            <div class="ledger-columns">
+                
+                <!-- Income Column -->
+                <div class="ledger-col income-col">
+                    <h3 class="col-header">INCOME (Sales)</h3>
+                    <div class="col-content">
+                        <div class="ledger-item">
+                            <span>Total Sales Revenue</span>
+                            <span class="amount" id="disp-revenue">₹0.00</span>
+                        </div>
+                        <!-- Future income sources can go here -->
+                    </div>
+                    <div class="col-total income-border">
+                        <span>Total Income</span>
+                        <span id="disp-total-income">₹0.00</span>
+                    </div>
+                </div>
+
+                <!-- Expense Column -->
+                <div class="ledger-col expense-col">
+                    <h3 class="col-header">EXPENSES</h3>
+                    <div class="col-content" id="expense-list-container">
+                        <!-- Items will be injected by JS -->
+                        <div class="ledger-item">
+                            <span>Cost of Goods Sold (Product Cost)</span>
+                            <span class="amount" id="disp-cogs">₹0.00</span>
+                        </div>
+                        <!-- Other expenses will appear here -->
+                    </div>
+                    <div class="col-total expense-border">
+                        <span>Total Expenses</span>
+                        <span id="disp-total-expense">₹0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result & Asset Section -->
+            <div class="financial-summary">
+                
+                <!-- Profit / Loss Box -->
+                <div class="summary-box result-box" id="pnl-result-box">
+                    <h4 id="pnl-label">NET PROFIT</h4>
+                    <p class="big-amount" id="pnl-amount">₹0.00</p>
+                </div>
+
+                <!-- Stock Asset Box -->
+                <div class="summary-box asset-box">
+                    <h4>CURRENT STOCK VALUE (Asset)</h4>
+                    <p class="big-amount" id="stock-asset-amount">₹0.00</p>
+                </div>
+
+            </div>
+
+            <div class="statement-footer">
+                <p>Authorized Signature</p>
+                <div class="signature-line"></div>
+            </div>
+        </section>
+        
+        <!-- Chart (Only for Dashboard) -->
+        <section class="card-chart no-print">
+            <h3>Overview Chart</h3>
+            <canvas id="pnlChart"></canvas>
+        </section>
+        
     </main>
 
-    <!-- Firebase এবং কাস্টম JS -->
     <script type="importmap">
     {
       "imports": {
