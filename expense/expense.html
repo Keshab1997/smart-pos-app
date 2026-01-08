@@ -18,25 +18,8 @@
 </head>
 <body>
 
-    <!-- Navbar -->
-    <header class="main-header">
-        <nav class="container">
-            <a href="../dashboard.html" class="logo">Smart POS</a>
-            <ul id="main-nav-links">
-                <li><a href="../dashboard.html">Dashboard</a></li>
-                <li><a href="../billing/billing.html">Billing</a></li>
-                <li><a href="../inventory/inventory.html">Inventory</a></li>
-                <li><a href="expense.html" class="active">Expenses</a></li>
-                <li><a href="../add-product/add-product.html">Add Product</a></li>
-                <li><a href="../sales-report/report.html">Sales Report</a></li>
-                <li><a href="../sales-report/profit-loss.html">Profit/Loss</a></li>
-                <li><a href="#" id="logout-btn">Logout</a></li>
-            </ul>
-            <button id="mobile-menu-btn" aria-label="Open Menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-            </button>
-        </nav>
-    </header>
+    <!-- Navbar Placeholder -->
+    <div id="navbar-placeholder"></div>
 
     <main class="container">
         <div class="page-header no-print">
@@ -171,6 +154,22 @@
     }
     </script>
     <script type="module" src="../js/firebase-config.js"></script>
+    <script src="../js/navbar.js"></script>
+    
+    <!-- লগআউট লজিক হ্যান্ডেল করা -->
+    <script type="module">
+        import { auth } from '../js/firebase-config.js';
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        document.addEventListener('trigger-logout', () => {
+            signOut(auth).then(() => {
+                window.location.href = '../index.html';
+            }).catch((error) => {
+                console.error("Logout error", error);
+            });
+        });
+    </script>
+    
     <script type="module" src="expense.js"></script>
 
 </body>

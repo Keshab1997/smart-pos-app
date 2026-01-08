@@ -33,30 +33,8 @@
 </head>
 <body>
 
-    <!-- ================= NAVBAR ================= -->
-    <header class="main-header">
-        <nav class="nav-container">
-            <a href="../dashboard.html" class="logo">Smart POS</a>
-            
-            <ul id="main-nav-links">
-                <li><a href="../dashboard.html">Dashboard</a></li>
-                <li><a href="../billing/billing.html">Billing</a></li>
-                <li><a href="../advance-booking/index.html">Bookings</a></li>
-                <li><a href="../inventory/inventory.html">Inventory</a></li>
-                <li><a href="../add-product/add-product.html">Add Product</a></li>
-                <li><a href="../sales-report/report.html">Sales Report</a></li>
-                <li><a href="../expense/expense.html">Expense</a></li>
-                <li><a href="../sales-report/profit-loss.html">Profit/Loss</a></li>
-                <li><a href="../shop-details/shop-details.html">Shop Details</a></li> 
-                <li><a href="../label-printer/index.html">Barcode Print</a></li> 
-                <li><a href="#" id="logout-btn">Logout</a></li>
-            </ul>
-
-            <button id="mobile-menu-btn" aria-label="Open Menu">
-                <i class="fas fa-bars"></i>
-            </button>
-        </nav>
-    </header>
+    <!-- Navbar Placeholder -->
+    <div id="navbar-placeholder"></div>
 
     <!-- ================= MAIN CONTENT ================= -->
     <div class="main-content-area">
@@ -108,6 +86,22 @@
     </div>
 
     <!-- JavaScript Module -->
+    <script src="../js/navbar.js"></script>
+    
+    <!-- লগআউট লজিক হ্যান্ডেল করা -->
+    <script type="module">
+        import { auth } from '../js/firebase-config.js';
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        document.addEventListener('trigger-logout', () => {
+            signOut(auth).then(() => {
+                window.location.href = '../index.html';
+            }).catch((error) => {
+                console.error("Logout error", error);
+            });
+        });
+    </script>
+    
     <script type="module" src="purchase-dashboard.js"></script>
 </body>
 </html>

@@ -1,137 +1,157 @@
 /* css/navbar.css */
 
-/* ============================
-   HEADER CONTAINER
-   ============================ */
-.main-header {
-    background-color: #ffffff;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    padding: 10px 0;
+:root {
+    --primary-color: #4361ee;
+    --sidebar-width: 280px;
+    --text-color: #333;
+    --bg-overlay: rgba(0, 0, 0, 0.5);
+}
+
+/* --- Top Bar (Fixed) --- */
+.top-navbar {
+    background: #ffffff;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     position: sticky;
     top: 0;
     z-index: 1000;
-    border-bottom: 1px solid #f0f0f0;
-    width: 100%;
 }
 
-.main-header .container {
+.nav-brand {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    position: relative; /* মোবাইল মেনুর পজিশনিংয়ের জন্য জরুরি */
+    gap: 15px;
 }
 
-/* ============================
-   LOGO STYLES
-   ============================ */
-.logo {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #007bff; /* Primary Color */
-    text-decoration: none;
-    letter-spacing: -0.5px;
-}
-
-/* ============================
-   DESKTOP NAVIGATION
-   ============================ */
-.main-header nav ul {
-    display: flex;
-    gap: 10px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    align-items: center;
-}
-
-.main-header nav a {
-    text-decoration: none;
-    color: #555;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 8px 15px;
-    border-radius: 20px;
-    transition: all 0.3s ease;
-}
-
-.main-header nav a:hover {
-    background-color: #f0f7ff;
-    color: #007bff;
-}
-
-.main-header nav a.active {
-    background-color: #007bff;
-    color: white;
-    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
-}
-
-/* Logout Button Style */
-.main-header nav li:last-child a {
-    color: #dc3545;
-    border: 1px solid rgba(220, 53, 69, 0.2);
-}
-.main-header nav li:last-child a:hover {
-    background-color: #dc3545;
-    color: white;
-}
-
-/* ============================
-   MOBILE MENU BUTTON (Hamburger)
-   ============================ */
-#mobile-menu-btn {
-    display: none; /* ডেস্কটপে লুকানো থাকবে */
+.hamburger-btn {
     background: none;
     border: none;
     cursor: pointer;
+    font-size: 24px;
+    color: var(--text-color);
     padding: 5px;
+    transition: 0.2s;
+}
+.hamburger-btn:hover { color: var(--primary-color); }
+
+.logo {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-decoration: none;
 }
 
-#mobile-menu-btn svg {
-    stroke: #333; /* আইকনের কালার কালো */
-    stroke-width: 2.5;
-    width: 28px;
-    height: 28px;
+/* --- Sidebar (Hidden by default) --- */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-overlay);
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s ease;
 }
 
-/* ============================
-   RESPONSIVE (MOBILE) STYLES
-   ============================ */
-@media (max-width: 992px) { /* ট্যাবলেট এবং মোবাইলের জন্য */
-    
-    /* বাটন দৃশ্যমান করা */
-    #mobile-menu-btn {
-        display: block;
-    }
-
-    /* মেনু লুকানো এবং ডিজাইন */
-    #main-nav-links {
-        display: none; /* শুরুতে লুকানো */
-        flex-direction: column;
-        position: absolute;
-        top: 100%; /* হেডারের ঠিক নিচে */
-        right: 0;
-        width: 250px; /* মেনুর চওড়া */
-        background-color: white;
-        box-shadow: -5px 5px 15px rgba(0,0,0,0.1);
-        padding: 15px;
-        border-radius: 0 0 0 10px;
-        gap: 5px;
-    }
-
-    /* যখন জাভাস্ক্রিপ্ট দিয়ে ক্লাস অ্যাড হবে তখন মেনু দেখাবে */
-    #main-nav-links.mobile-nav-active {
-        display: flex;
-    }
-
-    /* মোবাইল লিংকের স্টাইল */
-    .main-header nav ul li {
-        width: 100%;
-        text-align: right; /* লেখা ডান দিকে থাকবে */
-    }
-
-    .main-header nav a {
-        display: block;
-        padding: 10px 15px;
-        border-radius: 5px;
-    }
+.sidebar-menu {
+    position: fixed;
+    top: 0;
+    left: -100%; /* শুরুতে বামে লুকানো থাকবে */
+    width: var(--sidebar-width);
+    height: 100%;
+    background: #ffffff;
+    z-index: 1002;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
 }
+
+/* Active State (When menu is open) */
+.sidebar-open .sidebar-overlay {
+    opacity: 1;
+    visibility: visible;
+}
+.sidebar-open .sidebar-menu {
+    left: 0;
+}
+
+/* Sidebar Header */
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8f9fa;
+}
+.sidebar-header h3 { margin: 0; color: var(--primary-color); }
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+/* Sidebar Links */
+.sidebar-links {
+    list-style: none;
+    padding: 10px 0;
+    margin: 0;
+    overflow-y: auto; /* স্ক্রল করার জন্য */
+    flex-grow: 1;
+}
+
+.sidebar-links li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 25px;
+    color: #444;
+    text-decoration: none;
+    font-weight: 500;
+    transition: 0.2s;
+    border-left: 4px solid transparent;
+}
+
+.sidebar-links li a:hover {
+    background-color: #f0f7ff;
+    color: var(--primary-color);
+}
+
+/* Active Link Styling */
+.sidebar-links li a.active {
+    background-color: #eef2ff;
+    color: var(--primary-color);
+    border-left-color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Logout Section */
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid #f0f0f0;
+}
+.logout-btn {
+    width: 100%;
+    padding: 10px;
+    background: #ffebee;
+    color: #d32f2f;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+.logout-btn:hover { background: #ffcdd2; }

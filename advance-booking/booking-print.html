@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking Slip</title>
     <!-- মেইন ফোল্ডার থেকে আপনার দেওয়া CSS টি লিঙ্ক করছি -->
+    <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../billing/print.css"> 
     <style>
         /* বুকিং স্লিপের জন্য কিছু স্পেশাল স্টাইল */
@@ -33,6 +34,9 @@
     </style>
 </head>
 <body>
+    <!-- Navbar Placeholder -->
+    <div id="navbar-placeholder"></div>
+
     <div class="receipt">
         <!-- দোকানের নাম (JS দিয়ে লোড হবে) -->
         <header id="shop-details-container" class="shop-header">
@@ -100,6 +104,7 @@
     }
     </script>
     <script type="module" src="../js/firebase-config.js"></script>
+    <script src="../js/navbar.js"></script>
     <script type="module" src="booking-print.js"></script>
 </body>
 </html>
