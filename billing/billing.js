@@ -1,10 +1,10 @@
-// billing/billing.js - With Serial Number Starting from 1000 (v4.1)
+// billing/billing.js - With Product Images (v4.2)
 
 // =================================================================
 // --- মডিউল ইম্পোর্ট ---
 // =================================================================
 import { db, auth } from '../js/firebase-config.js';
-import { onAuthStateChanged } from 'firebase/auth'; // signOut এখান থেকে সরিয়ে নেওয়া হয়েছে কারণ এটি এখন HTML ফাইলে হ্যান্ডেল হচ্ছে
+import { onAuthStateChanged } from 'firebase/auth';
 import {
     collection, doc, getDocs, getDoc, updateDoc, query, where, orderBy, writeBatch, serverTimestamp, increment, runTransaction
 } from 'firebase/firestore';
@@ -39,17 +39,14 @@ const customerNameInput = document.getElementById('customer-name');
 const customerPhoneInput = document.getElementById('customer-phone');
 const customerAddressInput = document.getElementById('customer-address');
 
-// নোট: logoutBtn এবং mobileMenuBtn এখান থেকে সরিয়ে ফেলা হয়েছে কারণ এগুলো navbar.js হ্যান্ডেল করছে।
-
 // ==========================================================
 // --- গ্লোবাল ভেরিয়েবল ---
 // ==========================================================
 let cart = [];
 let allProducts = [];
-// currentTotals এ advancePaid এবং payableTotal যোগ করা হয়েছে
 let currentTotals = { subtotal: 0, discount: 0, tax: 0, total: 0, advancePaid: 0, payableTotal: 0 };
 let currentUserId = null;
-let bookingData = null; // বুকিং ডেটার জন্য ভেরিয়েবল
+let bookingData = null;
 
 // ==========================================================
 // --- Authentication & Initialization ---
@@ -68,8 +65,6 @@ function initializeBillingPage() {
     initializeProducts();
     setupEventListeners();
     handlePaymentMethodChange();
-    
-    // বুকিং চেক করা (যদি অ্যাডভান্স বুকিং পেজ থেকে এসে থাকে)
     checkPendingBooking();
 }
 
@@ -86,22 +81,16 @@ async function checkPendingBooking() {
         
         if (docSnap.exists()) {
             const data = docSnap.data();
-            // স্ট্যাটাস যদি অলরেডি বিল্ড হয়, তাহলে ইগনোর করুন
             if (data.status === 'Billed') {
                 sessionStorage.removeItem('pending_booking_id');
                 return;
             }
 
             bookingData = { id: docSnap.id, ...data };
-            
-            // কাস্টমার ইনফো অটো-ফিল করা
             customerNameInput.value = bookingData.customerName || '';
             customerPhoneInput.value = bookingData.phone || '';
             
-            // ইউজারকে নোটিফিকেশন দেওয়া
             alert(`Booking Detected for: ${bookingData.customerName}\nAdvance Paid: ₹${bookingData.advancePaid}`);
-            
-            // টোটাল আপডেট করা যাতে মডালে অ্যাডভান্স দেখায়
             updateAllTotals();
         }
     } catch (error) {
@@ -124,6 +113,7 @@ async function initializeProducts() {
     }
 }
 
+// --- ইমেজ সহ প্রোডাক্ট ডিসপ্লে ফাংশন ---
 function displayProductsByCategory() {
     const inStockProducts = allProducts.filter(p => p.stock > 0);
     if (inStockProducts.length === 0) {
@@ -136,31 +126,45 @@ function displayProductsByCategory() {
         acc[category].push(product);
         return acc;
     }, {});
+    
     categoryProductListContainer.innerHTML = '';
+    
     Object.keys(productsByCategory).sort().forEach(category => {
         const categoryGroup = document.createElement('div');
         categoryGroup.classList.add('category-group');
         categoryGroup.innerHTML = `<h4 class="category-name">${category}</h4>`;
+        
         const productGrid = document.createElement('div');
         productGrid.classList.add('product-grid');
+        
         productsByCategory[category].forEach(product => {
             const productCard = document.createElement('div');
             productCard.classList.add('product-card');
             productCard.dataset.productId = product.id;
+
+            // ইমেজ লজিক: যদি ইমেজ থাকে দেখাবে, না থাকলে প্লেসহোল্ডার
+            const imageHtml = product.imageUrl 
+                ? `<div class="product-img-wrapper"><img src="${product.imageUrl}" alt="${product.name}" loading="lazy"></div>`
+                : `<div class="product-img-wrapper no-img"><span>No Img</span></div>`;
+
             productCard.innerHTML = `
-                <span class="product-card-name">${product.name}</span>
-                <span class="product-card-price">₹${(product.sellingPrice || 0).toFixed(2)}</span>
-                <div class="product-card-stock ${product.stock <= 10 ? 'low-stock' : ''}">Stock: ${product.stock}</div>
+                ${imageHtml}
+                <div class="product-info-content">
+                    <span class="product-card-name">${product.name}</span>
+                    <span class="product-card-price">₹${(product.sellingPrice || 0).toFixed(2)}</span>
+                    <div class="product-card-stock ${product.stock <= 10 ? 'low-stock' : ''}">Stock: ${product.stock}</div>
+                </div>
             `;
             productGrid.appendChild(productCard);
         });
+        
         categoryGroup.appendChild(productGrid);
         categoryProductListContainer.appendChild(categoryGroup);
     });
 }
 
 // =========================================================================================
-// === প্রোডাক্ট সার্চ এবং বারকোড হ্যান্ডলিং ===
+// === প্রোডাক্ট সার্চ এবং বারকোড হ্যান্ডলিং (ইমেজ সহ) ===
 // =========================================================================================
 function handleSearch(e) {
     const searchText = e.target.value.trim().toLowerCase();
@@ -178,7 +182,19 @@ function handleSearch(e) {
         matchedProducts.forEach(product => {
             const div = document.createElement('div');
             div.classList.add('search-result-item');
-            div.innerHTML = `<span>${product.name}</span> <span>₹${(product.sellingPrice || 0).toFixed(2)}</span>`;
+            
+            // সার্চ রেজাল্টে ছোট থাম্বনেইল
+            const thumbHtml = product.imageUrl 
+                ? `<img src="${product.imageUrl}" class="search-thumb" alt="img">` 
+                : `<span class="search-thumb-placeholder"></span>`;
+
+            div.innerHTML = `
+                <div class="search-item-left">
+                    ${thumbHtml}
+                    <span>${product.name}</span>
+                </div>
+                <span>₹${(product.sellingPrice || 0).toFixed(2)}</span>
+            `;
             div.addEventListener('click', () => addProductToCart(product));
             searchResultsContainer.appendChild(div);
         });
@@ -236,8 +252,12 @@ function updateCartDisplay() {
         cart.forEach(item => {
             const cartItemEl = document.createElement('div');
             cartItemEl.className = 'cart-item';
+            
             cartItemEl.innerHTML = `
-                <div class="item-info"><span class="item-name">${item.name}</span><span class="item-price">₹${(item.sellingPrice || 0).toFixed(2)}</span></div>
+                <div class="item-info">
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-price">₹${(item.sellingPrice || 0).toFixed(2)}</span>
+                </div>
                 <div class="item-controls">
                     <button class="quantity-btn decrease-btn" data-id="${item.id}">-</button>
                     <input type="number" class="quantity-input" value="${item.quantity}" readonly>
@@ -310,9 +330,8 @@ function updateAllTotals() {
     const tax = gstToggle.checked ? discountedSubtotal * 0.05 : 0;
     const total = discountedSubtotal + tax;
 
-    // === ADVANCE ADJUSTMENT LOGIC ===
     let advancePaid = 0;
-    const advanceRow = document.getElementById('advance-row'); // HTML এ এই ID টি থাকতে হবে
+    const advanceRow = document.getElementById('advance-row');
     const modalAdvanceEl = document.getElementById('modal-advance');
 
     if (bookingData && bookingData.advancePaid > 0) {
@@ -325,18 +344,13 @@ function updateAllTotals() {
         if (advanceRow) advanceRow.style.display = 'none';
     }
 
-    // Payable Total (cannot be negative)
     const payableTotal = Math.max(0, total - advancePaid);
-
     currentTotals = { subtotal, discount: discountAmount, tax, total, advancePaid, payableTotal };
 
-    // UI আপডেট
-    footerTotalAmountEl.textContent = `₹${total.toFixed(2)}`; // এখানে গ্র্যান্ড টোটাল (বিল এমাউন্ট)
+    footerTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
     modalSubtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
     modalDiscountEl.textContent = `- ₹${discountAmount.toFixed(2)}`;
     modalTaxEl.textContent = `₹${tax.toFixed(2)}`;
-    
-    // মডালে আমরা কাস্টমারকে কত দিতে হবে সেটা দেখাবো
     modalTotalAmountEl.textContent = `₹${payableTotal.toFixed(2)}`;
 
     updatePaymentDetails();
@@ -344,7 +358,6 @@ function updateAllTotals() {
 
 function updatePaymentDetails() {
     const method = paymentMethodSelect.value;
-    // এখানে আমরা payableTotal ব্যবহার করবো, কারণ কাস্টমার এটাই দেবে
     const amountToPay = currentTotals.payableTotal;
 
     if (method === 'cash') {
@@ -377,10 +390,9 @@ function validateFinalBillButton() {
     }
     generateBillBtn.disabled = !isValid;
 }
-// --- END: টোটাল, ডিসকাউন্ট, এবং পেমেন্ট ক্যালকুলেশন ---
 
 // ==========================================================
-// --- বিল নম্বর জেনারেশন (MODIFIED FOR SERIAL 1000+) ---
+// --- বিল নম্বর জেনারেশন ---
 // ==========================================================
 async function getNextBillNumber() {
     if (!currentUserId) throw new Error("User not authenticated.");
@@ -389,32 +401,18 @@ async function getNextBillNumber() {
     try {
         return await runTransaction(db, async transaction => {
             const counterDoc = await transaction.get(counterRef);
-            
             let lastBillNumber = 0;
             if (counterDoc.exists()) {
                 const data = counterDoc.data();
                 lastBillNumber = data.lastBillNumber || 0;
             }
-
-            // --- লজিক পরিবর্তন ---
-            // যদি বর্তমান নম্বর ৯৯৯-এর কম হয়, আমরা সেটাকে ৯৯৯ ধরে নেব।
-            // এর ফলে পরবর্তী নম্বরটি হবে (৯৯৯ + ১) = ১০০০।
-            if (lastBillNumber < 999) {
-                lastBillNumber = 999;
-            }
-
+            if (lastBillNumber < 999) lastBillNumber = 999;
             const nextBillNumber = lastBillNumber + 1;
-            
-            // ডাটাবেসে নতুন নম্বর আপডেট করা
             transaction.set(counterRef, { lastBillNumber: nextBillNumber }, { merge: true });
-            
-            // এখন আর padStart(5, '0') ব্যবহার করছি না, সরাসরি নম্বর স্ট্রিং হিসেবে পাঠাচ্ছি।
-            // উদাহরণ: 1000, 1001, 1002
             return String(nextBillNumber);
         });
     } catch (error) {
         console.error("Error getting next bill number:", error);
-        // ব্যাকআপ হিসেবে টাইমস্ট্যাম্প ব্যবহার (যদি নেটওয়ার্ক এরর হয়)
         return `${Date.now().toString()}`;
     }
 }
@@ -433,21 +431,19 @@ async function generateFinalBill() {
                 price: item.sellingPrice || 0, category: item.category || 'N/A',
                 purchasePrice: item.purchasePrice || item.costPrice || 0
             })),
-            // নতুন ডেটা স্ট্রাকচার
             subtotal: currentTotals.subtotal,
             discount: currentTotals.discount,
             tax: currentTotals.tax,
-            total: currentTotals.total, // বিল এমাউন্ট
-            advanceAdjusted: currentTotals.advancePaid, // অ্যাডভান্স
-            finalPaidAmount: currentTotals.payableTotal, // কাস্টমার যা দিল
-            
+            total: currentTotals.total,
+            advanceAdjusted: currentTotals.advancePaid,
+            finalPaidAmount: currentTotals.payableTotal,
             paymentMethod: paymentMethodSelect.value,
             gstApplied: gstToggle.checked,
             customerDetails: { name: customerNameInput.value.trim() || 'Walk-in Customer', phone: customerPhoneInput.value.trim(), address: customerAddressInput.value.trim() },
             createdAt: serverTimestamp(),
             discountDetails: { type: discountTypeSelect.value, value: parseFloat(discountValueInput.value) || 0 },
             gstRate: 5,
-            bookingId: bookingData ? bookingData.id : null // বুকিং আইডি লিঙ্ক করা
+            bookingId: bookingData ? bookingData.id : null
         };
 
         const amountToPay = currentTotals.payableTotal;
@@ -465,7 +461,6 @@ async function generateFinalBill() {
         batch.set(newSaleRef, sale);
         cart.forEach(item => batch.update(doc(db, 'shops', currentUserId, 'inventory', item.id), { stock: increment(-item.quantity) }));
         
-        // === যদি বুকিং থেকে এসে থাকে, তবে বুকিং স্ট্যাটাস আপডেট করা ===
         if(bookingData && bookingData.id) {
             const bookingRef = doc(db, 'shops', currentUserId, 'bookings', bookingData.id);
             batch.update(bookingRef, { status: 'Billed' });
@@ -473,7 +468,6 @@ async function generateFinalBill() {
 
         await batch.commit();
 
-        // সেশন ক্লিয়ার করা
         if(bookingData) {
             sessionStorage.removeItem('pending_booking_id');
             bookingData = null;
@@ -521,11 +515,8 @@ function resetAfterSale() {
     discountTypeSelect.value = 'percent';
     gstToggle.checked = true;
     paymentMethodSelect.value = 'cash';
-    
-    // Advance row লুকিয়ে ফেলা
     const advanceRow = document.getElementById('advance-row');
     if(advanceRow) advanceRow.style.display = 'none';
-
     updateCartDisplay();
     handlePaymentMethodChange();
 }
@@ -538,7 +529,7 @@ function handlePaymentMethodChange() {
 }
 
 // ==========================================================
-// --- সব ইভেন্ট লিসেনার সেটআপ ---
+// --- ইভেন্ট লিসেনার ---
 // ==========================================================
 function setupEventListeners() {
     productSearchInput.addEventListener('input', handleSearch);
@@ -580,7 +571,6 @@ function setupEventListeners() {
         if (cart.length > 0) {
             updateAllTotals();
             checkoutModal.classList.remove('hidden');
-            // যদি বুকিং থেকে নাম না এসে থাকে, তাহলে ফোকাস করবে
             if(!customerNameInput.value) customerNameInput.focus();
         }
     });
@@ -597,8 +587,5 @@ function setupEventListeners() {
     });
     
     paymentMethodSelect.addEventListener('change', handlePaymentMethodChange);
-
     generateBillBtn.addEventListener('click', generateFinalBill);
-    
-    // নোট: logoutBtn এবং mobileMenuBtn এর ইভেন্ট লিসেনার এখান থেকে সরিয়ে ফেলা হয়েছে।
 }
