@@ -16,33 +16,6 @@
     <!-- Navbar Placeholder -->
     <div id="navbar-placeholder"></div>
 
-    <!-- ================= NAVBAR (Updated Paths) ================= -->
-    <header class="main-header">
-        <nav class="nav-container">
-            <!-- ড্যাশবোর্ড লিংক এক ফোল্ডার পিছনে (../) -->
-            <a href="../dashboard.html" class="logo">Smart POS</a>
-            
-            <ul id="main-nav-links">
-                <!-- সব লিংকের আগে ../ যোগ করা হয়েছে যাতে ফোল্ডারের ভেতর থেকে কাজ করে -->
-                <li><a href="../dashboard.html">Dashboard</a></li>
-                <li><a href="../billing/billing.html">Billing</a></li>
-                <li><a href="../advance-booking/index.html">Bookings</a></li>
-                <li><a href="../inventory/inventory.html">Inventory</a></li>
-                <li><a href="../add-product/add-product.html">Add Product</a></li>
-                <li><a href="../sales-report/report.html">Sales Report</a></li>
-                <li><a href="../expense/expense.html">Expense</a></li>
-                <li><a href="../sales-report/profit-loss.html">Profit/Loss</a></li>
-                <li><a href="../shop-details/shop-details.html">Shop Details</a></li> 
-                <li><a href="../label-printer/index.html">Barcode Print</a></li> 
-                <li><a href="#" id="logout-btn">Logout</a></li>
-            </ul>
-
-            <button id="mobile-menu-btn" aria-label="Open Menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-            </button>
-        </nav>
-    </header>
-
     <!-- ================= MAIN CONTENT ================= -->
     <div class="main-content-area">
         <div class="container">
@@ -66,7 +39,7 @@
                 </div>
                 <div class="form-group" style="flex-grow: 1;">
                     <label>Supplier / Bill Name (নাম):</label>
-                    <input type="text" id="billName" placeholder="দোকান বা সাপ্লায়ায়ের নাম লিখুন...">
+                    <input type="text" id="billName" placeholder="দোকান বা সাপ্লায়ায়ের নাম লিখুন...">
                 </div>
             </div>
 
@@ -83,7 +56,7 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <!-- জাভাস্ক্রিপ্ট দিয়ে এখানে রো তৈরি হবে -->
+                        <!-- জাভাস্ক্রিপ্ট দিয়ে এখানে রো তৈরি হবে -->
                     </tbody>
                 </table>
             </div>
@@ -144,7 +117,32 @@
         <option value="galon">
     </datalist>
 
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      }
+    }
+    </script>
+    <script type="module" src="../js/firebase-config.js"></script>
     <script src="../js/navbar.js"></script>
+    
+    <!-- Logout Logic -->
+    <script type="module">
+        import { auth } from '../js/firebase-config.js';
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        document.addEventListener('trigger-logout', () => {
+            signOut(auth).then(() => {
+                window.location.href = '../index.html';
+            }).catch((error) => {
+                console.error("Logout error", error);
+            });
+        });
+    </script>
+    
     <script type="module" src="purchase-record.js"></script>
 </body>
 </html>
