@@ -1,5 +1,3 @@
-// /add-product/add-product.js
-
 import {
     db,
     auth,
@@ -11,8 +9,10 @@ import {
 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-document.addEventListener('DOMContentLoaded', () => {
+// ImgBB API Configuration
+const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267'; 
 
+document.addEventListener('DOMContentLoaded', () => {
     const addRowBtn = document.getElementById('add-row-btn');
     const productsTbody = document.getElementById('products-tbody');
     const form = document.getElementById('add-products-form');
@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td><input type="number" step="0.01" class="product-sp" placeholder="0.00" required></td>
             <td><input type="text" class="product-barcode" placeholder="Scan or type barcode"></td>
             <td><input type="number" class="product-stock" placeholder="0" required></td>
+            <td><input type="file" class="product-image" accept="image/*" style="font-size: 12px; width: 180px;"></td>
             <td><button type="button" class="btn btn-danger remove-row-btn">X</button></td>
         `;
         productsTbody.appendChild(row);
@@ -56,6 +57,28 @@ document.addEventListener('DOMContentLoaded', () => {
             statusMessage.textContent = '';
             statusMessage.className = 'status';
         }, time);
+    }
+
+    async function uploadImageToImgBB(file) {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (data.success) {
+                return data.data.url;
+            } else {
+                console.error("ImgBB Upload Failed:", data);
+                return null;
+            }
+        } catch (error) {
+            console.error("ImgBB Network Error:", error);
+            return null;
+        }
     }
 
     function displayBarcodes(products) {
@@ -97,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const saveButton = form.querySelector('button[type="submit"]');
         saveButton.disabled = true;
-        saveButton.textContent = 'Checking & Saving...';
+        saveButton.textContent = 'Uploading Images & Saving...';
         
         const rows = productsTbody.querySelectorAll('tr');
         if (rows.length === 0) {
@@ -108,8 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const productsToProcess = [];
         let allRowsValid = true;
-        rows.forEach(row => {
-            if (!allRowsValid) return;
+
+        for (const row of rows) {
+            if (!allRowsValid) break;
+
             const name = row.querySelector('.product-name').value.trim();
             if (name) {
                 const category = row.querySelector('.product-category').value.trim();
@@ -117,14 +142,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sp = parseFloat(row.querySelector('.product-sp').value);
                 const barcode = row.querySelector('.product-barcode').value.trim();
                 const stock = parseInt(row.querySelector('.product-stock').value, 10);
+                const imageInput = row.querySelector('.product-image');
                 
                 if (!category || isNaN(cp) || isNaN(sp) || isNaN(stock) || cp < 0 || sp < 0 || stock < 0) {
                     allRowsValid = false;
                 } else {
-                    productsToProcess.push({ name, category, costPrice: cp, sellingPrice: sp, stock, barcode });
+                    let imageUrl = null;
+                    if (imageInput.files && imageInput.files[0]) {
+                        try {
+                            saveButton.textContent = `Uploading image for ${name}...`;
+                            imageUrl = await uploadImageToImgBB(imageInput.files[0]);
+                        } catch (err) {
+                            console.error("Failed to upload image for " + name);
+                        }
+                    }
+
+                    productsToProcess.push({ 
+                        name, 
+                        category, 
+                        costPrice: cp, 
+                        sellingPrice: sp, 
+                        stock, 
+                        barcode,
+                        imageUrl: imageUrl
+                    });
                 }
             }
-        });
+        }
 
         if (!allRowsValid || productsToProcess.length === 0) {
             showStatus('Error: Please fill all fields correctly.', 'error');
@@ -132,17 +176,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        saveButton.textContent = 'Saving to Database...';
+
         try {
             const productsForBarcodeDisplay = [];
             const metadataRef = doc(db, 'shops', currentUserId, '_metadata', 'counters');
 
             await runTransaction(db, async (transaction) => {
-                // ধাপ ১: রিড অপারেশন (Reads)
-                // ------------------------------------------------
                 const metadataDoc = await transaction.get(metadataRef);
                 let lastProductId = metadataDoc.exists() ? metadataDoc.data().lastProductId || 1000 : 1000;
 
-                // টেম্পোরারি অ্যারে ডেটা প্রসেসিংয়ের জন্য
                 const processQueue = [];
 
                 for (const product of productsToProcess) {
@@ -155,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     const productRef = doc(db, 'shops', currentUserId, 'inventory', finalBarcode);
-                    // আমরা এখানে শুধুমাত্র রিড করছি, রাইট করছি না
                     const productSnapshot = await transaction.get(productRef);
 
                     processQueue.push({
@@ -166,38 +208,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
 
-                // ধাপ ২: রাইট অপারেশন (Writes)
-                // ------------------------------------------------
-                // সব রিড শেষ, এখন আমরা নিরাপদে রাইট করতে পারি
                 for (const item of processQueue) {
                     const { productData, ref, snapshot, finalBarcode } = item;
 
                     if (snapshot.exists()) {
-                        // === STRICT VALIDATION ===
                         const dbData = snapshot.data();
 
                         if (dbData.name.trim().toLowerCase() !== productData.name.trim().toLowerCase()) {
                             throw new Error(`MISMATCH: Barcode '${finalBarcode}' is for '${dbData.name}', NOT '${productData.name}'.`);
                         }
-                        if (dbData.category.trim().toLowerCase() !== productData.category.trim().toLowerCase()) {
-                            throw new Error(`CATEGORY MISMATCH: Barcode '${finalBarcode}' belongs to category '${dbData.category}'.`);
-                        }
-                        if (Number(dbData.costPrice) !== Number(productData.costPrice)) {
-                            throw new Error(`CP MISMATCH: '${productData.name}' (Barcode ${finalBarcode}) has CP: ${dbData.costPrice}. Entered: ${productData.costPrice}.`);
-                        }
-                        if (Number(dbData.sellingPrice) !== Number(productData.sellingPrice)) {
-                            throw new Error(`SP MISMATCH: '${productData.name}' (Barcode ${finalBarcode}) has SP: ${dbData.sellingPrice}. Entered: ${productData.sellingPrice}.`);
-                        }
                         
-                        // স্টক আপডেট
                         const newStockTotal = parseInt(dbData.stock || 0) + productData.stock;
-                        transaction.update(ref, {
+                        
+                        const updateData = {
                             stock: newStockTotal,
                             lastUpdated: Timestamp.now()
-                        });
+                        };
+                        if (productData.imageUrl) {
+                            updateData.imageUrl = productData.imageUrl;
+                        }
+
+                        transaction.update(ref, updateData);
 
                     } else {
-                        // নতুন প্রোডাক্ট তৈরি
                         const dataToSave = {
                             name: productData.name,
                             category: productData.category,
@@ -205,12 +238,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             sellingPrice: productData.sellingPrice,
                             stock: productData.stock,
                             barcode: finalBarcode,
+                            imageUrl: productData.imageUrl || null,
                             createdAt: Timestamp.now()
                         };
                         transaction.set(ref, dataToSave);
                     }
 
-                    // Expense তৈরি (প্রত্যেকটি আলাদা রেফারেন্স হবে)
                     if (productData.costPrice > 0 && productData.stock > 0) {
                         const totalCost = productData.costPrice * productData.stock;
                         const expenseRef = doc(collection(db, 'shops', currentUserId, 'expenses'));
@@ -228,7 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     productsForBarcodeDisplay.push({ barcode: finalBarcode, name: productData.name, sp: productData.sellingPrice });
                 }
 
-                // শেষে কাউন্টার আপডেট
                 transaction.set(metadataRef, { lastProductId: lastProductId }, { merge: true });
             });
 

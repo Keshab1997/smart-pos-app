@@ -5,7 +5,7 @@ import {
     orderBy, query, where, getDocs, getDoc 
 } from 'firebase/firestore';
 
-// --- DOM Elements ---
+// DOM Elements
 const inventoryBody = document.getElementById('inventory-tbody');
 const searchInput = document.getElementById('search-inventory');
 const categoryFilter = document.getElementById('category-filter');
@@ -17,16 +17,20 @@ const selectAllCheckbox = document.getElementById('select-all-checkbox');
 const printSelectedBtn = document.getElementById('print-selected-btn');
 const printCategoryBtn = document.getElementById('print-category-btn');
 
-// --- Global State ---
+// Image Modal Elements
+let imageModal = null;
+
+// Global State
 let allProducts = [], filteredProducts = [];
 let currentPage = 1, currentUserId = null, unsubscribe;
 const ROWS_PER_PAGE = 10, LOW_STOCK_THRESHOLD = 10;
 let hasEventListenersSetup = false;
 
-// --- Authentication ---
+// Authentication
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserId = user.uid;
+        createImageModal();
         loadInventory();
         if (!hasEventListenersSetup) setupEventListeners();
     } else {
@@ -34,9 +38,33 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// --- Core Functions ---
+// Create Image Modal
+function createImageModal() {
+    if (document.getElementById('product-image-modal')) return;
 
-// UPDATED: Calculates both product types count and total stock quantity
+    const modalHtml = `
+        <div id="product-image-modal" class="modal" style="display:none; align-items:center; justify-content:center;">
+            <div class="modal-content" style="text-align:center; max-width: 500px; position:relative;">
+                <span class="close-button" id="close-image-modal" style="position:absolute; right:15px; top:10px; font-size:24px; cursor:pointer;">&times;</span>
+                <h3 id="img-modal-title" style="margin-top:0;">Product Image</h3>
+                <div style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
+                    <img id="img-modal-preview" src="" alt="Product" style="max-width: 100%; max-height: 400px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    imageModal = document.getElementById('product-image-modal');
+    document.getElementById('close-image-modal').addEventListener('click', () => {
+        imageModal.style.display = 'none';
+    });
+    
+    window.addEventListener('click', (e) => {
+        if (e.target === imageModal) imageModal.style.display = 'none';
+    });
+}
+
 function loadInventory() {
     if (!currentUserId) return;
     if (unsubscribe) unsubscribe();
@@ -49,19 +77,18 @@ function loadInventory() {
         
         allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // ক্যাটাগরি স্ট্যাটস ক্যালকুলেশন
         const categoryStats = {};
         
         allProducts.forEach(product => {
             const cat = product.category;
-            const stock = parseInt(product.stock) || 0; // Ensure stock is a number
+            const stock = parseInt(product.stock) || 0;
 
             if (cat) {
                 if (!categoryStats[cat]) {
                     categoryStats[cat] = { types: 0, totalStock: 0 };
                 }
-                categoryStats[cat].types += 1;       // কতটি আইটেম এন্ট্রি আছে
-                categoryStats[cat].totalStock += stock; // মোট কত কোয়ান্টিটি আছে
+                categoryStats[cat].types += 1;
+                categoryStats[cat].totalStock += stock;
             }
         });
 
@@ -88,10 +115,16 @@ function renderTable() {
     const paginated = filteredProducts.slice(start, start + ROWS_PER_PAGE);
     
     inventoryBody.innerHTML = paginated.length === 0 
-        ? '<tr><td colspan="8" class="loading-cell">No products found.</td></tr>'
-        : paginated.map(p => `
+        ? '<tr><td colspan="9" class="loading-cell">No products found.</td></tr>'
+        : paginated.map(p => {
+            const imgHtml = p.imageUrl 
+                ? `<img src="${p.imageUrl}" class="product-thumb" data-name="${p.name}" data-src="${p.imageUrl}" alt="img" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #ddd; transition: transform 0.2s;">` 
+                : `<span style="font-size:12px; color:#999; display:inline-block; width:40px; text-align:center;">No Img</span>`;
+
+            return `
             <tr class="${p.stock <= LOW_STOCK_THRESHOLD ? 'low-stock' : ''}">
                 <td><input type="checkbox" class="product-checkbox" data-id="${p.id}"></td>
+                <td style="text-align: center;">${imgHtml}</td>
                 <td>${p.name || 'N/A'}</td>
                 <td>${p.category || 'N/A'}</td>
                 <td>${(p.costPrice || 0).toFixed(2)}</td>
@@ -103,10 +136,10 @@ function renderTable() {
                     <button class="btn btn-sm btn-delete" data-id="${p.id}" title="Delete">Delete</button>
                     <button class="btn btn-sm btn-print" onclick="openPrintPage('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.sellingPrice}')" title="Print Barcode">Print</button>
                 </td>
-            </tr>`).join('');
+            </tr>`;
+        }).join('');
 }
 
-// UPDATED: Displays formatted text in dropdown
 function updateCategoryFilter(categoryStats, selectedValue) {
     const categories = Object.keys(categoryStats).sort();
 
@@ -115,8 +148,6 @@ function updateCategoryFilter(categoryStats, selectedValue) {
         ...categories.map(cat => {
             const stats = categoryStats[cat];
             const isSelected = cat === selectedValue ? 'selected' : '';
-            // Display Format: Name (Types: 2 | Stock: 150)
-            // 'Prod' means number of unique items, 'Qty' means total quantity
             const label = `${cat} (Prod: ${stats.types} | Qty: ${stats.totalStock})`;
             return `<option value="${cat}" ${isSelected}>${label}</option>`;
         })
@@ -138,7 +169,6 @@ function showStatus(message, type = 'success') {
     setTimeout(() => div.remove(), 4000);
 }
 
-// --- Event Listeners ---
 function setupEventListeners() {
     hasEventListenersSetup = true;
 
@@ -153,6 +183,15 @@ function setupEventListeners() {
     });
 
     inventoryBody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('product-thumb')) {
+            const src = e.target.dataset.src;
+            const name = e.target.dataset.name;
+            document.getElementById('img-modal-preview').src = src;
+            document.getElementById('img-modal-title').innerText = name;
+            imageModal.style.display = 'flex';
+            return;
+        }
+
         const target = e.target.closest('button');
         if (!target) return;
         if (target.matches('.btn-print')) return;
@@ -182,7 +221,6 @@ function setupEventListeners() {
     editForm.addEventListener('submit', handleEditFormSubmit);
 }
 
-// --- Helper Functions ---
 function openPrintPage(id, name, price) {
     const url = `../print-barcode.html?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}`;
     window.open(url, '_blank', 'width=800,height=600');
@@ -203,7 +241,6 @@ function openEditModal(product) {
     editModal.style.display = 'flex';
 }
 
-// --- PIN VERIFICATION HELPER ---
 async function verifyAdminPIN() {
     const userPin = prompt("🔒 SECURITY: Enter Master PIN to continue:");
     if (!userPin) return false;
@@ -227,9 +264,6 @@ async function verifyAdminPIN() {
     }
 }
 
-// =======================================================================
-// <<<<<<<<<<< SECURED EDIT SUBMIT FUNCTION >>>>>>>>>>>
-// =======================================================================
 async function handleEditFormSubmit(e) {
     e.preventDefault();
     
@@ -278,9 +312,6 @@ async function handleEditFormSubmit(e) {
     }
 }
 
-// =======================================================================
-// <<<<<<<<<<< SECURED DELETE FUNCTION >>>>>>>>>>>
-// =======================================================================
 async function deleteProduct(id) {
     const isAuthorized = await verifyAdminPIN();
     if (!isAuthorized) return;
