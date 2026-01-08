@@ -31,12 +31,26 @@
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 20px;
-    color: var(--text-color);
     padding: 5px;
-    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    color: var(--text-color);
 }
-.hamburger-btn:hover { color: var(--primary-color); }
+
+.hamburger-btn:hover {
+    background-color: #f0f2f5;
+    color: var(--primary-color);
+}
+
+/* SVG Icon Size */
+.hamburger-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor; /* প্যারেন্ট কালার নেবে */
+}
 
 .logo {
     font-size: 1.4rem;
@@ -91,10 +105,12 @@
 .close-btn {
     background: none;
     border: none;
-    font-size: 24px;
+    font-size: 28px;
     cursor: pointer;
     color: #666;
+    line-height: 1;
 }
+.close-btn:hover { color: #d32f2f; }
 
 /* Sidebar Links */
 .sidebar-links {

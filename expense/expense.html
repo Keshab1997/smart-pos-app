@@ -30,8 +30,11 @@
         <!-- 1. ADD NEW EXPENSE FORM (Entry Section) -->
         <!-- ========================================== -->
         <section class="card add-expense-section no-print">
-            <h3>Add New Expense</h3>
+            <h3 id="form-title">Add New Expense</h3>
             <form id="add-expense-form">
+                <!-- Hidden input for editing -->
+                <input type="hidden" id="edit-expense-id">
+                
                 <div class="form-grid">
                     <!-- Date -->
                     <div class="form-group">
@@ -73,7 +76,8 @@
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Save Expense</button>
+                    <button type="button" id="btn-cancel-edit" class="btn btn-outline" style="display: none; margin-right: 10px;">Cancel</button>
+                    <button type="submit" id="btn-save-expense" class="btn btn-primary">Save Expense</button>
                 </div>
             </form>
         </section>
@@ -124,7 +128,7 @@
                             <th>Category</th>
                             <th>Purpose / Details</th>
                             <th class="text-right">Amount (₹)</th>
-                            <th class="no-print">Action</th>
+                            <th class="no-print" style="text-align: center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="expense-sheet-body">

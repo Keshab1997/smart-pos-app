@@ -1,7 +1,7 @@
 // sales-report/profit-loss.js (v7.0 - Detailed Breakdown View)
 
 import { db, auth } from '../js/firebase-config.js';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import {
     collection, getDocs, query, where, Timestamp, orderBy
 } from 'firebase/firestore';
@@ -37,10 +37,6 @@ const generateReportBtn = document.getElementById('generate-report-btn');
 const printReportBtn = document.getElementById('print-report-btn');
 const startDateInput = document.getElementById('start-date');
 const endDateInput = document.getElementById('end-date');
-
-const logoutBtn = document.getElementById('logout-btn');
-const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-const mainNavLinks = document.querySelector('header nav ul');
 
 let currentUserId = null;
 
@@ -327,6 +323,4 @@ function setupEventListeners() {
     });
 
     printReportBtn.addEventListener('click', () => window.print());
-    logoutBtn.addEventListener('click', () => signOut(auth));
-    if(mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => mainNavLinks.classList.toggle('mobile-nav-active'));
 }

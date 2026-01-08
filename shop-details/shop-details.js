@@ -1,7 +1,7 @@
 // shop-details/shop-details.js
 
 import { db, auth } from '../js/firebase-config.js';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 // ==========================================================
@@ -17,11 +17,6 @@ const shopEmailInput = document.getElementById('shop-email');
 const receiptFooterInput = document.getElementById('receipt-footer'); 
 const saveBtn = document.getElementById('save-btn');
 const statusMessage = document.getElementById('status-message');
-
-// Navbar এলিমেন্টস
-const logoutBtn = document.getElementById('logout-btn');
-const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-const mainNavLinks = document.getElementById('main-nav-links');
 
 // ==========================================================
 // --- গ্লোবাল ভেরিয়েবল ---
@@ -134,15 +129,3 @@ function showStatus(message, type) {
 // --- ইভেন্ট লিসেনার সেটআপ ---
 // ==========================================================
 form.addEventListener('submit', handleFormSubmit);
-
-logoutBtn.addEventListener('click', async () => {
-    try {
-        await signOut(auth);
-    } catch (error) {
-        console.error("Logout error: ", error);
-    }
-});
-
-mobileMenuBtn.addEventListener('click', () => {
-    mainNavLinks.classList.toggle('mobile-nav-active');
-});

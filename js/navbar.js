@@ -90,8 +90,12 @@ function loadNavbar() {
     const navbarHTML = `
         <div class="top-navbar">
             <div class="nav-brand">
-                <button id="toggle-sidebar" class="hamburger-btn">
-                    <i class="fas fa-bars"></i>
+                <button id="toggle-sidebar" class="hamburger-btn" aria-label="Toggle Menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
                 </button>
                 <a href="${dashboardLink}" class="logo">Smart POS</a>
             </div>
@@ -111,7 +115,7 @@ function loadNavbar() {
 
             <div class="sidebar-footer">
                 <button id="global-logout-btn" class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i> Logout
+                    <span>🚪</span> Logout
                 </button>
             </div>
         </aside>

@@ -1,21 +1,27 @@
-// expense.js (v2.0 - Daily Sheet System)
+// expense.js (v3.0 - Add, Edit & Delete)
 
 import { db, auth } from '../js/firebase-config.js';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { 
-    collection, addDoc, getDocs, query, where, orderBy, deleteDoc, doc, Timestamp 
+    collection, addDoc, getDocs, query, orderBy, deleteDoc, updateDoc, doc, Timestamp 
 } from 'firebase/firestore';
 
 // ==========================================
 // --- DOM Elements ---
 // ==========================================
 const addExpenseForm = document.getElementById('add-expense-form');
+const formTitle = document.getElementById('form-title');
+const editExpenseId = document.getElementById('edit-expense-id');
+
 const entryDate = document.getElementById('entry-date');
 const entryCategory = document.getElementById('entry-category');
 const entryDesc = document.getElementById('entry-desc');
 const entryAmount = document.getElementById('entry-amount');
+
 const btnAddCategory = document.getElementById('btn-add-category');
 const btnAddDesc = document.getElementById('btn-add-desc');
+const btnSaveExpense = document.getElementById('btn-save-expense');
+const btnCancelEdit = document.getElementById('btn-cancel-edit');
 
 const filterDateFrom = document.getElementById('filter-date-from');
 const filterDateTo = document.getElementById('filter-date-to');
@@ -26,10 +32,6 @@ const btnPrintSheet = document.getElementById('btn-print-sheet');
 const expenseSheetBody = document.getElementById('expense-sheet-body');
 const displayTotalExpense = document.getElementById('display-total-expense');
 const sheetPeriodLabel = document.getElementById('sheet-period-label');
-
-const logoutBtn = document.getElementById('logout-btn');
-const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-const mainNavLinks = document.querySelector('header nav ul');
 
 let currentUserId = null;
 let allExpenses = [];
@@ -48,93 +50,117 @@ onAuthStateChanged(auth, (user) => {
 });
 
 function setDefaultDate() {
-    // Set form date to today by default
     const today = new Date().toISOString().split('T')[0];
-    entryDate.value = today;
+    if(entryDate) entryDate.value = today;
 }
 
 // ==========================================
-// --- 1. Add New Expense Logic ---
+// --- 1. Add / Update Expense Logic ---
 // ==========================================
-addExpenseForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!currentUserId) return;
+if(addExpenseForm) {
+    addExpenseForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!currentUserId) return;
 
-    const dateVal = new Date(entryDate.value);
-    const categoryVal = entryCategory.value;
-    const descVal = entryDesc.value;
-    const amountVal = parseFloat(entryAmount.value);
+        const dateVal = new Date(entryDate.value);
+        const categoryVal = entryCategory.value;
+        const descVal = entryDesc.value;
+        const amountVal = parseFloat(entryAmount.value);
+        const editId = editExpenseId.value;
 
-    // Validation
-    if (!categoryVal || !descVal || isNaN(amountVal)) {
-        alert("Please fill all fields correctly.");
-        return;
-    }
+        if (!categoryVal || !descVal || isNaN(amountVal)) {
+            alert("Please fill all fields correctly.");
+            return;
+        }
 
-    try {
-        const btn = addExpenseForm.querySelector('button[type="submit"]');
-        btn.textContent = "Saving...";
-        btn.disabled = true;
+        try {
+            btnSaveExpense.textContent = editId ? "Updating..." : "Saving...";
+            btnSaveExpense.disabled = true;
 
-        await addDoc(collection(db, 'shops', currentUserId, 'expenses'), {
-            date: Timestamp.fromDate(dateVal),
-            category: categoryVal,
-            description: descVal,
-            amount: amountVal,
-            createdAt: Timestamp.now()
-        });
+            const expenseData = {
+                date: Timestamp.fromDate(dateVal),
+                category: categoryVal,
+                description: descVal,
+                amount: amountVal,
+                updatedAt: Timestamp.now()
+            };
 
-        // Reset form but keep date
-        entryCategory.value = "";
-        entryDesc.value = "";
-        entryAmount.value = "";
-        
-        btn.textContent = "Save Expense";
-        btn.disabled = false;
+            if (editId) {
+                const expenseRef = doc(db, 'shops', currentUserId, 'expenses', editId);
+                await updateDoc(expenseRef, expenseData);
+                alert("Expense updated successfully!");
+            } else {
+                expenseData.createdAt = Timestamp.now();
+                await addDoc(collection(db, 'shops', currentUserId, 'expenses'), expenseData);
+            }
 
-        // Reload table
-        loadExpenses();
+            resetForm();
+            loadExpenses();
 
-    } catch (error) {
-        console.error("Error adding expense:", error);
-        alert("Error adding expense.");
-    }
-});
+        } catch (error) {
+            console.error("Error saving expense:", error);
+            alert("Error saving expense: " + error.message);
+        } finally {
+            btnSaveExpense.disabled = false;
+        }
+    });
+}
+
+function resetForm() {
+    entryCategory.value = "";
+    entryDesc.value = "";
+    entryAmount.value = "";
+    editExpenseId.value = "";
+    
+    formTitle.textContent = "Add New Expense";
+    btnSaveExpense.textContent = "Save Expense";
+    btnCancelEdit.style.display = "none";
+    
+    setDefaultDate();
+}
+
+if(btnCancelEdit) {
+    btnCancelEdit.addEventListener('click', resetForm);
+}
 
 // --- Dynamic Category (+ Icon) ---
-btnAddCategory.addEventListener('click', () => {
-    const newCat = prompt("Enter new Category Name:");
-    if (newCat && newCat.trim() !== "") {
-        const option = document.createElement("option");
-        option.value = newCat.trim();
-        option.text = newCat.trim();
-        option.selected = true;
-        entryCategory.add(option);
-    }
-});
+if(btnAddCategory) {
+    btnAddCategory.addEventListener('click', () => {
+        const newCat = prompt("Enter new Category Name:");
+        if (newCat && newCat.trim() !== "") {
+            const option = document.createElement("option");
+            option.value = newCat.trim();
+            option.text = newCat.trim();
+            option.selected = true;
+            entryCategory.add(option);
+        }
+    });
+}
 
 // --- Dynamic Description (+ Icon) ---
-btnAddDesc.addEventListener('click', () => {
-    const commonPurposes = [
-        "Buying Stock (Mal Kena)",
-        "Daily Tiffin",
-        "Shop Cleaning",
-        "Electricity Bill",
-        "Van/Rickshaw Fare"
-    ];
-    let msg = "Choose a common purpose (enter number):\n";
-    commonPurposes.forEach((p, i) => msg += `${i+1}. ${p}\n`);
-    
-    const choice = prompt(msg);
-    const index = parseInt(choice) - 1;
-    
-    if (!isNaN(index) && commonPurposes[index]) {
-        entryDesc.value = commonPurposes[index];
-    }
-});
+if(btnAddDesc) {
+    btnAddDesc.addEventListener('click', () => {
+        const commonPurposes = [
+            "Buying Stock (Mal Kena)",
+            "Daily Tiffin",
+            "Shop Cleaning",
+            "Electricity Bill",
+            "Van/Rickshaw Fare"
+        ];
+        let msg = "Choose a common purpose (enter number):\n";
+        commonPurposes.forEach((p, i) => msg += `${i+1}. ${p}\n`);
+        
+        const choice = prompt(msg);
+        const index = parseInt(choice) - 1;
+        
+        if (!isNaN(index) && commonPurposes[index]) {
+            entryDesc.value = commonPurposes[index];
+        }
+    });
+}
 
 // ==========================================
-// --- 2. Load & Display Logic (Daily Sheet) ---
+// --- 2. Load & Display Logic ---
 // ==========================================
 async function loadExpenses(fromDate = null, toDate = null) {
     if (!currentUserId) return;
@@ -149,10 +175,9 @@ async function loadExpenses(fromDate = null, toDate = null) {
         allExpenses = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
-            jsDate: doc.data().date.toDate() // Helper for sorting/filtering
+            jsDate: doc.data().date.toDate()
         }));
 
-        // Client-side filtering if dates provided
         if (fromDate && toDate) {
             const fDate = new Date(fromDate); fDate.setHours(0,0,0,0);
             const tDate = new Date(toDate); tDate.setHours(23,59,59,999);
@@ -182,7 +207,6 @@ function renderExpenseSheet(data) {
         return;
     }
 
-    // Group by Date
     const grouped = data.reduce((acc, exp) => {
         const dateStr = exp.jsDate.toLocaleDateString('en-IN', { 
             weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
@@ -194,9 +218,7 @@ function renderExpenseSheet(data) {
 
     let grandTotal = 0;
 
-    // Iterate through grouped dates
     for (const [dateStr, expenses] of Object.entries(grouped)) {
-        // 1. Date Header Row
         const headerRow = document.createElement('tr');
         headerRow.classList.add('date-header-row');
         headerRow.innerHTML = `<td colspan="5">${dateStr}</td>`;
@@ -204,7 +226,6 @@ function renderExpenseSheet(data) {
 
         let dayTotal = 0;
 
-        // 2. Expense Rows for that day
         expenses.forEach(exp => {
             dayTotal += exp.amount;
             grandTotal += exp.amount;
@@ -216,17 +237,22 @@ function renderExpenseSheet(data) {
                 <td>${exp.description}</td>
                 <td class="text-right">₹${exp.amount.toFixed(2)}</td>
                 <td class="no-print" style="text-align:center;">
-                    <button class="btn-delete">Delete</button>
+                    <button class="btn-edit" data-id="${exp.id}">Edit</button>
+                    <button class="btn-delete" data-id="${exp.id}">Delete</button>
                 </td>
             `;
             
-            // Add event listener for delete
-            tr.querySelector('.btn-delete').addEventListener('click', () => deleteExpense(exp.id));
+            tr.querySelector('.btn-edit').addEventListener('click', function() {
+                prepareEdit(this.getAttribute('data-id'));
+            });
+
+            tr.querySelector('.btn-delete').addEventListener('click', function() {
+                deleteExpense(this.getAttribute('data-id'));
+            });
             
             expenseSheetBody.appendChild(tr);
         });
 
-        // 3. Day Subtotal
         const subRow = document.createElement('tr');
         subRow.style.backgroundColor = '#fff';
         subRow.style.fontWeight = 'bold';
@@ -242,34 +268,37 @@ function renderExpenseSheet(data) {
 }
 
 // ==========================================
-// --- 3. Filter & Print Logic ---
+// --- 3. Edit Helper Function ---
 // ==========================================
-btnApplyFilter.addEventListener('click', () => {
-    if (filterDateFrom.value && filterDateTo.value) {
-        loadExpenses(filterDateFrom.value, filterDateTo.value);
-    } else {
-        alert("Please select both From and To dates.");
-    }
-});
+function prepareEdit(id) {
+    const expense = allExpenses.find(e => e.id === id);
+    if (!expense) return;
 
-btnResetFilter.addEventListener('click', () => {
-    filterDateFrom.value = "";
-    filterDateTo.value = "";
-    loadExpenses();
-});
+    entryDate.value = expense.jsDate.toISOString().split('T')[0];
+    entryCategory.value = expense.category;
+    entryDesc.value = expense.description;
+    entryAmount.value = expense.amount;
+    editExpenseId.value = id;
 
-btnPrintSheet.addEventListener('click', () => {
-    window.print();
-});
+    formTitle.textContent = "Edit Expense";
+    btnSaveExpense.textContent = "Update Expense";
+    btnCancelEdit.style.display = "inline-block";
+
+    document.querySelector('.add-expense-section').scrollIntoView({ behavior: 'smooth' });
+}
 
 // ==========================================
-// --- 4. Delete Helper ---
+// --- 4. Delete Helper Function ---
 // ==========================================
 async function deleteExpense(id) {
     if (confirm("Are you sure you want to delete this entry?")) {
         try {
             await deleteDoc(doc(db, 'shops', currentUserId, 'expenses', id));
-            // Reload keeping current filters if any
+            
+            if(editExpenseId.value === id) {
+                resetForm();
+            }
+
             if(filterDateFrom.value && filterDateTo.value) {
                 loadExpenses(filterDateFrom.value, filterDateTo.value);
             } else {
@@ -283,9 +312,28 @@ async function deleteExpense(id) {
 }
 
 // ==========================================
-// --- Navbar Logic ---
+// --- 5. Filter & Print Logic ---
 // ==========================================
-logoutBtn.addEventListener('click', () => signOut(auth));
-if(mobileMenuBtn) {
-    mobileMenuBtn.addEventListener('click', () => mainNavLinks.classList.toggle('mobile-nav-active'));
+if(btnApplyFilter) {
+    btnApplyFilter.addEventListener('click', () => {
+        if (filterDateFrom.value && filterDateTo.value) {
+            loadExpenses(filterDateFrom.value, filterDateTo.value);
+        } else {
+            alert("Please select both From and To dates.");
+        }
+    });
+}
+
+if(btnResetFilter) {
+    btnResetFilter.addEventListener('click', () => {
+        filterDateFrom.value = "";
+        filterDateTo.value = "";
+        loadExpenses();
+    });
+}
+
+if(btnPrintSheet) {
+    btnPrintSheet.addEventListener('click', () => {
+        window.print();
+    });
 }

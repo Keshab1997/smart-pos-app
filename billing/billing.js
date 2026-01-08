@@ -4,7 +4,7 @@
 // --- মডিউল ইম্পোর্ট ---
 // =================================================================
 import { db, auth } from '../js/firebase-config.js';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth'; // signOut এখান থেকে সরিয়ে নেওয়া হয়েছে কারণ এটি এখন HTML ফাইলে হ্যান্ডেল হচ্ছে
 import {
     collection, doc, getDocs, getDoc, updateDoc, query, where, orderBy, writeBatch, serverTimestamp, increment, runTransaction
 } from 'firebase/firestore';
@@ -38,9 +38,8 @@ const generateBillBtn = document.getElementById('generate-bill-btn');
 const customerNameInput = document.getElementById('customer-name');
 const customerPhoneInput = document.getElementById('customer-phone');
 const customerAddressInput = document.getElementById('customer-address');
-const logoutBtn = document.getElementById('logout-btn');
-const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-const mainNavLinks = document.querySelector('header nav .nav-links');
+
+// নোট: logoutBtn এবং mobileMenuBtn এখান থেকে সরিয়ে ফেলা হয়েছে কারণ এগুলো navbar.js হ্যান্ডেল করছে।
 
 // ==========================================================
 // --- গ্লোবাল ভেরিয়েবল ---
@@ -600,6 +599,6 @@ function setupEventListeners() {
     paymentMethodSelect.addEventListener('change', handlePaymentMethodChange);
 
     generateBillBtn.addEventListener('click', generateFinalBill);
-    logoutBtn.addEventListener('click', () => signOut(auth).catch(error => console.error("Logout error", error)));
-    mobileMenuBtn.addEventListener('click', () => mainNavLinks.classList.toggle('mobile-nav-active'));
+    
+    // নোট: logoutBtn এবং mobileMenuBtn এর ইভেন্ট লিসেনার এখান থেকে সরিয়ে ফেলা হয়েছে।
 }

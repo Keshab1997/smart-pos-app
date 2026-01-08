@@ -1,5 +1,5 @@
 import { db, auth } from '../js/firebase-config.js';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { 
     collection, onSnapshot, doc, deleteDoc, updateDoc, 
     orderBy, query, where, getDocs, getDoc 
@@ -12,7 +12,6 @@ const categoryFilter = document.getElementById('category-filter');
 const paginationContainer = document.getElementById('pagination-container');
 const editModal = document.getElementById('edit-modal');
 const editForm = document.getElementById('edit-form');
-const logoutBtn = document.getElementById('logout-btn');
 const statusMessageContainer = document.getElementById('status-message-container');
 const selectAllCheckbox = document.getElementById('select-all-checkbox');
 const printSelectedBtn = document.getElementById('print-selected-btn');
@@ -181,8 +180,6 @@ function setupEventListeners() {
     window.addEventListener('click', (e) => { if (e.target === editModal) editModal.style.display = 'none'; });
     
     editForm.addEventListener('submit', handleEditFormSubmit);
-
-    logoutBtn.addEventListener('click', () => signOut(auth));
 }
 
 // --- Helper Functions ---

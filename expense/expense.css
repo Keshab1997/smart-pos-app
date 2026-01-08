@@ -164,6 +164,19 @@ body {
     padding: 8px 15px;
 }
 
+/* Edit Button */
+.btn-edit {
+    background: #e3f2fd;
+    color: #1976d2;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin-right: 5px;
+}
+.btn-edit:hover { background: #bbdefb; }
+
 /* Delete Button */
 .btn-delete {
     background: #ffebee;
