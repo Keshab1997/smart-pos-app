@@ -31,7 +31,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 24px;
+    font-size: 20px;
     color: var(--text-color);
     padding: 5px;
     transition: 0.2s;
@@ -45,7 +45,7 @@
     text-decoration: none;
 }
 
-/* --- Sidebar (Hidden by default) --- */
+/* --- Sidebar --- */
 .sidebar-overlay {
     position: fixed;
     top: 0;
@@ -62,7 +62,7 @@
 .sidebar-menu {
     position: fixed;
     top: 0;
-    left: -100%; /* শুরুতে বামে লুকানো থাকবে */
+    left: -100%;
     width: var(--sidebar-width);
     height: 100%;
     background: #ffffff;
@@ -73,14 +73,9 @@
     flex-direction: column;
 }
 
-/* Active State (When menu is open) */
-.sidebar-open .sidebar-overlay {
-    opacity: 1;
-    visibility: visible;
-}
-.sidebar-open .sidebar-menu {
-    left: 0;
-}
+/* Active State */
+.sidebar-open .sidebar-overlay { opacity: 1; visibility: visible; }
+.sidebar-open .sidebar-menu { left: 0; }
 
 /* Sidebar Header */
 .sidebar-header {
@@ -106,7 +101,7 @@
     list-style: none;
     padding: 10px 0;
     margin: 0;
-    overflow-y: auto; /* স্ক্রল করার জন্য */
+    overflow-y: auto;
     flex-grow: 1;
 }
 
@@ -126,7 +121,6 @@
     color: var(--primary-color);
 }
 
-/* Active Link Styling */
 .sidebar-links li a.active {
     background-color: #eef2ff;
     color: var(--primary-color);

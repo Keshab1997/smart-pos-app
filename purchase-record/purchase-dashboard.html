@@ -3,33 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Dashboard</title>
+    <title>Purchase Dashboard - Smart POS</title>
     
     <!-- CSS Links -->
-    <link rel="stylesheet" href="purchase-record.css"> 
+    <!-- নোট: আমরা ধরে নিচ্ছি এই ফাইলটি 'purchase-record' ফোল্ডারের ভেতরে আছে -->
     <link rel="stylesheet" href="purchase-dashboard.css"> 
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/global.css">
+    
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <!-- Inline Style for Print Button specificity -->
-    <style>
-        .btn-print {
-            background-color: #6c5ce7; /* Purple color */
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-            margin-left: 10px;
-        }
-        .btn-print:hover {
-            background-color: #5b4cc4;
-        }
-    </style>
 </head>
 <body>
 
@@ -63,12 +46,12 @@
                     <i class="fas fa-search"></i> Search
                 </button>
                 
-                <button id="showAllBtn" class="btn btn-outline" style="border-color: #7f8c8d; color: #7f8c8d;">
+                <button id="showAllBtn" class="btn btn-outline">
                     <i class="fas fa-sync"></i> Show All
                 </button>
 
-                <!-- Print Button (New Addition) -->
-                <button id="printBtn" class="btn-print">
+                <!-- Print Button -->
+                <button id="printBtn" class="btn btn-purple">
                     <i class="fas fa-print"></i> Print Report
                 </button>
             </div>
@@ -86,9 +69,10 @@
     </div>
 
     <!-- JavaScript Module -->
+    <!-- Navbar JS -->
     <script src="../js/navbar.js"></script>
     
-    <!-- লগআউট লজিক হ্যান্ডেল করা -->
+    <!-- Logout Logic -->
     <script type="module">
         import { auth } from '../js/firebase-config.js';
         import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -102,6 +86,7 @@
         });
     </script>
     
+    <!-- Main Dashboard Logic -->
     <script type="module" src="purchase-dashboard.js"></script>
 </body>
 </html>

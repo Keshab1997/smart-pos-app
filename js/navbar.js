@@ -1,6 +1,6 @@
 // js/navbar.js
 
-// 1. মেনুর তালিকা (এখানে নতুন মেনু অ্যাড করলে সব পেজে অ্যাড হয়ে যাবে)
+// 1. মেনুর তালিকা (রুট ফোল্ডার থেকে পাথ)
 const menuItems = [
     { name: 'Dashboard', link: 'dashboard.html', icon: '🏠' },
     { name: 'Billing', link: 'billing/billing.html', icon: '🧾' },
@@ -15,25 +15,48 @@ const menuItems = [
     { name: 'Barcode Print', link: 'label-printer/index.html', icon: '🖨️' }
 ];
 
-// 2. সঠিক পাথ বের করার ফাংশন (Path Correction)
+// 2. সঠিক পাথ বের করার ফাংশন (Robust Path Correction)
 function getCorrectPath(targetPath) {
     const currentPath = window.location.pathname;
     
-    // যদি আমরা সাব-ফোল্ডারে থাকি (যেমন: /billing/billing.html)
-    // তাহলে রুট ফোল্ডারে যেতে '../' যোগ করতে হবে।
-    // এটা সিম্পল রাখার জন্য আমরা ধরে নিচ্ছি আপনার সব সাব-ফোল্ডার ১ লেভেলের।
+    // আমরা কি কোনো সাব-ফোল্ডারে আছি? (যেমন /purchase-record/...)
+    // যদি URL এ '/' এর সংখ্যা ২ এর বেশি হয় (root '/' বাদে), তাহলে আমরা সাব-ফোল্ডারে আছি।
+    // সহজ চেক: যদি currentPath এ 'purchase-record' বা অন্য ফোল্ডারের নাম থাকে।
     
-    const isSubFolder = currentPath.split('/').length > 2 && !currentPath.includes('dashboard.html');
-
-    if (isSubFolder) {
-        // যদি টার্গেট রুট ফোল্ডারে হয় (যেমন dashboard.html)
-        if (!targetPath.includes('/')) return '../' + targetPath;
-        // যদি টার্গেট অন্য ফোল্ডারে হয় (যেমন billing/...)
-        return '../' + targetPath; 
-    } else {
-        // যদি আমরা রুটে থাকি
-        return targetPath;
+    // আমরা ধরে নিচ্ছি index.html এবং dashboard.html রুটে আছে।
+    // বাকি সব ফোল্ডারের ভেতরে।
+    
+    const pathSegments = currentPath.split('/').filter(Boolean); // খালি স্ট্রিং বাদ দিয়ে
+    
+    // যদি আমরা লোকালহোস্টে থাকি, প্রথম সেগমেন্ট হতে পারে প্রোজেক্ট ফোল্ডারের নাম।
+    // তাই আমরা দেখব ফাইলের নাম কী।
+    const fileName = pathSegments[pathSegments.length - 1];
+    
+    // যদি আমরা রুটে না থাকি (অর্থাৎ ফাইলের আগে ফোল্ডার আছে)
+    // তবে dashboard.html এর জন্য '../' যোগ করতে হবে।
+    
+    // সহজ লজিক: যদি বর্তমান পেজটি কোনো ফোল্ডারের ভেতর থাকে (যেমন purchase-record/dashboard.html)
+    // তাহলে রুটে যেতে '../' লাগবে।
+    
+    // আপনার স্ট্রাকচার অনুযায়ী:
+    // Root: dashboard.html
+    // Sub: purchase-record/purchase-dashboard.html
+    
+    // যদি বর্তমান লোকেশনে ফোল্ডার থাকে (যেমন purchase-record)
+    if (currentPath.includes('/purchase-record/') || 
+        currentPath.includes('/billing/') || 
+        currentPath.includes('/inventory/') ||
+        currentPath.includes('/sales-report/') ||
+        currentPath.includes('/expense/') ||
+        currentPath.includes('/add-product/') ||
+        currentPath.includes('/shop-details/') ||
+        currentPath.includes('/advance-booking/') ||
+        currentPath.includes('/label-printer/')) {
+            
+        return '../' + targetPath;
     }
+    
+    return targetPath;
 }
 
 // 3. HTML তৈরি এবং ইনজেক্ট করা
@@ -41,14 +64,15 @@ function loadNavbar() {
     const navContainer = document.getElementById('navbar-placeholder');
     if (!navContainer) return;
 
-    // বর্তমান পেজের নাম বের করা (Active class এর জন্য)
     const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
 
     let menuHTML = '';
     menuItems.forEach(item => {
         // Active Class Logic
-        // item.link এর শেষ অংশ যদি currentPage এর সাথে মিলে যায়
-        const isActive = item.link.endsWith(currentPage) ? 'active' : '';
+        // item.link এর শেষ ফাইলের নাম যদি currentPage এর সাথে মিলে
+        const itemFileName = item.link.split('/').pop();
+        const isActive = itemFileName === currentPage ? 'active' : '';
+        
         const finalLink = getCorrectPath(item.link);
         
         menuHTML += `
@@ -60,15 +84,17 @@ function loadNavbar() {
         `;
     });
 
+    // ড্যাশবোর্ড লিংক (লোগোর জন্য)
+    const dashboardLink = getCorrectPath('dashboard.html');
+
     const navbarHTML = `
         <div class="top-navbar">
             <div class="nav-brand">
                 <button id="toggle-sidebar" class="hamburger-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    <i class="fas fa-bars"></i>
                 </button>
-                <a href="${getCorrectPath('dashboard.html')}" class="logo">Smart POS</a>
+                <a href="${dashboardLink}" class="logo">Smart POS</a>
             </div>
-            <!-- ডানে প্রোফাইল বা নোটিফিকেশন আইকন চাইলে এখানে দেওয়া যাবে -->
         </div>
 
         <div id="sidebar-overlay" class="sidebar-overlay"></div>
@@ -85,16 +111,13 @@ function loadNavbar() {
 
             <div class="sidebar-footer">
                 <button id="global-logout-btn" class="logout-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                    Logout
+                    <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
             </div>
         </aside>
     `;
 
     navContainer.innerHTML = navbarHTML;
-
-    // 4. ইভেন্ট লিসেনার সেটআপ
     setupNavbarEvents();
 }
 
@@ -113,20 +136,12 @@ function setupNavbarEvents() {
     if(closeBtn) closeBtn.addEventListener('click', toggleMenu);
     if(overlay) overlay.addEventListener('click', toggleMenu);
 
-    // Logout Logic (Note: This dispatches an event that firebase-config.js listens to, OR we import signOut here)
-    // সিম্পল রাখার জন্য আমরা এখানে ইভেন্ট ডিসপ্যাচ করব অথবা সরাসরি লগআউট ফাংশন কল করব।
-    // আপনার আগের কোড অনুযায়ী dashboard.js এ লগআউট হ্যান্ডেল করা আছে, তাই আমরা বাটনটির আইডি 'logout-btn' এর বদলে 'global-logout-btn' দিয়েছি।
-    // তবে ভালো হয় সব পেজের JS ফাইলে এই আইডি ধরে কাজ করা।
-    
-    // আমরা কাস্টম ইভেন্ট তৈরি করি যাতে মূল JS ফাইল লগআউট হ্যান্ডেল করতে পারে
     if(logoutBtn) {
         logoutBtn.addEventListener('click', () => {
-             // একটি কাস্টম ইভেন্ট ট্রিগার করা যা dashboard.js বা অন্য ফাইল শুনবে
              const event = new Event('trigger-logout');
              document.dispatchEvent(event);
         });
     }
 }
 
-// পেজ লোড হলে মেনু লোড হবে
 document.addEventListener('DOMContentLoaded', loadNavbar);

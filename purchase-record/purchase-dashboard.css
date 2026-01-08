@@ -13,6 +13,8 @@
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .page-header h2 {
@@ -27,7 +29,7 @@
     font-size: 0.9rem;
 }
 
-/* --- Filter Section (Modern Look) --- */
+/* --- Filter Section --- */
 .filter-section {
     background-color: #ffffff;
     padding: 20px 25px;
@@ -48,7 +50,6 @@
     display: block;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .filter-section input[type="date"] {
@@ -59,16 +60,10 @@
     color: #334155;
     background: #f8fafc;
     outline: none;
-    transition: all 0.2s;
 }
 
-.filter-section input[type="date"]:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-/* Filter Buttons */
-.filter-section button {
+/* Buttons */
+.btn {
     padding: 10px 20px;
     border-radius: 8px;
     font-weight: 500;
@@ -76,31 +71,36 @@
     transition: all 0.2s;
     font-size: 0.95rem;
     border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
 }
 
-#filterBtn {
-    background-color: #3b82f6;
-    color: white;
-}
-#filterBtn:hover { background-color: #2563eb; transform: translateY(-1px); }
+.btn-blue { background-color: #3b82f6; color: white; }
+.btn-blue:hover { background-color: #2563eb; }
 
-#showAllBtn {
+.btn-green { background-color: #10b981; color: white; }
+.btn-green:hover { background-color: #059669; }
+
+.btn-purple { background-color: #8b5cf6; color: white; }
+.btn-purple:hover { background-color: #7c3aed; }
+
+.btn-outline {
     background-color: #f1f5f9;
     color: #475569;
     border: 1px solid #e2e8f0;
 }
-#showAllBtn:hover { background-color: #e2e8f0; color: #1e293b; }
+.btn-outline:hover { background-color: #e2e8f0; color: #1e293b; }
 
-
-/* --- Record Card Design (Premium Look) --- */
+/* --- Record Card --- */
 .record-card {
     background: white;
-    padding: 0; /* প্যাডিং হেডার এবং বডির জন্য আলাদা দেব */
     margin-bottom: 20px;
     border-radius: 12px;
     border: 1px solid #e2e8f0;
     box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s;
     overflow: hidden;
     position: relative;
 }
@@ -108,10 +108,8 @@
 .record-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-    border-color: #cbd5e1;
 }
 
-/* Left colored border using pseudo-element */
 .record-card::before {
     content: '';
     position: absolute;
@@ -119,10 +117,9 @@
     top: 0;
     bottom: 0;
     width: 6px;
-    background: #3b82f6; /* Blue accent */
+    background: #3b82f6;
 }
 
-/* --- Card Header --- */
 .record-header {
     display: flex;
     justify-content: space-between;
@@ -136,50 +133,36 @@
     margin: 0 0 8px 0;
     font-size: 1.25rem;
     color: #1e293b;
-    font-weight: 700;
 }
 
 .record-date {
     color: #64748b;
     font-size: 0.85rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
     background: #f1f5f9;
     padding: 5px 10px;
     border-radius: 20px;
-    font-weight: 500;
-}
-
-.record-right {
-    text-align: right;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
 }
 
 .record-total {
-    display: inline-block;
     font-weight: 800;
     font-size: 1.4rem;
-    color: #10b981; /* Green */
-    letter-spacing: -0.5px;
+    color: #10b981;
 }
 
 .click-hint {
     font-size: 0.75rem;
     color: #94a3b8;
+    display: block;
+    text-align: right;
     margin-top: 4px;
-    font-style: italic;
-    opacity: 0.8;
 }
 
-/* --- Expanded Item Table (The Main Fix) --- */
+/* --- Expanded Table --- */
 .items-container {
     background-color: #f8fafc;
     border-top: 1px solid #e2e8f0;
     padding: 20px 25px;
-    display: none; /* JS will toggle this */
+    display: none;
     animation: slideDown 0.3s ease-out;
 }
 
@@ -188,7 +171,6 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* টেবিল ডিজাইন ফিক্স */
 .mini-table {
     width: 100%;
     border-collapse: separate;
@@ -197,56 +179,28 @@
     background: white;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    overflow: hidden; /* রাউন্ড কর্নার দেখানোর জন্য */
-}
-
-/* টেবিল হেডার */
-.mini-table thead {
-    background-color: #f1f5f9;
 }
 
 .mini-table th {
     text-align: left;
     color: #475569;
     padding: 12px 15px;
+    background-color: #f1f5f9;
     font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
-    border-bottom: 2px solid #e2e8f0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #e2e8f0;
 }
 
-/* কলাম সাইজিং */
-.mini-table th:nth-child(1) { width: 8%; text-align: center; } /* No. */
-.mini-table th:nth-child(2) { width: 50%; } /* Item Name */
-.mini-table th:nth-child(3) { width: 20%; text-align: center; } /* Qty */
-.mini-table th:nth-child(4) { width: 22%; text-align: right; } /* Price */
-
-/* টেবিল বডি */
 .mini-table td {
     padding: 12px 15px;
     border-bottom: 1px solid #f1f5f9;
     color: #334155;
-    vertical-align: middle;
 }
 
-/* টেবিলের ডেটা এলাইনমেন্ট */
-.mini-table td:nth-child(1) { text-align: center; color: #94a3b8; font-weight: 500; }
-.mini-table td:nth-child(2) { font-weight: 500; }
-.mini-table td:nth-child(3) { text-align: center; background-color: #fcfcfc; }
-.mini-table td:nth-child(4) { text-align: right; font-weight: 600; color: #0f172a; }
-
-/* শেষ রো এর বর্ডার রিমুভ */
-.mini-table tr:last-child td {
-    border-bottom: none;
+.mini-table th:nth-child(4), .mini-table td:nth-child(4) {
+    text-align: right;
 }
 
-/* রো হোভার এফেক্ট */
-.mini-table tbody tr:hover {
-    background-color: #f8fafc;
-}
-
-/* --- Delete Button --- */
 .btn-delete-record {
     background: #fff1f2;
     color: #e11d48;
@@ -256,29 +210,23 @@
     cursor: pointer;
     margin-top: 20px;
     font-size: 0.85rem;
-    font-weight: 600;
-    display: inline-flex;
+    float: right;
+    display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.2s;
-    float: right; /* ডান দিকে সরানোর জন্য */
 }
 
 .btn-delete-record:hover {
     background: #e11d48;
     color: white;
-    border-color: #e11d48;
-    box-shadow: 0 4px 6px rgba(225, 29, 72, 0.2);
 }
 
-/* Clear float fix if needed */
 .items-container::after {
     content: "";
     display: table;
     clear: both;
 }
 
-/* --- Loading State --- */
 .loading-state {
     text-align: center;
     padding: 60px;
@@ -287,5 +235,4 @@
 .loading-state i {
     font-size: 2.5rem;
     margin-bottom: 15px;
-    color: #cbd5e1;
 }

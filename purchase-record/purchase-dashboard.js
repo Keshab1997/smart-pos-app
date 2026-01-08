@@ -6,7 +6,7 @@ const filterBtn = document.getElementById('filterBtn');
 const showAllBtn = document.getElementById('showAllBtn');
 const printBtn = document.getElementById('printBtn');
 
-// বর্তমানে প্রদর্শিত ডাটা স্টোর করার জন্য ভেরিয়েবল
+// বর্তমানে প্রদর্শিত ডাটা স্টোর করার জন্য ভেরিয়েবল
 let currentData = [];
 
 // পেজ লোড হলে সব ডাটা দেখাবে
@@ -15,20 +15,24 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ফিল্টার বাটন ক্লিক
-filterBtn.addEventListener('click', () => {
-    const date = filterDateInput.value;
-    if(date) {
-        loadRecords(date);
-    } else {
-        alert("Please select a date first!");
-    }
-});
+if(filterBtn) {
+    filterBtn.addEventListener('click', () => {
+        const date = filterDateInput.value;
+        if(date) {
+            loadRecords(date);
+        } else {
+            alert("Please select a date first!");
+        }
+    });
+}
 
 // Show All বাটন
-showAllBtn.addEventListener('click', () => {
-    filterDateInput.value = '';
-    loadRecords();
-});
+if(showAllBtn) {
+    showAllBtn.addEventListener('click', () => {
+        filterDateInput.value = '';
+        loadRecords();
+    });
+}
 
 // প্রিন্ট বাটন ইভেন্ট
 if (printBtn) {
@@ -102,7 +106,7 @@ function createRecordCard(data, id) {
                     <td>${index + 1}</td>
                     <td>${item.itemName}</td>
                     <td>${item.itemQty || '-'}</td>
-                    <td>₹ ${item.itemPrice}</td>
+                    <td>₹ ${parseFloat(item.itemPrice).toFixed(2)}</td>
                 </tr>
             `;
         });
@@ -115,7 +119,7 @@ function createRecordCard(data, id) {
                 <span class="record-date"><i class="far fa-calendar-alt"></i> ${data.date}</span>
             </div>
             <div class="record-right">
-                <span class="record-total">₹ ${data.totalAmount}</span>
+                <span class="record-total">₹ ${parseFloat(data.totalAmount).toFixed(2)}</span>
                 <span class="click-hint">Click to view items</span>
             </div>
         </div>
@@ -145,21 +149,17 @@ function createRecordCard(data, id) {
 }
 
 // =======================================================
-//   FULL DETAILS PRINT FUNCTION (UPDATED)
+//   FULL DETAILS PRINT FUNCTION
 // =======================================================
 function printReport() {
-    // গ্র্যান্ড টোটাল হিসাব
     const grandTotal = currentData.reduce((sum, record) => sum + parseFloat(record.totalAmount || 0), 0);
     const reportDate = filterDateInput.value ? `Date: ${filterDateInput.value}` : "All Records History";
 
-    // প্রিন্ট উইন্ডো সেটআপ
     const printWindow = window.open('', '', 'height=600,width=800');
 
-    // টেবিলের বডি তৈরি (লুপের মাধ্যমে)
     let tableContent = '';
 
     currentData.forEach((record, index) => {
-        // ১. প্রতিটি বিলের হেডার (দোকানের নাম ও তারিখ)
         tableContent += `
             <tr class="bill-header-row">
                 <td>${index + 1}</td>
@@ -170,32 +170,28 @@ function printReport() {
             </tr>
         `;
 
-        // ২. প্রতিটি বিলের ভেতরের আইটেমগুলোর লুপ
         if (record.items && record.items.length > 0) {
             record.items.forEach(item => {
                 tableContent += `
                     <tr class="item-row">
-                        <td></td> <!-- SL খালি থাকবে -->
+                        <td></td>
                         <td style="padding-left: 25px;">• ${item.itemName}</td>
                         <td style="text-align: center;">${item.itemQty || '-'}</td>
-                        <td style="text-align: right;">${item.itemPrice}</td>
+                        <td style="text-align: right;">${parseFloat(item.itemPrice).toFixed(2)}</td>
                     </tr>
                 `;
             });
         }
 
-        // ৩. নির্দিষ্ট বিলের টোটাল
         tableContent += `
             <tr class="bill-total-row">
                 <td colspan="3" style="text-align: right;">Bill Total:</td>
-                <td style="text-align: right;">₹ ${record.totalAmount}</td>
+                <td style="text-align: right;">₹ ${parseFloat(record.totalAmount).toFixed(2)}</td>
             </tr>
-            <!-- বিলের মাঝখানে একটু গ্যাপ -->
             <tr><td colspan="4" style="border: none; height: 10px;"></td></tr>
         `;
     });
 
-    // প্রিন্ট পেজের HTML ও CSS ডিজাইন
     printWindow.document.write(`
         <html>
         <head>
@@ -204,18 +200,13 @@ function printReport() {
                 body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #333; }
                 h1 { text-align: center; margin-bottom: 5px; color: #2c3e50; }
                 .subtitle { text-align: center; color: #7f8c8d; margin-bottom: 30px; font-size: 14px; }
-                
                 table { width: 100%; border-collapse: collapse; font-size: 13px; }
                 th { background-color: #2c3e50; color: white; padding: 8px; text-align: left; }
                 td { border: 1px solid #ddd; padding: 6px 8px; }
-                
-                /* ডিজাইনের জন্য ক্লাস */
                 .bill-header-row td { background-color: #f0f2f5; font-weight: bold; border-bottom: none; }
                 .item-row td { border-top: none; border-bottom: 1px dotted #eee; color: #444; }
                 .bill-total-row td { font-weight: bold; background-color: #fff; border-top: 1px solid #999; }
-                
                 .grand-total { background-color: #2ecc71 !important; color: white; font-size: 16px; font-weight: bold; }
-                
                 .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #aaa; border-top: 1px solid #eee; padding-top: 10px; }
             </style>
         </head>
@@ -259,7 +250,7 @@ function printReport() {
     }, 500);
 }
 
-// ডিটেইলস হাইড/শো ফাংশন
+// গ্লোবাল ফাংশন (HTML onclick এর জন্য)
 window.toggleDetails = function(id) {
     const container = document.getElementById(`details-${id}`);
     if (container.style.display === "block") {
@@ -269,7 +260,6 @@ window.toggleDetails = function(id) {
     }
 }
 
-// রেকর্ড ডিলিট ফাংশন
 window.deleteRecord = async function(id) {
     if (!confirm("Are you sure you want to delete this purchase record?")) {
         return;
@@ -277,6 +267,8 @@ window.deleteRecord = async function(id) {
 
     try {
         await deleteDoc(doc(db, "purchase_notes_isolated", id));
+        
+        // অ্যারে থেকে রিমুভ করা
         currentData = currentData.filter(item => item.id !== id);
 
         const cardElement = document.getElementById(`record-${id}`);
@@ -290,8 +282,6 @@ window.deleteRecord = async function(id) {
             }, 500);
         }
         
-        alert("Record deleted successfully!");
-
     } catch (error) {
         console.error("Error removing document: ", error);
         alert("Error deleting record: " + error.message);
