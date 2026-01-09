@@ -9,8 +9,11 @@
     --border-color: #ddd;
 }
 
+/* ফন্টগুলো হালকা এবং মার্জিত করার জন্য */
 body {
     background-color: var(--bg-color);
+    font-family: 'Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased;
 }
 
 /* --- Entry Form Section --- */
@@ -137,21 +140,27 @@ body {
 .expense-sheet-table {
     width: 100%;
     border-collapse: collapse;
-    font-family: 'Roboto Mono', monospace; /* Accounting Font */
-    font-size: 0.95rem;
+    font-family: 'Poppins', sans-serif; /* Roboto Mono সরিয়ে Poppins দেওয়া হলো যাতে চিকন লাগে */
+    font-size: 0.85rem; /* ফন্ট সাইজ কিছুটা কমানো হলো */
+    color: #444;
 }
 
 .expense-sheet-table th, 
 .expense-sheet-table td {
-    padding: 12px 15px;
+    padding: 10px 12px;
     border: 1px solid #ddd;
 }
 
 .expense-sheet-table th {
-    background-color: #f1f3f5;
-    font-weight: 700;
-    text-transform: uppercase;
+    background-color: #f8f9fa;
+    font-weight: 500; /* অতিরিক্ত মোটা (700) থেকে কমিয়ে 500 করা হলো */
+    color: #333;
+    text-transform: none; /* সব বড় হাতের অক্ষর সরিয়ে দেওয়া হলো */
     font-size: 0.85rem;
+}
+
+.expense-sheet-table td {
+    font-weight: 400; /* টেক্সট চিকন করার জন্য */
 }
 
 .expense-sheet-table .text-right { text-align: right; }
@@ -189,11 +198,55 @@ body {
 }
 .btn-delete:hover { background: #ffcdd2; }
 
+/* কালারগুলো কিছুটা হালকা করা হলো যাতে চোখে না লাগে */
+.row-inventory {
+    color: #c0392b !important; /* গাঢ় লাল থেকে কিছুটা সফট লাল */
+    font-weight: 400 !important;
+}
+
+/* ইনভেন্টরি বাদে অন্য সব খরচ সবুজ রঙে */
+.row-general-expense {
+    color: #218c53 !important; /* সফট গ্রিন */
+    font-weight: 400 !important;
+}
+
+/* ইনলাইন এডিট ইনপুট বক্সের স্টাইল */
+.inline-edit-input {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid var(--primary-color);
+    border-radius: 3px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+/* এডিটেবল সেলের জন্য কার্সর পরিবর্তন */
+.editable-cell {
+    cursor: cell;
+}
+.editable-cell:hover {
+    background-color: #fff8e1;
+}
+
+/* টেবিল রো হোভার ইফেক্ট (ইউজার ফ্রেন্ডলি করার জন্য) */
+.expense-sheet-table tbody tr:hover {
+    background-color: #f9f9f9;
+    cursor: pointer;
+}
+
+/* ইনভেন্টরি পারচেজ রো এর জন্য আলাদা স্টাইল (যাতে বোঝা যায় এগুলো এডিট হবে না) */
+.row-readonly {
+    background-color: #fcfcfc;
+    color: #888;
+}
+
 /* Sheet Footer (Signature) */
 .sheet-footer {
     margin-top: 60px;
     display: none; /* Hidden on screen usually */
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: flex-end;
 }
 .signature-area {
     text-align: center;
@@ -208,10 +261,27 @@ body {
 /* --- PRINT STYLES (PDF Generation) --- */
 /* ========================================= */
 @media print {
-    @page { size: A4; margin: 1cm; }
+    @page { 
+        size: A4 portrait; 
+        margin: 1cm; 
+    }
 
-    /* Hide everything except the sheet */
-    .main-header, .no-print, .btn-print, #mobile-menu-btn {
+    /* প্রিন্ট করার সময় সব টেক্সট কালো করার জন্য */
+    .row-inventory, 
+    .row-general-expense, 
+    .expense-sheet-table td, 
+    .expense-sheet-table th,
+    .expense-sheet-table tr {
+        color: #000000 !important; /* প্রিন্টে সব কালো দেখাবে */
+        -webkit-print-color-adjust: exact;
+    }
+
+    /* হ্যামবার্গার মেনু এবং নেভিগেশন বার লুকানোর জন্য */
+    #navbar-placeholder, 
+    .navbar, 
+    .hamburger-menu, 
+    .no-print, 
+    #mobile-menu-btn {
         display: none !important;
     }
 
@@ -221,12 +291,18 @@ body {
         color: black;
     }
 
-    .container { width: 100%; max-width: 100%; margin: 0; padding: 0; }
+    .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
 
     .sheet-container {
+        width: 100% !important;
+        padding: 0 !important;
         box-shadow: none;
         border: none;
-        padding: 0;
         margin: 0;
     }
 
@@ -236,26 +312,43 @@ body {
         margin-bottom: 20px;
     }
 
+    .expense-sheet-table {
+        width: 100% !important;
+        table-layout: auto; /* উইডথ অটো অ্যাডজাস্ট হবে */
+    }
+
+    /* প্রিন্টে ফন্ট আরো পরিষ্কার দেখানোর জন্য */
+    .expense-sheet-table td, 
+    .expense-sheet-table th {
+        font-size: 9pt;
+        color: #000 !important;
+        border: 0.5pt solid #ccc !important;
+    }
+
     .expense-sheet-table th {
         background-color: #ddd !important;
         color: black !important;
-        border: 1px solid #000;
         -webkit-print-color-adjust: exact;
     }
     
-    .expense-sheet-table td {
-        border: 1px solid #000;
-    }
-
     .date-header-row td {
-        background-color: #eee !important;
+        background-color: #f0f0f0 !important;
         border: 1px solid #000;
-        font-weight: bold;
+        font-weight: 600 !important;
         -webkit-print-color-adjust: exact;
     }
 
-    /* Show Signature Line */
-    .sheet-footer { display: flex; }
+    .sheet-footer {
+        display: flex !important; /* প্রিন্টে ফুটার দেখাবে */
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: 40px;
+    }
+    
+    .developer-credit p {
+        margin: 0;
+        font-size: 0.8rem !important;
+    }
 }
 
 /* Responsive */

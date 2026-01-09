@@ -3,11 +3,12 @@ import {
     auth,
     collection,
     doc,
+    getDoc,
     Timestamp,
     runTransaction
 } from '../js/firebase-config.js';
 
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // ImgBB API Configuration
 const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267'; 
@@ -108,6 +109,47 @@ document.addEventListener('DOMContentLoaded', () => {
             barcodesContainer.appendChild(wrapper);
         });
     }
+
+    // বারকোড ইনপুট দিলে অটো-ফিল করার লজিক
+    productsTbody.addEventListener('change', async (e) => {
+        if (e.target.classList.contains('product-barcode')) {
+            const barcode = e.target.value.trim();
+            const row = e.target.closest('tr');
+            
+            if (barcode && currentUserId) {
+                try {
+                    // ডাটাবেস থেকে প্রোডাক্ট চেক করা
+                    const productRef = doc(db, 'shops', currentUserId, 'inventory', barcode);
+                    const productSnap = await getDoc(productRef);
+
+                    if (productSnap.exists()) {
+                        const data = productSnap.data();
+                        
+                        // পুরনো তথ্য দিয়ে ফিল্ডগুলো অটো-ফিল করা
+                        row.querySelector('.product-name').value = data.name || '';
+                        row.querySelector('.product-category').value = data.category || '';
+                        row.querySelector('.product-cp').value = data.costPrice || 0;
+                        row.querySelector('.product-sp').value = data.sellingPrice || 0;
+                        
+                        // ইউজারকে বোঝানোর জন্য রো-এর রঙ পরিবর্তন (হালকা সবুজ)
+                        row.style.backgroundColor = '#e8f5e9'; 
+                        showStatus(`Product "${data.name}" found! New stock will be added to existing.`, 'success');
+                        
+                        // নাম এবং ক্যাটাগরি লক করে দেওয়া যাতে ভুল না হয়
+                        row.querySelector('.product-name').readOnly = true;
+                        row.querySelector('.product-category').readOnly = true;
+                    } else {
+                        // যদি নতুন বারকোড হয়, তবে লক খুলে দেওয়া এবং রঙ রিসেট করা
+                        row.style.backgroundColor = '';
+                        row.querySelector('.product-name').readOnly = false;
+                        row.querySelector('.product-category').readOnly = false;
+                    }
+                } catch (error) {
+                    console.error("Error fetching product:", error);
+                }
+            }
+        }
+    });
 
     addRowBtn.addEventListener('click', addProductRow);
 

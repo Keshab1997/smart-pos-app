@@ -5,6 +5,26 @@ import {
     orderBy, query, where, getDocs, getDoc 
 } from 'firebase/firestore';
 
+// ImgBB API Configuration
+const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267';
+
+// ইমেজ আপলোড ফাংশন
+async function uploadImageToImgBB(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        return data.success ? data.data.url : null;
+    } catch (error) {
+        console.error("ImgBB Error:", error);
+        return null;
+    }
+}
+
 // DOM Elements
 const inventoryBody = document.getElementById('inventory-tbody');
 const searchInput = document.getElementById('search-inventory');
@@ -238,6 +258,16 @@ function openEditModal(product) {
         'edit-stock': product.stock,
         'edit-barcode': product.barcode
     }).forEach(([id, value]) => { document.getElementById(id).value = value || ''; });
+    
+    // পুরনো ছবি থাকলে প্রিভিউ দেখানো
+    const preview = document.getElementById('edit-image-preview');
+    if (product.imageUrl) {
+        preview.src = product.imageUrl;
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+    
     editModal.style.display = 'flex';
 }
 
@@ -270,12 +300,17 @@ async function handleEditFormSubmit(e) {
     const isAuthorized = await verifyAdminPIN();
     if (!isAuthorized) return; 
 
+    const saveBtn = document.getElementById('edit-save-btn');
     const id = document.getElementById('edit-product-id').value;
+    const imageInput = document.getElementById('edit-image');
     const newName = document.getElementById('edit-name').value.trim();
     const newCategory = document.getElementById('edit-category').value.trim();
     const newCP = parseFloat(document.getElementById('edit-cp').value);
     const newSP = parseFloat(document.getElementById('edit-sp').value);
     const newStock = parseInt(document.getElementById('edit-stock').value, 10);
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
 
     const data = {
         name: newName,
@@ -283,9 +318,19 @@ async function handleEditFormSubmit(e) {
         costPrice: newCP,
         sellingPrice: newSP,
         stock: newStock,
+        lastUpdated: new Date()
     };
 
     try {
+        // যদি নতুন ছবি সিলেক্ট করা হয়
+        if (imageInput.files && imageInput.files[0]) {
+            saveBtn.textContent = 'Uploading Image...';
+            const uploadedUrl = await uploadImageToImgBB(imageInput.files[0]);
+            if (uploadedUrl) {
+                data.imageUrl = uploadedUrl;
+            }
+        }
+
         await updateDoc(doc(db, 'shops', currentUserId, 'inventory', id), data);
 
         const expensesRef = collection(db, 'shops', currentUserId, 'expenses');
@@ -309,6 +354,9 @@ async function handleEditFormSubmit(e) {
     } catch (error) {
         console.error("Update Error:", error);
         showStatus('Failed to update product.', 'error'); 
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
     }
 }
 

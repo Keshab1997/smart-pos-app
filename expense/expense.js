@@ -231,28 +231,45 @@ function renderExpenseSheet(data) {
             grandTotal += exp.amount;
 
             const tr = document.createElement('tr');
+            
+            // ইনভেন্টরি কি না চেক করা
+            const isInventory = exp.category === 'inventory_purchase' || exp.category.toLowerCase().includes('inventory');
+            
+            if (isInventory) {
+                tr.classList.add('row-inventory');       // ইনভেন্টরি হলে লাল
+            } else {
+                tr.classList.add('row-general-expense'); // অন্য সব খরচ সবুজ
+            }
+
             tr.innerHTML = `
                 <td>${exp.jsDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</td>
                 <td>${exp.category}</td>
-                <td>${exp.description}</td>
-                <td class="text-right">₹${exp.amount.toFixed(2)}</td>
+                <td class="${!isInventory ? 'editable-cell' : ''}" title="${!isInventory ? 'Double click to edit' : ''}">${exp.description}</td>
+                <td class="text-right ${!isInventory ? 'editable-cell' : ''}" title="${!isInventory ? 'Double click to edit' : ''}">₹${exp.amount.toFixed(2)}</td>
                 <td class="no-print" style="text-align:center;">
-                    <button class="btn-edit" data-id="${exp.id}">Edit</button>
-                    <button class="btn-delete" data-id="${exp.id}">Delete</button>
+                    ${!isInventory ? `
+                        <button class="btn-edit" data-id="${exp.id}">Edit</button>
+                        <button class="btn-delete" data-id="${exp.id}">Delete</button>
+                    ` : '<span style="font-size:0.7rem; color:#bbb;">Locked</span>'}
                 </td>
             `;
             
-            tr.querySelector('.btn-edit').addEventListener('click', function() {
-                prepareEdit(this.getAttribute('data-id'));
-            });
+            // --- ইনলাইন এডিট লজিক (Double Click) ---
+            if (!isInventory) {
+                const descCell = tr.cells[2];
+                const amountCell = tr.cells[3];
 
-            tr.querySelector('.btn-delete').addEventListener('click', function() {
-                deleteExpense(this.getAttribute('data-id'));
-            });
+                descCell.addEventListener('dblclick', () => startInlineEdit(descCell, exp.id, 'description', exp.description));
+                amountCell.addEventListener('dblclick', () => startInlineEdit(amountCell, exp.id, 'amount', exp.amount));
+
+                tr.querySelector('.btn-edit').addEventListener('click', () => prepareEdit(exp.id));
+                tr.querySelector('.btn-delete').addEventListener('click', () => deleteExpense(exp.id));
+            }
             
             expenseSheetBody.appendChild(tr);
         });
 
+        // সাবটোটাল রো
         const subRow = document.createElement('tr');
         subRow.style.backgroundColor = '#fff';
         subRow.style.fontWeight = 'bold';
@@ -264,7 +281,65 @@ function renderExpenseSheet(data) {
         expenseSheetBody.appendChild(subRow);
     }
 
+    // লুপ শেষ হওয়ার পর গ্র্যান্ড টোটাল রো যোগ করা
+    const grandTotalRow = document.createElement('tr');
+    grandTotalRow.style.backgroundColor = '#f1f3f5'; // কালো থেকে হালকা গ্রে করা হলো
+    grandTotalRow.style.color = '#000';             // টেক্সট কালো
+    grandTotalRow.style.fontWeight = '600';
+    grandTotalRow.style.fontSize = '0.95rem';
+
+    grandTotalRow.innerHTML = `
+        <td colspan="3" style="text-align:right; padding: 12px; border: 1px solid #ddd;">GRAND TOTAL:</td>
+        <td class="text-right" style="padding: 12px; border: 1px solid #ddd;">₹${grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+        <td class="no-print" style="border: 1px solid #ddd;"></td>
+    `;
+    
+    expenseSheetBody.appendChild(grandTotalRow);
+
     displayTotalExpense.textContent = `₹${grandTotal.toFixed(2)}`;
+}
+
+/**
+ * ইনলাইন এডিট শুরু করার ফাংশন
+ */
+function startInlineEdit(td, id, field, originalValue) {
+    if (td.querySelector('input')) return; // অলরেডি এডিট চলছে
+
+    const input = document.createElement('input');
+    input.type = field === 'amount' ? 'number' : 'text';
+    input.value = originalValue;
+    input.className = 'inline-edit-input';
+    
+    td.innerHTML = '';
+    td.appendChild(input);
+    input.focus();
+
+    // সেভ করার ফাংশন
+    const saveInline = async () => {
+        const newValue = field === 'amount' ? parseFloat(input.value) : input.value;
+        
+        if (newValue !== originalValue && newValue !== "") {
+            try {
+                const docRef = doc(db, 'shops', currentUserId, 'expenses', id);
+                await updateDoc(docRef, { [field]: newValue, updatedAt: Timestamp.now() });
+                loadExpenses(); // টেবিল রিফ্রেশ
+            } catch (e) {
+                console.error(e);
+                alert("Update failed!");
+                loadExpenses();
+            }
+        } else {
+            // কোনো পরিবর্তন না হলে আগের ভ্যালু ফিরিয়ে আনা
+            td.innerText = field === 'amount' ? `₹${parseFloat(originalValue).toFixed(2)}` : originalValue;
+        }
+    };
+
+    // ইভেন্ট লিসেনার (Enter চাপলে বা বাইরে ক্লিক করলে সেভ হবে)
+    input.addEventListener('blur', saveInline);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') saveInline();
+        if (e.key === 'Escape') loadExpenses();
+    });
 }
 
 // ==========================================

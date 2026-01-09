@@ -119,7 +119,17 @@
                     <label for="edit-barcode">Barcode (Optional):</label>
                     <input type="text" id="edit-barcode" class="form-control" disabled>
                 </div>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
+                
+                <!-- নতুন ইমেজ আপলোড ফিল্ড -->
+                <div class="form-group">
+                    <label for="edit-image">Product Image:</label>
+                    <input type="file" id="edit-image" class="form-control" accept="image/*">
+                    <div id="edit-image-preview-container" style="margin-top: 10px;">
+                        <img id="edit-image-preview" src="" style="max-width: 80px; height: 80px; object-fit: cover; border-radius: 5px; display: none; border: 1px solid #ddd;">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="edit-save-btn">Save Changes</button>
             </form>
         </div>
     </div>
