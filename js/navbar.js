@@ -1,49 +1,26 @@
-// js/navbar.js
+import { auth } from './firebase-config.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// 1. মেনুর তালিকা (রুট ফোল্ডার থেকে পাথ)
+// 1. মেনুর তালিকা
 const menuItems = [
     { name: 'Dashboard', link: 'dashboard.html', icon: '🏠' },
     { name: 'Billing', link: 'billing/billing.html', icon: '🧾' },
-    { name: 'Advance Booking', link: 'advance-booking/index.html', icon: '📅' },
     { name: 'Inventory', link: 'inventory/inventory.html', icon: '📦' },
     { name: 'Add Product', link: 'add-product/add-product.html', icon: '➕' },
     { name: 'Purchase Record', link: 'purchase-record/purchase-dashboard.html', icon: '🛒' },
     { name: 'Sales Report', link: 'sales-report/report.html', icon: '📊' },
-    { name: 'Expense', link: 'expense/expense.html', icon: '💸' },
     { name: 'Profit/Loss', link: 'sales-report/profit-loss.html', icon: '📈' },
-    { name: 'Shop Details', link: 'shop-details/shop-details.html', icon: '🏪' },
+    { name: 'Expense', link: 'expense/expense.html', icon: '💸' },
+    { name: 'Advance Booking', link: 'advance-booking/index.html', icon: '📅' },
     { name: 'Barcode Print', link: 'label-printer/index.html', icon: '🖨️' },
+    { name: 'Shop Details', link: 'shop-details/shop-details.html', icon: '🏪' },
     { name: 'Admin Panel', link: 'admin.html', icon: '⚙️', id: 'nav-item-admin' }
 ];
 
-// 2. সঠিক পাথ বের করার ফাংশন (Robust Path Correction)
+// 2. সঠিক পাথ বের করার ফাংশন
 function getCorrectPath(targetPath) {
     const currentPath = window.location.pathname;
     
-    // আমরা কি কোনো সাব-ফোল্ডারে আছি? (যেমন /purchase-record/...)
-    // যদি URL এ '/' এর সংখ্যা ২ এর বেশি হয় (root '/' বাদে), তাহলে আমরা সাব-ফোল্ডারে আছি।
-    // সহজ চেক: যদি currentPath এ 'purchase-record' বা অন্য ফোল্ডারের নাম থাকে।
-    
-    // আমরা ধরে নিচ্ছি index.html এবং dashboard.html রুটে আছে।
-    // বাকি সব ফোল্ডারের ভেতরে।
-    
-    const pathSegments = currentPath.split('/').filter(Boolean); // খালি স্ট্রিং বাদ দিয়ে
-    
-    // যদি আমরা লোকালহোস্টে থাকি, প্রথম সেগমেন্ট হতে পারে প্রোজেক্ট ফোল্ডারের নাম।
-    // তাই আমরা দেখব ফাইলের নাম কী।
-    const fileName = pathSegments[pathSegments.length - 1];
-    
-    // যদি আমরা রুটে না থাকি (অর্থাৎ ফাইলের আগে ফোল্ডার আছে)
-    // তবে dashboard.html এর জন্য '../' যোগ করতে হবে।
-    
-    // সহজ লজিক: যদি বর্তমান পেজটি কোনো ফোল্ডারের ভেতর থাকে (যেমন purchase-record/dashboard.html)
-    // তাহলে রুটে যেতে '../' লাগবে।
-    
-    // আপনার স্ট্রাকচার অনুযায়ী:
-    // Root: dashboard.html
-    // Sub: purchase-record/purchase-dashboard.html
-    
-    // যদি বর্তমান লোকেশনে ফোল্ডার থাকে (যেমন purchase-record)
     if (currentPath.includes('/purchase-record/') || 
         currentPath.includes('/billing/') || 
         currentPath.includes('/inventory/') ||
@@ -69,13 +46,9 @@ function loadNavbar() {
 
     let menuHTML = '';
     menuItems.forEach(item => {
-        // Active Class Logic
         const itemFileName = item.link.split('/').pop();
         const isActive = itemFileName === currentPage ? 'active' : '';
-        
-        // যদি আইটেমের ID থাকে (যেমন Admin Panel), সেটা যোগ করা হবে
         const idAttr = item.id ? `id="${item.id}"` : '';
-        
         const finalLink = getCorrectPath(item.link);
         
         menuHTML += `
@@ -87,12 +60,11 @@ function loadNavbar() {
         `;
     });
 
-    // ড্যাশবোর্ড লিংক (লোগোর জন্য)
     const dashboardLink = getCorrectPath('dashboard.html');
 
-    // --- নতুন: অ্যাডমিন মডাল HTML ---
+    // অ্যাডমিন মডাল HTML
     const adminModalHTML = `
-        <div id="admin-modal" class="admin-modal-overlay">
+        <div id="admin-modal" class="admin-modal-overlay" style="display:none;">
             <div class="admin-modal-content">
                 <div class="admin-modal-header">
                     <h3 style="margin:0; color:#d32f2f;">👮‍♂️ Admin Control</h3>
@@ -168,7 +140,6 @@ function loadNavbar() {
             </div>
         </aside>
         
-        <!-- মডাল যোগ করা হলো -->
         ${adminModalHTML}
     `;
 
@@ -176,6 +147,7 @@ function loadNavbar() {
     setupNavbarEvents();
 }
 
+// 4. ইভেন্ট লিসেনার সেটআপ
 function setupNavbarEvents() {
     const body = document.body;
     const toggleBtn = document.getElementById('toggle-sidebar');
@@ -197,13 +169,22 @@ function setupNavbarEvents() {
              document.dispatchEvent(event);
         });
     }
+
+    // অ্যাডমিন মডাল ক্লোজ বাটন
+    const adminModal = document.getElementById('admin-modal');
+    const closeAdminModal = document.getElementById('close-admin-modal');
+    
+    if (closeAdminModal) {
+        closeAdminModal.addEventListener('click', () => {
+            if (adminModal) adminModal.style.display = 'none';
+        });
+    }
 }
 
+// DOM লোড হওয়ার পর নেভবার লোড করা
 document.addEventListener('DOMContentLoaded', loadNavbar);
-// Admin button visibility control
-import { auth } from './firebase-config.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+// 5. অথেনটিকেশন লজিক
 onAuthStateChanged(auth, (user) => {
     const adminBtn = document.getElementById('nav-item-admin');
     const ADMIN_EMAIL = "keshabsarkar2018@gmail.com";
@@ -212,5 +193,46 @@ onAuthStateChanged(auth, (user) => {
         if (adminBtn) adminBtn.style.display = 'block';
     } else {
         if (adminBtn) adminBtn.style.display = 'none';
+    }
+});
+
+// 6. কিবোর্ড শর্টকাট লজিক (Universal Fix for Mac & Windows)
+document.addEventListener('keydown', (e) => {
+    // ডিবাগিং-এর জন্য: কনসোলে দেখাবে আপনি কী চাপছেন
+    // console.log(`Pressed: ${e.code}, Alt: ${e.altKey}, Ctrl: ${e.ctrlKey}`);
+
+    // শুধুমাত্র Alt কি চাপা হলে (Mac এ Option Key)
+    if (e.altKey) {
+        let targetPage = "";
+
+        // e.key এর বদলে e.code ব্যবহার করা হচ্ছে যাতে Mac এ সমস্যা না হয়
+        switch (e.code) {
+            case 'KeyD': targetPage = 'dashboard.html'; break;
+            case 'KeyB': targetPage = 'billing/billing.html'; break;
+            case 'KeyI': targetPage = 'inventory/inventory.html'; break;
+            case 'KeyS': targetPage = 'sales-report/report.html'; break;
+            case 'KeyE': targetPage = 'expense/expense.html'; break;
+            case 'KeyP': targetPage = 'sales-report/profit-loss.html'; break;
+        }
+
+        if (targetPage) {
+            e.preventDefault(); // ব্রাউজারের ডিফল্ট অ্যাকশন বন্ধ করা
+            const finalPath = getCorrectPath(targetPage);
+            console.log("🚀 Shortcut Triggered! Going to: " + finalPath);
+            window.location.href = finalPath;
+        }
+    }
+
+    // Escape বাটন চাপলে মডাল বা সাইডবার বন্ধ হবে
+    if (e.code === 'Escape') {
+        // সাইডবার বন্ধ করা
+        document.body.classList.remove('sidebar-open');
+
+        // অ্যাডমিন মডাল বন্ধ করা
+        const adminModal = document.getElementById('admin-modal');
+        if (adminModal) adminModal.style.display = 'none';
+        
+        // অন্যান্য মডাল বন্ধ করা
+        document.querySelectorAll('.modal-overlay, .modal').forEach(m => m.classList.add('hidden'));
     }
 });

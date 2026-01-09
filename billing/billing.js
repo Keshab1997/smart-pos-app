@@ -542,6 +542,19 @@ function setupEventListeners() {
         const activeEl = document.activeElement;
         const isTypingInInput = activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA';
 
+        // F2 = সার্চ বক্সে ফোকাস
+        if (e.key === 'F2') {
+            e.preventDefault();
+            productSearchInput.focus();
+        }
+        // F8 = চেকআউট মডাল ওপেন
+        if (e.key === 'F8') {
+            e.preventDefault();
+            if (proceedToCheckoutBtn && !proceedToCheckoutBtn.disabled) {
+                proceedToCheckoutBtn.click();
+            }
+        }
+
         if (!isTypingInInput && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
             e.preventDefault();
             productSearchInput.focus();
