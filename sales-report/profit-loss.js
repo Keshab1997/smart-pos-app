@@ -1,4 +1,4 @@
-// sales-report/profit-loss.js (v7.0 - Detailed Breakdown View)
+// sales-report/profit-loss.js (v9.0 - Added Daily Subtotals & Grand Total)
 
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -9,26 +9,22 @@ import {
 // ==========================================================
 // --- DOM Elements ---
 // ==========================================================
-// Ledger Elements
 const dispRevenue = document.getElementById('disp-revenue');
 const dispTotalIncome = document.getElementById('disp-total-income');
 const expenseListContainer = document.getElementById('expense-list-container');
 const dispTotalExpense = document.getElementById('disp-total-expense');
 
-// Summary Boxes
 const pnlResultBox = document.getElementById('pnl-result-box');
 const pnlLabel = document.getElementById('pnl-label');
 const pnlAmount = document.getElementById('pnl-amount');
 const stockAssetAmount = document.getElementById('stock-asset-amount');
 
-// Detailed Table
 const detailedExpenseBody = document.getElementById('detailed-expense-body');
 
 const displayPeriodRange = document.getElementById('display-period-range');
 const pnlChartCtx = document.getElementById('pnlChart').getContext('2d');
 let pnlChartInstance;
 
-// Filters & Controls
 const btnToday = document.getElementById('btn-today');
 const btnThisWeek = document.getElementById('btn-this-week');
 const btnThisMonth = document.getElementById('btn-this-month');
@@ -81,9 +77,6 @@ function getPeriodDates(period) {
     return { startDate, endDate };
 }
 
-// ==========================================================
-// --- Helper: Stock Value ---
-// ==========================================================
 async function calculateClosingStockValue() {
     if (!currentUserId) return 0;
     const inventoryRef = collection(db, 'shops', currentUserId, 'inventory');
@@ -125,43 +118,56 @@ async function generatePnlReport(startDate, endDate) {
 
         let totalRevenue = 0;
         let totalCogs = 0;
+        const cogsDetails = []; 
+        const detailedExpenses = [];
 
-        // Process Sales (Revenue & COGS)
+        // 1. Process Sales (Revenue & COGS)
         salesSnap.forEach(doc => {
             const sale = doc.data();
             if (sale.status === 'canceled') return;
-            
             totalRevenue += sale.total || 0;
+            
             if (Array.isArray(sale.items)) {
                 sale.items.forEach(item => {
-                    const cost = item.purchasePrice || item.costPrice || 0;
-                    totalCogs += cost * (item.quantity || 0);
+                    const costPrice = item.purchasePrice || item.costPrice || 0;
+                    const qty = item.quantity || 0;
+                    const lineCost = costPrice * qty;
+                    if (lineCost > 0) {
+                        totalCogs += lineCost;
+                        cogsDetails.push({
+                            date: sale.createdAt ? sale.createdAt.toDate() : new Date(),
+                            category: 'COGS (Product Cost)',
+                            desc: `${item.name || item.productName} (Qty: ${qty})`,
+                            amount: lineCost,
+                            type: 'cogs'
+                        });
+                    }
                 });
             }
         });
 
-        // Process Expenses (Categorize & List)
+        // 2. Process Expenses
         let totalOtherExpenses = 0;
         const expenseCategoryMap = {};
-        const detailedExpenses = [];
         
         expensesSnap.forEach(doc => {
             const exp = doc.data();
-            // Filter out 'Inventory Purchase' to avoid double counting with COGS
-            if (exp.category?.toLowerCase() !== 'inventory purchase') {
+            const catRaw = exp.category || '';
+            const catNormalized = catRaw.toLowerCase().replace(/_/g, ' ').trim();
+
+            // Filter out Inventory Purchase
+            if (catNormalized !== 'inventory purchase') {
                 const amount = exp.amount || 0;
                 totalOtherExpenses += amount;
-                
-                // For Category Summary
                 const catName = exp.category || 'Other';
                 expenseCategoryMap[catName] = (expenseCategoryMap[catName] || 0) + amount;
 
-                // For Detailed List
                 detailedExpenses.push({
                     date: exp.date.toDate(),
                     category: exp.category,
                     desc: exp.description,
-                    amount: amount
+                    amount: amount,
+                    type: 'expense'
                 });
             }
         });
@@ -169,9 +175,11 @@ async function generatePnlReport(startDate, endDate) {
         const totalExpenses = totalCogs + totalOtherExpenses;
         const netProfit = totalRevenue - totalExpenses;
 
-        // Update All Views
         updateLedgerView(totalRevenue, totalCogs, expenseCategoryMap, totalExpenses, netProfit, stockValue);
-        updateDetailedExpenseTable(detailedExpenses);
+        
+        const allDetails = [...detailedExpenses, ...cogsDetails];
+        updateDetailedExpenseTable(allDetails);
+        
         updateChart(totalRevenue, totalExpenses, netProfit);
 
     } catch (error) {
@@ -181,27 +189,19 @@ async function generatePnlReport(startDate, endDate) {
     }
 }
 
-// ==========================================================
-// --- View 1: Split Column Ledger (Category Breakdown) ---
-// ==========================================================
 function updateLedgerView(revenue, cogs, expenseMap, totalExpenses, netProfit, stockValue) {
     const fmt = n => `₹${n.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-
-    // 1. Income Column
     dispRevenue.textContent = fmt(revenue);
     dispTotalIncome.textContent = fmt(revenue);
 
-    // 2. Expense Column
     expenseListContainer.innerHTML = `
-        <div class="ledger-item">
-            <span>Cost of Goods Sold (Product Cost)</span>
-            <span class="amount">${fmt(cogs)}</span>
+        <div class="ledger-item" style="border-bottom: 2px solid #eee;">
+            <span style="font-weight:600; color:#d62828;">Cost of Goods Sold (Product Cost)</span>
+            <span class="amount" style="color:#d62828;">${fmt(cogs)}</span>
         </div>
     `;
 
-    // Sort categories by amount desc
     const sortedCategories = Object.entries(expenseMap).sort((a, b) => b[1] - a[1]);
-
     for (const [name, amount] of sortedCategories) {
         expenseListContainer.innerHTML += `
             <div class="ledger-item">
@@ -210,10 +210,7 @@ function updateLedgerView(revenue, cogs, expenseMap, totalExpenses, netProfit, s
             </div>
         `;
     }
-
     dispTotalExpense.textContent = fmt(totalExpenses);
-
-    // 3. Profit / Loss Box
     pnlAmount.textContent = fmt(Math.abs(netProfit));
     
     if (netProfit >= 0) {
@@ -223,81 +220,106 @@ function updateLedgerView(revenue, cogs, expenseMap, totalExpenses, netProfit, s
         pnlLabel.textContent = "NET LOSS";
         pnlResultBox.className = "summary-box result-box loss";
     }
-
-    // 4. Asset Box
     stockAssetAmount.textContent = fmt(stockValue);
 }
 
 // ==========================================================
-// --- View 2: Detailed Expense Table (Bottom Sheet) ---
+// --- View 2: Detailed Expense Table (With Subtotals) ---
 // ==========================================================
-function updateDetailedExpenseTable(expenses) {
+function updateDetailedExpenseTable(items) {
     detailedExpenseBody.innerHTML = '';
+    let grandTotal = 0;
 
-    if (expenses.length === 0) {
-        detailedExpenseBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:15px; color:#777;">No expenses found in this period.</td></tr>';
+    if (items.length === 0) {
+        detailedExpenseBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:15px; color:#777;">No expenses found.</td></tr>';
         return;
     }
 
     // Sort by date desc
-    expenses.sort((a, b) => b.date - a.date);
+    items.sort((a, b) => b.date - a.date);
 
-    // Group by Date for better readability
-    const grouped = expenses.reduce((acc, exp) => {
-        const dateStr = exp.date.toLocaleDateString('en-IN', { 
+    // Group by Date
+    const grouped = items.reduce((acc, item) => {
+        const dateStr = item.date.toLocaleDateString('en-IN', { 
             weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
         });
         if (!acc[dateStr]) acc[dateStr] = [];
-        acc[dateStr].push(exp);
+        acc[dateStr].push(item);
         return acc;
     }, {});
 
-    // Render grouped expenses
-    for (const [dateStr, dayExpenses] of Object.entries(grouped)) {
-        // Date Header Row
+    // Render grouped items
+    for (const [dateStr, dayItems] of Object.entries(grouped)) {
+        let dailyTotal = 0;
+
+        // 1. Date Header Row
         const headerRow = document.createElement('tr');
         headerRow.classList.add('group-date-row');
-        headerRow.innerHTML = `<td colspan="4">${dateStr}</td>`;
+        headerRow.innerHTML = `<td colspan="4" style="background:#f1f3f5; font-weight:bold;">${dateStr}</td>`;
         detailedExpenseBody.appendChild(headerRow);
 
-        // Expense Rows for that day
-        dayExpenses.forEach(exp => {
+        // 2. Item Rows
+        dayItems.forEach(item => {
+            dailyTotal += item.amount;
+            grandTotal += item.amount;
+
             const tr = document.createElement('tr');
+            const isCogs = item.type === 'cogs';
+            if (isCogs) tr.style.backgroundColor = '#fffafa';
+
             tr.innerHTML = `
-                <td>${exp.date.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</td>
-                <td>${exp.category || 'Other'}</td>
-                <td>${exp.desc || 'N/A'}</td>
-                <td class="text-right">₹${exp.amount.toFixed(2)}</td>
+                <td style="color:#666; font-size:0.85rem;">${item.date.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</td>
+                <td style="${isCogs ? 'color:#d62828; font-weight:500;' : ''}">${item.category}</td>
+                <td style="font-size:0.85rem;">${item.desc || '-'}</td>
+                <td class="text-right">₹${item.amount.toFixed(2)}</td>
             `;
             detailedExpenseBody.appendChild(tr);
         });
+
+        // 3. Daily Subtotal Row
+        const subtotalRow = document.createElement('tr');
+        subtotalRow.style.backgroundColor = '#fdfdfe';
+        subtotalRow.style.fontWeight = 'bold';
+        subtotalRow.innerHTML = `
+            <td colspan="3" class="text-right" style="color:#555;">Daily Total (${dateStr}):</td>
+            <td class="text-right" style="border-top: 1px solid #ccc; color:#000;">₹${dailyTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+        `;
+        detailedExpenseBody.appendChild(subtotalRow);
     }
+
+    // 4. Grand Total Row (Footer)
+    const grandTotalRow = document.createElement('tr');
+    grandTotalRow.style.backgroundColor = '#343a40';
+    grandTotalRow.style.color = '#fff';
+    grandTotalRow.style.fontWeight = 'bold';
+    grandTotalRow.style.fontSize = '1rem';
+    grandTotalRow.innerHTML = `
+        <td colspan="3" class="text-right">GRAND TOTAL (All Expenses + COGS):</td>
+        <td class="text-right">₹${grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+    `;
+    detailedExpenseBody.appendChild(grandTotalRow);
 }
 
-// ==========================================================
-// --- Chart ---
-// ==========================================================
 function updateChart(revenue, expenses, netProfit) {
     if (pnlChartInstance) pnlChartInstance.destroy();
+    const profitData = netProfit > 0 ? netProfit : 0;
     pnlChartInstance = new Chart(pnlChartCtx, {
         type: 'doughnut',
         data: {
-            labels: ['Expenses', 'Net Profit'],
+            labels: ['Total Expenses', 'Net Profit'],
             datasets: [{
-                data: [expenses, netProfit > 0 ? netProfit : 0],
+                data: [expenses, profitData],
                 backgroundColor: ['#e63946', '#2a9d8f'],
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
         }
     });
 }
 
-// ==========================================================
-// --- Event Listeners ---
-// ==========================================================
 function setupEventListeners() {
     const timePeriodButtons = {
         'btn-today': 'today', 'btn-this-week': 'week',
