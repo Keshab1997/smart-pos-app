@@ -183,8 +183,18 @@ function renderSalesTable(sales) {
     sales.forEach(sale => {
         const saleDateObj = sale.createdAt.toDate();
         const saleDateStr = formatDate(saleDateObj); 
-        // বিলের প্রতিটি আইটেমের নাম এবং তার দাম/পরিমাণ দেখানোর জন্য
-        const detailsStr = sale.items ? sale.items.map(i => `${i.name} (${i.quantity}x)`).join(', ') : '';
+        // আইটেমগুলোকে সুন্দর লিস্ট আকারে দেখানোর জন্য HTML তৈরি
+        const detailsHTML = sale.items ? sale.items.map(i => {
+            // ডাটাবেসে 'price' নামে সেভ হচ্ছে, তাই i.price চেক করতে হবে
+            const unitPrice = i.price || i.sellingPrice || i.sp || 0;
+            
+            return `
+                <div class="item-info">
+                    <span class="item-name">• ${i.name}</span>
+                    <span class="item-qty-price">(${i.quantity} x ₹${parseFloat(unitPrice).toFixed(2)})</span>
+                </div>
+            `;
+        }).join('') : 'No items';
         
         // মোট কস্ট প্রাইস ক্যালকুলেশন
         let totalBillCost = 0;
@@ -249,7 +259,7 @@ function renderSalesTable(sales) {
             <td style="font-weight:600;">${displayBillNumber}</td>
             <td>${saleDateStr}</td>
             <td>${sale.items ? sale.items.length : 0}</td>
-            <td title="${detailsStr}">${detailsStr.length > 30 ? detailsStr.substring(0, 30) + '...' : detailsStr}</td>
+            <td class="details-column">${detailsHTML}</td>
             <td><span class="badge badge-${payMethod.toLowerCase() === 'cash' ? 'success' : 'warning'}">${payMethod}</span></td>
             <td>₹${discount.toFixed(2)}</td>
             <td style="color:#d35400; font-weight:500;">₹${totalBillCost.toFixed(2)}</td>
@@ -388,142 +398,170 @@ function sendReportToWhatsApp() {
     window.open(`https://wa.me/?text=${encodedMsg}`, '_blank');
 }
 
-// --- PDF DOWNLOAD (Enhanced with New Page & Footer) ---
+// --- PDF DOWNLOAD (Perfect Alignment Final Version) ---
 window.downloadPDF = function() {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4');
+    const doc = new jsPDF('l', 'mm', 'a4'); 
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
 
-    // Add custom footer function
-    const addFooter = (pageNumber) => {
-        const pageHeight = doc.internal.pageSize.height;
-        doc.setFontSize(8);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Page ${pageNumber} | Developed by Keshab Sarkar`, 14, pageHeight - 10);
-        doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, doc.internal.pageSize.width - 80, pageHeight - 10);
-    };
+    const startStr = startDatePicker.value || 'Start';
+    const endStr = endDatePicker.value || 'End';
 
-    // Header
-    doc.setFontSize(18);
-    doc.text(myShopName, 14, 15);
-    doc.setFontSize(12);
-    doc.text("Detailed Sales Report (Including Item-wise Cost)", 14, 22);
+    // --- ১. মেইন হেডার (Dark Blue Bar) ---
+    doc.setFillColor(31, 41, 55); 
+    doc.rect(0, 0, pageWidth, 40, 'F'); 
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.text(myShopName.toUpperCase(), 15, 18); 
+
     doc.setFontSize(10);
-    doc.text(`Period: ${startDatePicker.value} to ${endDatePicker.value}`, 14, 28);
+    doc.setFont("helvetica", "normal");
+    doc.text(`SALES REPORT | PERIOD: ${startStr} TO ${endStr}`, 15, 27);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, 33);
 
-    // Main table data
+    // --- ২. ডাটা প্রসেসিং ---
     const tableData = [];
+    let totals = { rev: 0, cost: 0, disc: 0, cash: 0, online: 0, canceled: 0 };
+
     filteredSalesForPDF.forEach(sale => {
-        const saleDate = formatDate(sale.createdAt.toDate());
-        const billNo = sale.billNumber || sale.billNo || sale.id.substring(0,6).toUpperCase();
+        const isCanceled = sale.status === 'canceled';
+        const billNo = sale.billNumber || sale.billNo || sale.id.substring(0, 6).toUpperCase();
+        const date = formatDate(sale.createdAt.toDate());
         
-        let itemsDetails = "";
-        let totalCost = 0;
-        
-        if(sale.items) {
-            itemsDetails = sale.items.map(i => {
-                const itemCostTotal = (i.costPrice || 0) * i.quantity;
-                totalCost += itemCostTotal;
-                return `${i.name} [Qty: ${i.quantity}] (CP: ${i.costPrice || 0} | Total CP: ${itemCostTotal})`;
+        let itemsList = "";
+        let saleCost = 0;
+        if (sale.items) {
+            itemsList = sale.items.map(i => {
+                const price = i.price || i.sellingPrice || 0;
+                const cost = i.costPrice || 0;
+                if (!isCanceled) saleCost += (cost * i.quantity);
+                return `• ${i.name} (${i.quantity} x ${price})`;
             }).join('\n');
         }
 
-        const statusText = sale.status === 'canceled' ? 'CANCELED' : 'SUCCESS';
-
         const netTotal = sale.total || 0;
-        const profit = netTotal - totalCost;
+        const discount = sale.discountAmount || sale.discount || 0;
+        const profit = isCanceled ? 0 : (netTotal - saleCost);
+        const method = (sale.paymentMethod || 'Cash').toUpperCase();
+
+        if (!isCanceled) {
+            totals.rev += netTotal;
+            totals.cost += saleCost;
+            totals.disc += discount;
+            if (method === 'CASH') totals.cash += netTotal;
+            else totals.online += netTotal;
+        } else {
+            totals.canceled += netTotal;
+        }
 
         tableData.push([
             billNo,
-            saleDate,
-            itemsDetails,
-            (sale.paymentMethod || 'Cash').toUpperCase(),
-            (sale.discountAmount || 0).toFixed(2),
-            totalCost.toFixed(2),
+            date,
+            itemsList,
+            method,
+            discount.toFixed(2),
+            saleCost.toFixed(2),
             netTotal.toFixed(2),
             profit.toFixed(2),
-            statusText
+            isCanceled ? 'CANCELED' : 'SUCCESS'
         ]);
     });
 
+    // --- ৩. মেইন সেলস টেবিল ---
+    doc.autoTable({
+        startY: 45,
+        margin: { left: 15, right: 15 },
+        head: [['Bill No', 'Date', 'Items & Details', 'Type', 'Disc.', 'Cost', 'Net Total', 'Profit', 'Status']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { 
+            fillColor: [55, 65, 81], 
+            textColor: 255, 
+            fontSize: 10, 
+            halign: 'center',
+            valign: 'middle'
+        },
+        styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
+        columnStyles: {
+            0: { halign: 'center', fontStyle: 'bold' },
+            1: { halign: 'center' },
+            2: { halign: 'left', cellWidth: 80 },
+            3: { halign: 'center' },
+            4: { halign: 'right' },
+            5: { halign: 'right' },
+            6: { halign: 'right', fontStyle: 'bold' },
+            7: { halign: 'right', fontStyle: 'bold' },
+            8: { halign: 'center' }
+        },
+        didParseCell: function(data) {
+            if (data.column.index === 7 && data.section === 'body') {
+                const val = parseFloat(data.cell.raw);
+                if (val > 0) data.cell.styles.textColor = [22, 101, 52];
+                else if (val < 0) data.cell.styles.textColor = [185, 28, 28];
+            }
+        }
+    });
+
+    // --- ৪. সামারি পেজ ---
+    doc.addPage();
+    doc.setFillColor(31, 41, 55);
+    doc.rect(0, 0, pageWidth, 25, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.text("FINANCIAL PERFORMANCE SUMMARY", 15, 16);
+
+    const netProfit = totals.rev - totals.cost;
+    const profitMargin = totals.rev > 0 ? ((netProfit / totals.rev) * 100) : 0;
+
     doc.autoTable({
         startY: 35,
-        head: [['Bill No', 'Date', 'Items Breakdown (Name, Qty, Cost Price)', 'Type', 'Disc.', 'Total CP', 'Net Total', 'Profit', 'Status']],
-        body: tableData,
-        theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-        columnStyles: {
-            2: { cellWidth: 80 },
-        },
-        headStyles: { fillColor: [44, 62, 80] },
-        didDrawPage: function(data) {
-            addFooter(data.pageNumber);
-        }
-    });
-
-    // Add new page for summary
-    doc.addPage();
-    
-    // Summary page header
-    doc.setFontSize(16);
-    doc.setTextColor(44, 62, 80);
-    doc.text('Financial Summary Report', 14, 20);
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`${myShopName} | Period: ${startDatePicker.value} to ${endDatePicker.value}`, 14, 28);
-    
-    // Calculate totals
-    let totalRevenue = 0, totalCost = 0, totalDiscount = 0, totalCanceled = 0;
-    let cashSales = 0, cardSales = 0;
-    
-    filteredSalesForPDF.forEach(sale => {
-        if (sale.status === 'canceled') {
-            totalCanceled += sale.total;
-            return;
-        }
-        
-        totalRevenue += sale.total;
-        totalDiscount += (sale.discountAmount || 0);
-        
-        if (sale.items) {
-            totalCost += sale.items.reduce((sum, item) => sum + ((item.costPrice || 0) * item.quantity), 0);
-        }
-        
-        const method = (sale.paymentMethod || 'cash').toLowerCase();
-        if (method === 'cash') cashSales += sale.total;
-        else cardSales += sale.total;
-    });
-    
-    const totalProfit = totalRevenue - totalCost;
-    const profitMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;
-    
-    // Professional Summary Table
-    doc.autoTable({
-        startY: 40,
-        head: [['Financial Summary', 'Amount (Rs.)']],
+        margin: { left: 15, right: 15 },
+        head: [['Financial Metric', 'Value (INR)']],
         body: [
-            ['Total Revenue', totalRevenue.toFixed(2)],
-            ['Total Cost', totalCost.toFixed(2)],
-            ['Gross Profit', totalProfit.toFixed(2)],
-            ['Profit Margin', profitMargin.toFixed(1) + '%'],
-            ['Total Discount Given', totalDiscount.toFixed(2)],
-            ['Cash Sales', cashSales.toFixed(2)],
-            ['Card/Online Sales', cardSales.toFixed(2)],
-            ['Canceled Amount', totalCanceled.toFixed(2)]
+            ['Total Sales Revenue', totals.rev.toLocaleString('en-IN')],
+            ['Total Cost of Goods (COGS)', totals.cost.toLocaleString('en-IN')],
+            ['Gross Profit', netProfit.toLocaleString('en-IN')],
+            ['Profit Margin (%)', profitMargin.toFixed(2) + '%'],
+            ['Total Discount Given', totals.disc.toLocaleString('en-IN')],
+            ['Cash Collection', totals.cash.toLocaleString('en-IN')],
+            ['Online/Card Collection', totals.online.toLocaleString('en-IN')],
+            ['Total Canceled Value', totals.canceled.toLocaleString('en-IN')]
         ],
-        theme: 'striped',
-        styles: { fontSize: 12, cellPadding: 4 },
-        headStyles: { fillColor: [52, 73, 94], textColor: 255, fontStyle: 'bold' },
-        columnStyles: {
-            0: { fontStyle: 'bold', cellWidth: 80 },
-            1: { halign: 'right', cellWidth: 60, fontStyle: 'bold' }
+        theme: 'grid',
+        headStyles: { 
+            fillColor: [75, 85, 99], 
+            textColor: 255, 
+            fontSize: 11,
+            halign: 'left'
         },
-        alternateRowStyles: { fillColor: [245, 245, 245] },
-        didDrawPage: function(data) {
-            addFooter(data.pageNumber);
+        columnStyles: { 
+            0: { fontStyle: 'bold', cellWidth: 100, halign: 'left' }, 
+            1: { fontStyle: 'bold', halign: 'right' }
+        },
+        didParseCell: function(data) {
+            if (data.section === 'head' && data.column.index === 1) {
+                data.cell.styles.halign = 'right';
+            }
         }
     });
 
-    doc.save(`Detailed_Sales_Report_${startDatePicker.value}.pdf`);
+    // --- ৫. ফুটার (Keshab Sarkar Name Fix) ---
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(9);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`This is a computer-generated report. Page ${i} of ${totalPages}`, 15, pageHeight - 10);
+        
+        const footerRightText = `Powered by Smart POS | Developed by Keshab Sarkar`;
+        const textWidth = doc.getTextWidth(footerRightText);
+        doc.text(footerRightText, pageWidth - textWidth - 15, pageHeight - 10);
+    }
+
+    doc.save(`Sales_Report_${startStr}.pdf`);
 };
 
 // --- Event Listeners ---

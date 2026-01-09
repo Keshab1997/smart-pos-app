@@ -214,6 +214,43 @@ body {
     display: inline-block;
 }
 
+/* Details Column Styling */
+.sales-table td.details-column {
+    white-space: normal !important; /* টেক্সট র্যাপ করার জন্য */
+    word-break: break-word;
+    min-width: 250px; /* কলামের মিনিমাম চওড়া */
+    padding: 8px 10px;
+}
+
+.item-info {
+    display: block;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin-bottom: 4px;
+    border-bottom: 1px dashed #f0f0f0; /* প্রতিটি আইটেমের মাঝে হালকা দাগ */
+    padding-bottom: 2px;
+}
+
+.item-info:last-child {
+    border-bottom: none;
+}
+
+.item-name {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.item-qty-price {
+    color: #7f8c8d;
+    font-size: 0.8rem;
+    margin-left: 4px;
+}
+
+/* টেবিল কলামের উইডথ অ্যাডজাস্টমেন্ট */
+.sales-table th:nth-child(4) { 
+    width: 35% !important; /* ডিটেইলস কলামকে বেশি জায়গা দেওয়া হলো */
+}
+
 /* ============================
    Button Styles
    ============================ */
