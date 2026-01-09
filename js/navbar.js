@@ -13,7 +13,7 @@ const menuItems = [
     { name: 'Profit/Loss', link: 'sales-report/profit-loss.html', icon: '📈' },
     { name: 'Shop Details', link: 'shop-details/shop-details.html', icon: '🏪' },
     { name: 'Barcode Print', link: 'label-printer/index.html', icon: '🖨️' },
-    { name: 'Admin Panel', link: '#', icon: '⚙️', id: 'nav-item-admin' }
+    { name: 'Admin Panel', link: 'admin.html', icon: '⚙️', id: 'nav-item-admin' }
 ];
 
 // 2. সঠিক পাথ বের করার ফাংশন (Robust Path Correction)
@@ -76,8 +76,7 @@ function loadNavbar() {
         // যদি আইটেমের ID থাকে (যেমন Admin Panel), সেটা যোগ করা হবে
         const idAttr = item.id ? `id="${item.id}"` : '';
         
-        // Admin Panel এর জন্য লিংক ঠিক রাখা, বাকিদের জন্য getCorrectPath
-        const finalLink = item.link === '#' ? '#' : getCorrectPath(item.link);
+        const finalLink = getCorrectPath(item.link);
         
         menuHTML += `
             <li ${idAttr}>
@@ -116,7 +115,15 @@ function loadNavbar() {
                 </div>
 
                 <div class="admin-section">
-                    <h4 style="margin-top:0;">👥 User List</h4>
+                    <h4 style="margin-top:0;">📢 System Announcement</h4>
+                    <textarea id="admin-announcement-text" placeholder="Enter message for all users..." style="width:100%; height:60px; padding:5px; border-radius:4px; border:1px solid #ccc;"></textarea>
+                    <button id="btn-save-announcement" class="btn" style="width:100%; background:#ff9f1c; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer; margin-top:5px;">
+                        Post Announcement
+                    </button>
+                </div>
+
+                <div class="admin-section">
+                    <h4 style="margin-top:0;">👥 User Management</h4>
                     <button id="btn-load-users" class="btn" style="width:100%; background:#0d6efd; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;">
                         Show All Users
                     </button>
@@ -193,3 +200,17 @@ function setupNavbarEvents() {
 }
 
 document.addEventListener('DOMContentLoaded', loadNavbar);
+// Admin button visibility control
+import { auth } from './firebase-config.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+onAuthStateChanged(auth, (user) => {
+    const adminBtn = document.getElementById('nav-item-admin');
+    const ADMIN_EMAIL = "keshabsarkar2018@gmail.com";
+
+    if (user && user.email === ADMIN_EMAIL) {
+        if (adminBtn) adminBtn.style.display = 'block';
+    } else {
+        if (adminBtn) adminBtn.style.display = 'none';
+    }
+});

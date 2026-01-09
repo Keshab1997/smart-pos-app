@@ -11,7 +11,8 @@ import {
     limit, 
     Timestamp,
     addDoc,
-    serverTimestamp
+    serverTimestamp,
+    onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // DOM Elements (Sales/Profit Cards)
@@ -59,6 +60,10 @@ onAuthStateChanged(auth, (user) => {
 async function initializeDashboard(user) {
     // UI Updates (Clock starts immediately)
     startClock();
+    
+    // Check user status and announcements
+    await checkUserStatus(user.uid);
+    listenForAnnouncements();
     
     // Fetch and Update Profile/Shop Info from Firestore & Auth
     await updateWelcomeSection(user);
@@ -401,4 +406,62 @@ function setupDashboardEventListeners() {
     if (expenseDateInput) {
         expenseDateInput.valueAsDate = new Date();
     }
+}
+// ==========================================
+// 7. USER STATUS & ANNOUNCEMENT SYSTEM
+// ==========================================
+
+// ১. ইউজার স্ট্যাটাস চেক (Inactive হলে লগআউট করে দেওয়া)
+async function checkUserStatus(uid) {
+    try {
+        const shopSnap = await getDoc(doc(db, 'shops', uid));
+        if (shopSnap.exists() && shopSnap.data().status === 'inactive') {
+            alert("Your account is inactive. Please contact admin.");
+            auth.signOut();
+            window.location.href = 'index.html';
+        }
+    } catch (error) {
+        console.error("Error checking user status:", error);
+    }
+}
+
+// ২. রিয়েল-টাইম এনাউন্সমেন্ট লিসেনার
+function listenForAnnouncements() {
+    onSnapshot(doc(db, 'settings', 'announcement'), (doc) => {
+        if (doc.exists() && doc.data().active) {
+            const msg = doc.data().message;
+            showAnnouncementBanner(msg);
+        } else {
+            removeAnnouncementBanner();
+        }
+    });
+}
+
+function showAnnouncementBanner(msg) {
+    // যদি ইউজার এই সেশনে অলরেডি এই মেসেজটি ক্লোজ করে থাকে, তবে আর দেখাবে না
+    if (sessionStorage.getItem('closed-announcement') === msg) return;
+
+    let banner = document.getElementById('global-announcement-banner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'global-announcement-banner';
+        banner.style = "background:#ff9f1c; color:white; padding:12px; text-align:center; font-weight:bold; position:sticky; top:0; z-index:1000; display:flex; justify-content:center; align-items:center; gap:20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);";
+        document.body.prepend(banner);
+    }
+    
+    banner.innerHTML = `
+        <span style="flex-grow: 1;">📢 ${msg}</span>
+        <button id="close-announcement" style="background:rgba(0,0,0,0.2); border:none; color:white; cursor:pointer; padding:5px 10px; border-radius:4px; font-weight:bold;">✕ Close</button>
+    `;
+
+    document.getElementById('close-announcement').onclick = () => {
+        banner.remove();
+        // সেশন স্টোরেজে সেভ করে রাখা যাতে বারবার বিরক্ত না করে
+        sessionStorage.setItem('closed-announcement', msg);
+    };
+}
+
+function removeAnnouncementBanner() {
+    const banner = document.getElementById('global-announcement-banner');
+    if (banner) banner.remove();
 }

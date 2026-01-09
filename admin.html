@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Panel - Smart POS</title>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/navbar.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="admin-container">
+        <header class="admin-header">
+            <h1>👮‍♂️ Admin Control Panel</h1>
+            <div id="admin-info">Checking access...</div>
+        </header>
+
+        <div class="admin-grid">
+            <!-- বাম পাশ: ইউজার লিস্ট -->
+            <section class="user-list-section card">
+                <h3>👥 Registered Shops</h3>
+                <div id="user-list" class="list-container">
+                    <p>Loading users...</p>
+                </div>
+            </section>
+
+            <!-- ডান পাশ: কন্ট্রোল প্যানেল (ইউজার সিলেক্ট করলে ওপেন হবে) -->
+            <section class="user-control-section card" id="control-panel">
+                <div id="empty-state">
+                    <p>Select a shop from the list to manage.</p>
+                </div>
+                <div id="user-details" class="hidden">
+                    <h3 id="selected-shop-name">Shop Name</h3>
+                    <p id="selected-shop-email">email@example.com</p>
+                    <hr>
+                    
+                    <div class="action-group">
+                        <h4>Status Control</h4>
+                        <button id="btn-toggle-status" class="btn">Toggle Active/Inactive</button>
+                    </div>
+
+                    <div class="action-group">
+                        <h4>Data Management</h4>
+                        <button id="btn-single-backup" class="btn btn-blue">📥 Download Backup</button>
+                        <button id="btn-single-restore" class="btn btn-red">📤 Restore Data</button>
+                        <button id="btn-single-reset" class="btn btn-pink">⚠️ Reset Sales/Expenses</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- গ্লোবাল সেটিংস (এনাউন্সমেন্ট) -->
+            <section class="global-settings card">
+                <h3>📢 System Announcement</h3>
+                <textarea id="announcement-text" placeholder="Type message for all users..."></textarea>
+                <button id="btn-post-announcement" class="btn btn-orange">Post Announcement</button>
+            </section>
+        </div>
+    </main>
+
+    <!-- হিডেন ফাইল ইনপুট রিস্টোর এর জন্য -->
+    <input type="file" id="file-restore-json" accept=".json" style="display:none;">
+
+    <script type="module" src="js/navbar.js"></script>
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>
