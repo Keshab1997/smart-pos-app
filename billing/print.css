@@ -24,6 +24,16 @@ html, body {
     align-items: flex-start; 
 }
 
+/* কাস্টমার ভিউতে মেনু এবং অপ্রয়োজনীয় বাটন হাইড করার জন্য */
+.is-customer-view #navbar-placeholder,
+.is-customer-view #mobile-menu-btn,
+.is-customer-view .no-print,
+.is-customer-view header:not(.shop-header),
+.is-customer-view nav,
+.is-customer-view .hamburger {
+    display: none !important;
+}
+
 /* --- ৩. রশিদের মেইন কন্টেইনার (মোবাইল কার্ড স্টাইল) --- */
 .receipt {
     /* স্ক্রিন ভিউ: মোবাইলে সুন্দর কার্ডের মতো দেখাবে */
@@ -36,6 +46,8 @@ html, body {
     /* শ্যাডো এবং গোল কোণা (অ্যাপ স্টাইল) */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
+    position: relative;
+    z-index: 1;
 }
 
 /* ============================================================= */
