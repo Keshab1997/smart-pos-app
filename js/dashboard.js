@@ -5,6 +5,8 @@ import {
     query, 
     where, 
     getDocs, 
+    doc,
+    getDoc,
     orderBy, 
     limit, 
     Timestamp,
@@ -55,14 +57,16 @@ onAuthStateChanged(auth, (user) => {
 // 2. Initialize Dashboard
 // ==========================================
 async function initializeDashboard(user) {
-    // UI Updates
-    updateWelcomeSection(user);
+    // UI Updates (Clock starts immediately)
     startClock();
+    
+    // Fetch and Update Profile/Shop Info from Firestore & Auth
+    await updateWelcomeSection(user);
     
     // Data Loading
     await loadDashboardData();
     
-    // Event Listeners (শুধুমাত্র ড্যাশবোর্ডের ভিতরের এলিমেন্টগুলোর জন্য)
+    // Event Listeners
     setupDashboardEventListeners();
 }
 
@@ -79,7 +83,10 @@ function startClock() {
     setInterval(updateTime, 1000);
 }
 
-function updateWelcomeSection(user) {
+/**
+ * জিমেইল থেকে ছবি এবং Firestore থেকে দোকানের নাম নিয়ে আসে
+ */
+async function updateWelcomeSection(user) {
     const hour = new Date().getHours();
     let greeting = "Hello";
     if (hour < 12) greeting = "Good Morning";
@@ -88,9 +95,34 @@ function updateWelcomeSection(user) {
 
     if(greetingMsgEl) greetingMsgEl.textContent = `${greeting}!`;
     if(displayUserEmailEl) displayUserEmailEl.textContent = user.email;
-    
-    // Shop Name (Optional: Fetch from Firestore 'shops' collection if needed)
-    if(displayShopNameEl) displayShopNameEl.textContent = "My Smart Shop"; 
+
+    // --- জিমেইল থেকে প্রোফাইল ছবি সেট করা ---
+    if (user.photoURL && userProfilePicEl) {
+        // গুগল একাউন্টের ছবি সেট করা হচ্ছে
+        userProfilePicEl.src = user.photoURL;
+    } else if (userProfilePicEl) {
+        // ছবি না থাকলে ডিফল্ট ছবি
+        userProfilePicEl.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    }
+
+    try {
+        // Firestore-এর 'shops' কালেকশন থেকে ইউজারের ডকুমেন্ট আনা
+        const shopDocRef = doc(db, 'shops', user.uid);
+        const shopSnap = await getDoc(shopDocRef);
+
+        if (shopSnap.exists()) {
+            const shopData = shopSnap.data();
+            // দোকানের নাম আপডেট করা
+            if(displayShopNameEl) {
+                displayShopNameEl.textContent = shopData.shopName || "My Smart Shop";
+            }
+        } else {
+            if(displayShopNameEl) displayShopNameEl.textContent = "Setup Your Shop";
+        }
+    } catch (error) {
+        console.error("Error fetching shop details:", error);
+        if(displayShopNameEl) displayShopNameEl.textContent = "My Smart Shop";
+    }
 }
 
 // ==========================================
