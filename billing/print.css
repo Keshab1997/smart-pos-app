@@ -142,6 +142,16 @@ html, body {
 /* ৫. প্রিন্ট মিডিয়া কোয়েরি (এখানেই আসল ম্যাজিক)                 */
 /* ============================================================= */
 @media print {
+    /* নেভিগেশন বার, হ্যামবার্গার মেনু এবং অন্যান্য বাটন হাইড করা */
+    #navbar-placeholder, 
+    .no-print, 
+    #mobile-menu-btn, 
+    header:not(.shop-header), 
+    nav, 
+    .hamburger {
+        display: none !important;
+    }
+
     /* প্রিন্টের সময় ব্যাকগ্রাউন্ড সাদা, কোনো প্যাডিং নেই */
     body { 
         background-color: #fff; 
@@ -170,6 +180,6 @@ html, body {
     /* প্রিন্টের সময় অপ্রয়োজনীয় স্ক্রলবার লুকানো */
     html, body {
         height: auto;
-        overflow: hidden;
+        overflow: visible;
     }
 }
