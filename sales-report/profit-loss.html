@@ -53,7 +53,7 @@
         <section class="ledger-container card">
             <div class="statement-header">
                 <h2>Statement of Profit & Loss</h2>
-                <p class="company-name">Smart POS Store</p>
+                <p class="company-name" id="display-shop-name">Loading Shop Name...</p>
                 <p class="statement-period">Period: <span id="display-period-range">-- to --</span></p>
             </div>
 
@@ -92,6 +92,8 @@
                 <div class="summary-box result-box" id="pnl-result-box">
                     <h4 id="pnl-label">NET PROFIT</h4>
                     <p class="big-amount" id="pnl-amount">₹0.00</p>
+                    <!-- প্রফিট পার্সেন্টেজ এর জন্য নতুন লাইন -->
+                    <p id="pnl-percentage" style="font-size: 1.1rem; font-weight: 500; margin-top: 5px; opacity: 0.9;"></p>
                 </div>
                 <div class="summary-box asset-box">
                     <h4>Current Stock Value (Asset)</h4>
@@ -100,8 +102,14 @@
             </div>
 
             <div class="statement-footer">
-                <p>Authorized Signature</p>
-                <div class="signature-line"></div>
+                <!-- আপনার নাম (Developer Credit) এখানে যোগ করা হলো -->
+                <div class="footer-left" style="text-align: left;">
+                    <p style="font-size: 0.8rem; color: #555;">Software Developed by: <strong>Keshab Sarkar</strong></p>
+                </div>
+                <div class="footer-right">
+                    <p>Authorized Signature</p>
+                    <div class="signature-line"></div>
+                </div>
             </div>
         </section>
 

@@ -3,7 +3,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
-    collection, getDocs, query, where, Timestamp, orderBy
+    collection, getDocs, query, where, Timestamp, orderBy, doc, getDoc
 } from 'firebase/firestore';
 
 // ==========================================================
@@ -13,10 +13,12 @@ const dispRevenue = document.getElementById('disp-revenue');
 const dispTotalIncome = document.getElementById('disp-total-income');
 const expenseListContainer = document.getElementById('expense-list-container');
 const dispTotalExpense = document.getElementById('disp-total-expense');
+const displayShopNameEl = document.getElementById('display-shop-name');
 
 const pnlResultBox = document.getElementById('pnl-result-box');
 const pnlLabel = document.getElementById('pnl-label');
 const pnlAmount = document.getElementById('pnl-amount');
+const pnlPercentage = document.getElementById('pnl-percentage');
 const stockAssetAmount = document.getElementById('stock-asset-amount');
 
 const detailedExpenseBody = document.getElementById('detailed-expense-body');
@@ -50,7 +52,31 @@ onAuthStateChanged(auth, (user) => {
 
 function initializePnlPage() {
     setupEventListeners();
+    updateShopName();
     btnThisWeek.click();
+}
+
+/**
+ * Firestore থেকে দোকানের নাম নিয়ে এসে UI-তে দেখায়
+ */
+async function updateShopName() {
+    if (!currentUserId) return;
+    try {
+        const shopDocRef = doc(db, 'shops', currentUserId);
+        const shopSnap = await getDoc(shopDocRef);
+
+        if (shopSnap.exists()) {
+            const shopData = shopSnap.data();
+            if (displayShopNameEl) {
+                displayShopNameEl.textContent = shopData.shopName || "My Smart Shop";
+            }
+        } else {
+            if (displayShopNameEl) displayShopNameEl.textContent = "Smart POS Store";
+        }
+    } catch (error) {
+        console.error("Error fetching shop name:", error);
+        if (displayShopNameEl) displayShopNameEl.textContent = "Smart POS Store";
+    }
 }
 
 function getPeriodDates(period) {
@@ -212,10 +238,17 @@ function updateLedgerView(revenue, cogs, expenseMap, totalExpenses, netProfit, s
     }
     dispTotalExpense.textContent = fmt(totalExpenses);
     pnlAmount.textContent = fmt(Math.abs(netProfit));
+
+    // --- Profit Percentage Calculation ---
+    const profitPercent = revenue > 0 ? (netProfit / revenue) * 100 : 0;
+    if (pnlPercentage) {
+        pnlPercentage.textContent = `Profit Margin: ${profitPercent.toFixed(2)}%`;
+    }
     
     if (netProfit >= 0) {
         pnlLabel.textContent = "NET PROFIT";
         pnlResultBox.className = "summary-box result-box profit";
+        if(pnlPercentage) pnlPercentage.style.display = 'block';
     } else {
         pnlLabel.textContent = "NET LOSS";
         pnlResultBox.className = "summary-box result-box loss";
