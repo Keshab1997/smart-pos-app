@@ -221,6 +221,26 @@ document.addEventListener('DOMContentLoaded', () => {
         saveButton.textContent = 'Saving to Database...';
 
         try {
+            // --- নতুন লজিক: প্রোডাক্টগুলোকে বারকোড অনুযায়ী গ্রুপ করা ---
+            const groupedProducts = [];
+            const barcodeMap = new Map();
+
+            productsToProcess.forEach(p => {
+                if (p.barcode) {
+                    if (barcodeMap.has(p.barcode)) {
+                        // যদি একই বারকোড আগে পাওয়া যায়, তবে স্টক যোগ করো
+                        barcodeMap.get(p.barcode).stock += p.stock;
+                    } else {
+                        const newObj = { ...p };
+                        barcodeMap.set(p.barcode, newObj);
+                        groupedProducts.push(newObj);
+                    }
+                } else {
+                    // বারকোড না থাকলে প্রতিটি রো-কে আলাদা প্রোডাক্ট হিসেবে ধরো
+                    groupedProducts.push({ ...p });
+                }
+            });
+
             const productsForBarcodeDisplay = [];
             const metadataRef = doc(db, 'shops', currentUserId, '_metadata', 'counters');
 
@@ -230,7 +250,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const processQueue = [];
 
-                for (const product of productsToProcess) {
+                // এখন productsToProcess এর বদলে groupedProducts ব্যবহার হবে
+                for (const product of groupedProducts) {
                     let finalBarcode;
                     if (product.barcode) {
                         finalBarcode = product.barcode;
@@ -286,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         transaction.set(ref, dataToSave);
                     }
 
+                    // এক্সপেন্স সেভ করার সময়ও গ্রুপ করা স্টক অনুযায়ী অ্যামাউন্ট ক্যালকুলেট হবে
                     if (productData.costPrice > 0 && productData.stock > 0) {
                         const totalCost = productData.costPrice * productData.stock;
                         const expenseRef = doc(collection(db, 'shops', currentUserId, 'expenses'));

@@ -365,10 +365,29 @@ async function deleteProduct(id) {
     if (!isAuthorized) return;
 
     try {
+        // ১. প্রথমে এই প্রোডাক্টের সাথে সম্পর্কিত সব খরচ (Expenses) খুঁজে বের করা
+        const expensesRef = collection(db, 'shops', currentUserId, 'expenses');
+        const q = query(expensesRef, where("relatedProductId", "==", id));
+        const querySnapshot = await getDocs(q);
+
+        // ২. খরচগুলো ডিলিট করার জন্য প্রমিস লিস্ট তৈরি করা
+        const deleteExpensePromises = [];
+        querySnapshot.forEach((docSnap) => {
+            deleteExpensePromises.push(deleteDoc(doc(db, 'shops', currentUserId, 'expenses', docSnap.id)));
+        });
+
+        // ৩. সব খরচ ডিলিট করা
+        if (deleteExpensePromises.length > 0) {
+            await Promise.all(deleteExpensePromises);
+            console.log(`${deleteExpensePromises.length} related expense records deleted.`);
+        }
+
+        // ৪. সবশেষে ইনভেন্টরি থেকে প্রোডাক্টটি ডিলিট করা
         await deleteDoc(doc(db, 'shops', currentUserId, 'inventory', id));
-        showStatus('Product deleted successfully.');
+        
+        showStatus('Product and related purchase records deleted successfully.');
     } catch (error) { 
-        console.error(error);
-        showStatus('Failed to delete product.', 'error'); 
+        console.error("Delete Error:", error);
+        showStatus('Failed to delete product or related records.', 'error'); 
     }
 }
