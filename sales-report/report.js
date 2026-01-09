@@ -183,15 +183,15 @@ function renderSalesTable(sales) {
     sales.forEach(sale => {
         const saleDateObj = sale.createdAt.toDate();
         const saleDateStr = formatDate(saleDateObj); 
-        // আইটেমগুলোকে সুন্দর লিস্ট আকারে দেখানোর জন্য HTML তৈরি
+        // আইটেম ডিটেইলস জেনারেট করার লজিক পরিবর্তন (SP এর বদলে Cost Price দেখানো)
         const detailsHTML = sale.items ? sale.items.map(i => {
-            // ডাটাবেসে 'price' নামে সেভ হচ্ছে, তাই i.price চেক করতে হবে
-            const unitPrice = i.price || i.sellingPrice || i.sp || 0;
+            // এখানে i.price বা sellingPrice এর বদলে i.costPrice ব্যবহার করা হয়েছে
+            const unitCostPrice = i.costPrice || 0;
             
             return `
                 <div class="item-info">
                     <span class="item-name">• ${i.name}</span>
-                    <span class="item-qty-price">(${i.quantity} x ₹${parseFloat(unitPrice).toFixed(2)})</span>
+                    <span class="item-qty-price">(${i.quantity} x ₹${parseFloat(unitCostPrice).toFixed(2)})</span>
                 </div>
             `;
         }).join('') : 'No items';
@@ -435,10 +435,12 @@ window.downloadPDF = function() {
         let saleCost = 0;
         if (sale.items) {
             itemsList = sale.items.map(i => {
-                const price = i.price || i.sellingPrice || 0;
+                // এখানে কেনা দাম (costPrice) নেওয়া হচ্ছে
                 const cost = i.costPrice || 0;
                 if (!isCanceled) saleCost += (cost * i.quantity);
-                return `• ${i.name} (${i.quantity} x ${price})`;
+                
+                // পিডিএফ-এ দেখানোর জন্য স্ট্রিং তৈরি (Cost Price সহ)
+                return `• ${i.name} (${i.quantity} x ${cost.toFixed(2)})`;
             }).join('\n');
         }
 
@@ -481,14 +483,15 @@ window.downloadPDF = function() {
             fillColor: [55, 65, 81], 
             textColor: 255, 
             fontSize: 10, 
-            halign: 'center',
+            halign: 'center', // সব হেডার ডিফল্ট সেন্টার থাকবে
             valign: 'middle'
         },
         styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
         columnStyles: {
             0: { halign: 'center', fontStyle: 'bold' },
             1: { halign: 'center' },
-            2: { halign: 'left', cellWidth: 80 },
+            // কলাম ২ (Items & Details) এর হেডার এবং বডি বাম দিকে (left) অ্যালাইন করা হলো
+            2: { halign: 'left', cellWidth: 80 }, 
             3: { halign: 'center' },
             4: { halign: 'right' },
             5: { halign: 'right' },
@@ -496,7 +499,12 @@ window.downloadPDF = function() {
             7: { halign: 'right', fontStyle: 'bold' },
             8: { halign: 'center' }
         },
+        // বিশেষ করে ৩ নম্বর কলামের (Index 2) হেডার বামে সরানোর জন্য:
         didParseCell: function(data) {
+            if (data.section === 'head' && data.column.index === 2) {
+                data.cell.styles.halign = 'left';
+            }
+            // প্রফিট কালার লজিক (আগের মতোই থাকবে)
             if (data.column.index === 7 && data.section === 'body') {
                 const val = parseFloat(data.cell.raw);
                 if (val > 0) data.cell.styles.textColor = [22, 101, 52];
