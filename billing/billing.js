@@ -427,9 +427,13 @@ async function generateFinalBill() {
         const sale = {
             billNo: newBillNo,
             items: cart.map(item => ({
-                id: item.id, name: item.name, quantity: item.quantity,
-                price: item.sellingPrice || 0, category: item.category || 'N/A',
-                purchasePrice: item.purchasePrice || item.costPrice || 0
+                id: item.id, 
+                name: item.name, 
+                quantity: item.quantity,
+                price: item.sellingPrice || 0, 
+                category: item.category || 'N/A',
+                // ✅ এখানে costPrice সেভ করা হচ্ছে যা রিপোর্ট ফাইলে কাজে লাগবে
+                costPrice: item.costPrice || item.purchasePrice || 0
             })),
             subtotal: currentTotals.subtotal,
             discount: currentTotals.discount,
