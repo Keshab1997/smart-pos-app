@@ -196,27 +196,52 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// 6. কিবোর্ড শর্টকাট লজিক (Universal Fix for Mac & Windows)
+// 6. কিবোর্ড শর্টকাট লজিক (All Menu Items Added)
 document.addEventListener('keydown', (e) => {
-    // ডিবাগিং-এর জন্য: কনসোলে দেখাবে আপনি কী চাপছেন
-    // console.log(`Pressed: ${e.code}, Alt: ${e.altKey}, Ctrl: ${e.ctrlKey}`);
-
-    // শুধুমাত্র Alt কি চাপা হলে (Mac এ Option Key)
+    // শুধুমাত্র Alt কি চাপা হলে
     if (e.altKey) {
         let targetPage = "";
 
-        // e.key এর বদলে e.code ব্যবহার করা হচ্ছে যাতে Mac এ সমস্যা না হয়
         switch (e.code) {
+            // 🏠 Dashboard
             case 'KeyD': targetPage = 'dashboard.html'; break;
+            
+            // 🧾 Billing
             case 'KeyB': targetPage = 'billing/billing.html'; break;
+            
+            // 📦 Inventory
             case 'KeyI': targetPage = 'inventory/inventory.html'; break;
+            
+            // ➕ Add Product (A)
+            case 'KeyA': targetPage = 'add-product/add-product.html'; break;
+            
+            // 🛒 Purchase Record (R - Record)
+            case 'KeyR': targetPage = 'purchase-record/purchase-dashboard.html'; break;
+            
+            // 📊 Sales Report (S)
             case 'KeyS': targetPage = 'sales-report/report.html'; break;
-            case 'KeyE': targetPage = 'expense/expense.html'; break;
+            
+            // 📈 Profit/Loss (P)
             case 'KeyP': targetPage = 'sales-report/profit-loss.html'; break;
+            
+            // 💸 Expense (E)
+            case 'KeyE': targetPage = 'expense/expense.html'; break;
+            
+            // 📅 Advance Booking (V - AdVance)
+            case 'KeyV': targetPage = 'advance-booking/index.html'; break;
+            
+            // 🖨️ Barcode Print (L - Label)
+            case 'KeyL': targetPage = 'label-printer/index.html'; break;
+            
+            // 🏪 Shop Details (H - SHop)
+            case 'KeyH': targetPage = 'shop-details/shop-details.html'; break;
+
+            // ⚙️ Admin (M - AdMin)
+            case 'KeyM': targetPage = 'admin.html'; break;
         }
 
         if (targetPage) {
-            e.preventDefault(); // ব্রাউজারের ডিফল্ট অ্যাকশন বন্ধ করা
+            e.preventDefault();
             const finalPath = getCorrectPath(targetPage);
             console.log("🚀 Shortcut Triggered! Going to: " + finalPath);
             window.location.href = finalPath;
@@ -225,14 +250,9 @@ document.addEventListener('keydown', (e) => {
 
     // Escape বাটন চাপলে মডাল বা সাইডবার বন্ধ হবে
     if (e.code === 'Escape') {
-        // সাইডবার বন্ধ করা
         document.body.classList.remove('sidebar-open');
-
-        // অ্যাডমিন মডাল বন্ধ করা
         const adminModal = document.getElementById('admin-modal');
         if (adminModal) adminModal.style.display = 'none';
-        
-        // অন্যান্য মডাল বন্ধ করা
         document.querySelectorAll('.modal-overlay, .modal').forEach(m => m.classList.add('hidden'));
     }
 });
