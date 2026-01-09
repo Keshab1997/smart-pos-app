@@ -1,9 +1,9 @@
 // js/firebase-config.js (আপডেট করা সংস্করণ)
 
-// Firebase SDK থেকে প্রয়োজনীয় মডিউল ইম্পোর্ট করা হচ্ছে
+// Firebase SDK থেকে প্রয়োজনীয় মডিউল ইম্পোর্ট করা হচ্ছে
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-// Firestore থেকে আপনার প্রোজেক্টের জন্য প্রয়োজনীয় সব ফাংশন ইম্পোর্ট করা হচ্ছে
+// Firestore থেকে আপনার প্রোজেক্টের জন্য প্রয়োজনীয় সব ফাংশন ইম্পোর্ট করা হচ্ছে
 import { 
     getFirestore, 
     collection, 
@@ -23,16 +23,17 @@ import {
     deleteDoc,
     updateDoc,
     addDoc,
+    setDoc,
     Timestamp,
-    runTransaction  // <<<<<<<<<<<<< ১. এখানে runTransaction যোগ করা হয়েছে
+    runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// আপনার ওয়েব অ্যাপের Firebase কনফিগারেশন
+// আপনার ওয়েব অ্যাপের Firebase কনফিগারেশন
 const firebaseConfig = {
   // ⚠️ নিরাপত্তা সতর্কতা: আপনার Firebase API কী পাবলিকলি দেখা যাচ্ছে।
-  // প্রোডাকশনে যাওয়ার আগে Firebase কনসোল থেকে একটি নতুন কী জেনারেট করে এটি পরিবর্তন করুন 
+  // প্রোডাকশনে যাওয়ার আগে Firebase কনসোল থেকে একটি নতুন কী জেনারেট করে এটি পরিবর্তন করুন 
   // এবং পুরনো কী-টি ডিলিট করে দিন।
   apiKey: "AIzaSyB1fmVLCxyq8kQRULji0j7T-8c5De3X_Gk", 
   authDomain: "smart-pos-app-64ad6.firebaseapp.com",
@@ -43,10 +44,10 @@ const firebaseConfig = {
   measurementId: "G-K18V45KTN3"
 };
 
-// Firebase অ্যাপটি ইনিশিয়ালাইজ করা হচ্ছে
+// Firebase অ্যাপটি ইনিশিয়ালাইজ করা হচ্ছে
 const app = initializeApp(firebaseConfig);
 
-// আমাদের প্রয়োজনীয় Firebase সার্ভিসগুলো ইনিশিয়ালাইজ করা হচ্ছে
+// আমাদের প্রয়োজনীয় Firebase সার্ভিসগুলো ইনিশিয়ালাইজ করা হচ্ছে
 const db = getFirestore(app);
 const auth = getAuth(app);
 
@@ -71,6 +72,7 @@ export {
     deleteDoc,
     updateDoc,
     addDoc,
+    setDoc,
     Timestamp,
-    runTransaction // <<<<<<<<<<<<< ২. এখানেও runTransaction এক্সপোর্ট করা হয়েছে
+    runTransaction
 };

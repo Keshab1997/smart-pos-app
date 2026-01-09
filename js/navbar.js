@@ -12,7 +12,8 @@ const menuItems = [
     { name: 'Expense', link: 'expense/expense.html', icon: '💸' },
     { name: 'Profit/Loss', link: 'sales-report/profit-loss.html', icon: '📈' },
     { name: 'Shop Details', link: 'shop-details/shop-details.html', icon: '🏪' },
-    { name: 'Barcode Print', link: 'label-printer/index.html', icon: '🖨️' }
+    { name: 'Barcode Print', link: 'label-printer/index.html', icon: '🖨️' },
+    { name: 'Admin Panel', link: '#', icon: '⚙️', id: 'nav-item-admin' }
 ];
 
 // 2. সঠিক পাথ বের করার ফাংশন (Robust Path Correction)
@@ -69,14 +70,17 @@ function loadNavbar() {
     let menuHTML = '';
     menuItems.forEach(item => {
         // Active Class Logic
-        // item.link এর শেষ ফাইলের নাম যদি currentPage এর সাথে মিলে
         const itemFileName = item.link.split('/').pop();
         const isActive = itemFileName === currentPage ? 'active' : '';
         
-        const finalLink = getCorrectPath(item.link);
+        // যদি আইটেমের ID থাকে (যেমন Admin Panel), সেটা যোগ করা হবে
+        const idAttr = item.id ? `id="${item.id}"` : '';
+        
+        // Admin Panel এর জন্য লিংক ঠিক রাখা, বাকিদের জন্য getCorrectPath
+        const finalLink = item.link === '#' ? '#' : getCorrectPath(item.link);
         
         menuHTML += `
-            <li>
+            <li ${idAttr}>
                 <a href="${finalLink}" class="${isActive}">
                     <span style="margin-right: 10px;">${item.icon}</span> ${item.name}
                 </a>
@@ -86,6 +90,43 @@ function loadNavbar() {
 
     // ড্যাশবোর্ড লিংক (লোগোর জন্য)
     const dashboardLink = getCorrectPath('dashboard.html');
+
+    // --- নতুন: অ্যাডমিন মডাল HTML ---
+    const adminModalHTML = `
+        <div id="admin-modal" class="admin-modal-overlay">
+            <div class="admin-modal-content">
+                <div class="admin-modal-header">
+                    <h3 style="margin:0; color:#d32f2f;">👮‍♂️ Admin Control</h3>
+                    <button id="close-admin-modal" class="admin-close-btn">&times;</button>
+                </div>
+                
+                <div class="admin-section">
+                    <h4 style="margin-top:0;">💾 Backup & Restore</h4>
+                    <button id="btn-backup-now" class="btn" style="width:100%; background:#4361ee; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer; margin-bottom:5px;">
+                        📥 Download Full Backup
+                    </button>
+                    <p id="backup-progress" style="font-size:12px; color:#666; margin:5px 0;">Ready.</p>
+                    
+                    <div style="margin-top:10px; border-top:1px dashed #ccc; padding-top:10px;">
+                        <input type="file" id="file-restore-json" accept=".json" style="display:none;">
+                        <button onclick="document.getElementById('file-restore-json').click()" class="btn" style="width:100%; background:#dc3545; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;">
+                            📤 Restore Database
+                        </button>
+                    </div>
+                </div>
+
+                <div class="admin-section">
+                    <h4 style="margin-top:0;">👥 User List</h4>
+                    <button id="btn-load-users" class="btn" style="width:100%; background:#0d6efd; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;">
+                        Show All Users
+                    </button>
+                    <div id="user-list-container" style="margin-top:10px; max-height:150px; overflow-y:auto; font-size:12px; border:1px solid #eee; padding:5px;">
+                        Click button to load...
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 
     const navbarHTML = `
         <div class="top-navbar">
@@ -119,6 +160,9 @@ function loadNavbar() {
                 </button>
             </div>
         </aside>
+        
+        <!-- মডাল যোগ করা হলো -->
+        ${adminModalHTML}
     `;
 
     navContainer.innerHTML = navbarHTML;
