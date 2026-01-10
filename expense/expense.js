@@ -32,6 +32,9 @@ const btnPrintSheet = document.getElementById('btn-print-sheet');
 const expenseSheetBody = document.getElementById('expense-sheet-body');
 const displayTotalExpense = document.getElementById('display-total-expense');
 const sheetPeriodLabel = document.getElementById('sheet-period-label');
+const bulkTbody = document.getElementById('bulk-tbody');
+const btnAddBulkRow = document.getElementById('btn-add-bulk-row');
+const btnSaveBulk = document.getElementById('btn-save-bulk');
 
 let currentUserId = null;
 let allExpenses = [];
@@ -244,7 +247,12 @@ function renderExpenseSheet(data) {
             tr.innerHTML = `
                 <td>${exp.jsDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</td>
                 <td>${exp.category}</td>
-                <td class="${!isInventory ? 'editable-cell' : ''}" title="${!isInventory ? 'Double click to edit' : ''}">${exp.description}</td>
+                <td class="${!isInventory ? 'editable-cell' : ''}" title="${!isInventory ? 'Double click to edit' : ''}">
+                    ${exp.description}
+                    ${isInventory && exp.quantity ? `<div style="font-size: 0.75rem; color: #666; margin-top: 2px;">
+                        (Qty: ${exp.quantity || 0} * CP: ${(exp.unitPrice || (exp.amount / (exp.quantity || 1))).toFixed(2)})
+                    </div>` : ''}
+                </td>
                 <td class="text-right ${!isInventory ? 'editable-cell' : ''}" title="${!isInventory ? 'Double click to edit' : ''}">₹${exp.amount.toFixed(2)}</td>
                 <td class="no-print" style="text-align:center;">
                     ${!isInventory ? `
@@ -410,5 +418,82 @@ if(btnResetFilter) {
 if(btnPrintSheet) {
     btnPrintSheet.addEventListener('click', () => {
         window.print();
+    });
+}
+
+// --- Bulk Entry Functions ---
+function addBulkRow() {
+    const tr = document.createElement('tr');
+    const today = new Date().toISOString().split('T')[0];
+    tr.innerHTML = `
+        <td><input type="date" class="bulk-date" value="${today}"></td>
+        <td>
+            <select class="bulk-category">
+                <option value="Tea/Snacks">Tea/Snacks</option>
+                <option value="Transport">Transport</option>
+                <option value="Shop Rent">Shop Rent</option>
+                <option value="Electricity Bill">Electricity Bill</option>
+                <option value="Staff Salary">Staff Salary</option>
+                <option value="Other">Other</option>
+            </select>
+        </td>
+        <td><input type="text" class="bulk-desc" placeholder="Description"></td>
+        <td><input type="number" class="bulk-amount" placeholder="0.00" step="0.01"></td>
+        <td><button class="btn-delete remove-bulk-row">X</button></td>
+    `;
+    bulkTbody.appendChild(tr);
+}
+
+if(bulkTbody) { for(let i=0; i<3; i++) addBulkRow(); }
+
+if(btnAddBulkRow) {
+    btnAddBulkRow.addEventListener('click', addBulkRow);
+}
+
+if(bulkTbody) {
+    bulkTbody.addEventListener('click', (e) => {
+        if(e.target.classList.contains('remove-bulk-row')) e.target.closest('tr').remove();
+    });
+}
+
+if(btnSaveBulk) {
+    btnSaveBulk.addEventListener('click', async () => {
+        const rows = bulkTbody.querySelectorAll('tr');
+        const batchData = [];
+        
+        rows.forEach(row => {
+            const date = row.querySelector('.bulk-date').value;
+            const category = row.querySelector('.bulk-category').value;
+            const desc = row.querySelector('.bulk-desc').value.trim();
+            const amount = parseFloat(row.querySelector('.bulk-amount').value);
+
+            if(desc && !isNaN(amount)) {
+                batchData.push({
+                    date: Timestamp.fromDate(new Date(date)),
+                    category,
+                    description: desc,
+                    amount,
+                    createdAt: Timestamp.now()
+                });
+            }
+        });
+
+        if(batchData.length === 0) return alert("Please fill at least one row correctly.");
+
+        try {
+            btnSaveBulk.disabled = true;
+            btnSaveBulk.textContent = "Saving...";
+            const colRef = collection(db, 'shops', currentUserId, 'expenses');
+            
+            for(const data of batchData) {
+                await addDoc(colRef, data);
+            }
+            
+            alert("All expenses saved!");
+            bulkTbody.innerHTML = "";
+            for(let i=0; i<3; i++) addBulkRow();
+            loadExpenses();
+        } catch (e) { console.error(e); }
+        finally { btnSaveBulk.disabled = false; btnSaveBulk.textContent = "Save All Bulk Entries"; }
     });
 }

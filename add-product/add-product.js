@@ -313,9 +313,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         const expenseRef = doc(collection(db, 'shops', currentUserId, 'expenses'));
                         
                         const expenseData = {
-                            description: `Purchase: ${productData.name} (Qty: ${productData.stock})`,
+                            description: `Purchase: ${productData.name}`,
                             amount: totalCost,
                             category: 'inventory_purchase',
+                            quantity: productData.stock,
+                            unitPrice: productData.costPrice,
                             date: Timestamp.now(),
                             relatedProductId: finalBarcode
                         };

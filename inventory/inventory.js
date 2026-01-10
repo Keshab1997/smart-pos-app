@@ -343,7 +343,8 @@ async function handleEditFormSubmit(e) {
                 const newTotalAmount = newCP * newStock;
                 await updateDoc(expenseRef, {
                     amount: newTotalAmount,
-                    description: `Inventory purchase: ${newName}`
+                    description: `Inventory purchase: ${newName}`,
+                    quantity: newStock
                 });
             });
         }
