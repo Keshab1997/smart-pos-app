@@ -36,6 +36,15 @@ const printReportBtn = document.getElementById('print-report-btn');
 const startDateInput = document.getElementById('start-date');
 const endDateInput = document.getElementById('end-date');
 
+// Category Toggle Elements
+const categoryToggleSection = document.getElementById('category-toggle-section');
+const categoryCheckboxes = document.getElementById('category-checkboxes');
+
+const COGS_LABEL = "Cost of Goods Sold (Product Cost)"; // COGS এর জন্য নির্দিষ্ট নাম
+let allExpenseData = []; // সব এক্সপেন্স স্টোর করার জন্য
+let excludedCategories = new Set(); // কোন ক্যাটাগরি বাদ যাবে তার লিস্ট
+let currentReportData = null; // Current report data for recalculation
+
 let currentUserId = null;
 
 // ==========================================================
@@ -162,7 +171,7 @@ async function generatePnlReport(startDate, endDate) {
                         totalCogs += lineCost;
                         cogsDetails.push({
                             date: sale.createdAt ? sale.createdAt.toDate() : new Date(),
-                            category: 'COGS (Product Cost)',
+                            category: COGS_LABEL, // এখানে লেবেল ব্যবহার করুন
                             desc: `${item.name || item.productName} (Qty: ${qty})`,
                             amount: lineCost,
                             type: 'cogs'
@@ -175,6 +184,11 @@ async function generatePnlReport(startDate, endDate) {
         // 2. Process Expenses
         let totalOtherExpenses = 0;
         const expenseCategoryMap = {};
+        allExpenseData = []; // রিসেট করুন
+        const categoriesFound = new Set();
+        
+        // যদি COGS থাকে তবে ক্যাটাগরি লিস্টে যোগ করুন
+        if (totalCogs > 0) categoriesFound.add(COGS_LABEL);
         
         expensesSnap.forEach(doc => {
             const exp = doc.data();
@@ -183,36 +197,109 @@ async function generatePnlReport(startDate, endDate) {
 
             // Filter out Inventory Purchase
             if (catNormalized !== 'inventory purchase') {
-                const amount = exp.amount || 0;
-                totalOtherExpenses += amount;
-                const catName = exp.category || 'Other';
-                expenseCategoryMap[catName] = (expenseCategoryMap[catName] || 0) + amount;
-
-                detailedExpenses.push({
-                    date: exp.date.toDate(),
-                    category: exp.category,
-                    desc: exp.description,
-                    amount: amount,
-                    type: 'expense'
-                });
+                allExpenseData.push({ ...exp, id: doc.id }); // সব ডাটা সেভ করে রাখা হচ্ছে
+                categoriesFound.add(catRaw || 'Other');
             }
         });
 
-        const totalExpenses = totalCogs + totalOtherExpenses;
-        const netProfit = totalRevenue - totalExpenses;
+        // Store current report data for recalculation
+        currentReportData = {
+            totalRevenue,
+            totalCogs,
+            cogsDetails,
+            stockValue
+        };
 
-        updateLedgerView(totalRevenue, totalCogs, expenseCategoryMap, totalExpenses, netProfit, stockValue);
+        // ক্যাটাগরি ফিল্টার UI তৈরি করা
+        renderCategoryFilters(Array.from(categoriesFound));
         
-        const allDetails = [...detailedExpenses, ...cogsDetails];
-        updateDetailedExpenseTable(allDetails);
-        
-        updateChart(totalRevenue, totalExpenses, netProfit);
+        // ক্যালকুলেশন ফাংশন কল করা
+        calculateAndDisplay();
 
     } catch (error) {
         console.error(error);
     } finally {
         document.body.style.cursor = 'default';
     }
+}
+
+// নতুন ফাংশন: ক্যাটাগরি ফিল্টার UI তৈরি
+function renderCategoryFilters(categories) {
+    if (categories.length === 0) {
+        categoryToggleSection.style.display = 'none';
+        return;
+    }
+    categoryToggleSection.style.display = 'block';
+    categoryCheckboxes.innerHTML = '';
+
+    categories.forEach(cat => {
+        const isChecked = !excludedCategories.has(cat);
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <label>
+                <input type="checkbox" class="cat-toggle" value="${cat}" ${isChecked ? 'checked' : ''}> ${cat}
+            </label>
+        `;
+        categoryCheckboxes.appendChild(div);
+    });
+
+    // ইভেন্ট লিসেনার যোগ করা
+    document.querySelectorAll('.cat-toggle').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                excludedCategories.delete(e.target.value);
+            } else {
+                excludedCategories.add(e.target.value);
+            }
+            
+            // পুনরায় ক্যালকুলেট করা
+            calculateAndDisplay();
+        });
+    });
+}
+
+// ক্যালকুলেশন লজিক আপডেট
+function calculateAndDisplay() {
+    if (!currentReportData) return;
+    
+    let filteredOtherExpenses = 0;
+    const expenseCategoryMap = {};
+    const finalDetailedExpenses = [];
+
+    // ১. সাধারণ এক্সপেন্স ফিল্টার করা
+    allExpenseData.forEach(exp => {
+        if (!excludedCategories.has(exp.category)) {
+            const amount = exp.amount || 0;
+            filteredOtherExpenses += amount;
+            const catName = exp.category || 'Other';
+            expenseCategoryMap[catName] = (expenseCategoryMap[catName] || 0) + amount;
+            
+            finalDetailedExpenses.push({
+                date: exp.date.toDate(),
+                category: exp.category,
+                desc: exp.description,
+                amount: amount,
+                type: 'expense'
+            });
+        }
+    });
+
+    // ২. COGS ফিল্টার করা
+    let activeCogs = 0;
+    if (!excludedCategories.has(COGS_LABEL)) {
+        activeCogs = currentReportData.totalCogs;
+        // COGS details যোগ করা
+        finalDetailedExpenses.push(...currentReportData.cogsDetails);
+    }
+
+    const totalExpenses = activeCogs + filteredOtherExpenses;
+    const netProfit = currentReportData.totalRevenue - totalExpenses;
+
+    updateLedgerView(currentReportData.totalRevenue, activeCogs, expenseCategoryMap, totalExpenses, netProfit, currentReportData.stockValue);
+    
+    updateDetailedExpenseTable(finalDetailedExpenses);
+    
+    updateChart(currentReportData.totalRevenue, totalExpenses, netProfit);
 }
 
 function updateLedgerView(revenue, cogs, expenseMap, totalExpenses, netProfit, stockValue) {

@@ -209,6 +209,28 @@ body {
 }
 #pnlChart { width: 100% !important; max-height: 300px; }
 
+/* Category Toggle Filter */
+#category-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: 0.3s;
+    border: 1px solid #ccc;
+    background: #eee;
+    padding: 5px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+#category-checkboxes label:hover {
+    background-color: #e0e0e0;
+}
+
+#category-checkboxes input[type="checkbox"] {
+    cursor: pointer;
+}
+
 /* Buttons */
 .action-buttons { display: flex; gap: 10px; }
 .btn-print { background-color: #6c757d; color: white; }
