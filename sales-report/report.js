@@ -136,9 +136,34 @@ function filterAndDisplayData() {
     const endDate = new Date(endDatePicker.value);
     endDate.setHours(23, 59, 59, 999);
 
+    // ফিল্টার ভ্যালু সংগ্রহ
+    const selectedMethods = Array.from(document.querySelectorAll('.data-filter[value]:checked')).map(cb => cb.value);
+    const showOnlyDiscount = document.getElementById('filter-discount')?.checked || false;
+    const showCanceled = document.getElementById('filter-canceled')?.checked || false;
+
     filteredSalesForPDF = allSalesData.filter(sale => {
         const d = sale.createdAt.toDate();
-        return d >= startDate && d <= endDate;
+        const method = (sale.paymentMethod || 'cash').toLowerCase();
+        const hasDiscount = (sale.discountAmount || sale.discount || 0) > 0;
+        const isCanceled = sale.status === 'canceled';
+
+        // ১. তারিখ চেক
+        if (d < startDate || d > endDate) return false;
+
+        // ২. ক্যানসেল ফিল্টার: যদি 'Canceled' চেক করা থাকে তবে শুধু ক্যানসেলগুলো দেখাবে, নাহলে শুধু সাকসেসগুলো
+        if (showCanceled) {
+            if (!isCanceled) return false;
+        } else {
+            if (isCanceled) return false;
+        }
+
+        // ৩. পেমেন্ট মেথড চেক (ক্যানসেল মোডে না থাকলে)
+        if (!showCanceled && selectedMethods.length > 0 && !selectedMethods.includes(method)) return false;
+
+        // ৪. ডিসকাউন্ট ফিল্টার
+        if (showOnlyDiscount && !hasDiscount) return false;
+
+        return true;
     });
 
     calculateFilteredPaymentSummary(filteredSalesForPDF);
@@ -398,7 +423,7 @@ function sendReportToWhatsApp() {
     window.open(`https://wa.me/?text=${encodedMsg}`, '_blank');
 }
 
-// --- PDF DOWNLOAD (Perfect Alignment Final Version) ---
+// --- PDF DOWNLOAD (Fixed Syntax Error & Header Summary) ---
 window.downloadPDF = function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'mm', 'a4'); 
@@ -408,24 +433,19 @@ window.downloadPDF = function() {
     const startStr = startDatePicker.value || 'Start';
     const endStr = endDatePicker.value || 'End';
 
-    // --- ১. মেইন হেডার (Dark Blue Bar) ---
-    doc.setFillColor(31, 41, 55); 
-    doc.rect(0, 0, pageWidth, 40, 'F'); 
+    // ১. সব হিসাব একটি মাত্র অবজেক্টে (totals) রাখা হয়েছে
+    const totals = { 
+        cash: 0, 
+        card: 0, 
+        online: 0, 
+        net: 0, 
+        cost: 0, 
+        disc: 0 
+    };
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.setTextColor(255, 255, 255);
-    doc.text(myShopName.toUpperCase(), 15, 18); 
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`SALES REPORT | PERIOD: ${startStr} TO ${endStr}`, 15, 27);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, 33);
-
-    // --- ২. ডাটা প্রসেসিং ---
     const tableData = [];
-    let totals = { rev: 0, cost: 0, disc: 0, cash: 0, online: 0, canceled: 0 };
 
+    // ২. ডাটা প্রসেসিং এবং হিসাব একসাথে করা
     filteredSalesForPDF.forEach(sale => {
         const isCanceled = sale.status === 'canceled';
         const billNo = sale.billNumber || sale.billNo || sale.id.substring(0, 6).toUpperCase();
@@ -435,11 +455,8 @@ window.downloadPDF = function() {
         let saleCost = 0;
         if (sale.items) {
             itemsList = sale.items.map(i => {
-                // এখানে কেনা দাম (costPrice) নেওয়া হচ্ছে
                 const cost = i.costPrice || 0;
                 if (!isCanceled) saleCost += (cost * i.quantity);
-                
-                // পিডিএফ-এ দেখানোর জন্য স্ট্রিং তৈরি (Cost Price সহ)
                 return `• ${i.name} (${i.quantity} x ${cost.toFixed(2)})`;
             }).join('\n');
         }
@@ -447,23 +464,24 @@ window.downloadPDF = function() {
         const netTotal = sale.total || 0;
         const discount = sale.discountAmount || sale.discount || 0;
         const profit = isCanceled ? 0 : (netTotal - saleCost);
-        const method = (sale.paymentMethod || 'Cash').toUpperCase();
+        const method = (sale.paymentMethod || 'cash').toLowerCase();
 
+        // শুধুমাত্র সাকসেসফুল বিলের হিসাব রাখা
         if (!isCanceled) {
-            totals.rev += netTotal;
+            if (method === 'cash') totals.cash += netTotal;
+            else if (method === 'card') totals.card += netTotal;
+            else if (method === 'online') totals.online += netTotal;
+            
+            totals.net += netTotal;
             totals.cost += saleCost;
             totals.disc += discount;
-            if (method === 'CASH') totals.cash += netTotal;
-            else totals.online += netTotal;
-        } else {
-            totals.canceled += netTotal;
         }
 
         tableData.push([
             billNo,
             date,
             itemsList,
-            method,
+            method.toUpperCase(),
             discount.toFixed(2),
             saleCost.toFixed(2),
             netTotal.toFixed(2),
@@ -472,39 +490,47 @@ window.downloadPDF = function() {
         ]);
     });
 
-    // --- ৩. মেইন সেলস টেবিল ---
+    // ৩. মেইন হেডার (Dark Blue Bar)
+    doc.setFillColor(31, 41, 55); 
+    doc.rect(0, 0, pageWidth, 45, 'F'); 
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.text(myShopName.toUpperCase(), 15, 18); 
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`PERIOD: ${startStr} TO ${endStr}`, 15, 27);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, 33);
+    
+    // ডান দিকের পেমেন্ট সামারি
+    const rightX = pageWidth - 15;
+    doc.setFontSize(10);
+    doc.setTextColor(200, 200, 200);
+    doc.text(`CASH: RS. ${totals.cash.toFixed(2)}`, rightX, 18, { align: 'right' });
+    doc.text(`CARD: RS. ${totals.card.toFixed(2)}`, rightX, 24, { align: 'right' });
+    doc.text(`ONLINE: RS. ${totals.online.toFixed(2)}`, rightX, 30, { align: 'right' });
+    
+    doc.setFontSize(12);
+    doc.setTextColor(255, 215, 0); // Gold Color
+    doc.text(`NET REVENUE: RS. ${totals.net.toFixed(2)}`, rightX, 40, { align: 'right' });
+
+    // ৪. টেবিল রেন্ডারিং
     doc.autoTable({
-        startY: 45,
+        startY: 50,
         margin: { left: 15, right: 15 },
         head: [['Bill No', 'Date', 'Items & Details', 'Type', 'Disc.', 'Cost', 'Net Total', 'Profit', 'Status']],
         body: tableData,
         theme: 'striped',
-        headStyles: { 
-            fillColor: [55, 65, 81], 
-            textColor: 255, 
-            fontSize: 10, 
-            halign: 'center', // সব হেডার ডিফল্ট সেন্টার থাকবে
-            valign: 'middle'
-        },
+        headStyles: { fillColor: [55, 65, 81], fontSize: 10 },
         styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
         columnStyles: {
-            0: { halign: 'center', fontStyle: 'bold' },
-            1: { halign: 'center' },
-            // কলাম ২ (Items & Details) এর হেডার এবং বডি বাম দিকে (left) অ্যালাইন করা হলো
-            2: { halign: 'left', cellWidth: 80 }, 
-            3: { halign: 'center' },
-            4: { halign: 'right' },
-            5: { halign: 'right' },
-            6: { halign: 'right', fontStyle: 'bold' },
-            7: { halign: 'right', fontStyle: 'bold' },
-            8: { halign: 'center' }
+            2: { cellWidth: 80 },
+            6: { fontStyle: 'bold' },
+            7: { fontStyle: 'bold' }
         },
-        // বিশেষ করে ৩ নম্বর কলামের (Index 2) হেডার বামে সরানোর জন্য:
         didParseCell: function(data) {
-            if (data.section === 'head' && data.column.index === 2) {
-                data.cell.styles.halign = 'left';
-            }
-            // প্রফিট কালার লজিক (আগের মতোই থাকবে)
             if (data.column.index === 7 && data.section === 'body') {
                 const val = parseFloat(data.cell.raw);
                 if (val > 0) data.cell.styles.textColor = [22, 101, 52];
@@ -513,60 +539,14 @@ window.downloadPDF = function() {
         }
     });
 
-    // --- ৪. সামারি পেজ ---
-    doc.addPage();
-    doc.setFillColor(31, 41, 55);
-    doc.rect(0, 0, pageWidth, 25, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.text("FINANCIAL PERFORMANCE SUMMARY", 15, 16);
-
-    const netProfit = totals.rev - totals.cost;
-    const profitMargin = totals.rev > 0 ? ((netProfit / totals.rev) * 100) : 0;
-
-    doc.autoTable({
-        startY: 35,
-        margin: { left: 15, right: 15 },
-        head: [['Financial Metric', 'Value (INR)']],
-        body: [
-            ['Total Sales Revenue', totals.rev.toLocaleString('en-IN')],
-            ['Total Cost of Goods (COGS)', totals.cost.toLocaleString('en-IN')],
-            ['Gross Profit', netProfit.toLocaleString('en-IN')],
-            ['Profit Margin (%)', profitMargin.toFixed(2) + '%'],
-            ['Total Discount Given', totals.disc.toLocaleString('en-IN')],
-            ['Cash Collection', totals.cash.toLocaleString('en-IN')],
-            ['Online/Card Collection', totals.online.toLocaleString('en-IN')],
-            ['Total Canceled Value', totals.canceled.toLocaleString('en-IN')]
-        ],
-        theme: 'grid',
-        headStyles: { 
-            fillColor: [75, 85, 99], 
-            textColor: 255, 
-            fontSize: 11,
-            halign: 'left'
-        },
-        columnStyles: { 
-            0: { fontStyle: 'bold', cellWidth: 100, halign: 'left' }, 
-            1: { fontStyle: 'bold', halign: 'right' }
-        },
-        didParseCell: function(data) {
-            if (data.section === 'head' && data.column.index === 1) {
-                data.cell.styles.halign = 'right';
-            }
-        }
-    });
-
-    // --- ৫. ফুটার (Keshab Sarkar Name Fix) ---
+    // ৫. ফুটার
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
         doc.setFontSize(9);
         doc.setTextColor(150, 150, 150);
-        doc.text(`This is a computer-generated report. Page ${i} of ${totalPages}`, 15, pageHeight - 10);
-        
-        const footerRightText = `Powered by Smart POS | Developed by Keshab Sarkar`;
-        const textWidth = doc.getTextWidth(footerRightText);
-        doc.text(footerRightText, pageWidth - textWidth - 15, pageHeight - 10);
+        doc.text(`Page ${i} of ${totalPages}`, 15, pageHeight - 10);
+        doc.text(`Developed by Keshab Sarkar`, pageWidth - 50, pageHeight - 10);
     }
 
     doc.save(`Sales_Report_${startStr}.pdf`);
@@ -574,7 +554,15 @@ window.downloadPDF = function() {
 
 // --- Event Listeners ---
 function setupEventListeners() {
-    if (filterBtn) filterBtn.addEventListener('click', filterAndDisplayData);
+    // ডেট পরিবর্তন করলে সাথে সাথে আপডেট
+    if (startDatePicker) startDatePicker.addEventListener('change', filterAndDisplayData);
+    if (endDatePicker) endDatePicker.addEventListener('change', filterAndDisplayData);
+
+    // সব চেক বক্সে ক্লিক করলে সাথে সাথে আপডেট
+    document.querySelectorAll('.data-filter').forEach(el => {
+        el.addEventListener('change', filterAndDisplayData);
+    });
+
     if (whatsappBtn) whatsappBtn.addEventListener('click', sendReportToWhatsApp);
 
     if (salesTableBody) {

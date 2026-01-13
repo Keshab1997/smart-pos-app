@@ -76,6 +76,86 @@
             padding: 2px 6px;
             border-radius: 4px;
         }
+        
+        /* Payment Filter Styles */
+        .pay-method-filter {
+            width: 18px;
+            height: 18px;
+            vertical-align: middle;
+            cursor: pointer;
+            accent-color: #3498db;
+        }
+        
+        .form-group-inline label {
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* Filter Section Improvements */
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1.5fr 1fr;
+            gap: 20px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .filter-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4b5563;
+            font-size: 0.9rem;
+        }
+
+        .date-input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .payment-checkboxes {
+            display: flex;
+            gap: 15px;
+            background: #f9fafb;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .cb-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            user-select: none;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .filter-actions .btn {
+            height: 40px;
+            padding: 0 15px;
+            margin-left: 0;
+        }
+
+        /* Responsive Fix */
+        @media (max-width: 1024px) {
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+            .filter-actions {
+                justify-content: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
@@ -106,29 +186,38 @@
 
         <!-- Filter Section -->
         <section class="filter-section card">
-            <h3>Filter Sales Report</h3>
-            <div class="form-group-inline">
-                <div>
-                    <label for="start-date">From Date:</label>
-                    <input type="date" id="start-date" class="form-control">
+            <div class="filter-header">
+                <h3><i class="fas fa-filter"></i> Filter Sales Report</h3>
+            </div>
+            
+            <div class="filter-grid">
+                <!-- Date Range -->
+                <div class="filter-group">
+                    <label>Date Range</label>
+                    <div class="date-input-container">
+                        <input type="date" id="start-date" class="form-control">
+                        <span>to</span>
+                        <input type="date" id="end-date" class="form-control">
+                    </div>
                 </div>
-                <div>
-                    <label for="end-date">To Date:</label>
-                    <input type="date" id="end-date" class="form-control">
-                </div>
-                
-                <!-- Filter Button -->
-                <button id="filter-btn" class="btn btn-primary">Filter</button>
-                
-                <!-- WhatsApp Button -->
-                <button id="whatsapp-btn" class="btn btn-success" style="margin-left: 10px;">
-                    <i class="fab fa-whatsapp"></i> Share
-                </button>
 
-                <!-- PDF Download Button -->
-                <button onclick="downloadPDF()" class="btn btn-danger">
-                    <i class="fas fa-file-pdf"></i> Download PDF
-                </button>
+                <!-- Multi Filters -->
+                <div class="filter-group">
+                    <label>Filters (Payment & Status)</label>
+                    <div class="payment-checkboxes">
+                        <label class="cb-container"><input type="checkbox" class="data-filter" value="cash" checked> Cash</label>
+                        <label class="cb-container"><input type="checkbox" class="data-filter" value="card" checked> Card</label>
+                        <label class="cb-container"><input type="checkbox" class="data-filter" value="online" checked> Online</label>
+                        <label class="cb-container" style="color: #d35400;"><input type="checkbox" id="filter-discount" class="data-filter"> Discount Only</label>
+                        <label class="cb-container" style="color: #e74c3c;"><input type="checkbox" id="filter-canceled" class="data-filter"> Canceled</label>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="filter-actions">
+                    <button id="whatsapp-btn" class="btn btn-success"><i class="fab fa-whatsapp"></i> Share</button>
+                    <button onclick="downloadPDF()" class="btn btn-danger"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
             </div>
 
             <!-- Filtered Summary -->
