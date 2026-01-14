@@ -465,3 +465,29 @@ function removeAnnouncementBanner() {
     const banner = document.getElementById('global-announcement-banner');
     if (banner) banner.remove();
 }
+
+// ৩. Support Button Functionality
+const supportBtn = document.getElementById('btn-open-support');
+if (supportBtn) {
+    supportBtn.addEventListener('click', async () => {
+        const msg = prompt("💬 Write your message/feedback for the Admin:");
+        if (msg && msg.trim() !== "") {
+            try {
+                const shopSnap = await getDoc(doc(db, 'shops', currentUserId));
+                const shopName = shopSnap.exists() ? shopSnap.data().shopName : "Unknown Shop";
+                
+                await addDoc(collection(db, 'support_tickets'), {
+                    userId: currentUserId,
+                    shopName: shopName,
+                    email: auth.currentUser.email,
+                    message: msg,
+                    createdAt: serverTimestamp()
+                });
+                alert("✅ Message sent to Admin! Thank you for your feedback.");
+            } catch (e) {
+                console.error('Error sending feedback:', e);
+                alert("❌ Failed to send message. Please try again.");
+            }
+        }
+    });
+}

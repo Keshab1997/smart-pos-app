@@ -1,5 +1,5 @@
 // js/admin.js
-import { db, auth, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc } from './firebase-config.js';
+import { db, auth, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, serverTimestamp } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const ADMIN_EMAIL = "keshabsarkar2018@gmail.com";
@@ -30,8 +30,14 @@ function setupEventListeners() {
     document.getElementById('btn-single-backup').addEventListener('click', () => backupSingleUser(selectedShopId, selectedShopData.shopName));
     document.getElementById('btn-single-restore').addEventListener('click', () => document.getElementById('file-restore-json').click());
     document.getElementById('btn-single-reset').addEventListener('click', resetData);
+    document.getElementById('btn-reset-pin').addEventListener('click', resetMasterPin);
     document.getElementById('btn-post-announcement').addEventListener('click', postAnnouncement);
+    document.getElementById('btn-edit-announcement').addEventListener('click', editAnnouncement);
+    document.getElementById('btn-delete-announcement').addEventListener('click', deleteAnnouncement);
     document.getElementById('file-restore-json').addEventListener('change', handleRestore);
+    
+    loadCurrentAnnouncement();
+    loadFeedbacks();
 }
 
 async function loadAllUsers() {
@@ -124,6 +130,96 @@ async function resetData() {
     }
 }
 
+async function resetMasterPin() {
+    if (!selectedShopId) return alert('⚠️ Please select a shop first!');
+    
+    const newPin = prompt(`Enter new Master PIN for "${selectedShopData.shopName}" (Minimum 4 digits):`);
+    
+    if (newPin && newPin.length >= 4) {
+        try {
+            const pinRef = doc(db, 'shops', selectedShopId, 'settings', 'security');
+            await setDoc(pinRef, { master_pin: newPin }, { merge: true });
+            alert("✅ Master PIN reset successfully!");
+        } catch (e) {
+            alert("❌ Error resetting PIN: " + e.message);
+        }
+    } else if (newPin !== null) {
+        alert("❌ Invalid PIN! Must be at least 4 digits.");
+    }
+}
+
+function editAnnouncement() {
+    const currentMsg = document.getElementById('display-current-msg').textContent;
+    const textarea = document.getElementById('announcement-text');
+    textarea.value = currentMsg;
+    textarea.focus();
+    textarea.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function loadFeedbacks() {
+    const feedbackList = document.getElementById('feedback-list');
+    try {
+        const snap = await getDocs(query(collection(db, 'support_tickets'), orderBy('createdAt', 'desc')));
+        feedbackList.innerHTML = '';
+        
+        if (snap.empty) {
+            feedbackList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No feedbacks found.</p>';
+            return;
+        }
+        
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            const date = d.createdAt ? d.createdAt.toDate().toLocaleString() : 'N/A';
+            const div = document.createElement('div');
+            div.className = 'user-item';
+            div.style.cursor = 'default';
+            div.style.marginBottom = '10px';
+            div.innerHTML = `
+                <strong>👤 ${d.shopName}</strong> <small style="color: #999;">(${date})</small><br>
+                <p style="margin: 8px 0; color: #444; background: #f9f9f9; padding: 8px; border-radius: 4px;">${d.message}</p>
+                <small style="color: #666;">📧 ${d.email}</small>
+            `;
+            feedbackList.appendChild(div);
+        });
+    } catch (e) { 
+        console.error('Error loading feedbacks:', e);
+        feedbackList.innerHTML = '<p style="color: red;">Error loading feedbacks.</p>';
+    }
+}
+
+async function loadCurrentAnnouncement() {
+    try {
+        const snap = await getDoc(doc(db, 'settings', 'announcement'));
+        const box = document.getElementById('current-announcement-box');
+        const msgDisplay = document.getElementById('display-current-msg');
+
+        if (snap.exists() && snap.data().active) {
+            box.classList.remove('hidden');
+            msgDisplay.textContent = snap.data().message;
+        } else {
+            box.classList.add('hidden');
+        }
+    } catch (e) { 
+        console.error('Error loading announcement:', e); 
+    }
+}
+
+async function deleteAnnouncement() {
+    if (confirm("আপনি কি নিশ্চিত বর্তমান অ্যানাউন্সমেন্ট ডিলিট করতে চান?")) {
+        try {
+            await updateDoc(doc(db, 'settings', 'announcement'), {
+                active: false,
+                message: "",
+                updatedAt: new Date().toISOString()
+            });
+            alert("✅ Announcement deleted successfully!");
+            loadCurrentAnnouncement();
+        } catch (e) { 
+            alert("❌ Error: " + e.message); 
+        }
+    }
+}
+
 async function postAnnouncement() {
     const msg = document.getElementById('announcement-text').value;
     const action = msg.trim() === "" ? "REMOVE the current announcement" : "PUBLISH this announcement to ALL users";
@@ -137,6 +233,7 @@ async function postAnnouncement() {
             });
             alert("✅ Announcement updated successfully!");
             document.getElementById('announcement-text').value = '';
+            loadCurrentAnnouncement();
         } catch (e) {
             alert("Failed to post announcement: " + e.message);
         }
