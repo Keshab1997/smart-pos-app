@@ -3,28 +3,17 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import { 
-    collection, addDoc, getDocs, query, orderBy, deleteDoc, updateDoc, doc, Timestamp 
+    collection, addDoc, getDocs, query, orderBy, deleteDoc, updateDoc, doc, Timestamp, setDoc, getDoc 
 } from 'firebase/firestore';
 
 // ==========================================
 // --- DOM Elements ---
 // ==========================================
-const addExpenseForm = document.getElementById('add-expense-form');
-const formTitle = document.getElementById('form-title');
-const editExpenseId = document.getElementById('edit-expense-id');
-
-const entryDate = document.getElementById('entry-date');
-const entryCategory = document.getElementById('entry-category');
-const entryDesc = document.getElementById('entry-desc');
-const entryAmount = document.getElementById('entry-amount');
-
 const btnAddCategory = document.getElementById('btn-add-category');
-const btnAddDesc = document.getElementById('btn-add-desc');
-const btnSaveExpense = document.getElementById('btn-save-expense');
-const btnCancelEdit = document.getElementById('btn-cancel-edit');
-
 const filterDateFrom = document.getElementById('filter-date-from');
 const filterDateTo = document.getElementById('filter-date-to');
+const filterCategory = document.getElementById('filter-category');
+const filterPurpose = document.getElementById('filter-purpose');
 const btnApplyFilter = document.getElementById('btn-apply-filter');
 const btnResetFilter = document.getElementById('btn-reset-filter');
 const btnPrintSheet = document.getElementById('btn-print-sheet');
@@ -38,6 +27,8 @@ const btnSaveBulk = document.getElementById('btn-save-bulk');
 
 let currentUserId = null;
 let allExpenses = [];
+let expenseCategories = ["Shop Rent", "Electricity Bill", "Staff Salary", "Tea/Snacks", "Transport", "Inventory Purchase", "Other"];
+let purposeMap = {}; // Purpose -> Category mapping
 
 // ==========================================
 // --- Auth & Initial Load ---
@@ -45,127 +36,109 @@ let allExpenses = [];
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserId = user.uid;
-        setDefaultDate();
+        loadInitialData();
         loadExpenses(); 
     } else {
         window.location.href = '../index.html';
     }
 });
 
-function setDefaultDate() {
-    const today = new Date().toISOString().split('T')[0];
-    if(entryDate) entryDate.value = today;
-}
-
-// ==========================================
-// --- 1. Add / Update Expense Logic ---
-// ==========================================
-if(addExpenseForm) {
-    addExpenseForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!currentUserId) return;
-
-        const dateVal = new Date(entryDate.value);
-        const categoryVal = entryCategory.value;
-        const descVal = entryDesc.value;
-        const amountVal = parseFloat(entryAmount.value);
-        const editId = editExpenseId.value;
-
-        if (!categoryVal || !descVal || isNaN(amountVal)) {
-            alert("Please fill all fields correctly.");
-            return;
+// ক্যাটাগরি এবং পূর্বের পারপাস লোড করা (অটো-সাজেশনের জন্য)
+async function loadInitialData() {
+    if (!currentUserId) return;
+    
+    try {
+        // ক্যাটাগরি লোড
+        const catRef = doc(db, 'shops', currentUserId, 'settings', 'expense_categories');
+        const catSnap = await getDoc(catRef);
+        expenseCategories = catSnap.exists() ? catSnap.data().list : expenseCategories;
+        
+        if (!catSnap.exists()) {
+            await setDoc(catRef, { list: expenseCategories });
+        }
+        
+        // ফিল্টার ড্রপডাউন আপডেট (Inventory Purchase বাদ দিয়ে)
+        if (filterCategory) {
+            const filteredCategories = expenseCategories.filter(cat => 
+                cat.toLowerCase() !== 'inventory purchase' && 
+                cat.toLowerCase() !== 'inventory_purchase'
+            );
+            filterCategory.innerHTML = '<option value="">All Categories</option>' + 
+                filteredCategories.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
-        try {
-            btnSaveExpense.textContent = editId ? "Updating..." : "Saving...";
-            btnSaveExpense.disabled = true;
+        // সব এক্সপেন্স থেকে ইউনিক পারপাস এবং ক্যাটাগরি ম্যাপ তৈরি
+        const expSnap = await getDocs(collection(db, 'shops', currentUserId, 'expenses'));
+        const datalist = document.getElementById('purpose-suggestions');
+        if (datalist) {
+            datalist.innerHTML = '';
+            const uniquePurposes = new Set();
 
-            const expenseData = {
-                date: Timestamp.fromDate(dateVal),
-                category: categoryVal,
-                description: descVal,
-                amount: amountVal,
-                updatedAt: Timestamp.now()
-            };
+            expSnap.forEach(docSnap => {
+                const data = docSnap.data();
+                if (data.description && data.category) {
+                    purposeMap[data.description.toLowerCase()] = data.category;
+                    uniquePurposes.add(data.description);
+                }
+            });
 
-            if (editId) {
-                const expenseRef = doc(db, 'shops', currentUserId, 'expenses', editId);
-                await updateDoc(expenseRef, expenseData);
-                alert("Expense updated successfully!");
-            } else {
-                expenseData.createdAt = Timestamp.now();
-                await addDoc(collection(db, 'shops', currentUserId, 'expenses'), expenseData);
-            }
-
-            resetForm();
-            loadExpenses();
-
-        } catch (error) {
-            console.error("Error saving expense:", error);
-            alert("Error saving expense: " + error.message);
-        } finally {
-            btnSaveExpense.disabled = false;
+            uniquePurposes.forEach(p => {
+                datalist.innerHTML += `<option value="${p}">`;
+            });
         }
-    });
+        
+        // প্রথম 5টি রো যোগ করা
+        if (bulkTbody && bulkTbody.children.length === 0) {
+            for(let i=0; i<5; i++) addBulkRow();
+        }
+    } catch (e) {
+        console.error("Error loading initial data:", e);
+    }
 }
 
-function resetForm() {
-    entryCategory.value = "";
-    entryDesc.value = "";
-    entryAmount.value = "";
-    editExpenseId.value = "";
-    
-    formTitle.textContent = "Add New Expense";
-    btnSaveExpense.textContent = "Save Expense";
-    btnCancelEdit.style.display = "none";
-    
-    setDefaultDate();
-}
-
-if(btnCancelEdit) {
-    btnCancelEdit.addEventListener('click', resetForm);
-}
-
-// --- Dynamic Category (+ Icon) ---
+// নতুন ক্যাটাগরি যোগ করা
 if(btnAddCategory) {
-    btnAddCategory.addEventListener('click', () => {
-        const newCat = prompt("Enter new Category Name:");
+    btnAddCategory.addEventListener('click', async () => {
+        const newCat = prompt("নতুন ক্যাটাগরির নাম লিখুন:");
         if (newCat && newCat.trim() !== "") {
-            const option = document.createElement("option");
-            option.value = newCat.trim();
-            option.text = newCat.trim();
-            option.selected = true;
-            entryCategory.add(option);
+            const trimmedCat = newCat.trim();
+            if (!expenseCategories.includes(trimmedCat)) {
+                expenseCategories.push(trimmedCat);
+                try {
+                    const catRef = doc(db, 'shops', currentUserId, 'settings', 'expense_categories');
+                    await setDoc(catRef, { list: expenseCategories });
+                    
+                    // ফিল্টার ড্রপডাউন আপডেট (Inventory Purchase বাদ দিয়ে)
+                    if (filterCategory) {
+                        const filteredCategories = expenseCategories.filter(cat => 
+                            cat.toLowerCase() !== 'inventory purchase' && 
+                            cat.toLowerCase() !== 'inventory_purchase'
+                        );
+                        filterCategory.innerHTML = '<option value="">All Categories</option>' + 
+                            filteredCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+                    }
+                    
+                    // বাল্ক টেবিল রিফ্রেশ
+                    bulkTbody.innerHTML = '';
+                    for(let i=0; i<5; i++) addBulkRow();
+                    
+                    alert("✅ ক্যাটাগরি সফলভাবে যোগ করা হয়েছে!");
+                } catch (e) {
+                    alert("❌ ক্যাটাগরি সেভ করতে সমস্যা হয়েছে!");
+                }
+            } else {
+                alert("⚠️ এই ক্যাটাগরি ইতিমধ্যে আছে!");
+            }
         }
     });
 }
 
-// --- Dynamic Description (+ Icon) ---
-if(btnAddDesc) {
-    btnAddDesc.addEventListener('click', () => {
-        const commonPurposes = [
-            "Buying Stock (Mal Kena)",
-            "Daily Tiffin",
-            "Shop Cleaning",
-            "Electricity Bill",
-            "Van/Rickshaw Fare"
-        ];
-        let msg = "Choose a common purpose (enter number):\n";
-        commonPurposes.forEach((p, i) => msg += `${i+1}. ${p}\n`);
-        
-        const choice = prompt(msg);
-        const index = parseInt(choice) - 1;
-        
-        if (!isNaN(index) && commonPurposes[index]) {
-            entryDesc.value = commonPurposes[index];
-        }
-    });
-}
+
 
 // ==========================================
 // --- 2. Load & Display Logic ---
 // ==========================================
-async function loadExpenses(fromDate = null, toDate = null) {
+async function loadExpenses() {
     if (!currentUserId) return;
     expenseSheetBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading records...</td></tr>`;
 
@@ -181,19 +154,35 @@ async function loadExpenses(fromDate = null, toDate = null) {
             jsDate: doc.data().date.toDate()
         }));
 
-        if (fromDate && toDate) {
-            const fDate = new Date(fromDate); fDate.setHours(0,0,0,0);
-            const tDate = new Date(toDate); tDate.setHours(23,59,59,999);
+        // ফিল্টার প্রয়োগ
+        const fCat = filterCategory ? filterCategory.value : '';
+        const fPurpose = filterPurpose ? filterPurpose.value.toLowerCase() : '';
+        const fFrom = filterDateFrom ? filterDateFrom.value : '';
+        const fTo = filterDateTo ? filterDateTo.value : '';
+
+        let filtered = allExpenses.filter(exp => {
+            const matchCat = !fCat || exp.category === fCat;
+            const matchPurpose = !fPurpose || exp.description.toLowerCase().includes(fPurpose);
             
-            allExpenses = allExpenses.filter(exp => 
-                exp.jsDate >= fDate && exp.jsDate <= tDate
-            );
+            let matchDate = true;
+            if (fFrom && fTo) {
+                const fDate = new Date(fFrom); fDate.setHours(0,0,0,0);
+                const tDate = new Date(fTo); tDate.setHours(23,59,59,999);
+                matchDate = exp.jsDate >= fDate && exp.jsDate <= tDate;
+            }
+            
+            return matchCat && matchPurpose && matchDate;
+        });
+
+        if (fFrom && fTo) {
+            const fDate = new Date(fFrom);
+            const tDate = new Date(fTo);
             sheetPeriodLabel.textContent = `${fDate.toLocaleDateString()} to ${tDate.toLocaleDateString()}`;
         } else {
             sheetPeriodLabel.textContent = "All Records (Recent)";
         }
 
-        renderExpenseSheet(allExpenses);
+        renderExpenseSheet(filtered);
 
     } catch (error) {
         console.error("Load error:", error);
@@ -233,51 +222,53 @@ function renderExpenseSheet(data) {
             dayTotal += exp.amount;
             grandTotal += exp.amount;
 
+            const timeStr = exp.jsDate.toLocaleTimeString('en-IN', {
+                hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
+            });
+
             const tr = document.createElement('tr');
-            
-            // ইনভেন্টরি কি না চেক করা
             const isInventory = exp.category === 'inventory_purchase' || exp.category.toLowerCase().includes('inventory');
             
             if (isInventory) {
-                tr.classList.add('row-inventory');       // ইনভেন্টরি হলে লাল
+                tr.classList.add('row-inventory');
             } else {
-                tr.classList.add('row-general-expense'); // অন্য সব খরচ সবুজ
+                tr.classList.add('row-general-expense');
             }
 
             tr.innerHTML = `
-                <td>${exp.jsDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</td>
-                <td>${exp.category}</td>
-                <td class="${!isInventory ? 'editable-cell' : ''}" title="${!isInventory ? 'Double click to edit' : ''}">
+                <td class="${!isInventory ? 'editable-cell' : ''}" data-field="date" title="${!isInventory ? 'Double click to edit Date & Time' : ''}">${timeStr}</td>
+                <td class="${!isInventory ? 'editable-cell' : ''}" data-field="category" title="${!isInventory ? 'Double click to edit' : ''}">${exp.category}</td>
+                <td class="${!isInventory ? 'editable-cell' : ''}" data-field="description" title="${!isInventory ? 'Double click to edit' : ''}">
                     ${exp.description}
                     ${isInventory && exp.quantity ? `<div style="font-size: 0.75rem; color: #666; margin-top: 2px;">
                         (Qty: ${exp.quantity || 0} * CP: ${(exp.unitPrice || (exp.amount / (exp.quantity || 1))).toFixed(2)})
                     </div>` : ''}
                 </td>
-                <td class="text-right ${!isInventory ? 'editable-cell' : ''}" title="${!isInventory ? 'Double click to edit' : ''}">₹${exp.amount.toFixed(2)}</td>
+                <td class="text-right ${!isInventory ? 'editable-cell' : ''}" data-field="amount" title="${!isInventory ? 'Double click to edit' : ''}">₹${exp.amount.toFixed(2)}</td>
                 <td class="no-print" style="text-align:center;">
-                    ${!isInventory ? `
-                        <button class="btn-edit" data-id="${exp.id}">Edit</button>
-                        <button class="btn-delete" data-id="${exp.id}">Delete</button>
-                    ` : '<span style="font-size:0.7rem; color:#bbb;">Locked</span>'}
+                    ${!isInventory ? `<button class="btn-delete" data-id="${exp.id}">Delete</button>` : '<span style="font-size:0.7rem; color:#bbb;">Locked</span>'}
                 </td>
             `;
             
-            // --- ইনলাইন এডিট লজিক (Double Click) ---
             if (!isInventory) {
-                const descCell = tr.cells[2];
-                const amountCell = tr.cells[3];
+                tr.querySelectorAll('.editable-cell').forEach(cell => {
+                    cell.addEventListener('dblclick', () => {
+                        const field = cell.getAttribute('data-field');
+                        let value = cell.innerText.trim();
+                        if (field === 'amount') value = exp.amount;
+                        startInlineEdit(cell, exp.id, field, value, exp.jsDate);
+                    });
+                });
 
-                descCell.addEventListener('dblclick', () => startInlineEdit(descCell, exp.id, 'description', exp.description));
-                amountCell.addEventListener('dblclick', () => startInlineEdit(amountCell, exp.id, 'amount', exp.amount));
-
-                tr.querySelector('.btn-edit').addEventListener('click', () => prepareEdit(exp.id));
-                tr.querySelector('.btn-delete').addEventListener('click', () => deleteExpense(exp.id));
+                const deleteBtn = tr.querySelector('.btn-delete');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', () => deleteExpense(exp.id));
+                }
             }
             
             expenseSheetBody.appendChild(tr);
         });
 
-        // সাবটোটাল রো
         const subRow = document.createElement('tr');
         subRow.style.backgroundColor = '#fff';
         subRow.style.fontWeight = 'bold';
@@ -289,10 +280,9 @@ function renderExpenseSheet(data) {
         expenseSheetBody.appendChild(subRow);
     }
 
-    // লুপ শেষ হওয়ার পর গ্র্যান্ড টোটাল রো যোগ করা
     const grandTotalRow = document.createElement('tr');
-    grandTotalRow.style.backgroundColor = '#f1f3f5'; // কালো থেকে হালকা গ্রে করা হলো
-    grandTotalRow.style.color = '#000';             // টেক্সট কালো
+    grandTotalRow.style.backgroundColor = '#f1f3f5';
+    grandTotalRow.style.color = '#000';
     grandTotalRow.style.fontWeight = '600';
     grandTotalRow.style.fontSize = '0.95rem';
 
@@ -307,42 +297,68 @@ function renderExpenseSheet(data) {
     displayTotalExpense.textContent = `₹${grandTotal.toFixed(2)}`;
 }
 
-/**
- * ইনলাইন এডিট শুরু করার ফাংশন
- */
-function startInlineEdit(td, id, field, originalValue) {
-    if (td.querySelector('input')) return; // অলরেডি এডিট চলছে
+function startInlineEdit(td, id, field, originalValue, originalDate) {
+    if (td.querySelector('input') || td.querySelector('select')) return;
 
-    const input = document.createElement('input');
-    input.type = field === 'amount' ? 'number' : 'text';
-    input.value = originalValue;
+    let input;
+    if (field === 'date') {
+        input = document.createElement('input');
+        input.type = 'datetime-local';
+        const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+        const localISOTime = (new Date(originalDate - tzOffset)).toISOString().slice(0, 16);
+        input.value = localISOTime;
+    } else if (field === 'category') {
+        input = document.createElement('select');
+        // ফিল্টার করা ক্যাটাগরি (Inventory Purchase বাদ)
+        const filteredCategories = expenseCategories.filter(cat => 
+            cat.toLowerCase() !== 'inventory purchase' && 
+            cat.toLowerCase() !== 'inventory_purchase'
+        );
+        filteredCategories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.text = cat;
+            if (cat === originalValue) opt.selected = true;
+            input.appendChild(opt);
+        });
+    } else {
+        input = document.createElement('input');
+        if (field === 'amount') {
+            input.type = 'number';
+            input.value = originalValue;
+        } else {
+            input.type = 'text';
+            input.value = originalValue;
+        }
+    }
+
     input.className = 'inline-edit-input';
-    
     td.innerHTML = '';
     td.appendChild(input);
     input.focus();
 
-    // সেভ করার ফাংশন
     const saveInline = async () => {
-        const newValue = field === 'amount' ? parseFloat(input.value) : input.value;
-        
-        if (newValue !== originalValue && newValue !== "") {
-            try {
-                const docRef = doc(db, 'shops', currentUserId, 'expenses', id);
-                await updateDoc(docRef, { [field]: newValue, updatedAt: Timestamp.now() });
-                loadExpenses(); // টেবিল রিফ্রেশ
-            } catch (e) {
-                console.error(e);
-                alert("Update failed!");
-                loadExpenses();
-            }
+        let updateData = {};
+
+        if (field === 'date') {
+            updateData.date = Timestamp.fromDate(new Date(input.value));
+        } else if (field === 'amount') {
+            updateData.amount = parseFloat(input.value);
         } else {
-            // কোনো পরিবর্তন না হলে আগের ভ্যালু ফিরিয়ে আনা
-            td.innerText = field === 'amount' ? `₹${parseFloat(originalValue).toFixed(2)}` : originalValue;
+            updateData[field] = input.value;
+        }
+
+        try {
+            const docRef = doc(db, 'shops', currentUserId, 'expenses', id);
+            await updateDoc(docRef, { ...updateData, updatedAt: Timestamp.now() });
+            loadExpenses();
+        } catch (e) {
+            console.error(e);
+            alert("আপডেট করতে সমস্যা হয়েছে!");
+            loadExpenses();
         }
     };
 
-    // ইভেন্ট লিসেনার (Enter চাপলে বা বাইরে ক্লিক করলে সেভ হবে)
     input.addEventListener('blur', saveInline);
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') saveInline();
@@ -350,46 +366,15 @@ function startInlineEdit(td, id, field, originalValue) {
     });
 }
 
-// ==========================================
-// --- 3. Edit Helper Function ---
-// ==========================================
-function prepareEdit(id) {
-    const expense = allExpenses.find(e => e.id === id);
-    if (!expense) return;
 
-    entryDate.value = expense.jsDate.toISOString().split('T')[0];
-    entryCategory.value = expense.category;
-    entryDesc.value = expense.description;
-    entryAmount.value = expense.amount;
-    editExpenseId.value = id;
-
-    formTitle.textContent = "Edit Expense";
-    btnSaveExpense.textContent = "Update Expense";
-    btnCancelEdit.style.display = "inline-block";
-
-    document.querySelector('.add-expense-section').scrollIntoView({ behavior: 'smooth' });
-}
-
-// ==========================================
-// --- 4. Delete Helper Function ---
-// ==========================================
 async function deleteExpense(id) {
-    if (confirm("Are you sure you want to delete this entry?")) {
+    if (confirm("আপনি কি নিশ্চিত এই এন্ট্রিটি ডিলিট করতে চান?")) {
         try {
             await deleteDoc(doc(db, 'shops', currentUserId, 'expenses', id));
-            
-            if(editExpenseId.value === id) {
-                resetForm();
-            }
-
-            if(filterDateFrom.value && filterDateTo.value) {
-                loadExpenses(filterDateFrom.value, filterDateTo.value);
-            } else {
-                loadExpenses();
-            }
+            loadExpenses();
         } catch (error) {
             console.error("Delete failed", error);
-            alert("Could not delete.");
+            alert("ডিলিট করতে সমস্যা হয়েছে।");
         }
     }
 }
@@ -398,19 +383,15 @@ async function deleteExpense(id) {
 // --- 5. Filter & Print Logic ---
 // ==========================================
 if(btnApplyFilter) {
-    btnApplyFilter.addEventListener('click', () => {
-        if (filterDateFrom.value && filterDateTo.value) {
-            loadExpenses(filterDateFrom.value, filterDateTo.value);
-        } else {
-            alert("Please select both From and To dates.");
-        }
-    });
+    btnApplyFilter.addEventListener('click', () => loadExpenses());
 }
 
 if(btnResetFilter) {
     btnResetFilter.addEventListener('click', () => {
-        filterDateFrom.value = "";
-        filterDateTo.value = "";
+        if (filterDateFrom) filterDateFrom.value = "";
+        if (filterDateTo) filterDateTo.value = "";
+        if (filterCategory) filterCategory.value = "";
+        if (filterPurpose) filterPurpose.value = "";
         loadExpenses();
     });
 }
@@ -421,30 +402,47 @@ if(btnPrintSheet) {
     });
 }
 
-// --- Bulk Entry Functions ---
+// বাল্ক রো তৈরি (স্মার্ট ফিচারসহ)
 function addBulkRow() {
     const tr = document.createElement('tr');
     const today = new Date().toISOString().split('T')[0];
+    
+    // ফিল্টার করা ক্যাটাগরি (Inventory Purchase বাদ)
+    const filteredCategories = expenseCategories.filter(cat => 
+        cat.toLowerCase() !== 'inventory purchase' && 
+        cat.toLowerCase() !== 'inventory_purchase'
+    );
+    
+    const catOptions = filteredCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+    
     tr.innerHTML = `
         <td><input type="date" class="bulk-date" value="${today}"></td>
+        <td><input type="text" class="bulk-desc" list="purpose-suggestions" placeholder="Type purpose..."></td>
         <td>
             <select class="bulk-category">
-                <option value="Tea/Snacks">Tea/Snacks</option>
-                <option value="Transport">Transport</option>
-                <option value="Shop Rent">Shop Rent</option>
-                <option value="Electricity Bill">Electricity Bill</option>
-                <option value="Staff Salary">Staff Salary</option>
-                <option value="Other">Other</option>
+                <option value="" disabled selected>Select</option>
+                ${catOptions}
             </select>
         </td>
-        <td><input type="text" class="bulk-desc" placeholder="Description"></td>
         <td><input type="number" class="bulk-amount" placeholder="0.00" step="0.01"></td>
         <td><button class="btn-delete remove-bulk-row">X</button></td>
     `;
+
+    // অটো-ক্যাটেগরি লজিক
+    const descInput = tr.querySelector('.bulk-desc');
+    const catSelect = tr.querySelector('.bulk-category');
+
+    descInput.addEventListener('input', (e) => {
+        const val = e.target.value.toLowerCase().trim();
+        if (purposeMap[val]) {
+            catSelect.value = purposeMap[val];
+            tr.style.backgroundColor = '#f0fff4';
+            setTimeout(() => tr.style.backgroundColor = '', 1000);
+        }
+    });
+
     bulkTbody.appendChild(tr);
 }
-
-if(bulkTbody) { for(let i=0; i<3; i++) addBulkRow(); }
 
 if(btnAddBulkRow) {
     btnAddBulkRow.addEventListener('click', addBulkRow);
@@ -462,14 +460,28 @@ if(btnSaveBulk) {
         const batchData = [];
         
         rows.forEach(row => {
-            const date = row.querySelector('.bulk-date').value;
+            const dateVal = row.querySelector('.bulk-date').value;
             const category = row.querySelector('.bulk-category').value;
             const desc = row.querySelector('.bulk-desc').value.trim();
             const amount = parseFloat(row.querySelector('.bulk-amount').value);
 
             if(desc && !isNaN(amount)) {
+                // নিরাপত্তা চেক: Inventory Purchase ম্যানুয়ালি যোগ করা যাবে না
+                if (category.toLowerCase().includes('inventory')) {
+                    alert("⚠️ Inventory Purchase এখানে যোগ করা যাবে না। 'Add Product' পেজ ব্যবহার করুন।");
+                    return;
+                }
+                
+                // তারিখটিকে লোকাল টাইমজোন অনুযায়ী প্রসেস করা
+                const [year, month, day] = dateVal.split('-').map(Number);
+                const finalDate = new Date(year, month - 1, day);
+                
+                // বর্তমান সময় যোগ করা যাতে 05:30 না দেখায়
+                const now = new Date();
+                finalDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+
                 batchData.push({
-                    date: Timestamp.fromDate(new Date(date)),
+                    date: Timestamp.fromDate(finalDate),
                     category,
                     description: desc,
                     amount,
@@ -489,10 +501,11 @@ if(btnSaveBulk) {
                 await addDoc(colRef, data);
             }
             
-            alert("All expenses saved!");
+            alert("✅ সব এক্সপেন্স সেভ করা হয়েছে!");
             bulkTbody.innerHTML = "";
-            for(let i=0; i<3; i++) addBulkRow();
+            for(let i=0; i<5; i++) addBulkRow();
             loadExpenses();
+            loadInitialData();
         } catch (e) { console.error(e); }
         finally { btnSaveBulk.disabled = false; btnSaveBulk.textContent = "Save All Bulk Entries"; }
     });

@@ -21,124 +21,65 @@
     <!-- Navbar Placeholder -->
     <div id="navbar-placeholder"></div>
 
-    <main class="container">
+    <main class="container expense-full-width">
         <div class="page-header no-print">
             <h1>Daily Expense Manager</h1>
         </div>
 
-        <!-- ========================================== -->
-        <!-- 1. ADD NEW EXPENSE FORM (Entry Section) -->
-        <!-- ========================================== -->
-        <section class="card add-expense-section no-print">
-            <h3 id="form-title">Add New Expense</h3>
-            <form id="add-expense-form">
-                <!-- Hidden input for editing -->
-                <input type="hidden" id="edit-expense-id">
-                
-                <div class="form-grid">
-                    <!-- Date -->
-                    <div class="form-group">
-                        <label>Date</label>
-                        <input type="date" id="entry-date" required>
-                    </div>
-
-                    <!-- Category with + Icon -->
-                    <div class="form-group">
-                        <label>Category</label>
-                        <div class="input-with-btn">
-                            <select id="entry-category" required>
-                                <option value="" disabled selected>Select Category</option>
-                                <option value="Inventory Purchase">Inventory Purchase (Stock)</option>
-                                <option value="Shop Rent">Shop Rent</option>
-                                <option value="Electricity Bill">Electricity Bill</option>
-                                <option value="Staff Salary">Staff Salary</option>
-                                <option value="Tea/Snacks">Tea/Snacks</option>
-                                <option value="Transport">Transport</option>
-                                <option value="Other">Other</option>
-                            </select>
-                            <button type="button" id="btn-add-category" class="btn-icon" title="Add New Category">+</button>
-                        </div>
-                    </div>
-
-                    <!-- Purpose/Description with + Icon -->
-                    <div class="form-group">
-                        <label>Purpose / Description</label>
-                        <div class="input-with-btn">
-                            <input type="text" id="entry-desc" placeholder="Ex: Bought 50kg Rice" required>
-                            <button type="button" id="btn-add-desc" class="btn-icon" title="Quick Purpose">+</button>
-                        </div>
-                    </div>
-
-                    <!-- Amount -->
-                    <div class="form-group">
-                        <label>Amount (₹)</label>
-                        <input type="number" id="entry-amount" placeholder="0.00" min="0" step="0.01" required>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="button" id="btn-cancel-edit" class="btn btn-outline" style="display: none; margin-right: 10px;">Cancel</button>
-                    <button type="submit" id="btn-save-expense" class="btn btn-primary">Save Expense</button>
-                </div>
-            </form>
-        </section>
-
-        <!-- Bulk Entry Section -->
-        <section class="card bulk-expense-section no-print" style="margin-top: 20px; padding: 20px;">
-            <h3>Bulk Expense Entry (Excel Style)</h3>
-            <div class="table-responsive">
-                <table class="bulk-entry-table" style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Category</th>
-                            <th>Description</th>
-                            <th>Amount (₹)</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="bulk-tbody">
-                        <!-- Rows will be added here -->
-                    </tbody>
-                </table>
-            </div>
-            <div style="margin-top: 15px; display: flex; justify-content: space-between;">
-                <button type="button" id="btn-add-bulk-row" class="btn btn-outline">+ Add Row</button>
-                <button type="button" id="btn-save-bulk" class="btn btn-primary">Save All Bulk Entries</button>
-            </div>
-        </section>
-
-        <!-- ========================================== -->
-        <!-- 2. FILTER & SUMMARY SECTION -->
-        <!-- ========================================== -->
+        <!-- ফিল্টার সেকশন (Category এবং Purpose ফিল্টারসহ) -->
         <section class="filter-section card no-print">
             <div class="filter-row">
                 <div class="date-filters">
                     <input type="date" id="filter-date-from" class="form-control">
-                    <span>to</span>
                     <input type="date" id="filter-date-to" class="form-control">
+                    
+                    <select id="filter-category" class="form-control">
+                        <option value="">All Categories</option>
+                    </select>
+                    
+                    <input type="text" id="filter-purpose" class="form-control" placeholder="Search Purpose...">
+                    
                     <button id="btn-apply-filter" class="btn btn-secondary">Filter</button>
                     <button id="btn-reset-filter" class="btn btn-outline">Reset</button>
                 </div>
-                <div class="print-action">
-                    <button id="btn-print-sheet" class="btn btn-print">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                        Print Sheet
-                    </button>
-                </div>
+                <button id="btn-print-sheet" class="btn btn-print">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    Print Sheet
+                </button>
             </div>
-            
-            <!-- Mini KPI -->
             <div class="mini-kpi">
-                <div class="kpi-box">
-                    <span>Total Expense (Selected Period)</span>
-                    <strong id="display-total-expense">₹0.00</strong>
-                </div>
+                <div class="kpi-box">Total: <strong id="display-total-expense">₹0.00</strong></div>
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 3. DAILY EXPENSE SHEET (The Table) -->
-        <!-- ========================================== -->
+        <!-- মেইন বাল্ক এন্ট্রি সেকশন -->
+        <section class="card bulk-expense-section no-print">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3>Add Expenses (Excel Style)</h3>
+                <button type="button" id="btn-add-category" class="btn btn-sm btn-primary">+ Add New Category</button>
+            </div>
+            <div class="table-responsive">
+                <table class="bulk-entry-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Purpose (Auto-Suggest)</th>
+                            <th>Category</th>
+                            <th>Amount (₹)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bulk-tbody"></tbody>
+                </table>
+            </div>
+            <div style="margin-top: 15px; display: flex; justify-content: space-between;">
+                <button type="button" id="btn-add-bulk-row" class="btn btn-outline">+ Add Row</button>
+                <button type="button" id="btn-save-bulk" class="btn btn-primary">Save All Entries</button>
+            </div>
+        </section>
+
+        <!-- অটো-সাজেশনের জন্য ডাটালিস্ট -->
+        <datalist id="purpose-suggestions"></datalist>
         <section class="sheet-container card">
             <div class="sheet-header">
                 <h2>Daily Expense Sheet</h2>

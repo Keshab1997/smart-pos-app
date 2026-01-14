@@ -351,26 +351,36 @@ async function handleCancelBill(saleId) {
     const isAuthorized = await verifyAdminPIN();
     if (!isAuthorized) return;
 
-    const reason = prompt("Reason for cancellation?");
-    if(!reason) { alert("Reason is mandatory!"); return; }
+    const reason = prompt("বিক্রয় বাতিলের কারণ লিখুন:");
+    if(!reason) { alert("কারণ উল্লেখ করা বাধ্যতামূলক!"); return; }
 
-    if(!confirm("Are you sure? Items will be returned to stock.")) return;
+    if(!confirm("আপনি কি নিশ্চিত? পণ্যগুলো স্টকে ফেরত যাবে এবং এই বিক্রয়টি বাতিল হিসেবে চিহ্নিত হবে।")) return;
 
     try {
         await runTransaction(db, async (t) => {
             const sRef = doc(db, 'shops', currentUserId, 'sales', saleId);
             const sDoc = await t.get(sRef);
-            if(!sDoc.exists()) throw "No doc";
-            const items = sDoc.data().items;
+            if(!sDoc.exists()) throw "Sale not found";
+            
+            const saleData = sDoc.data();
+            if(saleData.status === 'canceled') {
+                throw "This sale is already canceled";
+            }
+            
+            const items = saleData.items || [];
 
+            // স্টক ফেরত দেওয়া
             for (const item of items) {
                 if(!item.id) continue;
                 const pRef = doc(db, 'shops', currentUserId, 'inventory', item.id);
                 const pDoc = await t.get(pRef);
                 if(pDoc.exists()) {
-                    t.update(pRef, { stock: (pDoc.data().stock || 0) + item.quantity });
+                    const currentStock = pDoc.data().stock || 0;
+                    t.update(pRef, { stock: currentStock + item.quantity });
                 }
             }
+            
+            // বিক্রয় বাতিল করা
             t.update(sRef, { 
                 status: 'canceled',
                 canceledAt: new Date(),
@@ -378,14 +388,22 @@ async function handleCancelBill(saleId) {
             });
         });
 
+        // লোকাল ডাটা আপডেট
         const s = allSalesData.find(x => x.id === saleId);
         if(s) s.status = 'canceled';
         
         calculateTopSummaries(allSalesData);
         filterAndDisplayData();
-        alert("Bill Canceled.");
+        alert("✅ বিক্রয়টি সফলভাবে বাতিল করা হয়েছে এবং স্টক আপডেট হয়েছে।");
 
-    } catch(e) { console.log(e); alert("Error canceling."); }
+    } catch(e) { 
+        console.error("Cancel error:", e); 
+        if(e === "This sale is already canceled") {
+            alert("⚠️ এই বিক্রয়টি আগেই বাতিল করা হয়েছে।");
+        } else {
+            alert("❌ বিক্রয় বাতিল করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+        }
+    }
 }
 
 // --- WhatsApp Report ---
