@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Management - Smart POS</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <style>
+        /* ফুল স্ক্রিন এবং আধুনিক স্টাইল */
+        .staff-container { 
+            max-width: 98% !important;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .staff-grid { 
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+        
+        .card { 
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f0f0f0;
+        }
+        
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group { margin-bottom: 18px; }
+        .form-group label { 
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .form-control:focus { 
+            border-color: #4361ee;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+        
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 10px;
+        }
+        
+        .staff-list-table { 
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        
+        .staff-list-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            font-size: 13px;
+            text-transform: uppercase;
+            color: #666;
+            text-align: left;
+        }
+        
+        .staff-list-table td { 
+            padding: 15px;
+            border-bottom: 1px solid #f1f1f1;
+            vertical-align: middle;
+        }
+        
+        .staff-img-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #eee;
+        }
+        
+        .role-badge { 
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .role-manager { background: #eef2ff; color: #4361ee; }
+        .role-cashier { background: #fff7ed; color: #ea580c; }
+        
+        .btn-add {
+            background: linear-gradient(135deg, #4361ee, #3f37c9);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.3s;
+        }
+        .btn-add:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn-remove {
+            background: #fff1f2;
+            color: #e11d48;
+            border: 1px solid #ffe4e6;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+        .btn-remove:hover { 
+            background: #e11d48;
+            color: white;
+        }
+        
+        @media (max-width: 992px) {
+            .staff-grid { grid-template-columns: 1fr; }
+            .staff-container { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="staff-container">
+        <header style="margin-bottom: 30px;">
+            <h1 style="font-size: 1.8rem; color: #333;">👥 Staff Management</h1>
+            <p style="color: #777;">Manage your shop employees and their access levels.</p>
+        </header>
+        
+        <div class="staff-grid">
+            <!-- স্টাফ অ্যাড করার ফর্ম -->
+            <section class="card">
+                <h3><span>➕</span> Add New Staff</h3>
+                <form id="add-staff-form">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="staff-name" class="form-control" required placeholder="e.g. John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="staff-email" class="form-control" required placeholder="staff@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="staff-password" class="form-control" required placeholder="Min. 6 characters">
+                    </div>
+                    <div class="form-group">
+                        <label>Staff Photo</label>
+                        <input type="file" id="staff-photo" class="form-control" accept="image/*">
+                        <div id="photo-preview-container" style="margin-top:10px; display:none; align-items:center; gap:10px;">
+                            <img id="photo-preview" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid #4361ee;" alt="Preview">
+                            <span style="font-size:12px; color:#666;">Photo Selected</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Assign Role</label>
+                        <select id="staff-role" class="form-control">
+                            <option value="cashier">Cashier (Billing Only)</option>
+                            <option value="manager">Manager (Inventory + Billing)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-add">Create Staff Account</button>
+                </form>
+            </section>
+
+            <!-- স্টাফ লিস্ট -->
+            <section class="card">
+                <h3><span>📋</span> Existing Staff Members</h3>
+                <div class="table-responsive">
+                    <table class="staff-list-table">
+                        <thead>
+                            <tr>
+                                <th>Staff</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th style="text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staff-table-body">
+                            <tr><td colspan="4">Loading staff...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      }
+    }
+    </script>
+    <script type="module" src="../js/firebase-config.js"></script>
+    <script type="module" src="../js/navbar.js"></script>
+    <script type="module" src="staff.js"></script>
+</body>
+</html>

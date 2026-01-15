@@ -53,6 +53,8 @@ const auth = getAuth(app);
 
 // অন্য জাভাস্ক্রিপ্ট ফাইল থেকে ব্যবহারের জন্য সার্ভিস এবং ফাংশনগুলো এক্সপোর্ট করা হচ্ছে
 export { 
+    app,
+    firebaseConfig,
     db, 
     auth, 
     collection, 

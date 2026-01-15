@@ -21,14 +21,14 @@ const statusMessage = document.getElementById('status-message');
 // ==========================================================
 // --- গ্লোবাল ভেরিয়েবল ---
 // ==========================================================
-let currentUserId = null;
+let activeShopId = null;
 
 // ==========================================================
 // --- Authentication ---
 // ==========================================================
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        currentUserId = user.uid;
+        activeShopId = localStorage.getItem('activeShopId'); if (!activeShopId) { window.location.href = '../index.html'; return; }
         // ব্যবহারকারীর ইমেলটি লোড হওয়া মাত্রই ফর্মে দেখানো হচ্ছে
         shopEmailInput.value = user.email;
         loadShopDetails();
@@ -45,10 +45,10 @@ onAuthStateChanged(auth, (user) => {
  * Firestore থেকে দোকানের তথ্য লোড করে এবং ফর্মে দেখায়
  */
 async function loadShopDetails() {
-    if (!currentUserId) return;
+    if (!activeShopId) return;
     
     try {
-        const shopDetailsRef = doc(db, 'shops', currentUserId);
+        const shopDetailsRef = doc(db, 'shops', activeShopId);
         const docSnap = await getDoc(shopDetailsRef);
 
         if (docSnap.exists()) {
@@ -74,7 +74,7 @@ async function loadShopDetails() {
  */
 async function handleFormSubmit(e) {
     e.preventDefault();
-    if (!currentUserId) {
+    if (!activeShopId) {
         showStatus('Authentication error. Please log in again.', 'error');
         return;
     }
@@ -95,7 +95,7 @@ async function handleFormSubmit(e) {
 
     try {
         // ডেটা 'shops' কালেকশনের ভিতরে সেভ করা হচ্ছে, যা অন্যান্য ডেটার সাথে সামঞ্জস্যপূর্ণ
-        const shopDetailsRef = doc(db, 'shops', currentUserId);
+        const shopDetailsRef = doc(db, 'shops', activeShopId);
         // setDoc({ merge: true }) ব্যবহার করা হচ্ছে যাতে ডকুমেন্ট না থাকলে তৈরি হয়
         await setDoc(shopDetailsRef, shopDetails, { merge: true });
         

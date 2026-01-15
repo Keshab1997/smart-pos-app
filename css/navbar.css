@@ -27,6 +27,50 @@
     gap: 15px;
 }
 
+/* User Profile in Navbar */
+.user-nav-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 5px 10px;
+    border-radius: 50px;
+    transition: background 0.2s;
+}
+
+.user-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.nav-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-role {
+    font-size: 9px;
+    font-weight: 800;
+    color: white;
+    padding: 1px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nav-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid #eee;
+    object-fit: cover;
+}
+
 .hamburger-btn {
     background: none;
     border: none;
@@ -219,4 +263,11 @@
 /* Navbar এ Admin বাটনটি শুরুতে লুকানো থাকবে */
 #nav-item-admin {
     display: none; 
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .nav-name { display: none; }
+    .user-text { align-items: center; }
+    .nav-avatar { width: 30px; height: 30px; }
 }

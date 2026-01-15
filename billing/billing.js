@@ -45,7 +45,7 @@ const customerAddressInput = document.getElementById('customer-address');
 let cart = [];
 let allProducts = [];
 let currentTotals = { subtotal: 0, discount: 0, tax: 0, total: 0, advancePaid: 0, payableTotal: 0 };
-let currentUserId = null;
+let activeShopId = null;
 let bookingData = null;
 
 // ==========================================================
@@ -53,8 +53,12 @@ let bookingData = null;
 // ==========================================================
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        currentUserId = user.uid;
-        initializeBillingPage();
+        activeShopId = localStorage.getItem('activeShopId');
+        if (activeShopId) {
+            initializeBillingPage();
+        } else {
+            window.location.href = '../index.html';
+        }
     } else {
         window.location.href = '../index.html';
     }
@@ -73,10 +77,10 @@ function initializeBillingPage() {
 // ==========================================================
 async function checkPendingBooking() {
     const bookingId = sessionStorage.getItem('pending_booking_id');
-    if (!bookingId || !currentUserId) return;
+    if (!bookingId || !activeShopId) return;
 
     try {
-        const docRef = doc(db, 'shops', currentUserId, 'bookings', bookingId);
+        const docRef = doc(db, 'shops', activeShopId, 'bookings', bookingId);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
@@ -99,10 +103,10 @@ async function checkPendingBooking() {
 }
 
 async function initializeProducts() {
-    if (!currentUserId) return;
+    if (!activeShopId) return;
     categoryProductListContainer.innerHTML = '<p class="loading-message">Loading products...</p>';
     try {
-        const inventoryRef = collection(db, 'shops', currentUserId, 'inventory');
+        const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
         const q = query(inventoryRef, orderBy('name'));
         const querySnapshot = await getDocs(q);
         allProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -395,8 +399,8 @@ function validateFinalBillButton() {
 // --- বিল নম্বর জেনারেশন ---
 // ==========================================================
 async function getNextBillNumber() {
-    if (!currentUserId) throw new Error("User not authenticated.");
-    const counterRef = doc(db, 'shops', currentUserId, 'metadata', 'counters');
+    if (!activeShopId) throw new Error("User not authenticated.");
+    const counterRef = doc(db, 'shops', activeShopId, 'metadata', 'counters');
     
     try {
         return await runTransaction(db, async transaction => {
@@ -461,12 +465,12 @@ async function generateFinalBill() {
         }
 
         const batch = writeBatch(db);
-        const newSaleRef = doc(collection(db, 'shops', currentUserId, 'sales'));
+        const newSaleRef = doc(collection(db, 'shops', activeShopId, 'sales'));
         batch.set(newSaleRef, sale);
-        cart.forEach(item => batch.update(doc(db, 'shops', currentUserId, 'inventory', item.id), { stock: increment(-item.quantity) }));
+        cart.forEach(item => batch.update(doc(db, 'shops', activeShopId, 'inventory', item.id), { stock: increment(-item.quantity) }));
         
         if(bookingData && bookingData.id) {
-            const bookingRef = doc(db, 'shops', currentUserId, 'bookings', bookingData.id);
+            const bookingRef = doc(db, 'shops', activeShopId, 'bookings', bookingData.id);
             batch.update(bookingRef, { status: 'Billed' });
         }
 

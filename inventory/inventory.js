@@ -42,17 +42,21 @@ let imageModal = null;
 
 // Global State
 let allProducts = [], filteredProducts = [];
-let currentPage = 1, currentUserId = null, unsubscribe;
+let currentPage = 1, activeShopId = null, unsubscribe;
 const ROWS_PER_PAGE = 10, LOW_STOCK_THRESHOLD = 10;
 let hasEventListenersSetup = false;
 
 // Authentication
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        currentUserId = user.uid;
-        createImageModal();
-        loadInventory();
-        if (!hasEventListenersSetup) setupEventListeners();
+        activeShopId = localStorage.getItem('activeShopId');
+        if (activeShopId) {
+            createImageModal();
+            loadInventory();
+            if (!hasEventListenersSetup) setupEventListeners();
+        } else {
+            window.location.href = '../index.html';
+        }
     } else {
         window.location.href = '../index.html';
     }
@@ -86,10 +90,10 @@ function createImageModal() {
 }
 
 function loadInventory() {
-    if (!currentUserId) return;
+    if (!activeShopId) return;
     if (unsubscribe) unsubscribe();
     
-    const productsRef = collection(db, 'shops', currentUserId, 'inventory');
+    const productsRef = collection(db, 'shops', activeShopId, 'inventory');
     const q = query(productsRef, orderBy("name"));
     
     unsubscribe = onSnapshot(q, (snapshot) => {
@@ -276,7 +280,7 @@ async function verifyAdminPIN() {
     if (!userPin) return false;
 
     try {
-        const settingsRef = doc(db, 'shops', currentUserId, 'settings', 'security');
+        const settingsRef = doc(db, 'shops', activeShopId, 'settings', 'security');
         const snap = await getDoc(settingsRef);
         
         if (snap.exists()) {
@@ -331,15 +335,15 @@ async function handleEditFormSubmit(e) {
             }
         }
 
-        await updateDoc(doc(db, 'shops', currentUserId, 'inventory', id), data);
+        await updateDoc(doc(db, 'shops', activeShopId, 'inventory', id), data);
 
-        const expensesRef = collection(db, 'shops', currentUserId, 'expenses');
+        const expensesRef = collection(db, 'shops', activeShopId, 'expenses');
         const q = query(expensesRef, where("relatedProductId", "==", id));
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
             querySnapshot.forEach(async (docSnap) => {
-                const expenseRef = doc(db, 'shops', currentUserId, 'expenses', docSnap.id);
+                const expenseRef = doc(db, 'shops', activeShopId, 'expenses', docSnap.id);
                 const newTotalAmount = newCP * newStock;
                 await updateDoc(expenseRef, {
                     amount: newTotalAmount,
@@ -367,14 +371,14 @@ async function deleteProduct(id) {
 
     try {
         // ১. প্রথমে এই প্রোডাক্টের সাথে সম্পর্কিত সব খরচ (Expenses) খুঁজে বের করা
-        const expensesRef = collection(db, 'shops', currentUserId, 'expenses');
+        const expensesRef = collection(db, 'shops', activeShopId, 'expenses');
         const q = query(expensesRef, where("relatedProductId", "==", id));
         const querySnapshot = await getDocs(q);
 
         // ২. খরচগুলো ডিলিট করার জন্য প্রমিস লিস্ট তৈরি করা
         const deleteExpensePromises = [];
         querySnapshot.forEach((docSnap) => {
-            deleteExpensePromises.push(deleteDoc(doc(db, 'shops', currentUserId, 'expenses', docSnap.id)));
+            deleteExpensePromises.push(deleteDoc(doc(db, 'shops', activeShopId, 'expenses', docSnap.id)));
         });
 
         // ৩. সব খরচ ডিলিট করা
@@ -384,7 +388,7 @@ async function deleteProduct(id) {
         }
 
         // ৪. সবশেষে ইনভেন্টরি থেকে প্রোডাক্টটি ডিলিট করা
-        await deleteDoc(doc(db, 'shops', currentUserId, 'inventory', id));
+        await deleteDoc(doc(db, 'shops', activeShopId, 'inventory', id));
         
         showStatus('Product and related purchase records deleted successfully.');
     } catch (error) { 

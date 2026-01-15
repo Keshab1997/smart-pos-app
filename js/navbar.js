@@ -1,20 +1,21 @@
 import { auth } from './firebase-config.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// 1. মেনুর তালিকা
+// 1. মেনুর তালিকা (রোল-বেসড পারমিশন সহ)
 const menuItems = [
-    { name: 'Dashboard', link: 'dashboard.html', icon: '🏠' },
-    { name: 'Billing', link: 'billing/billing.html', icon: '🧾' },
-    { name: 'Inventory', link: 'inventory/inventory.html', icon: '📦' },
-    { name: 'Add Product', link: 'add-product/add-product.html', icon: '➕' },
-    { name: 'Purchase Record', link: 'purchase-record/purchase-dashboard.html', icon: '🛒' },
-    { name: 'Sales Report', link: 'sales-report/report.html', icon: '📊' },
-    { name: 'Profit/Loss', link: 'sales-report/profit-loss.html', icon: '📈' },
-    { name: 'Expense', link: 'expense/expense.html', icon: '💸' },
-    { name: 'Advance Booking', link: 'advance-booking/index.html', icon: '📅' },
-    { name: 'Barcode Print', link: 'label-printer/index.html', icon: '🖨️' },
-    { name: 'Shop Details', link: 'shop-details/shop-details.html', icon: '🏪' },
-    { name: 'Admin Panel', link: 'admin.html', icon: '⚙️', id: 'nav-item-admin' }
+    { name: 'Dashboard', link: 'dashboard.html', icon: '🏠', roles: ['owner', 'manager', 'cashier'] },
+    { name: 'Billing', link: 'billing/billing.html', icon: '🧾', roles: ['owner', 'manager', 'cashier'] },
+    { name: 'Inventory', link: 'inventory/inventory.html', icon: '📦', roles: ['owner', 'manager'] },
+    { name: 'Add Product', link: 'add-product/add-product.html', icon: '➕', roles: ['owner', 'manager'] },
+    { name: 'Purchase Record', link: 'purchase-record/purchase-dashboard.html', icon: '🛒', roles: ['owner', 'manager'] },
+    { name: 'Sales Report', link: 'sales-report/report.html', icon: '📊', roles: ['owner', 'manager', 'cashier'] },
+    { name: 'Profit/Loss', link: 'sales-report/profit-loss.html', icon: '📈', roles: ['owner'] },
+    { name: 'Expense', link: 'expense/expense.html', icon: '💸', roles: ['owner', 'manager'] },
+    { name: 'Advance Booking', link: 'advance-booking/index.html', icon: '📅', roles: ['owner', 'manager', 'cashier'] },
+    { name: 'Barcode Print', link: 'label-printer/index.html', icon: '🖨️', roles: ['owner', 'manager'] },
+    { name: 'Staff Manage', link: 'staff-management/index.html', icon: '👥', roles: ['owner'] },
+    { name: 'Shop Details', link: 'shop-details/shop-details.html', icon: '🏪', roles: ['owner'] },
+    { name: 'Admin Panel', link: 'admin.html', icon: '⚙️', roles: ['owner'], id: 'nav-item-admin' }
 ];
 
 // 2. সঠিক পাথ বের করার ফাংশন
@@ -29,6 +30,7 @@ function getCorrectPath(targetPath) {
         currentPath.includes('/add-product/') ||
         currentPath.includes('/shop-details/') ||
         currentPath.includes('/advance-booking/') ||
+        currentPath.includes('/staff-management/') ||
         currentPath.includes('/label-printer/')) {
             
         return '../' + targetPath;
@@ -42,22 +44,33 @@ function loadNavbar() {
     const navContainer = document.getElementById('navbar-placeholder');
     if (!navContainer) return;
 
+    const userRole = localStorage.getItem('userRole') || 'cashier';
     const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
+
+    // রোল অনুযায়ী কালার কোড
+    const roleColors = {
+        'owner': '#ffc107',
+        'manager': '#28a745',
+        'cashier': '#17a2b8'
+    };
 
     let menuHTML = '';
     menuItems.forEach(item => {
-        const itemFileName = item.link.split('/').pop();
-        const isActive = itemFileName === currentPage ? 'active' : '';
-        const idAttr = item.id ? `id="${item.id}"` : '';
-        const finalLink = getCorrectPath(item.link);
-        
-        menuHTML += `
-            <li ${idAttr}>
-                <a href="${finalLink}" class="${isActive}">
-                    <span style="margin-right: 10px;">${item.icon}</span> ${item.name}
-                </a>
-            </li>
-        `;
+        // শুধুমাত্র পারমিশন থাকা মেনুগুলো দেখাবে
+        if (item.roles && item.roles.includes(userRole)) {
+            const itemFileName = item.link.split('/').pop();
+            const isActive = itemFileName === currentPage ? 'active' : '';
+            const idAttr = item.id ? `id="${item.id}"` : '';
+            const finalLink = getCorrectPath(item.link);
+            
+            menuHTML += `
+                <li ${idAttr}>
+                    <a href="${finalLink}" class="${isActive}">
+                        <span style="margin-right: 10px;">${item.icon}</span> ${item.name}
+                    </a>
+                </li>
+            `;
+        }
     });
 
     const dashboardLink = getCorrectPath('dashboard.html');
@@ -119,6 +132,17 @@ function loadNavbar() {
                 </button>
                 <a href="${dashboardLink}" class="logo">Smart POS</a>
             </div>
+
+            <!-- User Profile Section -->
+            <div class="user-nav-profile" id="nav-user-details">
+                <div class="user-text">
+                    <span id="nav-user-name" class="nav-name">Loading...</span>
+                    <span class="nav-role" style="background: ${roleColors[userRole] || '#666'}">
+                        ${userRole.toUpperCase()}
+                    </span>
+                </div>
+                <img id="nav-user-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="nav-avatar" alt="User">
+            </div>
         </div>
 
         <div id="sidebar-overlay" class="sidebar-overlay"></div>
@@ -145,6 +169,37 @@ function loadNavbar() {
 
     navContainer.innerHTML = navbarHTML;
     setupNavbarEvents();
+    updateNavUserInfo();
+}
+
+// ইউজার তথ্য ডাইনামিকালি সেট করার ফাংশন
+async function updateNavUserInfo() {
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const nameEl = document.getElementById('nav-user-name');
+            const imgEl = document.getElementById('nav-user-img');
+            const userRole = localStorage.getItem('userRole');
+            const activeShopId = localStorage.getItem('activeShopId');
+
+            if (userRole === 'owner') {
+                // মালিকের জন্য গুগল প্রোফাইল ছবি
+                if (nameEl) nameEl.textContent = user.displayName || user.email.split('@')[0];
+                if (imgEl && user.photoURL) imgEl.src = user.photoURL;
+            } else {
+                // স্টাফের জন্য ডাটাবেস থেকে ছবি আনা
+                try {
+                    const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+                    const { db } = await import('./firebase-config.js');
+                    const staffDoc = await getDoc(doc(db, 'shops', activeShopId, 'staffs', user.email));
+                    if (staffDoc.exists()) {
+                        const data = staffDoc.data();
+                        if (nameEl) nameEl.textContent = data.name;
+                        if (imgEl && data.photoUrl) imgEl.src = data.photoUrl;
+                    }
+                } catch (e) { console.error("Error fetching staff photo", e); }
+            }
+        }
+    });
 }
 
 // 4. ইভেন্ট লিসেনার সেটআপ
@@ -165,8 +220,16 @@ function setupNavbarEvents() {
 
     if(logoutBtn) {
         logoutBtn.addEventListener('click', () => {
-             const event = new Event('trigger-logout');
-             document.dispatchEvent(event);
+            if (confirm("Are you sure you want to logout?")) {
+                signOut(auth).then(() => {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = getCorrectPath('index.html');
+                }).catch((error) => {
+                    console.error("Logout error", error);
+                    alert("Logout failed!");
+                });
+            }
         });
     }
 
@@ -182,17 +245,33 @@ function setupNavbarEvents() {
 }
 
 // DOM লোড হওয়ার পর নেভবার লোড করা
-document.addEventListener('DOMContentLoaded', loadNavbar);
+document.addEventListener('DOMContentLoaded', () => {
+    // প্রথমে একবার লোড করা
+    loadNavbar();
+});
 
 // 5. অথেনটিকেশন লজিক
 onAuthStateChanged(auth, (user) => {
-    const adminBtn = document.getElementById('nav-item-admin');
     const ADMIN_EMAIL = "keshabsarkar2018@gmail.com";
 
-    if (user && user.email === ADMIN_EMAIL) {
-        if (adminBtn) adminBtn.style.display = 'block';
-    } else {
-        if (adminBtn) adminBtn.style.display = 'none';
+    if (user) {
+        // যদি অ্যাডমিন লগইন করে, তবে তাকে অটোমেটিক 'owner' রোল দেওয়া
+        if (user.email === ADMIN_EMAIL) {
+            localStorage.setItem('userRole', 'owner');
+            localStorage.setItem('activeShopId', user.uid);
+            localStorage.setItem('isStaff', 'false');
+        }
+        
+        // মেনু পুনরায় রেন্ডার করা যাতে সঠিক রোল দিয়ে লোড হয়
+        setTimeout(() => {
+            loadNavbar();
+            
+            // অ্যাডমিন বাটন দেখানো/লুকানো
+            const adminBtn = document.getElementById('nav-item-admin');
+            if (adminBtn) {
+                adminBtn.style.display = (user.email === ADMIN_EMAIL) ? 'block' : 'none';
+            }
+        }, 100);
     }
 });
 

@@ -5,6 +5,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/f
 const ADMIN_EMAIL = "keshabsarkar2018@gmail.com";
 let selectedShopId = null;
 let selectedShopData = null;
+let selectedStaffEmail = null;
 
 onAuthStateChanged(auth, (user) => {
     // শুধুমাত্র admin.html পেজেই এই লজিক কাজ করবে
@@ -26,11 +27,13 @@ onAuthStateChanged(auth, (user) => {
 });
 
 function setupEventListeners() {
+    document.getElementById('btn-authorize-user').addEventListener('click', authorizeNewUser);
     document.getElementById('btn-toggle-status').addEventListener('click', toggleStatus);
     document.getElementById('btn-single-backup').addEventListener('click', () => backupSingleUser(selectedShopId, selectedShopData.shopName));
     document.getElementById('btn-single-restore').addEventListener('click', () => document.getElementById('file-restore-json').click());
     document.getElementById('btn-single-reset').addEventListener('click', resetData);
     document.getElementById('btn-reset-pin').addEventListener('click', resetMasterPin);
+    document.getElementById('btn-admin-update-role').addEventListener('click', updateRoleFromAdmin);
     document.getElementById('btn-post-announcement').addEventListener('click', postAnnouncement);
     document.getElementById('btn-edit-announcement').addEventListener('click', editAnnouncement);
     document.getElementById('btn-delete-announcement').addEventListener('click', deleteAnnouncement);
@@ -68,6 +71,7 @@ async function loadAllUsers() {
 function selectUser(shopId, data, element) {
     selectedShopId = shopId;
     selectedShopData = data;
+    selectedStaffEmail = null;
 
     // UI Update
     document.querySelectorAll('.user-item').forEach(el => el.classList.remove('active-selection'));
@@ -84,9 +88,37 @@ function selectUser(shopId, data, element) {
     statusBtn.textContent = `Status: ${currentStatus.toUpperCase()} (Click to Toggle)`;
     statusBtn.style.background = currentStatus === 'active' ? '#28a745' : '#dc3545';
     statusBtn.style.color = 'white';
+    
+    loadShopStaff(shopId);
 }
 
 // --- Actions ---
+async function authorizeNewUser() {
+    const email = document.getElementById('new-user-email').value.trim().toLowerCase();
+    const shopName = document.getElementById('new-shop-name').value.trim();
+
+    if (!email || !shopName) {
+        alert("Please enter both email and shop name.");
+        return;
+    }
+
+    try {
+        const authRef = doc(db, 'authorized_users', email.replace(/\./g, '_'));
+        await setDoc(authRef, {
+            email: email,
+            shopName: shopName,
+            authorizedBy: auth.currentUser.email,
+            createdAt: serverTimestamp()
+        });
+
+        alert(`✅ Success! ${email} can now access the app.`);
+        document.getElementById('new-user-email').value = '';
+        document.getElementById('new-shop-name').value = '';
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+
 async function toggleStatus() {
     if (!selectedShopId) return;
     const currentStatus = selectedShopData.status || 'active';
@@ -311,4 +343,90 @@ async function handleRestore(event) {
         reader.readAsText(file);
     }
     event.target.value = '';
+}
+
+async function loadShopStaff(shopId) {
+    const staffListDiv = document.getElementById('admin-staff-list');
+    staffListDiv.innerHTML = 'Loading staff...';
+    
+    try {
+        const staffSnap = await getDocs(collection(db, 'shops', shopId, 'staffs'));
+        staffListDiv.innerHTML = '';
+        
+        if (staffSnap.empty) {
+            staffListDiv.innerHTML = '<p style="padding:10px; color:#666;">No staff found for this shop.</p>';
+            return;
+        }
+
+        staffSnap.forEach(docSnap => {
+            const staff = docSnap.data();
+            const div = document.createElement('div');
+            div.style = "padding: 10px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;";
+            
+            div.innerHTML = `
+                <div onclick="selectStaffForUpdate('${staff.email}', '${staff.role}', this)" style="cursor: pointer; flex: 1;">
+                    <strong>${staff.name}</strong> <small>(${staff.role})</small><br>
+                    <small>${staff.email}</small>
+                </div>
+                <button class="btn-red" onclick="removeStaffFromAdmin('${shopId}', '${staff.email}')"
+                    style="width: auto; padding: 5px 10px; font-size: 11px; margin-top: 0;">
+                    Remove
+                </button>
+            `;
+            staffListDiv.appendChild(div);
+        });
+    } catch (e) {
+        staffListDiv.innerHTML = 'Error loading staff.';
+    }
+}
+
+window.selectStaffForUpdate = (email, role, element) => {
+    selectedStaffEmail = email;
+    document.getElementById('admin-role-select').value = role;
+    const staffListDiv = document.getElementById('admin-staff-list');
+    Array.from(staffListDiv.children).forEach(c => c.style.background = 'none');
+    element.parentElement.style.background = '#e3f2fd';
+};
+
+async function removeStaffFromAdmin(shopId, email) {
+    if (confirm(`⚠️ Are you sure you want to REMOVE staff "${email}" from this shop? \n\nThey will lose all access immediately.`)) {
+        try {
+            await deleteDoc(doc(db, 'shops', shopId, 'staffs', email));
+            const mappingId = email.replace(/\./g, '_');
+            await deleteDoc(doc(db, 'staff_mapping', mappingId));
+            alert("✅ Staff removed successfully!");
+            loadShopStaff(shopId);
+        } catch (e) {
+            alert("Error removing staff: " + e.message);
+        }
+    }
+}
+
+window.removeStaffFromAdmin = removeStaffFromAdmin;
+
+async function updateRoleFromAdmin() {
+    if (!selectedShopId || !selectedStaffEmail) {
+        alert("Please select a shop and then a staff member first.");
+        return;
+    }
+
+    const newRole = document.getElementById('admin-role-select').value;
+    
+    if (confirm(`Change role of ${selectedStaffEmail} to ${newRole.toUpperCase()}?`)) {
+        try {
+            await updateDoc(doc(db, 'shops', selectedShopId, 'staffs', selectedStaffEmail), {
+                role: newRole
+            });
+
+            const mappingId = selectedStaffEmail.replace(/\./g, '_');
+            await updateDoc(doc(db, 'staff_mapping', mappingId), {
+                role: newRole
+            });
+
+            alert("✅ Role updated successfully!");
+            loadShopStaff(selectedShopId);
+        } catch (e) {
+            alert("Error updating role: " + e.message);
+        }
+    }
 }

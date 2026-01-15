@@ -13,8 +13,41 @@
 
 .admin-grid {
     display: grid;
-    grid-template-columns: 350px 1fr;
+    grid-template-columns: 300px 1fr;
     gap: 20px;
+}
+
+.control-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.section-highlight {
+    border-top: 4px solid #4361ee;
+    background: #f8faff;
+}
+
+.form-inline {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.form-control {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.badge-info {
+    background: #eef2ff;
+    color: #4361ee;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 12px;
 }
 
 .card {
@@ -72,8 +105,16 @@
 }
 
 .btn-red { 
-    background: #dc3545; 
-    color: white; 
+    background: #ff4d4d; 
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-red:hover {
+    background: #cc0000;
 }
 
 .btn-pink { 

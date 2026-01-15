@@ -25,7 +25,7 @@ const bulkTbody = document.getElementById('bulk-tbody');
 const btnAddBulkRow = document.getElementById('btn-add-bulk-row');
 const btnSaveBulk = document.getElementById('btn-save-bulk');
 
-let currentUserId = null;
+let activeShopId = null;
 let allExpenses = [];
 let expenseCategories = ["Shop Rent", "Electricity Bill", "Staff Salary", "Tea/Snacks", "Transport", "Inventory Purchase", "Other"];
 let purposeMap = {}; // Purpose -> Category mapping
@@ -35,7 +35,7 @@ let purposeMap = {}; // Purpose -> Category mapping
 // ==========================================
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        currentUserId = user.uid;
+        activeShopId = localStorage.getItem('activeShopId'); if (!activeShopId) { window.location.href = '../index.html'; return; }
         loadInitialData();
         loadExpenses(); 
     } else {
@@ -45,11 +45,11 @@ onAuthStateChanged(auth, (user) => {
 
 // ক্যাটাগরি এবং পূর্বের পারপাস লোড করা (অটো-সাজেশনের জন্য)
 async function loadInitialData() {
-    if (!currentUserId) return;
+    if (!activeShopId) return;
     
     try {
         // ক্যাটাগরি লোড
-        const catRef = doc(db, 'shops', currentUserId, 'settings', 'expense_categories');
+        const catRef = doc(db, 'shops', activeShopId, 'settings', 'expense_categories');
         const catSnap = await getDoc(catRef);
         expenseCategories = catSnap.exists() ? catSnap.data().list : expenseCategories;
         
@@ -68,7 +68,7 @@ async function loadInitialData() {
         }
 
         // সব এক্সপেন্স থেকে ইউনিক পারপাস এবং ক্যাটাগরি ম্যাপ তৈরি
-        const expSnap = await getDocs(collection(db, 'shops', currentUserId, 'expenses'));
+        const expSnap = await getDocs(collection(db, 'shops', activeShopId, 'expenses'));
         const datalist = document.getElementById('purpose-suggestions');
         if (datalist) {
             datalist.innerHTML = '';
@@ -105,7 +105,7 @@ if(btnAddCategory) {
             if (!expenseCategories.includes(trimmedCat)) {
                 expenseCategories.push(trimmedCat);
                 try {
-                    const catRef = doc(db, 'shops', currentUserId, 'settings', 'expense_categories');
+                    const catRef = doc(db, 'shops', activeShopId, 'settings', 'expense_categories');
                     await setDoc(catRef, { list: expenseCategories });
                     
                     // ফিল্টার ড্রপডাউন আপডেট (Inventory Purchase বাদ দিয়ে)
@@ -139,11 +139,11 @@ if(btnAddCategory) {
 // --- 2. Load & Display Logic ---
 // ==========================================
 async function loadExpenses() {
-    if (!currentUserId) return;
+    if (!activeShopId) return;
     expenseSheetBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading records...</td></tr>`;
 
     try {
-        const expensesRef = collection(db, 'shops', currentUserId, 'expenses');
+        const expensesRef = collection(db, 'shops', activeShopId, 'expenses');
         let q = query(expensesRef, orderBy('date', 'desc'));
 
         const snapshot = await getDocs(q);
@@ -349,7 +349,7 @@ function startInlineEdit(td, id, field, originalValue, originalDate) {
         }
 
         try {
-            const docRef = doc(db, 'shops', currentUserId, 'expenses', id);
+            const docRef = doc(db, 'shops', activeShopId, 'expenses', id);
             await updateDoc(docRef, { ...updateData, updatedAt: Timestamp.now() });
             loadExpenses();
         } catch (e) {
@@ -370,7 +370,7 @@ function startInlineEdit(td, id, field, originalValue, originalDate) {
 async function deleteExpense(id) {
     if (confirm("আপনি কি নিশ্চিত এই এন্ট্রিটি ডিলিট করতে চান?")) {
         try {
-            await deleteDoc(doc(db, 'shops', currentUserId, 'expenses', id));
+            await deleteDoc(doc(db, 'shops', activeShopId, 'expenses', id));
             loadExpenses();
         } catch (error) {
             console.error("Delete failed", error);
@@ -495,7 +495,7 @@ if(btnSaveBulk) {
         try {
             btnSaveBulk.disabled = true;
             btnSaveBulk.textContent = "Saving...";
-            const colRef = collection(db, 'shops', currentUserId, 'expenses');
+            const colRef = collection(db, 'shops', activeShopId, 'expenses');
             
             for(const data of batchData) {
                 await addDoc(colRef, data);

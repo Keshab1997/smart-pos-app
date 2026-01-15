@@ -22,11 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const barcodesContainer = document.getElementById('barcodes-container');
     const logoutBtn = document.getElementById('logout-btn');
 
-    let currentUserId = null;
+    let activeShopId = null;
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            currentUserId = user.uid;
+            activeShopId = localStorage.getItem('activeShopId'); if (!activeShopId) { window.location.href = '../index.html'; return; }
             if (productsTbody.children.length === 0) {
                 addProductRow();
             }
@@ -116,10 +116,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const barcode = e.target.value.trim();
             const row = e.target.closest('tr');
             
-            if (barcode && currentUserId) {
+            if (barcode && activeShopId) {
                 try {
                     // ডাটাবেস থেকে প্রোডাক্ট চেক করা
-                    const productRef = doc(db, 'shops', currentUserId, 'inventory', barcode);
+                    const productRef = doc(db, 'shops', activeShopId, 'inventory', barcode);
                     const productSnap = await getDoc(productRef);
 
                     if (productSnap.exists()) {
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!currentUserId) {
+        if (!activeShopId) {
             showStatus('Authentication error. Please log in again.', 'error');
             return;
         }
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const productsForBarcodeDisplay = [];
-            const metadataRef = doc(db, 'shops', currentUserId, '_metadata', 'counters');
+            const metadataRef = doc(db, 'shops', activeShopId, '_metadata', 'counters');
 
             await runTransaction(db, async (transaction) => {
                 const metadataDoc = await transaction.get(metadataRef);
@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         finalBarcode = String(lastProductId);
                     }
 
-                    const productRef = doc(db, 'shops', currentUserId, 'inventory', finalBarcode);
+                    const productRef = doc(db, 'shops', activeShopId, 'inventory', finalBarcode);
                     const productSnapshot = await transaction.get(productRef);
 
                     processQueue.push({
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // এক্সপেন্স সেভ করার সময়ও গ্রুপ করা স্টক অনুযায়ী অ্যামাউন্ট ক্যালকুলেট হবে
                     if (productData.costPrice > 0 && productData.stock > 0) {
                         const totalCost = productData.costPrice * productData.stock;
-                        const expenseRef = doc(collection(db, 'shops', currentUserId, 'expenses'));
+                        const expenseRef = doc(collection(db, 'shops', activeShopId, 'expenses'));
                         
                         const expenseData = {
                             description: `Purchase: ${productData.name}`,

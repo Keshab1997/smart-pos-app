@@ -45,14 +45,14 @@ let allExpenseData = []; // সব এক্সপেন্স স্টোর �
 let excludedCategories = new Set(); // কোন ক্যাটাগরি বাদ যাবে তার লিস্ট
 let currentReportData = null; // Current report data for recalculation
 
-let currentUserId = null;
+let activeShopId = null;
 
 // ==========================================================
 // --- Auth & Init ---
 // ==========================================================
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        currentUserId = user.uid;
+        activeShopId = localStorage.getItem('activeShopId'); if (!activeShopId) { window.location.href = '../index.html'; return; }
         initializePnlPage();
     } else {
         window.location.href = '../index.html';
@@ -69,9 +69,9 @@ function initializePnlPage() {
  * Firestore থেকে দোকানের নাম নিয়ে এসে UI-তে দেখায়
  */
 async function updateShopName() {
-    if (!currentUserId) return;
+    if (!activeShopId) return;
     try {
-        const shopDocRef = doc(db, 'shops', currentUserId);
+        const shopDocRef = doc(db, 'shops', activeShopId);
         const shopSnap = await getDoc(shopDocRef);
 
         if (shopSnap.exists()) {
@@ -113,8 +113,8 @@ function getPeriodDates(period) {
 }
 
 async function calculateClosingStockValue() {
-    if (!currentUserId) return 0;
-    const inventoryRef = collection(db, 'shops', currentUserId, 'inventory');
+    if (!activeShopId) return 0;
+    const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
     let totalVal = 0;
     try {
         const snap = await getDocs(inventoryRef);
@@ -132,7 +132,7 @@ async function calculateClosingStockValue() {
 // --- Main Generation Logic ---
 // ==========================================================
 async function generatePnlReport(startDate, endDate) {
-    if (!currentUserId) return;
+    if (!activeShopId) return;
     
     document.body.style.cursor = 'wait';
     displayPeriodRange.textContent = `${startDate.toLocaleDateString('en-IN')} to ${endDate.toLocaleDateString('en-IN')}`;
@@ -142,8 +142,8 @@ async function generatePnlReport(startDate, endDate) {
         const startTimestamp = Timestamp.fromDate(startDate);
         const endTimestamp = Timestamp.fromDate(endDate);
 
-        const salesQuery = query(collection(db, 'shops', currentUserId, 'sales'), where('createdAt', '>=', startTimestamp), where('createdAt', '<=', endTimestamp));
-        const expensesQuery = query(collection(db, 'shops', currentUserId, 'expenses'), where('date', '>=', startTimestamp), where('date', '<=', endTimestamp));
+        const salesQuery = query(collection(db, 'shops', activeShopId, 'sales'), where('createdAt', '>=', startTimestamp), where('createdAt', '<=', endTimestamp));
+        const expensesQuery = query(collection(db, 'shops', activeShopId, 'expenses'), where('date', '>=', startTimestamp), where('date', '<=', endTimestamp));
         
         const [salesSnap, expensesSnap, stockValue] = await Promise.all([
             getDocs(salesQuery),

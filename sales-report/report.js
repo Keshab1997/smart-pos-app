@@ -26,7 +26,7 @@ const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mainNavLinks = document.getElementById('main-nav-links');
 
 // --- Global Variables ---
-let currentUserId = null;
+let activeShopId = null;
 let allSalesData = []; 
 let myShopName = "My Smart Shop";
 let filteredSalesForPDF = []; // PDF এর জন্য আলাদা গ্লোবাল ভ্যারিয়েবল 
@@ -34,7 +34,7 @@ let filteredSalesForPDF = []; // PDF এর জন্য আলাদা গ্�
 // --- Auth & Initialization ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        currentUserId = user.uid;
+        activeShopId = localStorage.getItem('activeShopId'); if (!activeShopId) { window.location.href = '../index.html'; return; }
         initializeReportPage();
     } else {
         window.location.href = '../index.html';
@@ -50,14 +50,14 @@ async function initializeReportPage() {
 // --- Shop Name Fetching ---
 async function fetchShopDetails() {
     try {
-        let shopDocRef = doc(db, 'shops', currentUserId, 'settings', 'profile');
+        let shopDocRef = doc(db, 'shops', activeShopId, 'settings', 'profile');
         let shopDoc = await getDoc(shopDocRef);
 
         if (shopDoc.exists()) {
             const data = shopDoc.data();
             if(data.shopName) myShopName = data.shopName;
         } else {
-            shopDocRef = doc(db, 'shops', currentUserId);
+            shopDocRef = doc(db, 'shops', activeShopId);
             shopDoc = await getDoc(shopDocRef);
             if (shopDoc.exists() && shopDoc.data().shopName) {
                 myShopName = shopDoc.data().shopName;
@@ -70,11 +70,11 @@ async function fetchShopDetails() {
 
 // --- Data Loading ---
 async function fetchAllSalesAndRender() {
-    if (!currentUserId) return;
+    if (!activeShopId) return;
     if (salesTableBody) salesTableBody.innerHTML = '<tr><td colspan="10" class="loading-cell">Loading data...</td></tr>';
     
     try {
-        const salesRef = collection(db, 'shops', currentUserId, 'sales');
+        const salesRef = collection(db, 'shops', activeShopId, 'sales');
         const q = query(salesRef, orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
         
@@ -302,7 +302,7 @@ async function verifyAdminPIN() {
     if (!userPin) return false;
 
     try {
-        const settingsRef = doc(db, 'shops', currentUserId, 'settings', 'security');
+        const settingsRef = doc(db, 'shops', activeShopId, 'settings', 'security');
         const snap = await getDoc(settingsRef);
         
         if (snap.exists()) {
@@ -335,7 +335,7 @@ async function handleEditPayment(saleId, currentMethod) {
     }
 
     try {
-        const saleRef = doc(db, 'shops', currentUserId, 'sales', saleId);
+        const saleRef = doc(db, 'shops', activeShopId, 'sales', saleId);
         await updateDoc(saleRef, { paymentMethod: newMethod });
         
         const s = allSalesData.find(x => x.id === saleId);
@@ -358,7 +358,7 @@ async function handleCancelBill(saleId) {
 
     try {
         await runTransaction(db, async (t) => {
-            const sRef = doc(db, 'shops', currentUserId, 'sales', saleId);
+            const sRef = doc(db, 'shops', activeShopId, 'sales', saleId);
             const sDoc = await t.get(sRef);
             if(!sDoc.exists()) throw "Sale not found";
             
@@ -372,7 +372,7 @@ async function handleCancelBill(saleId) {
             // স্টক ফেরত দেওয়া
             for (const item of items) {
                 if(!item.id) continue;
-                const pRef = doc(db, 'shops', currentUserId, 'inventory', item.id);
+                const pRef = doc(db, 'shops', activeShopId, 'inventory', item.id);
                 const pDoc = await t.get(pRef);
                 if(pDoc.exists()) {
                     const currentStock = pDoc.data().stock || 0;

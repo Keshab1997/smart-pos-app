@@ -2,13 +2,13 @@ import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, query, where, orderBy, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 
-let currentUserId = null;
+let activeShopId = null;
 let allBookings = []; // সব বুকিং ডেটা এখানে জমা থাকবে
 
 // --- অথেন্টিকেশন চেক ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        currentUserId = user.uid;
+        activeShopId = localStorage.getItem('activeShopId'); if (!activeShopId) { window.location.href = '../index.html'; return; }
         loadBookings(); // ডেটা লোড শুরু
         setupSearchListener(); // সার্চ অপশন চালু
     } else {
@@ -19,7 +19,7 @@ onAuthStateChanged(auth, (user) => {
 // --- বুকিং সেভ করা এবং প্রিন্ট করা ---
 document.getElementById('booking-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!currentUserId) return;
+    if (!activeShopId) return;
 
     const saveBtn = document.querySelector('.save-btn');
     const originalText = saveBtn.textContent;
@@ -38,7 +38,7 @@ document.getElementById('booking-form').addEventListener('submit', async (e) => 
     };
 
     try {
-        const docRef = await addDoc(collection(db, 'shops', currentUserId, 'bookings'), data);
+        const docRef = await addDoc(collection(db, 'shops', activeShopId, 'bookings'), data);
         e.target.reset();
         window.open(`booking-print.html?id=${docRef.id}`, '_blank');
     } catch (error) {
@@ -52,7 +52,7 @@ document.getElementById('booking-form').addEventListener('submit', async (e) => 
 
 // --- বুকিং ডেটা ফায়ারবেস থেকে আনা ---
 function loadBookings() {
-    const q = query(collection(db, 'shops', currentUserId, 'bookings'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'shops', activeShopId, 'bookings'), orderBy('createdAt', 'desc'));
     
     onSnapshot(q, (snapshot) => {
         allBookings = []; // লিস্ট ক্লিয়ার করা
@@ -152,7 +152,7 @@ window.printSlip = (id) => {
 window.updateStatus = async (id, status) => {
     if(confirm("Is the product ready for delivery?")) {
         try {
-            await updateDoc(doc(db, 'shops', currentUserId, 'bookings', id), { status: status });
+            await updateDoc(doc(db, 'shops', activeShopId, 'bookings', id), { status: status });
         } catch (error) {
             console.error("Error:", error);
         }

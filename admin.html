@@ -26,8 +26,18 @@
                 </div>
             </section>
 
-            <!-- ডান পাশ: কন্ট্রোল প্যানেল (ইউজার সিলেক্ট করলে ওপেন হবে) -->
-            <section class="user-control-section card" id="control-panel">
+            <!-- ডান পাশ: কন্ট্রোল স্ট্যাক -->
+            <div class="control-stack">
+                <!-- নতুন: ইউজার অথোরাইজেশন সেকশন -->
+                <section class="card section-highlight">
+                    <h3>✨ Authorize New Shop Owner</h3>
+                    <div class="form-inline">
+                        <input type="email" id="new-user-email" placeholder="Enter Gmail Address" class="form-control">
+                        <input type="text" id="new-shop-name" placeholder="Shop Name" class="form-control">
+                        <button id="btn-authorize-user" class="btn btn-blue">Grant Access</button>
+                    </div>
+                    <p style="font-size: 11px; color: #666; margin-top: 10px;">* এই ইমেইলটি অথোরাইজ করলে ইউজার লগইন করার অনুমতি পাবে।</p>
+                </section>
                 <div id="empty-state">
                     <p>Select a shop from the list to manage.</p>
                 </div>
@@ -52,8 +62,25 @@
                         <h4>Security Management</h4>
                         <button id="btn-reset-pin" class="btn btn-pink">🔐 Reset Master PIN</button>
                     </div>
+
+                    <div class="action-group">
+                        <h4>Staff & Role Management</h4>
+                        <div id="admin-staff-list" style="margin-bottom: 10px; max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 5px;">
+                            <p>Select a shop to see staff...</p>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="admin-role-select" class="btn" style="background: white; color: black; border: 1px solid #ddd; width: 60%;">
+                                <option value="cashier">Cashier</option>
+                                <option value="manager">Manager</option>
+                                <option value="owner">Owner (Full Access)</option>
+                            </select>
+                            <button id="btn-admin-update-role" class="btn btn-blue" style="margin-top: 0;">Update Role</button>
+                        </div>
+                    </div>
                 </div>
             </section>
+            </div>
 
             <!-- গ্লোবাল সেটিংস (এনাউন্সমেন্ট) -->
             <section class="global-settings card">

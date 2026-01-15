@@ -1,4 +1,5 @@
 import { db, auth } from './firebase-config.js';
+import { getActiveShopId } from './shop-helper.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { 
     collection, 
@@ -41,6 +42,7 @@ let categoryPieChartInstance = null;
 
 // User State
 let currentUserId = null;
+let activeShopId = null;
 
 // ==========================================
 // 1. Authentication Check & Init
@@ -48,7 +50,10 @@ let currentUserId = null;
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserId = user.uid;
-        initializeDashboard(user);
+        activeShopId = getActiveShopId();
+        if (activeShopId) {
+            initializeDashboard(user);
+        }
     } else {
         window.location.href = 'index.html';
     }
@@ -112,7 +117,7 @@ async function updateWelcomeSection(user) {
 
     try {
         // Firestore-এর 'shops' কালেকশন থেকে ইউজারের ডকুমেন্ট আনা
-        const shopDocRef = doc(db, 'shops', user.uid);
+        const shopDocRef = doc(db, 'shops', activeShopId);
         const shopSnap = await getDoc(shopDocRef);
 
         if (shopSnap.exists()) {
@@ -134,7 +139,7 @@ async function updateWelcomeSection(user) {
 // 4. Main Data Loading Logic
 // ==========================================
 async function loadDashboardData() {
-    if (!currentUserId) return;
+    if (!activeShopId) return;
 
     try {
         // ডেট রেঞ্জ ঠিক করা (আজকের জন্য)
@@ -147,7 +152,7 @@ async function loadDashboardData() {
         const todayEnd = Timestamp.fromDate(tomorrow);
 
         // --- A. Fetch Sales Data ---
-        const salesRef = collection(db, 'shops', currentUserId, 'sales');
+        const salesRef = collection(db, 'shops', activeShopId, 'sales');
         const salesQuery = query(salesRef, where('createdAt', '>=', todayStart), where('createdAt', '<', todayEnd));
         const salesSnapshot = await getDocs(salesQuery);
 
@@ -181,7 +186,7 @@ async function loadDashboardData() {
         });
 
         // --- B. Fetch Expenses ---
-        const expenseRef = collection(db, 'shops', currentUserId, 'expenses');
+        const expenseRef = collection(db, 'shops', activeShopId, 'expenses');
         const expenseQuery = query(expenseRef, where('date', '>=', todayStart), where('date', '<', todayEnd));
         const expenseSnapshot = await getDocs(expenseQuery);
         
@@ -195,7 +200,7 @@ async function loadDashboardData() {
         });
 
         // --- C. Fetch Low Stock ---
-        const inventoryRef = collection(db, 'shops', currentUserId, 'inventory');
+        const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
         const inventorySnapshot = await getDocs(inventoryRef);
         let lowStockCount = 0;
         const lowStockItems = [];
@@ -372,13 +377,13 @@ function setupDashboardEventListeners() {
             const category = document.getElementById('expense-category').value;
             const date = new Date(document.getElementById('expense-date').value);
 
-            if (!description || !amount || !currentUserId) {
+            if (!description || !amount || !activeShopId) {
                 alert('Please fill all required fields.');
                 return;
             }
 
             try {
-                await addDoc(collection(db, 'shops', currentUserId, 'expenses'), {
+                await addDoc(collection(db, 'shops', activeShopId, 'expenses'), {
                     description,
                     amount,
                     category,
@@ -414,7 +419,7 @@ function setupDashboardEventListeners() {
 // ১. ইউজার স্ট্যাটাস চেক (Inactive হলে লগআউট করে দেওয়া)
 async function checkUserStatus(uid) {
     try {
-        const shopSnap = await getDoc(doc(db, 'shops', uid));
+        const shopSnap = await getDoc(doc(db, 'shops', activeShopId));
         if (shopSnap.exists() && shopSnap.data().status === 'inactive') {
             alert("Your account is inactive. Please contact admin.");
             auth.signOut();
@@ -473,7 +478,7 @@ if (supportBtn) {
         const msg = prompt("💬 Write your message/feedback for the Admin:");
         if (msg && msg.trim() !== "") {
             try {
-                const shopSnap = await getDoc(doc(db, 'shops', currentUserId));
+                const shopSnap = await getDoc(doc(db, 'shops', activeShopId));
                 const shopName = shopSnap.exists() ? shopSnap.data().shopName : "Unknown Shop";
                 
                 await addDoc(collection(db, 'support_tickets'), {
