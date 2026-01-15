@@ -29,6 +29,7 @@
             ⏳ <span id="unsettled-count">0</span> Pending
         </div>
         <button id="btn-auto-settle" class="btn-xs-success">Settle All (Cash)</button>
+        <button id="btn-shift-summary" class="btn-xs-success" style="background: #4361ee; margin-left: 10px;">📊 Today's Summary</button>
     </section>
 
     <main class="billing-container full-screen-billing">
@@ -99,9 +100,9 @@
                         </div>
                     </div>
 
-                    <!-- কলাম ২: বিল সামারি এবং ট্যাক্স -->
+                    <!-- কলাম ২: বিল সামারি এবং ক্যালকুলেটর -->
                     <div class="checkout-section">
-                        <h4 class="section-title">💰 Bill Summary</h4>
+                        <h4 class="section-title">💰 Bill Summary & Entry</h4>
                         <div class="billing-summary-card compact">
                             <div class="summary-row"><span>Subtotal:</span> <strong id="modal-subtotal">₹0.00</strong></div>
                             
@@ -135,16 +136,6 @@
                             <hr>
                             <div class="summary-row total-row"><span>Grand Total:</span> <span id="modal-total-amount">₹0.00</span></div>
                         </div>
-                    </div>
-
-                    <!-- কলাম ৩: পেমেন্ট এবং ক্যালকুলেটর -->
-                    <div class="checkout-section">
-                        <h4 class="section-title">💳 Payment</h4>
-                        <div class="payment-buttons-vertical">
-                            <button type="button" class="pay-btn active" data-method="cash">💵 Cash Payment</button>
-                            <button type="button" class="pay-btn" data-method="online">📱 UPI / QR Scan</button>
-                            <button type="button" class="pay-btn" data-method="card">💳 Card Payment</button>
-                        </div>
 
                         <div id="cash-calc-area" class="cash-details-box">
                             <div class="input-group">
@@ -152,6 +143,36 @@
                                 <input type="number" id="cash-received" placeholder="0.00" style="font-size: 1.2rem; font-weight: bold;">
                             </div>
                             <div class="return-box">Return: <strong id="return-amount">₹0.00</strong></div>
+                        </div>
+
+                        <div id="part-payment-calc-area" class="part-payment-box hidden">
+                            <div class="split-row">
+                                <label>Cash Amount:</label>
+                                <input type="number" id="part-cash" class="part-input" placeholder="0.00">
+                            </div>
+                            <div class="split-row">
+                                <label>UPI Amount:</label>
+                                <input type="number" id="part-upi" class="part-input" placeholder="0.00">
+                            </div>
+                            <div class="split-row">
+                                <label>Card Amount:</label>
+                                <input type="number" id="part-card" class="part-input" placeholder="0.00">
+                            </div>
+                            <div class="split-total-status">
+                                Total Entered: <strong id="part-total-entered">₹0.00</strong>
+                                <span id="part-status-msg" style="font-size: 10px; display: block;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- কলাম ৩: পেমেন্ট মেথড সিলেকশন -->
+                    <div class="checkout-section">
+                        <h4 class="section-title">💳 Select Method</h4>
+                        <div class="payment-buttons-vertical">
+                            <button type="button" class="pay-btn active" data-method="cash">💵 Cash Payment</button>
+                            <button type="button" class="pay-btn" data-method="online">📱 UPI / QR Scan</button>
+                            <button type="button" class="pay-btn" data-method="card">💳 Card Payment</button>
+                            <button type="button" class="pay-btn" data-method="part-payment">🌓 Part Payment (Split)</button>
                         </div>
                     </div>
 
@@ -186,6 +207,19 @@
                         <!-- JS দিয়ে লোড হবে -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div id="summary-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Today's Shift Summary</h2>
+                <button id="close-summary-modal" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body" id="summary-content">
+                <p>Loading summary...</p>
             </div>
         </div>
     </div>

@@ -8,7 +8,6 @@ import {
 const totalSalesTodayEl = document.getElementById('total-sales-today');
 const totalSalesMonthEl = document.getElementById('total-sales-month');
 const overallTotalSalesEl = document.getElementById('overall-total-sales');
-const totalCanceledAmountEl = document.getElementById('total-canceled-amount');
 
 const startDatePicker = document.getElementById('start-date');
 const endDatePicker = document.getElementById('end-date');
@@ -18,7 +17,6 @@ const whatsappBtn = document.getElementById('whatsapp-btn');
 const filteredCashSalesEl = document.getElementById('filtered-cash-sales');
 const filteredCardSalesEl = document.getElementById('filtered-card-sales');
 const filteredTotalDiscountEl = document.getElementById('filtered-total-discount');
-const filteredCanceledAmountEl = document.getElementById('filtered-canceled-amount');
 
 const salesTableBody = document.getElementById('sales-table-body');
 const logoutBtn = document.getElementById('logout-btn');
@@ -92,26 +90,23 @@ async function fetchAllSalesAndRender() {
 }
 
 function calculateTopSummaries(sales) {
-    let todayTotal = 0, monthTotal = 0, overallTotal = 0, totalCanceled = 0;
+    let todayTotal = 0, monthTotal = 0, overallTotal = 0;
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     sales.forEach(sale => {
+        if (sale.status === 'canceled') return;
+        
         const netTotal = sale.total;
-        if (sale.status === 'canceled') {
-            totalCanceled += netTotal;
-        } else {
-            overallTotal += netTotal;
-            if (sale.createdAt.toDate() >= startOfToday) todayTotal += netTotal;
-            if (sale.createdAt.toDate() >= startOfMonth) monthTotal += netTotal;
-        }
+        overallTotal += netTotal;
+        if (sale.createdAt.toDate() >= startOfToday) todayTotal += netTotal;
+        if (sale.createdAt.toDate() >= startOfMonth) monthTotal += netTotal;
     });
 
     if(totalSalesTodayEl) totalSalesTodayEl.textContent = `₹${todayTotal.toFixed(2)}`;
     if(totalSalesMonthEl) totalSalesMonthEl.textContent = `₹${monthTotal.toFixed(2)}`;
     if(overallTotalSalesEl) overallTotalSalesEl.textContent = `₹${overallTotal.toFixed(2)}`;
-    if(totalCanceledAmountEl) totalCanceledAmountEl.textContent = `₹${totalCanceled.toFixed(2)}`;
 }
 
 // --- Helper: Check if Date is Today ---
@@ -139,28 +134,20 @@ function filterAndDisplayData() {
     // ফিল্টার ভ্যালু সংগ্রহ
     const selectedMethods = Array.from(document.querySelectorAll('.data-filter[value]:checked')).map(cb => cb.value);
     const showOnlyDiscount = document.getElementById('filter-discount')?.checked || false;
-    const showCanceled = document.getElementById('filter-canceled')?.checked || false;
 
     filteredSalesForPDF = allSalesData.filter(sale => {
         const d = sale.createdAt.toDate();
         const method = (sale.paymentMethod || 'cash').toLowerCase();
         const hasDiscount = (sale.discountAmount || sale.discount || 0) > 0;
-        const isCanceled = sale.status === 'canceled';
 
-        // ১. তারিখ চেক
         if (d < startDate || d > endDate) return false;
+        if (sale.status === 'canceled') return false;
 
-        // ২. ক্যানসেল ফিল্টার: যদি 'Canceled' চেক করা থাকে তবে শুধু ক্যানসেলগুলো দেখাবে, নাহলে শুধু সাকসেসগুলো
-        if (showCanceled) {
-            if (!isCanceled) return false;
-        } else {
-            if (isCanceled) return false;
-        }
+        // --- ফিল্টার লজিক ফিক্স ---
+        let checkMethod = method;
+        if (method === 'upi' || method === 'card') checkMethod = 'online';
 
-        // ৩. পেমেন্ট মেথড চেক (ক্যানসেল মোডে না থাকলে)
-        if (!showCanceled && selectedMethods.length > 0 && !selectedMethods.includes(method)) return false;
-
-        // ৪. ডিসকাউন্ট ফিল্টার
+        if (selectedMethods.length > 0 && !selectedMethods.includes(checkMethod)) return false;
         if (showOnlyDiscount && !hasDiscount) return false;
 
         return true;
@@ -171,24 +158,33 @@ function filterAndDisplayData() {
 }
 
 function calculateFilteredPaymentSummary(sales) {
-    let cashTotal = 0, onlineTotal = 0, discountTotal = 0, canceledTotal = 0;
+    let cashTotal = 0, onlineTotal = 0, discountTotal = 0;
 
     sales.forEach(sale => {
-        if (sale.status === 'canceled') {
-            canceledTotal += sale.total;
-            return;
-        }
+        if (sale.status === 'canceled') return;
+        
         discountTotal += (sale.discountAmount || sale.discount || 0);
 
-        const method = (sale.paymentMethod || 'cash').toLowerCase();
-        if (method === 'cash') cashTotal += sale.total;
-        else onlineTotal += sale.total;
+        if (sale.paymentMethod === 'part-payment' && sale.paymentBreakdown) {
+            // পার্ট পেমেন্টের ব্রেকডাউন থেকে নিখুঁত হিসাব
+            const pCash = parseFloat(sale.paymentBreakdown.cash) || 0;
+            // upi, online, card—সবগুলোকে অনলাইন হিসেবে যোগ করা
+            const pOnline = (parseFloat(sale.paymentBreakdown.upi) || 0) + 
+                           (parseFloat(sale.paymentBreakdown.online) || 0) + 
+                           (parseFloat(sale.paymentBreakdown.card) || 0);
+            
+            cashTotal += pCash;
+            onlineTotal += pOnline;
+        } else if (sale.paymentMethod === 'cash') {
+            cashTotal += (sale.total || 0);
+        } else {
+            onlineTotal += (sale.total || 0);
+        }
     });
 
     if(filteredCashSalesEl) filteredCashSalesEl.textContent = `₹${cashTotal.toFixed(2)}`;
     if(filteredCardSalesEl) filteredCardSalesEl.textContent = `₹${onlineTotal.toFixed(2)}`;
     if(filteredTotalDiscountEl) filteredTotalDiscountEl.textContent = `₹${discountTotal.toFixed(2)}`;
-    if(filteredCanceledAmountEl) filteredCanceledAmountEl.textContent = `₹${canceledTotal.toFixed(2)}`;
 }
 
 function formatDate(dateObject) {
@@ -206,6 +202,8 @@ function renderSalesTable(sales) {
     }
 
     sales.forEach(sale => {
+        if (sale.status === 'canceled') return;
+        
         const saleDateObj = sale.createdAt.toDate();
         const saleDateStr = formatDate(saleDateObj); 
         // আইটেম ডিটেইলস জেনারেট করার লজিক পরিবর্তন (SP এর বদলে Cost Price দেখানো)
@@ -232,6 +230,19 @@ function renderSalesTable(sales) {
 
         const discount = sale.discountAmount || sale.discount || 0;
         let payMethod = (sale.paymentMethod || 'Cash').toUpperCase();
+        let payMethodHTML = '';
+        
+        if (sale.paymentMethod === 'part-payment' && sale.paymentBreakdown) {
+            const onlineTotal = (sale.paymentBreakdown.online || sale.paymentBreakdown.upi || 0) + (sale.paymentBreakdown.card || 0);
+            payMethodHTML = `
+                <div class="type-container">
+                    <span class="badge badge-warning">PART-PAY</span>
+                    <div class="part-breakdown">C: ₹${(sale.paymentBreakdown.cash || 0).toFixed(0)} | O: ₹${onlineTotal.toFixed(0)}</div>
+                </div>
+            `;
+        } else {
+            payMethodHTML = `<span class="badge badge-${payMethod.toLowerCase() === 'cash' ? 'success' : 'warning'}">${payMethod}</span>`;
+        }
 
         // ===============================================
         // BILL NUMBER LOGIC (এখানে পরিবর্তন করা হয়েছে)
@@ -261,16 +272,14 @@ function renderSalesTable(sales) {
             actionHTML = `<span style="color:red; font-weight:bold; font-size:12px;">CANCELED</span>`;
         } else {
             if (isToday) {
-                // আজকের বিল: সব বাটন থাকবে
                 actionHTML = `
                     <div class="action-buttons">
-                        <button class="btn-icon btn-edit edit-pay-btn" data-sale-id="${sale.id}" data-current-pay="${sale.paymentMethod}" title="Edit Payment">${iconEdit}</button>
+                        <button class="btn-icon btn-edit edit-pay-btn" data-sale-id="${sale.id}" title="Edit Payment">${iconEdit}</button>
                         <button class="btn-icon btn-print reprint-btn" data-sale-id="${sale.id}" title="Print Receipt">${iconPrint}</button>
-                        <button class="btn-icon btn-delete cancel-btn" data-sale-id="${sale.id}" title="Cancel Bill">${iconTrash}</button>
+                        <button class="btn-icon btn-delete cancel-bill-btn" data-sale-id="${sale.id}" title="Cancel Bill">${iconTrash}</button>
                     </div>
                 `;
             } else {
-                // পুরনো বিল: Locked থাকবে, কিন্তু PRINT বাটন থাকবে
                 actionHTML = `
                     <div class="locked-wrapper">
                         <div class="locked-badge"><i class="fas fa-lock"></i> Locked</div>
@@ -285,7 +294,7 @@ function renderSalesTable(sales) {
             <td>${saleDateStr}</td>
             <td>${sale.items ? sale.items.length : 0}</td>
             <td class="details-column">${detailsHTML}</td>
-            <td><span class="badge badge-${payMethod.toLowerCase() === 'cash' ? 'success' : 'warning'}">${payMethod}</span></td>
+            <td>${payMethodHTML}</td>
             <td>₹${discount.toFixed(2)}</td>
             <td style="color:#d35400; font-weight:500;">₹${totalBillCost.toFixed(2)}</td>
             <td><strong>₹${netTotal.toFixed(2)}</strong></td>
@@ -321,30 +330,46 @@ async function verifyAdminPIN() {
 }
 
 // --- Actions with Security ---
-async function handleEditPayment(saleId, currentMethod) {
-    const isAuthorized = await verifyAdminPIN();
-    if (!isAuthorized) return;
-
-    let newMethod = prompt(`Change Payment (Current: ${currentMethod})\nEnter: Cash, Card or Online`, "");
-    if (!newMethod) return;
-    newMethod = newMethod.toLowerCase();
-
-    if (!['cash', 'card', 'online'].includes(newMethod)) {
-        alert("Invalid! Type Cash, Card or Online.");
-        return;
+window.openPaymentEdit = async (saleId) => {
+    const saleRef = doc(db, 'shops', activeShopId, 'sales', saleId);
+    const snap = await getDoc(saleRef);
+    if (!snap.exists()) return;
+    
+    const data = snap.data();
+    const saleTotal = data.total || 0;
+    
+    document.getElementById('edit-sale-id').value = saleId;
+    document.getElementById('edit-total-display').textContent = `₹${saleTotal.toFixed(2)}`;
+    document.getElementById('new-payment-method').value = data.paymentMethod || 'cash';
+    
+    // পার্ট পেমেন্ট সেকশন কন্ট্রোল
+    const partArea = document.getElementById('edit-part-area');
+    if (data.paymentMethod === 'part-payment') {
+        partArea.classList.remove('hidden');
+        document.getElementById('edit-part-cash').value = data.paymentBreakdown?.cash || 0;
+        document.getElementById('edit-part-upi').value = data.paymentBreakdown?.upi || data.paymentBreakdown?.online || 0;
+        document.getElementById('edit-part-card').value = data.paymentBreakdown?.card || 0;
+    } else {
+        partArea.classList.add('hidden');
     }
+    
+    // স্মার্ট অটো-ক্যালকুলেশন
+    const cashInput = document.getElementById('edit-part-cash');
+    const upiInput = document.getElementById('edit-part-upi');
+    const cardInput = document.getElementById('edit-part-card');
+    
+    cashInput.oninput = () => {
+        const cash = parseFloat(cashInput.value) || 0;
+        const remaining = Math.max(0, saleTotal - cash);
+        upiInput.value = remaining.toFixed(2);
+        cardInput.value = 0;
+    };
+    
+    document.getElementById('edit-payment-modal').classList.remove('hidden');
+};
 
-    try {
-        const saleRef = doc(db, 'shops', activeShopId, 'sales', saleId);
-        await updateDoc(saleRef, { paymentMethod: newMethod });
-        
-        const s = allSalesData.find(x => x.id === saleId);
-        if(s) s.paymentMethod = newMethod;
-        
-        calculateTopSummaries(allSalesData);
-        filterAndDisplayData();
-        alert("Payment updated successfully.");
-    } catch (e) { alert("Update failed."); }
+async function handleEditPayment(saleId) {
+    openPaymentEdit(saleId);
 }
 
 async function handleCancelBill(saleId) {
@@ -484,11 +509,16 @@ window.downloadPDF = function() {
         const profit = isCanceled ? 0 : (netTotal - saleCost);
         const method = (sale.paymentMethod || 'cash').toLowerCase();
 
-        // শুধুমাত্র সাকসেসফুল বিলের হিসাব রাখা
+        // PDF হেডার সামারি ক্যালকুলেশন (পার্ট পেমেন্ট হ্যান্ডলিং সহ)
         if (!isCanceled) {
-            if (method === 'cash') totals.cash += netTotal;
-            else if (method === 'card') totals.card += netTotal;
-            else if (method === 'online') totals.online += netTotal;
+            if (method === 'part-payment' && sale.paymentBreakdown) {
+                totals.cash += (sale.paymentBreakdown.cash || 0);
+                totals.online += (sale.paymentBreakdown.upi || 0) + (sale.paymentBreakdown.card || 0) + (sale.paymentBreakdown.online || 0);
+            } else if (method === 'cash') {
+                totals.cash += netTotal;
+            } else {
+                totals.online += netTotal;
+            }
             
             totals.net += netTotal;
             totals.cost += saleCost;
@@ -589,11 +619,73 @@ function setupEventListeners() {
             if (!btn) return;
 
             const id = btn.dataset.saleId;
-            if (btn.classList.contains('edit-pay-btn')) handleEditPayment(id, btn.dataset.currentPay);
+            if (btn.classList.contains('edit-pay-btn')) handleEditPayment(id);
             if (btn.classList.contains('reprint-btn')) window.open(`../billing/print.html?saleId=${id}`, '_blank');
-            if (btn.classList.contains('cancel-btn')) handleCancelBill(id);
+            if (btn.classList.contains('cancel-bill-btn')) handleCancelBill(id);
         });
     }
+
+    document.getElementById('close-payment-modal')?.addEventListener('click', () => {
+        document.getElementById('edit-payment-modal').classList.add('hidden');
+    });
+
+    document.getElementById('new-payment-method')?.addEventListener('change', (e) => {
+        const partArea = document.getElementById('edit-part-area');
+        if (e.target.value === 'part-payment') {
+            partArea.classList.remove('hidden');
+            const total = parseFloat(document.getElementById('edit-total-display').textContent.replace('₹','')) || 0;
+            document.getElementById('edit-part-cash').value = total.toFixed(2);
+            document.getElementById('edit-part-upi').value = 0;
+            document.getElementById('edit-part-card').value = 0;
+        } else {
+            partArea.classList.add('hidden');
+        }
+    });
+
+    document.getElementById('btn-save-new-payment')?.addEventListener('click', async () => {
+        const saleId = document.getElementById('edit-sale-id').value;
+        const method = document.getElementById('new-payment-method').value;
+        const saleTotal = parseFloat(document.getElementById('edit-total-display').textContent.replace('₹',''));
+        
+        let updateData = { paymentMethod: method };
+        
+        if (method === 'part-payment') {
+            const cashAmt = parseFloat(document.getElementById('edit-part-cash').value) || 0;
+            const upiAmt = parseFloat(document.getElementById('edit-part-upi').value) || 0;
+            const cardAmt = parseFloat(document.getElementById('edit-part-card').value) || 0;
+
+            // ভ্যালিডেশন: ব্রেকডাউন কি টোটালের সমান?
+            if (Math.abs((cashAmt + upiAmt + cardAmt) - saleTotal) > 0.1) {
+                alert("❌ Error: Breakdown sum must match the Total Bill Amount!");
+                return;
+            }
+
+            updateData.paymentBreakdown = {
+                cash: cashAmt,
+                upi: upiAmt,
+                card: cardAmt
+            };
+        }
+
+        try {
+            await updateDoc(doc(db, 'shops', activeShopId, 'sales', saleId), updateData);
+            
+            // লোকাল ডাটা আপডেট করা
+            const saleIndex = allSalesData.findIndex(x => x.id === saleId);
+            if(saleIndex !== -1) {
+                allSalesData[saleIndex].paymentMethod = method;
+                if(updateData.paymentBreakdown) allSalesData[saleIndex].paymentBreakdown = updateData.paymentBreakdown;
+            }
+
+            calculateTopSummaries(allSalesData);
+            filterAndDisplayData();
+            document.getElementById('edit-payment-modal').classList.add('hidden');
+            alert("✅ Payment method and summary updated!");
+        } catch (e) { 
+            console.error(e);
+            alert("Error updating payment."); 
+        }
+    });
 
     if (logoutBtn) logoutBtn.addEventListener('click', async () => await signOut(auth));
     if (mobileMenuBtn && mainNavLinks) {

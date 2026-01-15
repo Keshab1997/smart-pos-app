@@ -6,7 +6,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
-    collection, doc, getDocs, getDoc, updateDoc, query, where, orderBy, writeBatch, serverTimestamp, increment, runTransaction, addDoc, onSnapshot, deleteDoc
+    collection, doc, getDocs, getDoc, updateDoc, query, where, orderBy, writeBatch, serverTimestamp, increment, runTransaction, addDoc, onSnapshot, deleteDoc, Timestamp
 } from 'firebase/firestore';
 
 // ==========================================================
@@ -40,6 +40,20 @@ let currentTotals = { subtotal: 0, discount: 0, tax: 0, total: 0, advancePaid: 0
 let activeShopId = null;
 let bookingData = null;
 let selectedPaymentMethod = 'cash';
+
+// Beep Sound Function
+const playBeep = () => {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.1);
+};
 
 // ==========================================================
 // --- Authentication & Initialization ---
@@ -225,18 +239,21 @@ function addProductToCart(product) {
 function addToCart(product) {
     if (!product || !product.id) return;
     if (product.stock <= 0) {
-        alert(`'${product.name}' is out of stock!`);
+        alert(`❌ '${product.name}' স্টক শেষ (Out of Stock)!`);
         return;
     }
     const existingItem = cart.find(item => item.id === product.id);
     if (existingItem) {
         if (existingItem.quantity < product.stock) {
             existingItem.quantity++;
+            playBeep();
         } else {
-            alert(`Cannot add more. Stock limit for '${product.name}' reached!`);
+            alert(`⚠️ স্টকে মাত্র ${product.stock} টি আছে!`);
+            return;
         }
     } else {
         cart.push({ ...product, quantity: 1 });
+        playBeep();
     }
     updateCartDisplay();
 }
@@ -259,7 +276,7 @@ function updateCartDisplay() {
                 </div>
                 <div class="item-controls">
                     <button class="quantity-btn decrease-btn" data-id="${item.id}">-</button>
-                    <input type="number" class="quantity-input" value="${item.quantity}" readonly>
+                    <input type="number" class="quantity-input" value="${item.quantity}" data-id="${item.id}">
                     <button class="quantity-btn increase-btn" data-id="${item.id}">+</button>
                 </div>
                 <div class="item-total">₹${((item.sellingPrice || 0) * item.quantity).toFixed(2)}</div>
@@ -280,7 +297,7 @@ function addCartItemEventListeners() {
         let newQuantity = item.quantity + change;
         const productFromStock = allProducts.find(p => p.id === productId);
         if (newQuantity > productFromStock.stock) {
-            alert(`Maximum stock for ${item.name} is ${productFromStock.stock}.`);
+            alert(`⚠️ স্টকে মাত্র ${productFromStock.stock} টি আছে!`);
             newQuantity = productFromStock.stock;
         }
         if (newQuantity <= 0) {
@@ -292,6 +309,25 @@ function addCartItemEventListeners() {
     };
 
     document.querySelectorAll('.cart-item').forEach(el => {
+        const qtyInput = el.querySelector('.quantity-input');
+        const productId = qtyInput.dataset.id;
+
+        qtyInput.onchange = (e) => {
+            let newQty = parseInt(e.target.value);
+            const productFromStock = allProducts.find(p => p.id === productId);
+            
+            if (isNaN(newQty) || newQty <= 0) {
+                cart = cart.filter(i => i.id !== productId);
+            } else if (newQty > productFromStock.stock) {
+                alert(`⚠️ স্টকে মাত্র ${productFromStock.stock} টি আছে!`);
+                newQty = productFromStock.stock;
+            }
+            
+            const item = cart.find(i => i.id === productId);
+            if (item) item.quantity = newQty;
+            updateCartDisplay();
+        };
+
         el.querySelector('.increase-btn').onclick = e => handleQuantityChange(e.target.dataset.id, 1);
         el.querySelector('.decrease-btn').onclick = e => handleQuantityChange(e.target.dataset.id, -1);
         el.querySelector('.remove-item-btn').onclick = e => {
@@ -380,23 +416,95 @@ function updatePaymentDetails() {
             returnAmount = cashReceived - amountToPay;
         }
         returnAmountDisplay.textContent = `₹${returnAmount.toFixed(2)}`;
+    } else if (selectedPaymentMethod === 'part-payment') {
+        validatePartPayment();
     }
     validateFinalBillButton();
 }
 
-function validateFinalBillButton() {
-    let isValid = false;
-    if (cart.length > 0) {
-        const amountToPay = currentTotals.payableTotal;
+function validatePartPayment() {
+    if (selectedPaymentMethod !== 'part-payment') return true;
 
-        if (selectedPaymentMethod === 'cash') {
-            const cashReceived = parseFloat(cashReceivedInput.value);
+    const pCash = parseFloat(document.getElementById('part-cash').value) || 0;
+    const pUpi = parseFloat(document.getElementById('part-upi').value) || 0;
+    const pCard = parseFloat(document.getElementById('part-card').value) || 0;
+    
+    const totalEntered = pCash + pUpi + pCard;
+    const grandTotal = currentTotals.payableTotal;
+
+    document.getElementById('part-total-entered').textContent = `₹${totalEntered.toFixed(2)}`;
+    
+    const msgEl = document.getElementById('part-status-msg');
+
+    if (Math.abs(totalEntered - grandTotal) < 0.01) {
+        msgEl.textContent = "✅ Amount Matched!";
+        msgEl.style.color = "green";
+        return true;
+    } else if (totalEntered > grandTotal) {
+        msgEl.textContent = `⚠️ Excess: ₹${(totalEntered - grandTotal).toFixed(2)}`;
+        msgEl.style.color = "orange";
+        return false;
+    } else {
+        msgEl.textContent = `❌ Need ₹${(grandTotal - totalEntered).toFixed(2)} more`;
+        msgEl.style.color = "red";
+        return false;
+    }
+}
+
+function setupPartPaymentAutoCalc() {
+    const pCashInput = document.getElementById('part-cash');
+    const pUpiInput = document.getElementById('part-upi');
+    const pCardInput = document.getElementById('part-card');
+
+    pCashInput.addEventListener('input', () => {
+        const cash = parseFloat(pCashInput.value) || 0;
+        const grandTotal = currentTotals.payableTotal;
+        const remaining = Math.max(0, grandTotal - cash);
+        pUpiInput.value = remaining.toFixed(2);
+        pCardInput.value = 0;
+        validatePartPayment();
+    });
+}
+
+function validateFinalBillButton() {
+    const generateBtn = document.getElementById('generate-bill-btn');
+    if (!generateBtn) return;
+
+    let isValid = false;
+    const amountToPay = currentTotals.payableTotal;
+
+    if (cart.length > 0) {
+        if (selectedPaymentMethod === 'part-payment') {
+            const pCashEl = document.getElementById('part-cash');
+            const pUpiEl = document.getElementById('part-upi');
+            const pCardEl = document.getElementById('part-card');
+            
+            const pCash = pCashEl ? parseFloat(pCashEl.value) || 0 : 0;
+            const pUpi = pUpiEl ? parseFloat(pUpiEl.value) || 0 : 0;
+            const pCard = pCardEl ? parseFloat(pCardEl.value) || 0 : 0;
+            const totalEntered = pCash + pUpi + pCard;
+            
+            isValid = Math.abs(totalEntered - amountToPay) < 0.01;
+        } else if (selectedPaymentMethod === 'cash') {
+            const cashReceivedEl = document.getElementById('cash-received');
+            const cashReceived = cashReceivedEl ? parseFloat(cashReceivedEl.value) : 0;
             isValid = isNaN(cashReceived) || cashReceived >= amountToPay;
         } else {
             isValid = true;
         }
     }
-    generateBillBtn.disabled = !isValid;
+
+    generateBtn.disabled = !isValid;
+    
+    if (isValid) {
+        generateBtn.style.background = "#28a745";
+        generateBtn.style.opacity = "1";
+        generateBtn.style.cursor = "pointer";
+    } else {
+        generateBtn.style.background = "#a5d6a7";
+        generateBtn.style.opacity = "0.6";
+        generateBtn.style.cursor = "not-allowed";
+    }
 }
 
 // ==========================================================
@@ -482,6 +590,12 @@ async function generateFinalBill() {
                 cashReceived: finalCashReceived, 
                 changeReturned: finalCashReceived - amountToPay 
             };
+        } else if (sale.paymentMethod === 'part-payment') {
+            sale.paymentBreakdown = {
+                cash: parseFloat(document.getElementById('part-cash').value) || 0,
+                online: parseFloat(document.getElementById('part-upi').value) || 0,
+                card: parseFloat(document.getElementById('part-card').value) || 0
+            };
         }
 
         const batch = writeBatch(db);
@@ -535,12 +649,14 @@ function resetAfterSale() {
     cart = [];
     checkoutModal.classList.add('hidden');
     [customerNameInput, customerPhoneInput, customerAddressInput, discountValueInput, cashReceivedInput, productSearchInput].forEach(input => input.value = '');
+    ['part-cash', 'part-upi', 'part-card'].forEach(id => document.getElementById(id).value = '');
     discountTypeSelect.value = 'percent';
     document.getElementById('gst-rate-select').value = '0';
     selectedPaymentMethod = 'cash';
     document.querySelectorAll('.pay-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelector('.pay-btn[data-method="cash"]').classList.add('active');
     document.getElementById('cash-calc-area').classList.remove('hidden');
+    document.getElementById('part-payment-calc-area').classList.add('hidden');
     const advanceRow = document.getElementById('advance-row');
     if(advanceRow) advanceRow.style.display = 'none';
     updateCartDisplay();
@@ -721,6 +837,96 @@ async function manualSettleAll() {
 window.finalizeUnsettled = finalizeUnsettled;
 window.deleteUnsettled = deleteUnsettled;
 
+// ==========================================================
+// --- Shift Summary Function ---
+// ==========================================================
+async function showShiftSummary() {
+    const summaryModal = document.getElementById('summary-modal');
+    const summaryContent = document.getElementById('summary-content');
+    summaryModal.classList.remove('hidden');
+    summaryContent.innerHTML = '<p>Calculating accurate cash flow...</p>';
+    
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const todayStart = Timestamp.fromDate(today);
+    
+    try {
+        const salesQ = query(collection(db, 'shops', activeShopId, 'sales'), where('createdAt', '>=', todayStart));
+        const salesSnap = await getDocs(salesQ);
+        
+        let totals = { cash: 0, online: 0, total: 0 };
+        
+        salesSnap.forEach(doc => {
+            const data = doc.data();
+            
+            if (data.status === 'canceled') return;
+
+            const billTotal = data.total || 0;
+            totals.total += billTotal;
+
+            if (data.paymentMethod === 'part-payment' && data.paymentBreakdown) {
+                totals.cash += (parseFloat(data.paymentBreakdown.cash) || 0);
+                totals.online += (parseFloat(data.paymentBreakdown.upi) || 0) + 
+                                 (parseFloat(data.paymentBreakdown.online) || 0) + 
+                                 (parseFloat(data.paymentBreakdown.card) || 0);
+            } else if (data.paymentMethod === 'cash') {
+                totals.cash += billTotal;
+            } else {
+                totals.online += billTotal;
+            }
+        });
+
+        const expenseQ = query(collection(db, 'shops', activeShopId, 'expenses'), where('date', '>=', todayStart));
+        const expSnap = await getDocs(expenseQ);
+        
+        let boxExpenses = 0;
+        expSnap.forEach(doc => {
+            const expData = doc.data();
+            const cat = expData.category ? expData.category.toLowerCase() : '';
+            const source = expData.source || 'box';
+            if (cat !== 'inventory_purchase' && !cat.includes('inventory') && source === 'box') {
+                boxExpenses += (expData.amount || 0);
+            }
+        });
+
+        summaryContent.innerHTML = `
+            <div style="font-size: 15px; line-height: 1.8;">
+                <div class="summary-row"><span>💵 Today's Cash Sales:</span> <strong>+ ₹${totals.cash.toFixed(2)}</strong></div>
+                <div class="summary-row" style="color: #dc3545;"><span>📦 Shop Box Expenses:</span> <strong>- ₹${boxExpenses.toFixed(2)}</strong></div>
+                <div class="summary-row" style="border-top: 1px solid #eee; padding-top: 5px;">
+                    <span>📊 Net Cash Change:</span> <strong>₹${(totals.cash - boxExpenses).toFixed(2)}</strong>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #eef2ff;">
+                    <label style="font-size: 12px; color: #666;">Opening Cash in Box:</label>
+                    <input type="number" id="opening-cash-input" placeholder="0.00" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; font-weight: bold;">
+                    
+                    <div class="summary-row" style="margin-top: 15px; font-size: 18px; color: #28a745;">
+                        <span>💰 Cash in Hand:</span> <strong id="final-cash-display">₹${(totals.cash - boxExpenses).toFixed(2)}</strong>
+                    </div>
+                </div>
+
+                <hr>
+                <div class="summary-row"><span>🌐 Online Total (UPI+Card):</span> <strong>₹${totals.online.toFixed(2)}</strong></div>
+                <div class="summary-row" style="font-weight: 800; font-size: 18px; color: #4361ee; margin-top: 10px;">
+                    <span>🚀 Grand Total Sales:</span> <strong>₹${totals.total.toFixed(2)}</strong>
+                </div>
+            </div>
+        `;
+
+        const openingInput = document.getElementById('opening-cash-input');
+        const finalDisplay = document.getElementById('final-cash-display');
+        openingInput.addEventListener('input', () => {
+            const opening = parseFloat(openingInput.value) || 0;
+            finalDisplay.textContent = `₹${(opening + totals.cash - boxExpenses).toFixed(2)}`;
+        });
+
+    } catch (e) { 
+        console.error(e);
+        summaryContent.innerHTML = '<p style="color:red;">Error loading summary.</p>';
+    }
+}
+
 function handlePaymentMethodChange() {
     updateAllTotals();
 }
@@ -798,6 +1004,20 @@ function setupEventListeners() {
         el.addEventListener('input', updateAllTotals);
     });
     
+    ['part-cash', 'part-upi', 'part-card'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => {
+            updateAllTotals();
+            validateFinalBillButton();
+        });
+    });
+    
+    document.querySelectorAll('.part-input').forEach(input => {
+        input.addEventListener('input', updateAllTotals);
+    });
+    
+    setupPartPaymentAutoCalc();
+    
     document.getElementById('gst-rate-select').addEventListener('change', updateAllTotals);
     
     document.querySelectorAll('.pay-btn').forEach(btn => {
@@ -806,7 +1026,10 @@ function setupEventListeners() {
             btn.classList.add('active');
             selectedPaymentMethod = btn.dataset.method;
             document.getElementById('cash-calc-area').classList.toggle('hidden', selectedPaymentMethod !== 'cash');
+            const partPaymentArea = document.getElementById('part-payment-calc-area');
+            if (partPaymentArea) partPaymentArea.classList.toggle('hidden', selectedPaymentMethod !== 'part-payment');
             updateAllTotals();
+            validateFinalBillButton();
         });
     });
     
@@ -822,4 +1045,9 @@ function setupEventListeners() {
     });
     
     document.getElementById('btn-auto-settle').addEventListener('click', manualSettleAll);
+    
+    document.getElementById('btn-shift-summary').addEventListener('click', showShiftSummary);
+    document.getElementById('close-summary-modal').addEventListener('click', () => {
+        document.getElementById('summary-modal').classList.add('hidden');
+    });
 }

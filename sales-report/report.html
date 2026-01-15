@@ -178,10 +178,6 @@
                 <h2>Overall Total Sales</h2>
                 <p id="overall-total-sales">₹0.00</p>
             </div>
-            <div class="summary-box summary-box-canceled">
-                <h2>Total Canceled</h2>
-                <p id="total-canceled-amount">₹0.00</p>
-            </div>
         </section>
 
         <!-- Filter Section -->
@@ -208,8 +204,8 @@
                         <label class="cb-container"><input type="checkbox" class="data-filter" value="cash" checked> Cash</label>
                         <label class="cb-container"><input type="checkbox" class="data-filter" value="card" checked> Card</label>
                         <label class="cb-container"><input type="checkbox" class="data-filter" value="online" checked> Online</label>
+                        <label class="cb-container"><input type="checkbox" class="data-filter" value="part-payment" checked> Part Payment</label>
                         <label class="cb-container" style="color: #d35400;"><input type="checkbox" id="filter-discount" class="data-filter"> Discount Only</label>
-                        <label class="cb-container" style="color: #e74c3c;"><input type="checkbox" id="filter-canceled" class="data-filter"> Canceled</label>
                     </div>
                 </div>
 
@@ -233,10 +229,6 @@
                 <div class="summary-box">
                     <h4>Total Discount</h4>
                     <p id="filtered-total-discount">₹0.00</p>
-                </div>
-                <div class="summary-box summary-box-canceled">
-                    <h4>Filtered Canceled</h4>
-                    <p id="filtered-canceled-amount">₹0.00</p>
                 </div>
             </div>
         </section>
@@ -298,6 +290,52 @@
     </script>
     
     <script type="module" src="report.js"></script>
+
+    <!-- Edit Payment Modal -->
+    <div id="edit-payment-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Edit Payment Method</h2>
+                <button id="close-payment-modal" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- নতুন: বিলের মোট টাকা দেখানোর জন্য -->
+                <div style="background: #eef2ff; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                    <span style="font-size: 14px; color: #666;">Total Bill Amount:</span>
+                    <strong id="edit-total-display" style="font-size: 18px; color: #4361ee; display: block;">₹0.00</strong>
+                </div>
+
+                <input type="hidden" id="edit-sale-id">
+                <div class="form-group">
+                    <label>Select New Method:</label>
+                    <select id="new-payment-method" class="form-control">
+                        <option value="cash">💵 Cash</option>
+                        <option value="online">📱 UPI / QR</option>
+                        <option value="card">💳 Card</option>
+                        <option value="part-payment">🌓 Part Payment (Split)</option>
+                    </select>
+                </div>
+                
+                <div id="edit-part-area" class="hidden" style="background:#f8f9fa; padding:15px; border-radius:8px; margin-top:10px; border: 1px solid #ddd;">
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label style="font-size: 12px; color: #666; font-weight: 600;">Cash Amount:</label>
+                        <input type="number" id="edit-part-cash" placeholder="0.00" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label style="font-size: 12px; color: #666; font-weight: 600;">UPI / Online Amount:</label>
+                        <input type="number" id="edit-part-upi" placeholder="0.00" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 12px; color: #666; font-weight: 600;">Card Amount:</label>
+                        <input type="number" id="edit-part-card" placeholder="0.00" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-save-new-payment" class="btn btn-primary" style="width:100%;">Update Payment Info</button>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

@@ -472,6 +472,13 @@ h2 { margin-bottom: 20px; }
 .billing-summary-card.compact {
     margin-bottom: 0;
     border: 1px solid #eef2ff;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 15px;
+}
+
+.cash-details-box, .part-payment-box {
+    margin-top: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
 .cash-details-box {
@@ -620,6 +627,39 @@ h2 { margin-bottom: 20px; }
     padding: 15px; 
     border-radius: 10px; 
     border: 1px solid #ffeeba;
+}
+
+/* Part Payment Box */
+.part-payment-box {
+    margin-top: 15px;
+    background: #eef2ff;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #4361ee;
+}
+
+.split-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.part-input {
+    width: 120px;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: right;
+    font-size: 14px;
+}
+
+.split-total-status {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #4361ee;
+    text-align: right;
+    font-size: 14px;
 }
 
 .cash-details .input-group {

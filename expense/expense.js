@@ -407,7 +407,6 @@ function addBulkRow() {
     const tr = document.createElement('tr');
     const today = new Date().toISOString().split('T')[0];
     
-    // ফিল্টার করা ক্যাটাগরি (Inventory Purchase বাদ)
     const filteredCategories = expenseCategories.filter(cat => 
         cat.toLowerCase() !== 'inventory purchase' && 
         cat.toLowerCase() !== 'inventory_purchase'
@@ -424,11 +423,23 @@ function addBulkRow() {
                 ${catOptions}
             </select>
         </td>
+        <td>
+            <select class="bulk-method">
+                <option value="cash">Cash</option>
+                <option value="online">UPI</option>
+                <option value="card">Card</option>
+            </select>
+        </td>
+        <td>
+            <select class="bulk-source">
+                <option value="box">Shop Box</option>
+                <option value="owner">Owner Personal</option>
+            </select>
+        </td>
         <td><input type="number" class="bulk-amount" placeholder="0.00" step="0.01"></td>
         <td><button class="btn-delete remove-bulk-row">X</button></td>
     `;
 
-    // অটো-ক্যাটেগরি লজিক
     const descInput = tr.querySelector('.bulk-desc');
     const catSelect = tr.querySelector('.bulk-category');
 
@@ -464,19 +475,18 @@ if(btnSaveBulk) {
             const category = row.querySelector('.bulk-category').value;
             const desc = row.querySelector('.bulk-desc').value.trim();
             const amount = parseFloat(row.querySelector('.bulk-amount').value);
+            const method = row.querySelector('.bulk-method').value;
+            const source = row.querySelector('.bulk-source').value;
 
             if(desc && !isNaN(amount)) {
-                // নিরাপত্তা চেক: Inventory Purchase ম্যানুয়ালি যোগ করা যাবে না
                 if (category.toLowerCase().includes('inventory')) {
                     alert("⚠️ Inventory Purchase এখানে যোগ করা যাবে না। 'Add Product' পেজ ব্যবহার করুন।");
                     return;
                 }
                 
-                // তারিখটিকে লোকাল টাইমজোন অনুযায়ী প্রসেস করা
                 const [year, month, day] = dateVal.split('-').map(Number);
                 const finalDate = new Date(year, month - 1, day);
                 
-                // বর্তমান সময় যোগ করা যাতে 05:30 না দেখায়
                 const now = new Date();
                 finalDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
 
@@ -485,6 +495,8 @@ if(btnSaveBulk) {
                     category,
                     description: desc,
                     amount,
+                    method,
+                    source,
                     createdAt: Timestamp.now()
                 });
             }
