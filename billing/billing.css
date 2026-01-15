@@ -16,6 +16,68 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Poppins', sans-serif; background-color: var(--background-light); color: var(--text-color); line-height: 1.6; }
 
+/* বড় হেডিংগুলো হাইড */
+.product-selection h2, 
+.category-browse-title {
+    display: none !important;
+}
+
+/* স্লিম হেডার */
+.selection-header-slim {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* কম্প্যাক্ট সার্চ */
+.search-box-compact {
+    position: relative;
+    flex-grow: 1;
+}
+
+.search-box-compact svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+.search-box-compact #product-search {
+    width: 100%;
+    padding: 8px 10px 8px 35px !important;
+    font-size: 13px !important;
+    height: 36px !important;
+    border-radius: 6px !important;
+    border: 1px solid #ddd !important;
+}
+
+/* ক্যাটাগরি লেবেল */
+.browse-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #4361ee;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* প্রোডাক্ট লিস্ট এরিয়া */
+#category-product-list {
+    height: calc(100% - 50px);
+    overflow-y: auto;
+    padding-top: 5px;
+}
+
+/* ক্যাটাগরি নাম */
+.category-name {
+    font-size: 14px !important;
+    margin-bottom: 10px !important;
+    padding-bottom: 3px !important;
+}
+
 /* =====================================
    হেডার এবং নেভিগেশন
    ===================================== */
@@ -92,7 +154,7 @@ header nav li:last-child a:hover {
 
 
 /* =====================================
-   প্রধান বিলিং লেআউট
+   প্রধান বিলিং লেআউট (Full Screen)
    ===================================== */
 .billing-container { 
     display: grid; 
@@ -104,14 +166,27 @@ header nav li:last-child a:hover {
     height: calc(100vh - 65px); 
 }
 
+.full-screen-billing {
+    max-width: 98% !important;
+    width: 100%;
+    margin: 0 auto;
+    padding: 10px;
+    height: calc(100vh - 110px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
 .product-selection, .cart-section { 
     background-color: var(--background-white); 
     border-radius: 12px; 
     box-shadow: var(--shadow); 
-    padding: 24px; 
+    padding: 15px !important; 
     display: flex; 
     flex-direction: column; 
-    overflow: hidden; 
+    overflow: hidden;
+    height: 100%;
+    position: relative;
 }
 h2 { margin-bottom: 20px; }
 
@@ -123,16 +198,50 @@ h2 { margin-bottom: 20px; }
 .search-box svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--light-text-color); }
 
 /* সার্চ রেজাল্ট স্টাইল (ইমেজ সহ) */
-#search-results { position: absolute; background: white; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow); z-index: 10; max-height: 300px; overflow-y: auto; }
-.search-result-item { padding: 10px 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-.search-result-item:hover { background-color: #f0f0f0; }
+#search-results { 
+    position: absolute; 
+    top: 55px;
+    left: 15px;
+    right: 15px;
+    background: white; 
+    border: 1px solid #4361ee; 
+    border-radius: 8px; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+    z-index: 9999; 
+    max-height: 350px; 
+    overflow-y: auto;
+    display: none;
+}
+.search-result-item { 
+    padding: 12px 15px; 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+.search-result-item:hover { 
+    background-color: #f0f7ff; 
+}
+.search-result-item:last-child {
+    border-bottom: none;
+}
 
 .search-item-left { display: flex; align-items: center; gap: 10px; }
-.search-thumb { width: 35px; height: 35px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
+.search-thumb { 
+    width: 30px; 
+    height: 30px; 
+    object-fit: cover; 
+    border-radius: 4px; 
+    border: 1px solid #eee;
+    margin-right: 10px;
+}
 .search-thumb-placeholder { width: 35px; height: 35px; background: #eee; border-radius: 4px; display: inline-block; }
 
 .category-browse-title { font-size: 1.1em; color: var(--light-text-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 10px; }
 #category-product-list { flex-grow: 1; overflow-y: auto; margin-top: 15px; padding-right: 10px; }
+#cart-items { display: flex; flex-direction: column; flex-grow: 1; overflow-y: auto; min-height: 0; }
 .category-group { margin-bottom: 25px; }
 .category-name { font-size: 1.2em; font-weight: 600; color: var(--primary-color); margin-bottom: 15px; padding-bottom: 5px; border-bottom: 2px solid var(--primary-color); display: inline-block; }
 
@@ -209,7 +318,6 @@ h2 { margin-bottom: 20px; }
 /* =====================================
    ডান প্যানেল: বিলিং কার্ট
    ===================================== */
-#cart-items { display: flex; flex-direction: column; flex-grow: 1; overflow-y: auto; min-height: 0; }
 .empty-cart-message { text-align: center; color: var(--light-text-color); margin: auto; }
 .cart-item { 
     display: grid; 
@@ -234,77 +342,478 @@ h2 { margin-bottom: 20px; }
 .grand-total-display { text-align: left; }
 .grand-total-display .total-label { font-size: 0.9em; color: var(--light-text-color); display: block; }
 #footer-total-amount { font-size: 1.8rem; font-weight: 700; color: var(--success-color); }
+
+.cart-actions { display: flex; gap: 10px; align-items: center; }
+.btn-hold { background: #6c757d; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: background-color 0.2s; }
+.btn-hold:hover { background: #5a6268; }
+
 #proceed-to-checkout-btn { padding: 12px 25px; font-size: 1.1rem; font-weight: 600; }
 .checkout-button { background-color: var(--success-color); color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
 .checkout-button:hover:not(:disabled) { background-color: #218838; }
 .checkout-button:disabled { background-color: #a5d6a7; cursor: not-allowed; }
 
 /* =====================================
-   মডাল / পপ-আপ স্টাইল
+   মডাল / পপ-আপ স্টাইল (Full Screen)
    ===================================== */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; transition: opacity 0.2s ease; padding: 20px 0; }
 .modal-overlay.hidden { opacity: 0; pointer-events: none; }
-.modal-content { background-color: var(--background-white); padding: 0; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transform: scale(0.95); transition: transform 0.2s ease; display: flex; flex-direction: column; max-height: 95vh; overflow: hidden; }
+
+.modal-content { 
+    background-color: var(--background-white); 
+    padding: 0; 
+    border-radius: 12px; 
+    width: 90%; 
+    max-width: 500px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+    transform: scale(0.95); 
+    transition: transform 0.2s ease; 
+    display: flex; 
+    flex-direction: column; 
+    max-height: 95vh; 
+    overflow: hidden; 
+}
+
+.full-screen-modal {
+    width: 98% !important;
+    max-width: 1300px !important;
+    height: auto;
+    max-height: 95vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.section-title {
+    margin-bottom: 15px;
+    color: #4361ee;
+    border-bottom: 2px solid #eef2ff;
+    padding-bottom: 5px;
+    font-size: 1.1rem;
+    margin-top: 0;
+}
+
+.checkout-section .form-control, 
+.checkout-section input, 
+.checkout-section textarea {
+    background: #fcfcfc;
+    border: 1px solid #ddd;
+}
+
+/* Customer Info Section Alignment Fix */
+.checkout-section .form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.checkout-section label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #555;
+    display: block;
+}
+
+.checkout-section input, 
+.checkout-section textarea {
+    width: 100% !important;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+#customer-address {
+    resize: none;
+    min-height: 80px;
+}
+
+.checkout-section input:focus, 
+.checkout-section textarea:focus {
+    border-color: #4361ee;
+    outline: none;
+    background-color: #fff;
+}
+
 .modal-overlay:not(.hidden) .modal-content { transform: scale(1); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 15px 25px; flex-shrink: 0; }
 .modal-header h2 { margin-bottom: 0; }
 .close-button { background: none; border: none; font-size: 2rem; line-height: 1; cursor: pointer; color: var(--light-text-color); }
 .modal-body { padding: 20px 25px; overflow-y: auto; flex-grow: 1; }
-.customer-details-section { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-.customer-details-title { margin-bottom: 15px; font-size: 1.1rem; color: #333; }
-.customer-details-section .form-group { margin-bottom: 10px; }
-.customer-details-section .form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; }
-.customer-details-section .form-group input, .customer-details-section .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95rem; }
-.modal-body .summary-row { padding: 8px 0; display: flex; justify-content: space-between; align-items: center; }
-.modal-body .total-row { font-size: 1.3rem; font-weight: 700; color: var(--success-color); }
-.modal-body hr { border: none; border-top: 1px solid var(--border-color); margin: 10px 0; }
-.discount-input-row > span { display: flex; align-items: center; gap: 10px; }
-#discount-type { padding: 5px 8px; border: 1px solid var(--border-color); border-radius: 6px; background-color: #f9f9f9; font-size: 0.9rem; }
-#discount-value { width: 100px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; text-align: right; font-size: 1rem; }
-.payment-method { margin-top: 20px; }
-.payment-method label { display: block; margin-bottom: 8px; font-weight: 500; }
-#payment-method-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
 
-/* ক্যাশ ও পার্ট-পেমেন্ট */
-.payment-details-wrapper {
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px dashed var(--border-color);
+/* Checkout Grid Layout (3-Column) */
+.checkout-grid-three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    padding: 5px;
 }
-.payment-input-group {
+
+.checkout-section {
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #f0f0f0;
+}
+
+.payment-buttons-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.payment-buttons-vertical .pay-btn {
+    text-align: left;
+    padding: 15px;
+    font-size: 16px;
+}
+
+.billing-summary-card.compact {
+    margin-bottom: 0;
+    border: 1px solid #eef2ff;
+}
+
+.cash-details-box {
+    margin-top: 15px;
+    background: #fff9db;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #fab005;
+}
+
+@media (max-width: 1100px) {
+    .checkout-grid-three-col {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .checkout-grid-three-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Billing Summary Card */
+.billing-summary-card {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.billing-summary-card .summary-row { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 10px; 
+    font-size: 15px; 
+    align-items: center;
+}
+
+.billing-summary-card .total-row { 
+    font-size: 20px !important; 
+    color: #28a745; 
+    font-weight: 800; 
+    margin-top: 10px;
+}
+
+.discount-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.discount-group select {
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 0.9rem;
+}
+
+.discount-group input {
+    width: 100px;
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    text-align: right;
+}
+
+/* GST Configuration */
+.gst-config-box { 
+    margin: 15px 0; 
+    padding-top: 10px; 
+    border-top: 1px dashed #ccc; 
+}
+
+.gst-config-box label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.gst-config-box .form-control {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+.gst-split { 
+    display: flex; 
+    justify-content: space-between; 
+    font-size: 12px; 
+    color: #666; 
+    margin-top: 8px;
+    padding: 8px;
+    background: #fff;
+    border-radius: 6px;
+}
+
+/* Payment Method Section */
+.payment-method-section {
+    margin: 20px 0;
+}
+
+.payment-method-section label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.payment-buttons { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr 1fr; 
+    gap: 10px; 
+}
+
+.pay-btn {
+    padding: 12px;
+    border: 2px solid #eee;
+    background: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+}
+
+.pay-btn:hover {
+    border-color: #4361ee;
+    background: #f0f7ff;
+}
+
+.pay-btn.active { 
+    border-color: #4361ee; 
+    background: #eef2ff; 
+    color: #4361ee; 
+    box-shadow: 0 2px 8px rgba(67, 97, 238, 0.2);
+}
+
+/* Cash Details */
+.cash-details { 
+    margin-top: 15px; 
+    background: #fff3cd; 
+    padding: 15px; 
+    border-radius: 10px; 
+    border: 1px solid #ffeeba;
+}
+
+.cash-details .input-group {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
 }
-.payment-input-group label { font-weight: 500; }
-.payment-input-group input {
+
+.cash-details .input-group label {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.cash-details .input-group input {
     width: 130px;
     padding: 8px;
-    border: 1px solid var(--border-color);
+    border: 1px solid #ffc107;
     border-radius: 6px;
     text-align: right;
     font-size: 1rem;
 }
 
-.return-amount-display {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 10px;
-    padding: 10px;
-    background-color: #e9f2ff;
-    border: 1px solid var(--primary-color);
+.return-box { 
+    margin-top: 10px; 
+    font-size: 18px; 
+    color: #856404;
+    text-align: right;
+    padding: 8px;
+    background: #fff;
     border-radius: 6px;
 }
-.return-amount-display span:first-child { font-weight: 600; color: var(--primary-color); }
-.return-amount-display span:last-child { font-size: 1.2rem; font-weight: 700; color: var(--primary-color); }
+
+.return-box strong {
+    color: #28a745;
+    font-size: 20px;
+}
+
+/* Customer Details Section */
+.customer-details-section { 
+    margin-bottom: 20px; 
+    border-bottom: 1px solid #eee; 
+    padding-bottom: 20px; 
+}
+
+.customer-details-title { 
+    margin-bottom: 15px; 
+    font-size: 1.1rem; 
+    color: #333; 
+}
+
+.customer-details-section .form-group { 
+    margin-bottom: 10px; 
+}
+
+.customer-details-section .form-group label { 
+    display: block; 
+    margin-bottom: 5px; 
+    font-weight: 500; 
+    font-size: 0.9rem; 
+}
+
+.customer-details-section .form-group input, 
+.customer-details-section .form-group textarea { 
+    width: 100%; 
+    padding: 8px; 
+    border: 1px solid #ccc; 
+    border-radius: 4px; 
+    font-size: 0.95rem; 
+}
+
+.modal-body hr { 
+    border: none; 
+    border-top: 1px solid var(--border-color); 
+    margin: 10px 0; 
+}
 
 .modal-footer { border-top: 1px solid var(--border-color); padding: 20px 25px; flex-shrink: 0; }
 .final-bill-btn { width: 100%; padding: 15px; font-size: 1.2rem; }
 
 /* Helper ক্লাস */
 .hidden { display: none !important; }
+
+/* =====================================
+   Unsettled Bills Dashboard & Modal (Slim Version)
+   ===================================== */
+.billing-dashboard-bar-slim {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 15px;
+    padding: 5px 20px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+.unsettled-mini-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #fff3cd;
+    color: #856404;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid #ffeeba;
+    position: relative;
+}
+
+.unsettled-mini-badge:hover {
+    background: #ffeeba;
+}
+
+.btn-xs-success {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+.btn-xs-success:hover { background: #218838; }
+
+.notify-dot {
+    width: 8px;
+    height: 8px;
+    background: #ff4d4d;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+/* Old styles - keeping for backward compatibility */
+.billing-dashboard-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 15px 24px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+.status-card {
+    position: relative;
+    background: #f8f9fa;
+    padding: 10px 25px;
+    border-radius: 10px;
+    border-left: 5px solid #ffc107;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.status-card:hover { background: #e9ecef; }
+
+.status-info { display: flex; flex-direction: column; }
+.status-info .label { font-size: 0.85rem; color: var(--light-text-color); }
+.status-info strong { font-size: 1.5rem; color: #333; }
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.btn-mini-success {
+    background: var(--success-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+.btn-mini-success:hover { background: #218838; }
+
+.wide-modal { max-width: 800px !important; }
+.unsettled-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.unsettled-table th { background: #f1f3f5; padding: 12px; text-align: left; font-weight: 600; border-bottom: 2px solid var(--border-color); }
+.unsettled-table td { padding: 12px; border-bottom: 1px solid #eee; }
+.unsettled-table tr:hover { background: #f9f9f9; }
+
+.btn-sm { padding: 5px 10px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; margin-right: 5px; transition: all 0.2s; }
+.btn-sm.btn-success { background: var(--success-color); color: white; }
+.btn-sm.btn-success:hover { background: #218838; }
+.btn-sm.btn-danger { background: var(--danger-color); color: white; }
+.btn-sm.btn-danger:hover { background: #c82333; }
 
 /* =====================================
    রেসপন্সিভ ডিজাইন

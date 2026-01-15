@@ -22,18 +22,29 @@
     <!-- ✅ ২. Navbar প্লেসহোল্ডার (এখানে JS দিয়ে মেনু লোড হবে) -->
     <div id="navbar-placeholder"></div>
 
-    <main class="billing-container">
+    <!-- Unsettled Bills Dashboard Bar (Slim Version) -->
+    <section class="billing-dashboard-bar-slim">
+        <div class="unsettled-mini-badge" id="open-unsettled-btn">
+            <span class="notify-dot" id="unsettled-dot" style="display: none;"></span>
+            ⏳ <span id="unsettled-count">0</span> Pending
+        </div>
+        <button id="btn-auto-settle" class="btn-xs-success">Settle All (Cash)</button>
+    </section>
+
+    <main class="billing-container full-screen-billing">
         
         <!-- বাম দিক: প্রোডাক্ট খোঁজা -->
         <div class="product-selection">
-            <h2>Search & Browse Products</h2>
-            <div class="search-box">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="product-search" placeholder="Scan barcode or search by name..." autocomplete="off">
+            <div class="selection-header-slim">
+                <div class="search-box-compact">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="product-search" placeholder="Search name or scan barcode (F2)..." autocomplete="off">
+                </div>
+                <span class="browse-label">Categories:</span>
             </div>
+            
             <div id="search-results"></div>
             
-            <h3 class="category-browse-title">Or Browse by Category</h3>
             <div id="category-product-list">
                 <p class="loading-message">Loading products...</p>
             </div>
@@ -51,7 +62,10 @@
                     <span class="total-label">Grand Total</span>
                     <span id="footer-total-amount">₹0.00</span>
                 </div>
-                <button id="proceed-to-checkout-btn" class="checkout-button" disabled>Checkout</button>
+                <div class="cart-actions">
+                    <button id="btn-hold-bill" class="btn-hold">Hold Bill (F4)</button>
+                    <button id="proceed-to-checkout-btn" class="checkout-button" disabled>Checkout (F8)</button>
+                </div>
             </div>
         </div>
     </main>
@@ -60,118 +74,121 @@
     <!-- ===== চেকআউট মডাল (Popup) শুরু ===== -->
     <!-- ============================================= -->
     <div id="checkout-modal" class="modal-overlay hidden">
-        <div class="modal-content">
+        <div class="modal-content full-screen-modal">
             <div class="modal-header">
-                <h2>Finalize Bill</h2>
+                <h2>Finalize Bill & Payment</h2>
                 <button id="close-modal-btn" class="close-button">&times;</button>
             </div>
             <div class="modal-body">
-                
-                <!-- কাস্টমার ডিটেইলস সেকশন -->
-                <div class="customer-details-section">
-                    <h4 class="customer-details-title">Customer Details (Optional)</h4>
-                    <div class="form-group">
-                        <label for="customer-name">Name:</label>
-                        <input type="text" id="customer-name" placeholder="Walk-in Customer">
-                    </div>
-                    <div class="form-group">
-                        <label for="customer-phone">Phone:</label>
-                        <input type="tel" id="customer-phone" placeholder="e.g., 9876543210">
-                    </div>
-                    <div class="form-group">
-                        <label for="customer-address">Address:</label>
-                        <textarea id="customer-address" rows="2" placeholder="Customer address"></textarea>
-                    </div>
-                </div>
-
-                <!-- বিলিং ডিটেইলস সেকশন -->
-                <div class="billing-details">
-                    <div class="summary-row">
-                        <span>Subtotal:</span>
-                        <span id="modal-subtotal">₹0.00</span>
-                    </div>
-
-                    <div class="summary-row discount-input-row">
-                        <span>
-                            <label for="discount-value">Discount</label>
-                            <select id="discount-type">
-                                <option value="percent">%</option>
-                                <option value="amount">₹</option>
-                            </select>
-                        </span>
-                        <input type="number" id="discount-value" placeholder="0" min="0">
-                    </div>
-                    <div class="summary-row">
-                        <span>Discount Amount:</span>
-                        <span id="modal-discount">₹0.00</span>
-                    </div>
-
-                    <div class="summary-row gst-row">
-                        <span>
-                            <input type="checkbox" id="gst-toggle" checked> 
-                            <label for="gst-toggle">GST (5%)</label>
-                        </span>
-                        <span id="modal-tax">₹0.00</span>
-                    </div>
-
-                    <!-- Advance Booking Adjustment Row -->
-                    <div class="summary-row" id="advance-row" style="display: none; color: #d63384; font-weight: 600;">
-                        <span>Less Advance:</span>
-                        <span id="modal-advance">₹0.00</span>
-                    </div>
-
-                    <hr>
-                    <div class="summary-row total-row">
-                        <span>Grand Total:</span>
-                        <span id="modal-total-amount">₹0.00</span>
-                    </div>
-                </div>
-
-                <!-- পেমেন্ট মেথড সেকশন -->
-                <div class="payment-method">
-                    <label for="payment-method-select">Payment Method</label>
-                    <select id="payment-method-select" name="payment-method">
-                        <option value="cash" selected>Cash</option>
-                        <option value="card">Card</option>
-                        <option value="online">Online (UPI/etc)</option>
-                        <option value="part-payment">Part Payment</option>
-                    </select>
-                </div>
-
-                <!-- পেমেন্ট ডিটেইলস -->
-                <div class="payment-details-wrapper">
-                    <!-- ক্যাশ পেমেন্টের জন্য -->
-                    <div id="cash-payment-details" class="hidden">
-                        <div class="payment-input-group">
-                            <label for="cash-received">Cash Received:</label>
-                            <input type="number" id="cash-received" placeholder="0.00">
+                <div class="checkout-grid-three-col">
+                    
+                    <!-- কলাম ১: কাস্টমার তথ্য -->
+                    <div class="checkout-section">
+                        <h4 class="section-title">👤 Customer Info</h4>
+                        <div class="form-group">
+                            <label>Name:</label>
+                            <input type="text" id="customer-name" placeholder="Walk-in Customer">
                         </div>
-                        <div class="return-amount-display">
-                            <span>Return Amount:</span>
-                            <span id="return-amount">₹0.00</span>
+                        <div class="form-group">
+                            <label>Phone:</label>
+                            <input type="tel" id="customer-phone" placeholder="9876543210">
+                        </div>
+                        <div class="form-group">
+                            <label>Address:</label>
+                            <textarea id="customer-address" rows="4" placeholder="Customer address"></textarea>
                         </div>
                     </div>
 
-                    <!-- পার্ট পেমেন্টের জন্য -->
-                    <div id="part-payment-details" class="hidden">
-                        <div class="payment-input-group">
-                            <label for="cash-amount">Cash Amount:</label>
-                            <input type="number" id="cash-amount" placeholder="0.00">
-                        </div>
-                        <div class="payment-input-group">
-                            <label for="card-amount">Card/Online:</label>
-                            <input type="number" id="card-amount" placeholder="0.00">
+                    <!-- কলাম ২: বিল সামারি এবং ট্যাক্স -->
+                    <div class="checkout-section">
+                        <h4 class="section-title">💰 Bill Summary</h4>
+                        <div class="billing-summary-card compact">
+                            <div class="summary-row"><span>Subtotal:</span> <strong id="modal-subtotal">₹0.00</strong></div>
+                            
+                            <div class="summary-row">
+                                <span>Discount:</span>
+                                <div class="discount-group">
+                                    <select id="discount-type"><option value="percent">%</option><option value="amount">₹</option></select>
+                                    <input type="number" id="discount-value" value="0">
+                                </div>
+                            </div>
+
+                            <div class="gst-config-box">
+                                <label>Tax (GST):</label>
+                                <select id="gst-rate-select" class="form-control">
+                                    <option value="0" selected>No GST (0%)</option>
+                                    <option value="5">GST 5%</option>
+                                    <option value="12">GST 12%</option>
+                                    <option value="18">GST 18%</option>
+                                </select>
+                                <div id="gst-split-display" class="gst-split hidden">
+                                    <div>CGST: <span id="cgst-amt">₹0.00</span></div>
+                                    <div>SGST: <span id="sgst-amt">₹0.00</span></div>
+                                </div>
+                            </div>
+
+                            <div class="summary-row" id="advance-row" style="display: none; color: #d63384; font-weight: 600;">
+                                <span>Less Advance:</span>
+                                <span id="modal-advance">₹0.00</span>
+                            </div>
+
+                            <hr>
+                            <div class="summary-row total-row"><span>Grand Total:</span> <span id="modal-total-amount">₹0.00</span></div>
                         </div>
                     </div>
-                </div>
 
+                    <!-- কলাম ৩: পেমেন্ট এবং ক্যালকুলেটর -->
+                    <div class="checkout-section">
+                        <h4 class="section-title">💳 Payment</h4>
+                        <div class="payment-buttons-vertical">
+                            <button type="button" class="pay-btn active" data-method="cash">💵 Cash Payment</button>
+                            <button type="button" class="pay-btn" data-method="online">📱 UPI / QR Scan</button>
+                            <button type="button" class="pay-btn" data-method="card">💳 Card Payment</button>
+                        </div>
+
+                        <div id="cash-calc-area" class="cash-details-box">
+                            <div class="input-group">
+                                <label>Cash Received:</label>
+                                <input type="number" id="cash-received" placeholder="0.00" style="font-size: 1.2rem; font-weight: bold;">
+                            </div>
+                            <div class="return-box">Return: <strong id="return-amount">₹0.00</strong></div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
             <div class="modal-footer">
-                <button id="generate-bill-btn" class="checkout-button final-bill-btn" disabled>Generate Bill & Finalize</button>
+                <button id="generate-bill-btn" class="checkout-button final-bill-btn">Generate Bill & Finalize (F10)</button>
             </div>
         </div>
     </div>
     <!-- ===== চেকআউট মডাল শেষ ===== -->
+
+    <!-- Unsettled Bills Modal -->
+    <div id="unsettled-modal" class="modal-overlay hidden">
+        <div class="modal-content wide-modal">
+            <div class="modal-header">
+                <h2>Pending / Unsettled Bills</h2>
+                <button id="close-unsettled-modal" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table class="unsettled-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="unsettled-list-body">
+                        <!-- JS দিয়ে লোড হবে -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <!-- Firebase SDK -->
     <script type="importmap">

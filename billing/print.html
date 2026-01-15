@@ -57,13 +57,22 @@
                 <span>Subtotal</span>
                 <span id="receipt-subtotal"></span>
             </div>
+            
+            <!-- জিএসটি ব্রেকডাউন -->
+            <div id="gst-details-area" style="display: none;">
+                <div class="summary-line">
+                    <span>CGST (<span id="cgst-rate-print"></span>%)</span>
+                    <span id="receipt-cgst"></span>
+                </div>
+                <div class="summary-line">
+                    <span>SGST (<span id="sgst-rate-print"></span>%)</span>
+                    <span id="receipt-sgst"></span>
+                </div>
+            </div>
+
             <div class="summary-line" id="discount-line" style="display: none;">
                 <span>Discount</span>
                 <span id="receipt-discount"></span>
-            </div>
-            <div class="summary-line" id="gst-line" style="display: none;">
-                <span>GST (<span id="gst-rate"></span>%)</span>
-                <span id="receipt-tax"></span>
             </div>
             <hr class="separator">
             <div class="summary-line grand-total">

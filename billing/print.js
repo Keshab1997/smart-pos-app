@@ -104,6 +104,25 @@ async function loadAndPrintBill() {
             });
 
             document.getElementById('receipt-subtotal').textContent = `₹${saleData.subtotal.toFixed(2)}`;
+            
+            // জিএসটি ডাটা রেন্ডার
+            if (saleData.gstData && saleData.gstData.rate > 0) {
+                document.getElementById('gst-details-area').style.display = 'block';
+                const halfRate = (saleData.gstData.rate / 2).toFixed(1);
+                document.getElementById('cgst-rate-print').textContent = halfRate;
+                document.getElementById('sgst-rate-print').textContent = halfRate;
+                document.getElementById('receipt-cgst').textContent = `₹${saleData.gstData.cgst.toFixed(2)}`;
+                document.getElementById('receipt-sgst').textContent = `₹${saleData.gstData.sgst.toFixed(2)}`;
+            } else {
+                document.getElementById('gst-details-area').style.display = 'none';
+            }
+
+            // ডিসকাউন্ট
+            if (saleData.discount > 0) {
+                document.getElementById('discount-line').style.display = 'flex';
+                document.getElementById('receipt-discount').textContent = `- ₹${saleData.discount.toFixed(2)}`;
+            }
+
             document.getElementById('receipt-total').textContent = `₹${(saleData.finalPaidAmount || saleData.total).toFixed(2)}`;
             document.getElementById('payment-method').textContent = saleData.paymentMethod.toUpperCase();
 
@@ -142,8 +161,19 @@ async function loadAndPrintBill() {
         fetchAndRenderBill(urlUid, true); 
     } else {
         onAuthStateChanged(auth, (user) => {
-            if (user) fetchAndRenderBill(user.uid, false);
-            else document.body.innerHTML = '<h1>Please login to view this page.</h1>';
+            if (user) {
+                // স্টাফ বা মালিক যেই হোক, আমরা activeShopId ব্যবহার করব
+                const activeShopId = localStorage.getItem('activeShopId');
+                
+                if (activeShopId) {
+                    fetchAndRenderBill(activeShopId, false);
+                } else {
+                    // যদি কোনো কারণে activeShopId না থাকে, তবে ইউজারের নিজের আইডি ট্রাই করবে
+                    fetchAndRenderBill(user.uid, false);
+                }
+            } else {
+                document.body.innerHTML = '<h1>Please login to view this page.</h1>';
+            }
         });
     }
 }

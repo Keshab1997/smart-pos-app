@@ -6,7 +6,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
-    collection, doc, getDocs, getDoc, updateDoc, query, where, orderBy, writeBatch, serverTimestamp, increment, runTransaction
+    collection, doc, getDocs, getDoc, updateDoc, query, where, orderBy, writeBatch, serverTimestamp, increment, runTransaction, addDoc, onSnapshot, deleteDoc
 } from 'firebase/firestore';
 
 // ==========================================================
@@ -21,19 +21,11 @@ const proceedToCheckoutBtn = document.getElementById('proceed-to-checkout-btn');
 const checkoutModal = document.getElementById('checkout-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const modalSubtotalEl = document.getElementById('modal-subtotal');
-const gstToggle = document.getElementById('gst-toggle');
-const modalTaxEl = document.getElementById('modal-tax');
 const modalTotalAmountEl = document.getElementById('modal-total-amount');
 const discountTypeSelect = document.getElementById('discount-type');
 const discountValueInput = document.getElementById('discount-value');
-const modalDiscountEl = document.getElementById('modal-discount');
-const paymentMethodSelect = document.getElementById('payment-method-select');
-const partPaymentDetails = document.getElementById('part-payment-details');
-const cashPaymentDetails = document.getElementById('cash-payment-details');
 const cashReceivedInput = document.getElementById('cash-received');
 const returnAmountDisplay = document.getElementById('return-amount');
-const cashAmountInput = document.getElementById('cash-amount');
-const cardAmountInput = document.getElementById('card-amount');
 const generateBillBtn = document.getElementById('generate-bill-btn');
 const customerNameInput = document.getElementById('customer-name');
 const customerPhoneInput = document.getElementById('customer-phone');
@@ -47,6 +39,7 @@ let allProducts = [];
 let currentTotals = { subtotal: 0, discount: 0, tax: 0, total: 0, advancePaid: 0, payableTotal: 0 };
 let activeShopId = null;
 let bookingData = null;
+let selectedPaymentMethod = 'cash';
 
 // ==========================================================
 // --- Authentication & Initialization ---
@@ -70,6 +63,8 @@ function initializeBillingPage() {
     setupEventListeners();
     handlePaymentMethodChange();
     checkPendingBooking();
+    listenUnsettledBills();
+    autoSettleOldBills();
 }
 
 // ==========================================================
@@ -330,9 +325,14 @@ function updateAllTotals() {
     let discountAmount = (discountType === 'percent') ? (subtotal * discountValue) / 100 : discountValue;
     if (discountAmount > subtotal) discountAmount = subtotal;
     
-    const discountedSubtotal = subtotal - discountAmount;
-    const tax = gstToggle.checked ? discountedSubtotal * 0.05 : 0;
-    const total = discountedSubtotal + tax;
+    const taxableAmount = subtotal - discountAmount;
+    
+    const gstRate = parseFloat(document.getElementById('gst-rate-select').value);
+    const totalGst = taxableAmount * (gstRate / 100);
+    const cgst = totalGst / 2;
+    const sgst = totalGst / 2;
+    
+    const total = taxableAmount + totalGst;
 
     let advancePaid = 0;
     const advanceRow = document.getElementById('advance-row');
@@ -349,22 +349,31 @@ function updateAllTotals() {
     }
 
     const payableTotal = Math.max(0, total - advancePaid);
-    currentTotals = { subtotal, discount: discountAmount, tax, total, advancePaid, payableTotal };
+    currentTotals = { subtotal, discount: discountAmount, tax: totalGst, total, advancePaid, payableTotal };
 
     footerTotalAmountEl.textContent = `₹${total.toFixed(2)}`;
     modalSubtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
-    modalDiscountEl.textContent = `- ₹${discountAmount.toFixed(2)}`;
-    modalTaxEl.textContent = `₹${tax.toFixed(2)}`;
     modalTotalAmountEl.textContent = `₹${payableTotal.toFixed(2)}`;
+    
+    const gstSplitDisplay = document.getElementById('gst-split-display');
+    const cgstAmtEl = document.getElementById('cgst-amt');
+    const sgstAmtEl = document.getElementById('sgst-amt');
+    
+    if (gstRate > 0) {
+        if (gstSplitDisplay) gstSplitDisplay.classList.remove('hidden');
+        if (cgstAmtEl) cgstAmtEl.textContent = `₹${cgst.toFixed(2)}`;
+        if (sgstAmtEl) sgstAmtEl.textContent = `₹${sgst.toFixed(2)}`;
+    } else {
+        if (gstSplitDisplay) gstSplitDisplay.classList.add('hidden');
+    }
 
     updatePaymentDetails();
 }
 
 function updatePaymentDetails() {
-    const method = paymentMethodSelect.value;
     const amountToPay = currentTotals.payableTotal;
 
-    if (method === 'cash') {
+    if (selectedPaymentMethod === 'cash') {
         const cashReceived = parseFloat(cashReceivedInput.value);
         let returnAmount = 0;
         if (!isNaN(cashReceived) && cashReceived >= amountToPay) {
@@ -378,16 +387,11 @@ function updatePaymentDetails() {
 function validateFinalBillButton() {
     let isValid = false;
     if (cart.length > 0) {
-        const method = paymentMethodSelect.value;
         const amountToPay = currentTotals.payableTotal;
 
-        if (method === 'cash') {
+        if (selectedPaymentMethod === 'cash') {
             const cashReceived = parseFloat(cashReceivedInput.value);
             isValid = isNaN(cashReceived) || cashReceived >= amountToPay;
-        } else if (method === 'part-payment') {
-            const cashAmount = parseFloat(cashAmountInput.value) || 0;
-            const cardAmount = parseFloat(cardAmountInput.value) || 0;
-            isValid = Math.abs((cashAmount + cardAmount) - amountToPay) < 0.01;
         } else {
             isValid = true;
         }
@@ -428,6 +432,10 @@ async function generateFinalBill() {
 
     try {
         const newBillNo = await getNextBillNumber();
+        const gstRate = parseFloat(document.getElementById('gst-rate-select').value);
+        const cgst = parseFloat(document.getElementById('cgst-amt').textContent.replace('₹','')) || 0;
+        const sgst = parseFloat(document.getElementById('sgst-amt').textContent.replace('₹','')) || 0;
+        
         const sale = {
             billNo: newBillNo,
             items: cart.map(item => ({
@@ -436,7 +444,6 @@ async function generateFinalBill() {
                 quantity: item.quantity,
                 price: item.sellingPrice || 0, 
                 category: item.category || 'N/A',
-                // ✅ এখানে costPrice সেভ করা হচ্ছে যা রিপোর্ট ফাইলে কাজে লাগবে
                 costPrice: item.costPrice || item.purchasePrice || 0
             })),
             subtotal: currentTotals.subtotal,
@@ -445,12 +452,24 @@ async function generateFinalBill() {
             total: currentTotals.total,
             advanceAdjusted: currentTotals.advancePaid,
             finalPaidAmount: currentTotals.payableTotal,
-            paymentMethod: paymentMethodSelect.value,
-            gstApplied: gstToggle.checked,
-            customerDetails: { name: customerNameInput.value.trim() || 'Walk-in Customer', phone: customerPhoneInput.value.trim(), address: customerAddressInput.value.trim() },
+            paymentMethod: selectedPaymentMethod,
+            gstApplied: gstRate > 0,
+            gstData: {
+                rate: gstRate,
+                cgst: cgst,
+                sgst: sgst,
+                totalGst: currentTotals.tax
+            },
+            customerDetails: { 
+                name: customerNameInput.value.trim() || 'Walk-in Customer', 
+                phone: customerPhoneInput.value.trim(), 
+                address: customerAddressInput.value.trim() 
+            },
             createdAt: serverTimestamp(),
-            discountDetails: { type: discountTypeSelect.value, value: parseFloat(discountValueInput.value) || 0 },
-            gstRate: 5,
+            discountDetails: { 
+                type: discountTypeSelect.value, 
+                value: parseFloat(discountValueInput.value) || 0 
+            },
             bookingId: bookingData ? bookingData.id : null
         };
 
@@ -459,9 +478,10 @@ async function generateFinalBill() {
         if (sale.paymentMethod === 'cash') {
             const cashReceived = parseFloat(cashReceivedInput.value);
             const finalCashReceived = isNaN(cashReceived) ? amountToPay : cashReceived;
-            sale.paymentBreakdown = { cashReceived: finalCashReceived, changeReturned: finalCashReceived - amountToPay };
-        } else if (sale.paymentMethod === 'part-payment') {
-            sale.paymentBreakdown = { cash: parseFloat(cashAmountInput.value) || 0, card_or_online: parseFloat(cardAmountInput.value) || 0 };
+            sale.paymentBreakdown = { 
+                cashReceived: finalCashReceived, 
+                changeReturned: finalCashReceived - amountToPay 
+            };
         }
 
         const batch = writeBatch(db);
@@ -498,10 +518,9 @@ function preCheckoutValidation() {
         alert("Cart is empty.");
         return false;
     }
-    const method = paymentMethodSelect.value;
     const amountToPay = currentTotals.payableTotal;
 
-    if (method === 'cash') {
+    if (selectedPaymentMethod === 'cash') {
         const cashReceived = parseFloat(cashReceivedInput.value);
         if (!isNaN(cashReceived) && cashReceived < amountToPay) {
             alert("Cash received is less than payable amount.");
@@ -509,30 +528,200 @@ function preCheckoutValidation() {
             return false;
         }
     }
-    if (method === 'part-payment' && Math.abs(((parseFloat(cashAmountInput.value) || 0) + (parseFloat(cardAmountInput.value) || 0)) - amountToPay) > 0.01) {
-        alert("Part payment amounts do not match payable amount.");
-        return false;
-    }
     return true;
 }
 
 function resetAfterSale() {
     cart = [];
     checkoutModal.classList.add('hidden');
-    [customerNameInput, customerPhoneInput, customerAddressInput, discountValueInput, cashReceivedInput, cashAmountInput, cardAmountInput, productSearchInput].forEach(input => input.value = '');
+    [customerNameInput, customerPhoneInput, customerAddressInput, discountValueInput, cashReceivedInput, productSearchInput].forEach(input => input.value = '');
     discountTypeSelect.value = 'percent';
-    gstToggle.checked = true;
-    paymentMethodSelect.value = 'cash';
+    document.getElementById('gst-rate-select').value = '0';
+    selectedPaymentMethod = 'cash';
+    document.querySelectorAll('.pay-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector('.pay-btn[data-method="cash"]').classList.add('active');
+    document.getElementById('cash-calc-area').classList.remove('hidden');
     const advanceRow = document.getElementById('advance-row');
     if(advanceRow) advanceRow.style.display = 'none';
     updateCartDisplay();
-    handlePaymentMethodChange();
 }
 
+// ==========================================================
+// --- Hold/Unsettled Bill Functions ---
+// ==========================================================
+async function holdCurrentBill() {
+    if (cart.length === 0) {
+        alert("Cart is empty!");
+        return;
+    }
+    
+    const billData = {
+        items: cart,
+        subtotal: currentTotals.subtotal,
+        discount: currentTotals.discount,
+        tax: currentTotals.tax,
+        total: currentTotals.total,
+        customerDetails: {
+            name: customerNameInput.value || 'Walk-in Customer',
+            phone: customerPhoneInput.value || ''
+        },
+        status: 'unsettled',
+        createdAt: serverTimestamp()
+    };
+
+    try {
+        await addDoc(collection(db, 'shops', activeShopId, 'unsettled_bills'), billData);
+        alert("Bill put on HOLD.");
+        resetAfterSale();
+    } catch (e) {
+        console.error("Error holding bill:", e);
+        alert("Failed to hold bill.");
+    }
+}
+
+function listenUnsettledBills() {
+    const q = query(collection(db, 'shops', activeShopId, 'unsettled_bills'), orderBy('createdAt', 'desc'));
+    onSnapshot(q, (snapshot) => {
+        const count = snapshot.size;
+        document.getElementById('unsettled-count').textContent = count;
+        document.getElementById('unsettled-dot').style.display = count > 0 ? 'block' : 'none';
+        renderUnsettledList(snapshot);
+    });
+}
+
+function renderUnsettledList(snapshot) {
+    const tbody = document.getElementById('unsettled-list-body');
+    tbody.innerHTML = '';
+    
+    if (snapshot.empty) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">No pending bills</td></tr>';
+        return;
+    }
+    
+    snapshot.forEach(docSnap => {
+        const bill = docSnap.data();
+        const time = bill.createdAt ? bill.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Now';
+        const itemsSummary = bill.items.map(i => i.name).join(', ').substring(0, 30) + '...';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${time}</td>
+            <td>${bill.customerDetails.name}</td>
+            <td><small>${itemsSummary}</small></td>
+            <td><strong>₹${bill.total.toFixed(2)}</strong></td>
+            <td>
+                <button class="btn-sm btn-success" onclick="window.finalizeUnsettled('${docSnap.id}')">Pay</button>
+                <button class="btn-sm btn-danger" onclick="window.deleteUnsettled('${docSnap.id}')">🗑️</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+async function finalizeUnsettled(billId) {
+    try {
+        const billRef = doc(db, 'shops', activeShopId, 'unsettled_bills', billId);
+        const billSnap = await getDoc(billRef);
+        
+        if (!billSnap.exists()) {
+            alert("Bill not found!");
+            return;
+        }
+        
+        const billData = billSnap.data();
+        cart = billData.items;
+        customerNameInput.value = billData.customerDetails.name || '';
+        customerPhoneInput.value = billData.customerDetails.phone || '';
+        
+        updateCartDisplay();
+        document.getElementById('unsettled-modal').classList.add('hidden');
+        checkoutModal.classList.remove('hidden');
+        
+        await deleteDoc(billRef);
+    } catch (e) {
+        console.error("Error finalizing unsettled bill:", e);
+        alert("Failed to load bill.");
+    }
+}
+
+async function deleteUnsettled(billId) {
+    if (!confirm("Delete this pending bill?")) return;
+    
+    try {
+        await deleteDoc(doc(db, 'shops', activeShopId, 'unsettled_bills', billId));
+    } catch (e) {
+        console.error("Error deleting unsettled bill:", e);
+        alert("Failed to delete bill.");
+    }
+}
+
+async function autoSettleOldBills() {
+    const startOfToday = new Date();
+    startOfToday.setHours(0,0,0,0);
+
+    const q = query(collection(db, 'shops', activeShopId, 'unsettled_bills'), where('createdAt', '<', startOfToday));
+    const snapshot = await getDocs(q);
+
+    if (!snapshot.empty) {
+        const batch = writeBatch(db);
+        snapshot.forEach(billDoc => {
+            const data = billDoc.data();
+            const saleRef = doc(collection(db, 'shops', activeShopId, 'sales'));
+            batch.set(saleRef, { 
+                ...data, 
+                status: 'completed', 
+                paymentMethod: 'cash', 
+                settledAt: serverTimestamp(), 
+                isAutoSettled: true,
+                billNo: `AUTO-${Date.now()}`
+            });
+            batch.delete(billDoc.ref);
+        });
+        await batch.commit();
+        alert(`✅ ${snapshot.size} forgotten bills from yesterday settled as CASH.`);
+    }
+}
+
+async function manualSettleAll() {
+    const q = query(collection(db, 'shops', activeShopId, 'unsettled_bills'));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+        alert("No pending bills to settle.");
+        return;
+    }
+
+    if (!confirm(`Settle all ${snapshot.size} pending bills as CASH?`)) return;
+
+    const batch = writeBatch(db);
+    snapshot.forEach(billDoc => {
+        const data = billDoc.data();
+        const saleRef = doc(collection(db, 'shops', activeShopId, 'sales'));
+        batch.set(saleRef, { 
+            ...data, 
+            status: 'completed', 
+            paymentMethod: 'cash', 
+            settledAt: serverTimestamp(), 
+            isAutoSettled: true,
+            billNo: `MANUAL-${Date.now()}`
+        });
+        batch.delete(billDoc.ref);
+    });
+    
+    try {
+        await batch.commit();
+        alert(`✅ ${snapshot.size} bills settled successfully.`);
+    } catch (e) {
+        console.error("Error settling bills:", e);
+        alert("Failed to settle bills.");
+    }
+}
+
+// Make functions globally accessible
+window.finalizeUnsettled = finalizeUnsettled;
+window.deleteUnsettled = deleteUnsettled;
+
 function handlePaymentMethodChange() {
-    const method = paymentMethodSelect.value;
-    cashPaymentDetails.classList.toggle('hidden', method !== 'cash');
-    partPaymentDetails.classList.toggle('hidden', method !== 'part-payment');
     updateAllTotals();
 }
 
@@ -546,12 +735,14 @@ function setupEventListeners() {
         const activeEl = document.activeElement;
         const isTypingInInput = activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA';
 
-        // F2 = সার্চ বক্সে ফোকাস
         if (e.key === 'F2') {
             e.preventDefault();
             productSearchInput.focus();
         }
-        // F8 = চেকআউট মডাল ওপেন
+        if (e.key === 'F4') {
+            e.preventDefault();
+            holdCurrentBill();
+        }
         if (e.key === 'F8') {
             e.preventDefault();
             if (proceedToCheckoutBtn && !proceedToCheckoutBtn.disabled) {
@@ -603,10 +794,32 @@ function setupEventListeners() {
         }
     });
     
-    [gstToggle, discountTypeSelect, discountValueInput, cashReceivedInput, cashAmountInput, cardAmountInput].forEach(el => {
+    [discountTypeSelect, discountValueInput, cashReceivedInput].forEach(el => {
         el.addEventListener('input', updateAllTotals);
     });
     
-    paymentMethodSelect.addEventListener('change', handlePaymentMethodChange);
+    document.getElementById('gst-rate-select').addEventListener('change', updateAllTotals);
+    
+    document.querySelectorAll('.pay-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedPaymentMethod = btn.dataset.method;
+            document.getElementById('cash-calc-area').classList.toggle('hidden', selectedPaymentMethod !== 'cash');
+            updateAllTotals();
+        });
+    });
+    
     generateBillBtn.addEventListener('click', generateFinalBill);
+    
+    document.getElementById('btn-hold-bill').addEventListener('click', holdCurrentBill);
+    
+    document.getElementById('open-unsettled-btn').addEventListener('click', () => {
+        document.getElementById('unsettled-modal').classList.remove('hidden');
+    });
+    document.getElementById('close-unsettled-modal').addEventListener('click', () => {
+        document.getElementById('unsettled-modal').classList.add('hidden');
+    });
+    
+    document.getElementById('btn-auto-settle').addEventListener('click', manualSettleAll);
 }
