@@ -51,6 +51,14 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         activeShopId = localStorage.getItem('activeShopId');
         if (activeShopId) {
+            // রোল-বেসড ভিউ কন্ট্রোল
+            const userRole = localStorage.getItem('userRole');
+            const statsSection = document.querySelector('.stats-section');
+            
+            if (userRole !== 'owner' && statsSection) {
+                statsSection.style.display = 'none';
+            }
+            
             createImageModal();
             loadInventory();
             if (!hasEventListenersSetup) setupEventListeners();
