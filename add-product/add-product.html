@@ -55,8 +55,22 @@
         </div>
     </main>
     
+    <!-- Scanner Modal -->
+    <div id="scanner-modal" class="modal-overlay hidden" style="z-index: 2100;">
+        <div class="modal-content" style="background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">Scan Barcode</h3>
+                <button id="close-scanner-btn" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div id="reader" style="width: 100%;"></div>
+        </div>
+    </div>
+    
     <!-- JsBarcode লাইব্রেরি -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    
+    <!-- html5-qrcode লাইব্রেরি -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <!-- ======================================================== -->
     <!-- START: Firebase v10 Import Map (এই অংশটি নতুন) -->

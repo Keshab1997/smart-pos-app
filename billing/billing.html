@@ -40,6 +40,7 @@
                 <div class="search-box-compact">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     <input type="text" id="product-search" placeholder="Search name or scan barcode (F2)..." autocomplete="off">
+                    <button id="start-camera-btn" class="scanner-icon-btn" title="Scan Barcode">📷</button>
                 </div>
                 <span class="browse-label">Categories:</span>
             </div>
@@ -224,6 +225,17 @@
         </div>
     </div>
 
+    <!-- Scanner Modal -->
+    <div id="scanner-container" class="modal-overlay hidden" style="z-index: 2001;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Scan Barcode</h3>
+                <button id="stop-camera-btn" class="close-button">&times;</button>
+            </div>
+            <div id="reader" style="width: 100%;"></div>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script type="importmap">
     {
@@ -252,6 +264,9 @@
             });
         });
     </script>
+
+    <!-- html5-qrcode লাইব্রেরি -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <!-- মেইন বিলিং স্ক্রিপ্ট -->
     <script type="module" src="../js/firebase-config.js"></script>

@@ -79,27 +79,27 @@ body {
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1); /* গ্লো ইফেক্ট */
 }
 
-/* টেবিলের রিমুভ বাটন (X) */
+/* টেবিলের রিমুভ বাটন (আইকন) */
 .remove-row-btn {
-    background-color: #ffe5e5;
-    color: var(--danger-color);
-    border: none;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%; /* গোল বাটন */
+    background-color: #fff5f5;
+    color: #dc3545;
+    border: 1px solid #feb2b2;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     cursor: pointer;
-    font-size: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
-    margin-top: 4px;
+    transition: all 0.2s ease;
+    margin: 0 auto;
 }
 
 .remove-row-btn:hover {
-    background-color: var(--danger-color);
+    background-color: #dc3545;
     color: white;
-    transform: rotate(90deg); /* হভার করলে ঘুরবে */
+    transform: rotate(90deg);
+    box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3);
 }
 
 /* ============================
@@ -237,4 +237,123 @@ body {
     color: var(--primary-color);
     font-weight: 700;
     margin-top: 10px;
+}
+
+/* ============================
+   8. Scanner Button Style
+   ============================ */
+.btn-scan-row {
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+.btn-scan-row:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+/* ============================
+   9. Mobile Responsive Styles
+   ============================ */
+@media screen and (max-width: 768px) {
+    /* টেবিল হেডার লুকিয়ে ফেলা */
+    .card-container table thead {
+        display: none;
+    }
+
+    .card-container table, 
+    .card-container table tbody, 
+    .card-container table tr, 
+    .card-container table td {
+        display: block;
+        width: 100%;
+    }
+
+    /* প্রতিটি রো একটি কার্ডের মতো দেখাবে */
+    .card-container table tr {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 10px;
+        background: #fff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .card-container table td {
+        text-align: right;
+        padding: 10px 5px;
+        position: relative;
+        border-bottom: 1px solid #f1f1f1;
+    }
+
+    .card-container table td:last-child {
+        border-bottom: none;
+    }
+
+    /* বাম পাশে লেবেল দেখানোর জন্য */
+    .card-container table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        width: 45%;
+        text-align: left;
+        font-weight: 600;
+        color: #666;
+        font-size: 13px;
+    }
+
+    /* ইনপুট ফিল্ডগুলো ডান পাশে সেট করা */
+    .card-container table input, 
+    .card-container table select {
+        width: 50% !important;
+        display: inline-block;
+    }
+
+    /* বারকোড স্ক্যানার এরিয়া */
+    .card-container table td[data-label="Barcode"] div {
+        width: 50%;
+        float: right;
+    }
+
+    /* অ্যাকশন বাটন ফুল উইডথ করা */
+    .remove-row-btn {
+        width: 100% !important;
+        border-radius: 8px !important;
+        margin-top: 10px;
+    }
+
+    .remove-row-btn::after {
+        content: " Remove Item";
+        font-size: 14px;
+        margin-left: 8px;
+        font-weight: 600;
+    }
+
+    /* নিচের মেইন বাটনগুলো */
+    .form-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
 }

@@ -13,6 +13,9 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 // ImgBB API Configuration
 const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267'; 
 
+let html5QrCode;
+let currentBarcodeTarget = null; 
+
 document.addEventListener('DOMContentLoaded', () => {
     const addRowBtn = document.getElementById('add-row-btn');
     const productsTbody = document.getElementById('products-tbody');
@@ -38,14 +41,26 @@ document.addEventListener('DOMContentLoaded', () => {
     function addProductRow() {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><input type="text" class="product-name" placeholder="e.g., Lux Soap" required></td>
-            <td><input type="text" class="product-category" placeholder="e.g., Cosmetics" required></td>
-            <td><input type="number" step="0.01" class="product-cp" placeholder="0.00" required></td>
-            <td><input type="number" step="0.01" class="product-sp" placeholder="0.00" required></td>
-            <td><input type="text" class="product-barcode" placeholder="Scan or type barcode"></td>
-            <td><input type="number" class="product-stock" placeholder="0" required></td>
-            <td><input type="file" class="product-image" accept="image/*" style="font-size: 12px; width: 180px;"></td>
-            <td><button type="button" class="btn btn-danger remove-row-btn">X</button></td>
+            <td data-label="Product Name"><input type="text" class="product-name" placeholder="e.g., Lux Soap" required></td>
+            <td data-label="Category"><input type="text" class="product-category" placeholder="e.g., Cosmetics" required></td>
+            <td data-label="Cost Price"><input type="number" step="0.01" class="product-cp" placeholder="0.00" required></td>
+            <td data-label="Selling Price"><input type="number" step="0.01" class="product-sp" placeholder="0.00" required></td>
+            <td data-label="Barcode">
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <input type="text" class="product-barcode" placeholder="Scan or type">
+                    <button type="button" class="btn-scan-row" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 2px 5px;" title="Scan with Camera">📷</button>
+                </div>
+            </td>
+            <td data-label="Initial Stock"><input type="number" class="product-stock" placeholder="0" required></td>
+            <td data-label="Image"><input type="file" class="product-image" accept="image/*" style="font-size: 12px; width: 100%;"></td>
+            <td data-label="Action">
+                <button type="button" class="remove-row-btn" title="Remove Row">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                      <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                    </svg>
+                </button>
+            </td>
         `;
         productsTbody.appendChild(row);
     }
@@ -354,7 +369,41 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('remove-row-btn')) {
             e.target.closest('tr').remove();
         }
+        if (e.target.classList.contains('btn-scan-row')) {
+            currentBarcodeTarget = e.target.closest('td').querySelector('.product-barcode');
+            openScanner();
+        }
     });
+
+    function openScanner() {
+        document.getElementById('scanner-modal').classList.remove('hidden');
+        html5QrCode = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+        html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+            if (currentBarcodeTarget) {
+                currentBarcodeTarget.value = decodedText;
+                currentBarcodeTarget.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            stopScanner();
+        }).catch(err => {
+            console.error(err);
+            alert('ক্যামেরা চালু করতে সমস্যা। অনুগ্রহ করে পারমিশন দিন।');
+            stopScanner();
+        });
+    }
+
+    function stopScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('scanner-modal').classList.add('hidden');
+            }).catch(err => console.log(err));
+        } else {
+            document.getElementById('scanner-modal').classList.add('hidden');
+        }
+    }
+
+    document.getElementById('close-scanner-btn').addEventListener('click', stopScanner);
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async (e) => {
@@ -362,4 +411,11 @@ document.addEventListener('DOMContentLoaded', () => {
             await signOut(auth);
         });
     }
+
+    // Modal overlay click to close
+    document.getElementById('scanner-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'scanner-modal') {
+            stopScanner();
+        }
+    });
 });

@@ -40,6 +40,7 @@ let currentTotals = { subtotal: 0, discount: 0, tax: 0, total: 0, advancePaid: 0
 let activeShopId = null;
 let bookingData = null;
 let selectedPaymentMethod = 'cash';
+let html5QrCode;
 
 // Beep Sound Function
 const playBeep = () => {
@@ -936,6 +937,40 @@ function handlePaymentMethodChange() {
 // ==========================================================
 function setupEventListeners() {
     productSearchInput.addEventListener('input', handleSearch);
+
+    // Camera Scanner Event Listeners
+    const startCameraBtn = document.getElementById('start-camera-btn');
+    const stopCameraBtn = document.getElementById('stop-camera-btn');
+    const scannerContainer = document.getElementById('scanner-container');
+
+    startCameraBtn.addEventListener('click', () => {
+        scannerContainer.classList.remove('hidden');
+        html5QrCode = new Html5Qrcode("reader");
+        
+        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+        html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+            playBeep();
+            handleBarcodeScan(decodedText);
+            stopScanner();
+        }).catch((err) => {
+            console.error("Camera start error:", err);
+            alert("ক্যামেরা চালু করতে সমস্যা হয়েছে। অনুগ্রহ করে ক্যামেরা পারমিশন দিন।");
+            scannerContainer.classList.add('hidden');
+        });
+    });
+
+    stopCameraBtn.addEventListener('click', stopScanner);
+
+    function stopScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                scannerContainer.classList.add('hidden');
+            }).catch(err => console.log(err));
+        } else {
+            scannerContainer.classList.add('hidden');
+        }
+    }
 
     document.addEventListener('keydown', (e) => {
         const activeEl = document.activeElement;
