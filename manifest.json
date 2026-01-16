@@ -1,0 +1,21 @@
+{
+  "name": "Smart POS - Keshab",
+  "short_name": "SmartPOS",
+  "description": "Advanced Inventory and Billing Management System",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4361ee",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/9561/9561688.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/9561/9561688.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

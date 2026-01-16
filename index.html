@@ -4,12 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Smart POS</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4361ee">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
     <!-- লগইন পেজের জন্য একটি নতুন CSS ফাইল -->
     <link rel="stylesheet" href="css/login.css">
     <!-- আপনি চাইলে Google Fonts ব্যবহার করতে পারেন -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service Worker Registered'))
+            .catch(err => console.log('Service Worker Failed', err));
+        });
+      }
+    </script>
 </head>
 <body>
     <div class="login-wrapper">
@@ -40,5 +57,6 @@
 
     <!-- মডিউলার জাভাস্ক্রিপ্ট ফাইল লোড করার জন্য type="module" ব্যবহার করুন -->
     <script src="js/auth.js" type="module"></script>
+    <script src="js/pwa-handler.js"></script>
 </body>
 </html>

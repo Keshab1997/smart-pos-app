@@ -153,6 +153,11 @@ function loadNavbar() {
                 <button id="close-sidebar" class="close-btn">&times;</button>
             </div>
             
+            <!-- PWA Install Button -->
+            <div id="pwa-install-nav" style="display:none; margin: 15px; padding: 12px; background: #4361ee; color: white; text-align: center; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                📲 Install Smart POS
+            </div>
+            
             <ul class="sidebar-links">
                 ${menuHTML}
             </ul>
@@ -231,6 +236,24 @@ function setupNavbarEvents() {
                 });
             }
         });
+    }
+
+    // PWA Install Button Handler
+    const navInstallBtn = document.getElementById('pwa-install-nav');
+    if (navInstallBtn) {
+        if (window.deferredPrompt) {
+            navInstallBtn.style.display = 'block';
+        }
+        
+        navInstallBtn.onclick = async () => {
+            if (window.deferredPrompt) {
+                window.deferredPrompt.prompt();
+                const { outcome } = await window.deferredPrompt.userChoice;
+                console.log(`User response: ${outcome}`);
+                window.deferredPrompt = null;
+                navInstallBtn.style.display = 'none';
+            }
+        };
     }
 
     // অ্যাডমিন মডাল ক্লোজ বাটন
