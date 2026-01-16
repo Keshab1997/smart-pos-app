@@ -200,6 +200,7 @@
             align-items: center;
             justify-content: center;
             transition: 0.3s;
+            opacity: 0.5;
         }
 
         .modal-overlay {
@@ -271,6 +272,11 @@
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        #quick-info:active {
+            transform: scale(0.95);
+            background: var(--primary) !important;
+        }
     </style>
 </head>
 <body>
@@ -298,9 +304,12 @@
             </div>
         </main>
 
-        <div id="quick-info" style="display:none; margin: 10px 15px 0; padding: 12px; background: rgba(67, 97, 238, 0.15); border-radius: 10px; border: 1px solid var(--primary); text-align: center; font-size: 12px;">
-            <span id="info-name" style="font-weight:bold; display:block; margin-bottom: 5px;">Product Name</span>
-            <span id="info-details" style="opacity:0.8; font-size: 11px;">Price: ₹00 | Stock: 00</span>
+        <div id="quick-info" onclick="addCurrentToBill()" style="display:none; margin: 10px 15px 0; padding: 12px; background: rgba(67, 97, 238, 0.25); border-radius: 12px; border: 2px solid var(--primary); text-align: center; cursor: pointer; transition: 0.2s; user-select: none;">
+            <span id="info-name" style="font-weight:bold; display:block; margin-bottom: 5px; font-size: 15px; color: #fff;">Product Name</span>
+            <span id="info-details" style="opacity:0.9; font-size: 12px; color: #fff;">Price: ₹00 | Stock: 00</span>
+            <div style="margin-top: 8px; font-size: 10px; color: var(--primary); font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
+                👆 Tap to add again
+            </div>
         </div>
 
         <section class="controls-section">
@@ -353,6 +362,8 @@
         let scanHistory = JSON.parse(localStorage.getItem('scan_history') || '[]');
         let isTorchOn = false;
         let html5QrCode;
+        let lastScannedBarcode = null;
+        let lastScannedName = null;
 
         if (!shopId) {
             statusEl.innerText = "Please login first!";
@@ -375,16 +386,43 @@
 
         window.toggleTorch = async () => {
             try {
-                const track = html5QrCode.getRunningTrack();
-                if (track && track.getCapabilities().torch) {
+                if (!html5QrCode || !html5QrCode.isScanning) {
+                    statusEl.innerText = "ক্যামেরা চালু হওয়া পর্যন্ত অপেক্ষা করুন।";
+                    setTimeout(() => statusEl.innerText = "Ready to scan...", 2000);
+                    return;
+                }
+
+                const videoElement = document.querySelector('#reader video');
+                if (!videoElement || !videoElement.srcObject) {
+                    statusEl.innerText = "ক্যামেরা ট্র্যাক পাওয়া যায়নি।";
+                    setTimeout(() => statusEl.innerText = "Ready to scan...", 2000);
+                    return;
+                }
+
+                const track = videoElement.srcObject.getVideoTracks()[0];
+                const capabilities = track.getCapabilities();
+
+                if (capabilities.torch) {
                     isTorchOn = !isTorchOn;
-                    await track.applyConstraints({ advanced: [{ torch: isTorchOn }] });
-                    document.getElementById('torch-btn').style.background = isTorchOn ? 'var(--primary)' : 'rgba(255,255,255,0.1)';
+                    await track.applyConstraints({
+                        advanced: [{ torch: isTorchOn }]
+                    });
+                    
+                    const torchBtn = document.getElementById('torch-btn');
+                    torchBtn.style.background = isTorchOn ? 'var(--primary)' : 'rgba(255,255,255,0.1)';
+                    torchBtn.style.boxShadow = isTorchOn ? '0 0 15px var(--primary)' : 'none';
+                    
+                    statusEl.innerText = isTorchOn ? "Flashlight ON" : "Flashlight OFF";
+                    setTimeout(() => statusEl.innerText = "Ready to scan...", 1500);
                 } else {
-                    statusEl.innerText = "Torch not supported";
+                    statusEl.innerText = "আপনার ডিভাইস টর্চ সাপোর্ট করে না।";
                     setTimeout(() => statusEl.innerText = "Ready to scan...", 2000);
                 }
-            } catch (e) { console.error(e); }
+            } catch (err) {
+                console.error("Torch Error:", err);
+                statusEl.innerText = "টর্চ চালু করতে সমস্যা হয়েছে।";
+                setTimeout(() => statusEl.innerText = "Ready to scan...", 2000);
+            }
         };
 
         window.sendManualBarcode = async () => {
@@ -396,6 +434,18 @@
             await sendToDesktop(barcode, productName);
             addToHistory(barcode, productName);
             input.value = '';
+        };
+
+        window.addCurrentToBill = () => {
+            if (lastScannedBarcode) {
+                sendToDesktop(lastScannedBarcode, lastScannedName);
+                
+                const infoDiv = document.getElementById('quick-info');
+                infoDiv.style.background = "var(--primary)";
+                setTimeout(() => {
+                    infoDiv.style.background = "rgba(67, 97, 238, 0.25)";
+                }, 200);
+            }
         };
 
         document.getElementById('manual-barcode').addEventListener('keypress', (e) => {
@@ -470,12 +520,19 @@
                 
                 if (docSnap.exists()) {
                     const p = docSnap.data();
+                    
+                    lastScannedBarcode = barcode;
+                    lastScannedName = p.name;
+                    
                     document.getElementById('info-name').innerText = p.name;
                     document.getElementById('info-details').innerText = `Price: ₹${p.sellingPrice || 0} | Stock: ${p.stock || 0}`;
                     infoDiv.style.display = 'block';
                     if (navigator.vibrate) navigator.vibrate(50);
                     return p.name;
                 } else {
+                    lastScannedBarcode = barcode;
+                    lastScannedName = "New Product";
+                    
                     document.getElementById('info-name').innerText = "New Product";
                     document.getElementById('info-details').innerText = "Not in inventory";
                     infoDiv.style.display = 'block';
@@ -565,7 +622,10 @@
                     statusEl.innerText = "Ready to scan next...";
                 }, scanDelay);
             }
-        ).catch(err => {
+        ).then(() => {
+            document.getElementById('torch-btn').style.opacity = "1";
+            statusEl.innerText = "Ready to scan...";
+        }).catch(err => {
             console.error(err);
             statusEl.innerText = "Camera permission denied!";
         });
