@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (productsTbody.children.length === 0) {
                 addProductRow();
             }
+            setupRemoteScannerListener();
         } else {
             window.location.href = '../index.html';
         }
@@ -479,4 +480,37 @@ document.addEventListener('DOMContentLoaded', () => {
             stopScanner();
         }
     });
+
+    function setupRemoteScannerListener() {
+        if (!activeShopId) return;
+
+        console.log("Remote scanner listener active for Add Product...");
+        
+        const { onSnapshot, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+        
+        onSnapshot(doc(db, 'shops', activeShopId, 'remote_scan', 'current'), (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const barcode = data.barcode;
+                
+                if (barcode) {
+                    console.log("Remote Scan Received:", barcode);
+                    
+                    const lastRow = productsTbody.querySelector('tr:last-child');
+                    if (lastRow) {
+                        const barcodeInput = lastRow.querySelector('.product-barcode');
+                        if (barcodeInput && !barcodeInput.value) {
+                            barcodeInput.value = barcode;
+                            barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            playScanSound();
+                        }
+                    }
+                    
+                    updateDoc(doc(db, 'shops', activeShopId, 'remote_scan', 'current'), {
+                        barcode: null
+                    });
+                }
+            }
+        });
+    }
 });
