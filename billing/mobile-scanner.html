@@ -1,0 +1,121 @@
+<!-- billing/mobile-scanner.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Mobile Scanner - Smart POS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+        h3 {
+            margin: 20px 0;
+            font-size: 24px;
+        }
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        #status {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+        .success {
+            background: rgba(40, 167, 69, 0.8) !important;
+        }
+    </style>
+</head>
+<body>
+    <h3>📱 POS Remote Scanner</h3>
+    <div id="reader"></div>
+    <p id="status">Ready to scan...</p>
+
+    <script type="module">
+        import { db } from '../js/firebase-config.js';
+        import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const statusEl = document.getElementById('status');
+        const shopId = localStorage.getItem('activeShopId');
+
+        if (!shopId) {
+            statusEl.innerText = "Please login first!";
+            throw new Error("No shop ID");
+        }
+
+        const html5QrCode = new Html5Qrcode("reader");
+        
+        const config = {
+            fps: 25,
+            qrbox: function(viewfinderWidth, viewfinderHeight) {
+                return { width: viewfinderWidth * 0.8, height: 150 };
+            },
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.QR_CODE
+            ]
+        };
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            async (decodedText) => {
+                statusEl.innerText = "Sending: " + decodedText;
+                
+                try {
+                    await setDoc(doc(db, 'shops', shopId, 'remote_scan', 'current'), {
+                        barcode: decodedText,
+                        timestamp: serverTimestamp()
+                    });
+
+                    if (navigator.vibrate) navigator.vibrate(100);
+                    
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.1);
+
+                    statusEl.className = 'success';
+                    statusEl.innerText = "✅ Sent! Ready for next.";
+                    
+                    setTimeout(() => {
+                        statusEl.className = '';
+                        statusEl.innerText = "Ready to scan...";
+                    }, 1500);
+                } catch (error) {
+                    console.error("Error sending barcode:", error);
+                    statusEl.innerText = "❌ Error! Try again.";
+                }
+            }
+        ).catch(err => {
+            console.error(err);
+            statusEl.innerText = "Camera permission denied!";
+        });
+    </script>
+</body>
+</html>

@@ -5,6 +5,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 const menuItems = [
     { name: 'Dashboard', link: 'dashboard.html', icon: '🏠', roles: ['owner', 'manager', 'cashier'] },
     { name: 'Billing', link: 'billing/billing.html', icon: '🧾', roles: ['owner', 'manager', 'cashier'] },
+    { name: 'Mobile Scanner', link: 'billing/mobile-scanner.html', icon: '📱', roles: ['owner', 'manager', 'cashier'] },
     { name: 'Inventory', link: 'inventory/inventory.html', icon: '📦', roles: ['owner', 'manager'] },
     { name: 'Add Product', link: 'add-product/add-product.html', icon: '➕', roles: ['owner', 'manager'] },
     { name: 'Purchase Record', link: 'purchase-record/purchase-dashboard.html', icon: '🛒', roles: ['owner', 'manager'] },

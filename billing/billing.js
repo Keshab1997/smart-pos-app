@@ -80,6 +80,7 @@ function initializeBillingPage() {
     checkPendingBooking();
     listenUnsettledBills();
     autoSettleOldBills();
+    setupRemoteScannerListener();
 }
 
 // ==========================================================
@@ -797,6 +798,28 @@ async function autoSettleOldBills() {
         await batch.commit();
         alert(`✅ ${snapshot.size} forgotten bills from yesterday settled as CASH.`);
     }
+}
+
+function setupRemoteScannerListener() {
+    if (!activeShopId) return;
+
+    console.log("Remote scanner listener active...");
+    
+    onSnapshot(doc(db, 'shops', activeShopId, 'remote_scan', 'current'), (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const barcode = data.barcode;
+            
+            if (barcode) {
+                console.log("Remote Scan Received:", barcode);
+                handleBarcodeScan(barcode);
+                
+                updateDoc(doc(db, 'shops', activeShopId, 'remote_scan', 'current'), {
+                    barcode: null
+                });
+            }
+        }
+    });
 }
 
 async function manualSettleAll() {
