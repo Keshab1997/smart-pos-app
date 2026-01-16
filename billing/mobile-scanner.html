@@ -277,6 +277,10 @@
             transform: scale(0.95);
             background: var(--primary) !important;
         }
+
+        #suggestions-list li:hover {
+            background: rgba(67, 97, 238, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -287,7 +291,8 @@
         <header class="header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px;">
             <div id="connection-status" title="Connection Status" style="width: 12px; height: 12px; background: #ff4d4d; border-radius: 50%; box-shadow: 0 0 10px #ff4d4d;"></div>
             <h2 style="font-size: 0.9rem; margin: 0;">Smart POS Scanner</h2>
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 8px;">
+                <button onclick="switchCamera()" class="history-trigger-btn" title="Switch Camera">🔄</button>
                 <button id="torch-btn" onclick="toggleTorch()" class="history-trigger-btn" title="Flashlight">🔦</button>
                 <button class="history-trigger-btn" onclick="openHistoryModal()" title="Scan History">🕒</button>
             </div>
@@ -312,6 +317,18 @@
             </div>
         </div>
 
+        <div style="margin: 10px 15px; display: flex; gap: 5px;">
+            <input type="text" id="manual-barcode" placeholder="Type barcode manually..." style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; font-size: 12px; outline: none;">
+            <button onclick="sendManualBarcode()" style="padding: 10px 15px; background: var(--primary); border: none; border-radius: 8px; color: white; font-weight: bold; font-size: 12px; cursor: pointer;">SEND</button>
+        </div>
+
+        <div style="margin: 10px 15px; position: relative;">
+            <input type="text" id="manual-search-input" oninput="handleManualInput(this.value)" placeholder="🔍 Search product..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; font-size: 12px; outline: none; box-sizing: border-box;">
+            <div id="suggestions-box" style="display:none; position: absolute; top: 50px; left: 0; width: 100%; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; z-index: 1000; max-height: 200px; overflow-y: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+                <ul id="suggestions-list" style="list-style:none; padding:0; margin:0;"></ul>
+            </div>
+        </div>
+
         <section class="controls-section">
             <div class="status-card" id="status" style="margin-bottom: 8px;">
                 Ready to scan...
@@ -324,11 +341,6 @@
                     <button class="speed-btn active" onclick="setDelay(1500, 'Normal')">Normal</button>
                     <button class="speed-btn" onclick="setDelay(3000, 'Slow')">Slow</button>
                 </div>
-            </div>
-            
-            <div style="margin-top: 10px;">
-                <input type="text" id="manual-barcode" placeholder="Type barcode manually..." style="width: 70%; padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; font-size: 12px;">
-                <button onclick="sendManualBarcode()" style="padding: 8px 15px; margin-left: 5px; border-radius: 8px; border: none; background: var(--primary); color: white; font-size: 12px; cursor: pointer;">Send</button>
             </div>
         </section>
     </div>
@@ -350,7 +362,7 @@
 
     <script type="module">
         import { db } from '../js/firebase-config.js';
-        import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const statusEl = document.getElementById('status');
         const flashEl = document.getElementById('flash-effect');
@@ -364,6 +376,8 @@
         let html5QrCode;
         let lastScannedBarcode = null;
         let lastScannedName = null;
+        let currentFacingMode = "environment";
+        let localInventory = [];
 
         if (!shopId) {
             statusEl.innerText = "Please login first!";
@@ -434,6 +448,10 @@
             await sendToDesktop(barcode, productName);
             addToHistory(barcode, productName);
             input.value = '';
+            input.focus();
+            
+            statusEl.innerText = "Manual Code Sent!";
+            setTimeout(() => statusEl.innerText = "Ready to scan next...", 2000);
         };
 
         window.addCurrentToBill = () => {
@@ -445,6 +463,109 @@
                 setTimeout(() => {
                     infoDiv.style.background = "rgba(67, 97, 238, 0.25)";
                 }, 200);
+            }
+        };
+
+        window.switchCamera = async () => {
+            try {
+                currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+                await html5QrCode.stop();
+                statusEl.innerText = "Switching camera...";
+                
+                setTimeout(() => {
+                    html5QrCode.start(
+                        { facingMode: currentFacingMode },
+                        config,
+                        onScanSuccess
+                    ).then(() => {
+                        document.getElementById('torch-btn').style.opacity = "1";
+                        statusEl.innerText = "Camera switched!";
+                        setTimeout(() => statusEl.innerText = "Ready to scan...", 1500);
+                    });
+                }, 500);
+            } catch (e) {
+                console.error(e);
+                statusEl.innerText = "Camera switch failed!";
+            }
+        };
+
+        window.toggleManualSearch = () => {
+            const box = document.getElementById('manual-search-box');
+            const suggestionsBox = document.getElementById('suggestions-box');
+            box.style.display = (box.style.display === 'none' || !box.style.display) ? 'flex' : 'none';
+            if (box.style.display === 'flex') {
+                document.getElementById('manual-search-input').focus();
+            } else {
+                document.getElementById('manual-search-input').value = '';
+                suggestionsBox.style.display = 'none';
+            }
+        };
+
+        window.handleManualInput = (val) => {
+            const suggestionsBox = document.getElementById('suggestions-box');
+            const suggestionsList = document.getElementById('suggestions-list');
+            const term = val.toLowerCase().trim();
+
+            if (term.length < 2) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+
+            const matches = localInventory.filter(item => 
+                (item.name && item.name.toLowerCase().includes(term)) || 
+                (item.barcode && item.barcode.includes(term))
+            ).slice(0, 10);
+
+            if (matches.length > 0) {
+                let listHtml = "";
+                matches.forEach(item => {
+                    listHtml += `
+                        <li onclick="selectProduct('${item.barcode}')" style="padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: white;">
+                            <div style="text-align: left;">
+                                <span style="display: block; font-size: 14px; font-weight: 600;">${item.name}</span>
+                                <span style="font-size: 11px; opacity: 0.6;">${item.barcode}</span>
+                            </div>
+                            <span style="font-size: 13px; font-weight: bold; color: #2ec4b6;">₹${item.price}</span>
+                        </li>
+                    `;
+                });
+                
+                suggestionsList.innerHTML = listHtml;
+                suggestionsBox.style.display = 'block';
+            } else {
+                suggestionsList.innerHTML = '<li style="padding: 15px; text-align: center; opacity: 0.5; font-size: 12px;">No products found</li>';
+                suggestionsBox.style.display = 'block';
+            }
+        };
+
+        window.selectProduct = async (barcode) => {
+            document.getElementById('manual-search-input').value = '';
+            document.getElementById('suggestions-box').style.display = 'none';
+            
+            const product = localInventory.find(p => p.barcode === barcode);
+            await showQuickInfo(barcode);
+            await sendToDesktop(barcode, product ? product.name : 'Product');
+            addToHistory(barcode, product ? product.name : 'Product');
+        };
+
+        const fetchInventoryLocally = async () => {
+            try {
+                statusEl.innerText = "Loading inventory...";
+                const inventoryRef = collection(db, 'shops', shopId, 'inventory');
+                const snapshot = await getDocs(inventoryRef);
+                
+                localInventory = snapshot.docs.map(doc => ({
+                    barcode: doc.id,
+                    name: doc.data().name || 'Unknown',
+                    price: doc.data().sellingPrice || 0,
+                    stock: doc.data().stock || 0
+                }));
+                
+                console.log("Inventory cached:", localInventory.length, "items");
+                statusEl.innerText = "Ready to scan...";
+            } catch (e) {
+                console.error("Cache error:", e);
+                statusEl.innerText = "Cache failed, but scanner ready";
             }
         };
 
@@ -520,21 +641,34 @@
                 
                 if (docSnap.exists()) {
                     const p = docSnap.data();
+                    const stock = parseInt(p.stock) || 0;
                     
                     lastScannedBarcode = barcode;
                     lastScannedName = p.name;
                     
                     document.getElementById('info-name').innerText = p.name;
-                    document.getElementById('info-details').innerText = `Price: ₹${p.sellingPrice || 0} | Stock: ${p.stock || 0}`;
+                    const detailsEl = document.getElementById('info-details');
+                    detailsEl.innerHTML = `Price: ₹${p.sellingPrice || 0} | Stock: ${stock}`;
+                    
+                    if (stock <= 5) {
+                        detailsEl.style.color = "#ff4d4d";
+                        detailsEl.innerHTML += " <br>⚠️ LOW STOCK!";
+                        if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
+                    } else {
+                        detailsEl.style.color = "#fff";
+                        if (navigator.vibrate) navigator.vibrate(50);
+                    }
+                    
                     infoDiv.style.display = 'block';
-                    if (navigator.vibrate) navigator.vibrate(50);
                     return p.name;
                 } else {
                     lastScannedBarcode = barcode;
                     lastScannedName = "New Product";
                     
                     document.getElementById('info-name').innerText = "New Product";
-                    document.getElementById('info-details').innerText = "Not in inventory";
+                    const detailsEl = document.getElementById('info-details');
+                    detailsEl.innerHTML = "Not in inventory";
+                    detailsEl.style.color = "#fff";
                     infoDiv.style.display = 'block';
                     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                     return "New Product";
@@ -589,6 +723,20 @@
             oscillator.stop(audioCtx.currentTime + 0.1);
         };
 
+        const onScanSuccess = async (decodedText) => {
+            if (isPaused) return;
+            isPaused = true;
+
+            const productName = await showQuickInfo(decodedText);
+            await sendToDesktop(decodedText, productName);
+            addToHistory(decodedText, productName);
+            
+            setTimeout(() => {
+                isPaused = false;
+                statusEl.innerText = "Ready to scan next...";
+            }, scanDelay);
+        };
+
         html5QrCode = new Html5Qrcode("reader");
         
         const config = { 
@@ -607,24 +755,13 @@
         };
 
         html5QrCode.start(
-            { facingMode: "environment" },
+            { facingMode: currentFacingMode },
             config,
-            async (decodedText) => {
-                if (isPaused) return;
-                isPaused = true;
-
-                const productName = await showQuickInfo(decodedText);
-                await sendToDesktop(decodedText, productName);
-                addToHistory(decodedText, productName);
-                
-                setTimeout(() => {
-                    isPaused = false;
-                    statusEl.innerText = "Ready to scan next...";
-                }, scanDelay);
-            }
+            onScanSuccess
         ).then(() => {
             document.getElementById('torch-btn').style.opacity = "1";
             statusEl.innerText = "Ready to scan...";
+            fetchInventoryLocally();
         }).catch(err => {
             console.error(err);
             statusEl.innerText = "Camera permission denied!";
