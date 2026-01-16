@@ -1,69 +1,274 @@
 <!-- billing/mobile-scanner.html -->
 <!DOCTYPE html>
-<html>
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <title>Mobile Scanner - Smart POS</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart POS - Remote Scanner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
+        :root {
+            --primary: #4361ee;
+            --success: #2ec4b6;
+            --dark: #1a1a2e;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
         body {
-            text-align: center;
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
             margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: #000;
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        h3 {
-            margin: 20px 0;
-            font-size: 24px;
-        }
-        #reader {
+
+        .app-container {
             width: 100%;
-            max-width: 500px;
-            margin: 20px auto;
-            border-radius: 12px;
+            max-width: 450px;
+            height: 100%;
+            max-height: 900px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: var(--dark);
             overflow: hidden;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
         }
-        #status {
-            background: rgba(255,255,255,0.2);
-            padding: 15px;
+
+        .header {
+            padding: 20px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            color: #fff;
+        }
+
+        .scanner-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+        }
+
+        #reader {
+            width: 100% !important;
+            height: 100% !important;
+            border: none !important;
+        }
+
+        #reader video {
+            object-fit: cover !important;
+        }
+
+        .scan-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .scan-box {
+            width: 260px;
+            height: 180px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            position: relative;
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5);
+        }
+
+        .scan-box::before, .scan-box::after, 
+        .scan-box span::before, .scan-box span::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 4px solid var(--primary);
+        }
+
+        .scan-box::before { top: -4px; left: -4px; border-right: 0; border-bottom: 0; border-radius: 15px 0 0 0; }
+        .scan-box::after { top: -4px; right: -4px; border-left: 0; border-bottom: 0; border-radius: 0 15px 0 0; }
+        .scan-box span::before { bottom: -4px; left: -4px; border-right: 0; border-top: 0; border-radius: 0 0 0 15px; }
+        .scan-box span::after { bottom: -4px; right: -4px; border-left: 0; border-top: 0; border-radius: 0 0 15px 0; }
+
+        .laser {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+            top: 0;
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: 5%; }
+            50% { top: 95%; }
+            100% { top: 5%; }
+        }
+
+        .footer {
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .status-card {
+            background: var(--glass);
+            padding: 12px 20px;
+            border-radius: 50px;
+            display: inline-block;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: 0.3s;
+        }
+
+        .status-success {
+            background: var(--success);
+            color: white;
+            box-shadow: 0 0 20px rgba(46, 196, 182, 0.4);
+        }
+
+        .flash {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            opacity: 0;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .flash.active {
+            animation: flash-anim 0.3s ease-out;
+        }
+
+        @keyframes flash-anim {
+            0% { opacity: 0.8; }
+            100% { opacity: 0; }
+        }
+
+        .speed-btn {
+            background: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 15px;
             border-radius: 8px;
-            font-size: 16px;
-            margin-top: 20px;
-            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.3s;
         }
-        .success {
-            background: rgba(40, 167, 69, 0.8) !important;
+
+        .speed-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
         }
     </style>
 </head>
 <body>
-    <h3>📱 POS Remote Scanner</h3>
-    <div id="reader"></div>
-    <p id="status">Ready to scan...</p>
+
+    <div class="flash" id="flash-effect"></div>
+
+    <div class="app-container">
+        <header class="header">
+            <h2>📲 REMOTE SCANNER</h2>
+        </header>
+
+        <main class="scanner-wrapper">
+            <div id="reader"></div>
+            
+            <div class="scan-overlay">
+                <div class="scan-box">
+                    <div class="laser"></div>
+                    <span></span>
+                </div>
+                <p style="margin-top: 20px; font-size: 0.8rem; opacity: 0.7;">Align barcode within the frame</p>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="status-card" id="status">
+                Initializing Camera...
+            </div>
+            
+            <div class="speed-control" style="margin-top: 15px;">
+                <p style="font-size: 12px; margin-bottom: 8px; opacity: 0.8;">Scan Delay (বিরতি): <span id="delay-val">1.5</span>s</p>
+                <div style="display: flex; justify-content: center; gap: 10px;">
+                    <button class="speed-btn" onclick="setDelay(500, 'Fast')">Fast</button>
+                    <button class="speed-btn active" id="btn-normal" onclick="setDelay(1500, 'Normal')">Normal</button>
+                    <button class="speed-btn" onclick="setDelay(3000, 'Slow')">Slow</button>
+                </div>
+            </div>
+        </footer>
+    </div>
 
     <script type="module">
         import { db } from '../js/firebase-config.js';
         import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const statusEl = document.getElementById('status');
+        const flashEl = document.getElementById('flash-effect');
         const shopId = localStorage.getItem('activeShopId');
+
+        let scanDelay = 1500;
+        let isPaused = false;
 
         if (!shopId) {
             statusEl.innerText = "Please login first!";
             throw new Error("No shop ID");
         }
 
+        window.setDelay = (ms, label) => {
+            scanDelay = ms;
+            document.getElementById('delay-val').innerText = (ms / 1000).toFixed(1);
+            
+            document.querySelectorAll('.speed-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            statusEl.innerText = "Mode: " + label;
+            setTimeout(() => {
+                if (!isPaused) statusEl.innerText = "Ready to scan next...";
+            }, 1000);
+        };
+
+        const playBeep = () => {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        };
+
         const html5QrCode = new Html5Qrcode("reader");
         
-        const config = {
+        const config = { 
             fps: 25,
-            qrbox: function(viewfinderWidth, viewfinderHeight) {
-                return { width: viewfinderWidth * 0.8, height: 150 };
-            },
+            qrbox: { width: 260, height: 180 },
+            aspectRatio: 1.0,
             formatsToSupport: [
                 Html5QrcodeSupportedFormats.CODE_128,
                 Html5QrcodeSupportedFormats.EAN_13,
@@ -79,8 +284,16 @@
             { facingMode: "environment" },
             config,
             async (decodedText) => {
-                statusEl.innerText = "Sending: " + decodedText;
+                if (isPaused) return;
+                isPaused = true;
+
+                playBeep();
+                flashEl.classList.add('active');
+                setTimeout(() => flashEl.classList.remove('active'), 300);
                 
+                statusEl.innerText = "Sending: " + decodedText;
+                statusEl.classList.add('status-success');
+
                 try {
                     await setDoc(doc(db, 'shops', shopId, 'remote_scan', 'current'), {
                         barcode: decodedText,
@@ -89,27 +302,16 @@
 
                     if (navigator.vibrate) navigator.vibrate(100);
                     
-                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioCtx.createOscillator();
-                    const gainNode = audioCtx.createGain();
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
-                    oscillator.type = 'sine';
-                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                    oscillator.start();
-                    oscillator.stop(audioCtx.currentTime + 0.1);
-
-                    statusEl.className = 'success';
-                    statusEl.innerText = "✅ Sent! Ready for next.";
-                    
                     setTimeout(() => {
-                        statusEl.className = '';
-                        statusEl.innerText = "Ready to scan...";
-                    }, 1500);
-                } catch (error) {
-                    console.error("Error sending barcode:", error);
-                    statusEl.innerText = "❌ Error! Try again.";
+                        isPaused = false;
+                        statusEl.classList.remove('status-success');
+                        statusEl.innerText = "Ready to scan next...";
+                    }, scanDelay);
+
+                } catch (err) {
+                    isPaused = false;
+                    statusEl.innerText = "Error sending data!";
+                    console.error(err);
                 }
             }
         ).catch(err => {

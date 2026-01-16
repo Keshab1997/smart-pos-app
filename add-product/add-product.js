@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function setupRemoteScannerListener() {
+    async function setupRemoteScannerListener() {
         if (!activeShopId) return;
 
         console.log("Remote scanner listener active for Add Product...");
