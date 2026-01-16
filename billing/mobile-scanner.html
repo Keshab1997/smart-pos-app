@@ -279,9 +279,12 @@
 
     <div class="app-container">
         <header class="header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px;">
-            <div style="width: 40px;"></div>
-            <h2 style="font-size: 1rem; margin: 0;">📲 REMOTE SCANNER</h2>
-            <button class="history-trigger-btn" onclick="openHistoryModal()" title="Scan History">🕒</button>
+            <div id="connection-status" title="Connection Status" style="width: 12px; height: 12px; background: #ff4d4d; border-radius: 50%; box-shadow: 0 0 10px #ff4d4d;"></div>
+            <h2 style="font-size: 0.9rem; margin: 0;">Smart POS Scanner</h2>
+            <div style="display: flex; gap: 10px;">
+                <button id="torch-btn" onclick="toggleTorch()" class="history-trigger-btn" title="Flashlight">🔦</button>
+                <button class="history-trigger-btn" onclick="openHistoryModal()" title="Scan History">🕒</button>
+            </div>
         </header>
 
         <main class="scanner-wrapper">
@@ -295,6 +298,11 @@
             </div>
         </main>
 
+        <div id="quick-info" style="display:none; margin: 10px 15px 0; padding: 12px; background: rgba(67, 97, 238, 0.15); border-radius: 10px; border: 1px solid var(--primary); text-align: center; font-size: 12px;">
+            <span id="info-name" style="font-weight:bold; display:block; margin-bottom: 5px;">Product Name</span>
+            <span id="info-details" style="opacity:0.8; font-size: 11px;">Price: ₹00 | Stock: 00</span>
+        </div>
+
         <section class="controls-section">
             <div class="status-card" id="status" style="margin-bottom: 8px;">
                 Ready to scan...
@@ -307,6 +315,11 @@
                     <button class="speed-btn active" onclick="setDelay(1500, 'Normal')">Normal</button>
                     <button class="speed-btn" onclick="setDelay(3000, 'Slow')">Slow</button>
                 </div>
+            </div>
+            
+            <div style="margin-top: 10px;">
+                <input type="text" id="manual-barcode" placeholder="Type barcode manually..." style="width: 70%; padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; font-size: 12px;">
+                <button onclick="sendManualBarcode()" style="padding: 8px 15px; margin-left: 5px; border-radius: 8px; border: none; background: var(--primary); color: white; font-size: 12px; cursor: pointer;">Send</button>
             </div>
         </section>
     </div>
@@ -338,11 +351,56 @@
         let scanDelay = 1500;
         let isPaused = false;
         let scanHistory = JSON.parse(localStorage.getItem('scan_history') || '[]');
+        let isTorchOn = false;
+        let html5QrCode;
 
         if (!shopId) {
             statusEl.innerText = "Please login first!";
             throw new Error("No shop ID");
         }
+
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        function updateConnectionStatus() {
+            const dot = document.getElementById('connection-status');
+            if (navigator.onLine) {
+                dot.style.background = "#2ec4b6";
+                dot.style.boxShadow = "0 0 10px #2ec4b6";
+            } else {
+                dot.style.background = "#ff4d4d";
+                dot.style.boxShadow = "0 0 10px #ff4d4d";
+            }
+        }
+        updateConnectionStatus();
+
+        window.toggleTorch = async () => {
+            try {
+                const track = html5QrCode.getRunningTrack();
+                if (track && track.getCapabilities().torch) {
+                    isTorchOn = !isTorchOn;
+                    await track.applyConstraints({ advanced: [{ torch: isTorchOn }] });
+                    document.getElementById('torch-btn').style.background = isTorchOn ? 'var(--primary)' : 'rgba(255,255,255,0.1)';
+                } else {
+                    statusEl.innerText = "Torch not supported";
+                    setTimeout(() => statusEl.innerText = "Ready to scan...", 2000);
+                }
+            } catch (e) { console.error(e); }
+        };
+
+        window.sendManualBarcode = async () => {
+            const input = document.getElementById('manual-barcode');
+            const barcode = input.value.trim();
+            if (!barcode) return;
+            
+            const productName = await showQuickInfo(barcode);
+            await sendToDesktop(barcode, productName);
+            addToHistory(barcode, productName);
+            input.value = '';
+        };
+
+        document.getElementById('manual-barcode').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendManualBarcode();
+        });
 
         const renderHistory = () => {
             const historyListEl = document.getElementById('history-list');
@@ -384,7 +442,6 @@
                     barcode: barcode,
                     timestamp: serverTimestamp()
                 });
-                if (navigator.vibrate) navigator.vibrate(50);
                 
                 setTimeout(() => {
                     statusEl.classList.remove('status-success');
@@ -393,6 +450,7 @@
             } catch (err) {
                 console.error(err);
                 statusEl.innerText = "Error sending data!";
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
             }
         };
 
@@ -402,6 +460,32 @@
                 const docSnap = await getDoc(docRef);
                 return docSnap.exists() ? docSnap.data().name : 'New Product';
             } catch (e) { return 'New Product'; }
+        };
+
+        const showQuickInfo = async (barcode) => {
+            try {
+                const docRef = doc(db, 'shops', shopId, 'inventory', barcode);
+                const docSnap = await getDoc(docRef);
+                const infoDiv = document.getElementById('quick-info');
+                
+                if (docSnap.exists()) {
+                    const p = docSnap.data();
+                    document.getElementById('info-name').innerText = p.name;
+                    document.getElementById('info-details').innerText = `Price: ₹${p.sellingPrice || 0} | Stock: ${p.stock || 0}`;
+                    infoDiv.style.display = 'block';
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    return p.name;
+                } else {
+                    document.getElementById('info-name').innerText = "New Product";
+                    document.getElementById('info-details').innerText = "Not in inventory";
+                    infoDiv.style.display = 'block';
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                    return "New Product";
+                }
+            } catch (e) { 
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                return "Error"; 
+            }
         };
 
         const addToHistory = (barcode, name) => {
@@ -448,7 +532,7 @@
             oscillator.stop(audioCtx.currentTime + 0.1);
         };
 
-        const html5QrCode = new Html5Qrcode("reader");
+        html5QrCode = new Html5Qrcode("reader");
         
         const config = { 
             fps: 25,
@@ -472,11 +556,9 @@
                 if (isPaused) return;
                 isPaused = true;
 
-                const productName = await getProductName(decodedText);
+                const productName = await showQuickInfo(decodedText);
                 await sendToDesktop(decodedText, productName);
                 addToHistory(decodedText, productName);
-
-                if (navigator.vibrate) navigator.vibrate(100);
                 
                 setTimeout(() => {
                     isPaused = false;
