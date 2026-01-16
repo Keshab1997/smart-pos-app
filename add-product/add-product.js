@@ -14,7 +14,27 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267'; 
 
 let html5QrCode;
-let currentBarcodeTarget = null; 
+let currentBarcodeTarget = null;
+
+const playScanSound = () => {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.1);
+    } catch (e) {
+        console.error("Sound play failed:", e);
+    }
+}; 
 
 document.addEventListener('DOMContentLoaded', () => {
     const addRowBtn = document.getElementById('add-row-btn');
@@ -46,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td data-label="Cost Price"><input type="number" step="0.01" class="product-cp" placeholder="0.00" required></td>
             <td data-label="Selling Price"><input type="number" step="0.01" class="product-sp" placeholder="0.00" required></td>
             <td data-label="Barcode">
-                <div style="display: flex; gap: 5px; align-items: center;">
+                <div class="barcode-wrapper">
                     <input type="text" class="product-barcode" placeholder="Scan or type">
                     <button type="button" class="btn-scan-row" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 2px 5px;" title="Scan with Camera">📷</button>
                 </div>
@@ -366,29 +386,70 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     productsTbody.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-row-btn')) {
-            e.target.closest('tr').remove();
+        const removeBtn = e.target.closest('.remove-row-btn');
+        if (removeBtn) {
+            const rows = productsTbody.querySelectorAll('tr');
+            if (rows.length > 1) {
+                removeBtn.closest('tr').remove();
+            } else {
+                alert("At least one row must remain.");
+            }
+            return;
         }
-        if (e.target.classList.contains('btn-scan-row')) {
-            currentBarcodeTarget = e.target.closest('td').querySelector('.product-barcode');
+
+        const scanBtn = e.target.closest('.btn-scan-row');
+        if (scanBtn) {
+            currentBarcodeTarget = scanBtn.closest('td').querySelector('.product-barcode');
             openScanner();
         }
     });
 
     function openScanner() {
-        document.getElementById('scanner-modal').classList.remove('hidden');
-        html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+        const scannerModal = document.getElementById('scanner-modal');
+        scannerModal.classList.remove('hidden');
+        
+        if (html5QrCode) {
+            html5QrCode.clear();
+        }
 
-        html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
-            if (currentBarcodeTarget) {
-                currentBarcodeTarget.value = decodedText;
-                currentBarcodeTarget.dispatchEvent(new Event('change', { bubbles: true }));
+        html5QrCode = new Html5Qrcode("reader");
+        
+        const config = { 
+            fps: 25,
+            qrbox: function(viewfinderWidth, viewfinderHeight) {
+                return { width: viewfinderWidth * 0.8, height: 150 };
+            },
+            aspectRatio: 1.0,
+            formatsToSupport: [ 
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.QR_CODE
+            ]
+        };
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config, 
+            (decodedText) => {
+                playScanSound();
+                if (navigator.vibrate) navigator.vibrate(100);
+                
+                if (currentBarcodeTarget) {
+                    currentBarcodeTarget.value = decodedText;
+                    currentBarcodeTarget.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                stopScanner();
+            },
+            (errorMessage) => {
+                // Ignore scanning errors for fast performance
             }
-            stopScanner();
-        }).catch(err => {
-            console.error(err);
-            alert('ক্যামেরা চালু করতে সমস্যা। অনুগ্রহ করে পারমিশন দিন।');
+        ).catch(err => {
+            console.error("Camera Error:", err);
+            alert('ক্যামেরা চালু করা যাচ্ছে না। পারমিশন চেক করুন।');
             stopScanner();
         });
     }

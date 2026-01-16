@@ -240,11 +240,19 @@ body {
 }
 
 /* ============================
-   8. Scanner Button Style
+   8. Scanner Button & Barcode Wrapper Style
    ============================ */
+.barcode-wrapper {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    width: 100%;
+}
+
 .btn-scan-row {
     opacity: 0.7;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .btn-scan-row:hover {
@@ -269,11 +277,43 @@ body {
     display: none;
 }
 
+/* Scanner Box Styling */
+#reader {
+    position: relative;
+    border: none !important;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+#reader::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: rgba(255, 0, 0, 0.6);
+    box-shadow: 0 0 10px 2px rgba(255, 0, 0, 0.4);
+    animation: scan-line 2s linear infinite;
+    z-index: 10;
+}
+
+@keyframes scan-line {
+    0% { top: 20%; }
+    50% { top: 80%; }
+    100% { top: 20%; }
+}
+
+#reader video {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: cover !important;
+}
+
 /* ============================
-   9. Mobile Responsive Styles
+   9. Mobile Responsive Styles (FIXED)
    ============================ */
 @media screen and (max-width: 768px) {
-    /* টেবিল হেডার লুকিয়ে ফেলা */
     .card-container table thead {
         display: none;
     }
@@ -286,57 +326,66 @@ body {
         width: 100%;
     }
 
-    /* প্রতিটি রো একটি কার্ডের মতো দেখাবে */
     .card-container table tr {
-        margin-bottom: 20px;
-        border: 1px solid #ddd;
-        border-radius: 10px;
+        margin-bottom: 25px;
+        border: 1px solid #eee;
+        border-radius: 12px;
         padding: 10px;
         background: #fff;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
 
     .card-container table td {
-        text-align: right;
-        padding: 10px 5px;
+        text-align: left;
+        padding: 12px 10px 12px 40%;
         position: relative;
-        border-bottom: 1px solid #f1f1f1;
+        border-bottom: 1px solid #f8f9fa;
+        min-height: 55px;
+        display: flex;
+        align-items: center;
     }
 
     .card-container table td:last-child {
         border-bottom: none;
     }
 
-    /* বাম পাশে লেবেল দেখানোর জন্য */
     .card-container table td::before {
         content: attr(data-label);
         position: absolute;
-        left: 10px;
-        width: 45%;
-        text-align: left;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 35%;
         font-weight: 600;
-        color: #666;
+        color: #444;
         font-size: 13px;
     }
 
-    /* ইনপুট ফিল্ডগুলো ডান পাশে সেট করা */
     .card-container table input, 
     .card-container table select {
-        width: 50% !important;
-        display: inline-block;
+        width: 100% !important;
+        margin: 0;
     }
 
-    /* বারকোড স্ক্যানার এরিয়া */
     .card-container table td[data-label="Barcode"] div {
-        width: 50%;
-        float: right;
+        width: 100%;
+        display: flex;
+        gap: 5px;
     }
 
-    /* অ্যাকশন বাটন ফুল উইডথ করা */
+    .card-container table td[data-label="Barcode"] input {
+        flex: 1;
+    }
+
+    .card-container table td[data-label="Barcode"] .btn-scan-row {
+        flex-shrink: 0;
+    }
+
     .remove-row-btn {
         width: 100% !important;
         border-radius: 8px !important;
         margin-top: 10px;
+        height: 40px;
     }
 
     .remove-row-btn::after {
@@ -346,7 +395,6 @@ body {
         font-weight: 600;
     }
 
-    /* নিচের মেইন বাটনগুলো */
     .form-actions {
         flex-direction: column;
         gap: 10px;
