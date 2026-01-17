@@ -1,5 +1,5 @@
 // js/admin.js
-import { db, auth, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, serverTimestamp } from './firebase-config.js';
+import { db, auth, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, serverTimestamp, onSnapshot } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const ADMIN_EMAIL = "keshabsarkar2018@gmail.com";
@@ -43,29 +43,42 @@ function setupEventListeners() {
     loadFeedbacks();
 }
 
-async function loadAllUsers() {
+function loadAllUsers() {
     const listContainer = document.getElementById('user-list');
-    try {
-        const snap = await getDocs(collection(db, 'shops'));
+    const shopsRef = collection(db, 'shops');
+    
+    // Real-time listener using onSnapshot
+    onSnapshot(shopsRef, (snapshot) => {
         listContainer.innerHTML = '';
-        snap.forEach(docSnap => {
+        
+        if (snapshot.empty) {
+            listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No shops registered yet.</p>';
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
             const d = docSnap.data();
             const status = d.status || 'active';
             const statusIcon = status === 'active' ? '🟢' : '🔴';
             
             const div = document.createElement('div');
             div.className = 'user-item';
+            // Maintain selection highlight if this shop is currently selected
+            if (selectedShopId === docSnap.id) div.classList.add('active-selection');
+
             div.innerHTML = `
-                <strong>${d.shopName} ${statusIcon}</strong><br>
-                <small>${d.contactEmail || d.email}</small><br>
+                <strong>${d.shopName || 'Unnamed Shop'} ${statusIcon}</strong><br>
+                <small>${d.contactEmail || 'No Email'}</small><br>
                 <small style="color: ${status === 'active' ? '#28a745' : '#dc3545'};">Status: ${status}</small>
             `;
+            
             div.onclick = () => selectUser(docSnap.id, d, div);
             listContainer.appendChild(div);
         });
-    } catch (e) { 
-        listContainer.innerHTML = 'Error loading users.'; 
-    }
+    }, (error) => {
+        console.error("Error loading shops:", error);
+        listContainer.innerHTML = '<p style="color:red;">Error loading shops. Check console.</p>';
+    });
 }
 
 function selectUser(shopId, data, element) {
@@ -132,8 +145,6 @@ async function toggleStatus() {
         try {
             await updateDoc(doc(db, 'shops', selectedShopId), { status: newStatus });
             selectedShopData.status = newStatus;
-            selectUser(selectedShopId, selectedShopData, document.querySelector('.active-selection'));
-            loadAllUsers(); // Refresh list to show new status
             alert(`Success: Shop is now ${newStatus}.`);
         } catch (e) {
             alert("Error updating status: " + e.message);
