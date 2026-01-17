@@ -29,6 +29,7 @@ async function uploadImageToImgBB(file) {
 const inventoryBody = document.getElementById('inventory-tbody');
 const searchInput = document.getElementById('search-inventory');
 const categoryFilter = document.getElementById('category-filter');
+const stockLimitFilter = document.getElementById('stock-limit-filter');
 const paginationContainer = document.getElementById('pagination-container');
 const editModal = document.getElementById('edit-modal');
 const editForm = document.getElementById('edit-form');
@@ -133,11 +134,19 @@ function applyFiltersAndRender(resetPage = true) {
     if (resetPage) currentPage = 1;
     const term = searchInput.value.toLowerCase().trim();
     const category = categoryFilter.value;
+    const stockLimit = parseInt(stockLimitFilter.value);
 
-    filteredProducts = allProducts.filter(p => 
-        (!term || (p.name || '').toLowerCase().includes(term) || (p.barcode || '').toLowerCase().includes(term)) &&
-        (!category || p.category === category)
-    );
+    filteredProducts = allProducts.filter(p => {
+        const matchesSearch = !term || (p.name || '').toLowerCase().includes(term) || (p.barcode || '').toLowerCase().includes(term);
+        const matchesCategory = !category || p.category === category;
+        
+        // Stock filter logic: if input is empty show all, if number is entered show products with stock <= that number
+        const currentStock = parseInt(p.stock) || 0;
+        const matchesStock = isNaN(stockLimit) || currentStock <= stockLimit;
+
+        return matchesSearch && matchesCategory && matchesStock;
+    });
+    
     renderTable();
     setupPagination();
 }
@@ -149,19 +158,35 @@ function renderTable() {
     inventoryBody.innerHTML = paginated.length === 0 
         ? '<tr><td colspan="9" class="loading-cell">No products found.</td></tr>'
         : paginated.map(p => {
+            const stock = parseInt(p.stock) || 0;
+            const cp = parseFloat(p.costPrice) || 0;
+            const sp = parseFloat(p.sellingPrice) || 0;
+            
+            // Profit calculation
+            const profit = sp - cp;
+            const margin = cp > 0 ? ((profit / cp) * 100).toFixed(1) : 0;
+
+            // Stock color logic
+            let stockClass = "stock-healthy";
+            if (stock === 0) stockClass = "stock-critical";
+            else if (stock <= 5) stockClass = "stock-low";
+
             const imgHtml = p.imageUrl 
-                ? `<img src="${p.imageUrl}" class="product-thumb" data-name="${p.name}" data-src="${p.imageUrl}" alt="img" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #ddd; transition: transform 0.2s;">` 
+                ? `<img src="${p.imageUrl}" class="product-thumb" data-name="${p.name}" data-src="${p.imageUrl}" alt="img">` 
                 : `<span style="font-size:12px; color:#999; display:inline-block; width:40px; text-align:center;">No Img</span>`;
 
             return `
-            <tr class="${p.stock <= LOW_STOCK_THRESHOLD ? 'low-stock' : ''}">
+            <tr class="${stockClass}">
                 <td><input type="checkbox" class="product-checkbox" data-id="${p.id}"></td>
                 <td style="text-align: center;">${imgHtml}</td>
                 <td>${p.name || 'N/A'}</td>
                 <td>${p.category || 'N/A'}</td>
-                <td>${(p.costPrice || 0).toFixed(2)}</td>
-                <td>${(p.sellingPrice || 0).toFixed(2)}</td>
-                <td>${p.stock || 0}</td>
+                <td>${cp.toFixed(2)}</td>
+                <td>
+                    ${sp.toFixed(2)}
+                    <br><small style="color: #28a745; font-weight: bold;">Margin: ${margin}%</small>
+                </td>
+                <td class="stock-cell"><strong>${stock}</strong></td>
                 <td>${p.barcode || 'N/A'}</td>
                 <td class="action-buttons">
                     <button class="btn btn-sm btn-edit" data-id="${p.id}" title="Edit">Edit</button>
@@ -206,6 +231,7 @@ function setupEventListeners() {
 
     searchInput.addEventListener('input', () => applyFiltersAndRender(true));
     categoryFilter.addEventListener('change', () => applyFiltersAndRender(true));
+    stockLimitFilter.addEventListener('input', () => applyFiltersAndRender(true));
     
     paginationContainer.addEventListener('click', (e) => {
         if(e.target.matches('.pagination-btn')) {

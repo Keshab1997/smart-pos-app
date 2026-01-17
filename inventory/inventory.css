@@ -192,6 +192,43 @@ body {
     color: var(--danger-color);
 }
 
+/* Stock Color Coding */
+.stock-critical { 
+    background-color: #ffe5e5 !important; /* Light red */
+}
+.stock-low { 
+    background-color: #fff4e5 !important; /* Light orange */
+}
+.stock-healthy { 
+    background-color: #ffffff; /* Normal white */
+}
+
+.stock-critical td { 
+    color: #d32f2f; /* Red text */
+}
+.stock-low td { 
+    color: #ef6c00; /* Orange text */
+}
+
+.stock-cell { 
+    font-size: 1.1rem; 
+}
+
+/* Product Thumbnail */
+.product-thumb {
+    width: 40px; 
+    height: 40px; 
+    object-fit: cover; 
+    border-radius: 6px; 
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.product-thumb:hover {
+    transform: scale(1.1);
+}
+
 /* ============================ */
 /* --- Buttons --- */
 /* ============================ */
