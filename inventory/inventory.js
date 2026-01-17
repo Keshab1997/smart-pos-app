@@ -2,8 +2,27 @@ import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import { 
     collection, onSnapshot, doc, deleteDoc, updateDoc, 
-    orderBy, query, where, getDocs, getDoc 
+    orderBy, query, where, getDocs, getDoc, addDoc, serverTimestamp, limit 
 } from 'firebase/firestore';
+
+// Inventory Audit Log Function
+async function saveInventoryLog(productId, productName, actionType, oldStock, newStock) {
+    try {
+        const logRef = collection(db, 'shops', activeShopId, 'inventory_logs');
+        await addDoc(logRef, {
+            productId: productId,
+            productName: productName,
+            action: actionType, // 'UPDATE' or 'DELETE'
+            oldStock: oldStock,
+            newStock: newStock,
+            change: newStock - oldStock,
+            userEmail: auth.currentUser.email,
+            timestamp: serverTimestamp()
+        });
+    } catch (e) {
+        console.error("Log saving failed:", e);
+    }
+}
 
 // ImgBB API Configuration
 const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267';
@@ -277,6 +296,45 @@ function setupEventListeners() {
     window.addEventListener('click', (e) => { if (e.target === editModal) editModal.style.display = 'none'; });
     
     editForm.addEventListener('submit', handleEditFormSubmit);
+    
+    // View Logs button event listener
+    const viewLogsBtn = document.getElementById('view-logs-btn');
+    if (viewLogsBtn) {
+        viewLogsBtn.addEventListener('click', async () => {
+            const logModal = document.getElementById('log-modal');
+            const logTbody = document.getElementById('log-tbody');
+            logModal.style.display = 'flex';
+            logTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading logs...</td></tr>';
+
+            try {
+                const q = query(collection(db, 'shops', activeShopId, 'inventory_logs'), orderBy('timestamp', 'desc'), limit(50));
+                const snap = await getDocs(q);
+                
+                if (snap.empty) {
+                    logTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No audit logs found.</td></tr>';
+                    return;
+                }
+                
+                logTbody.innerHTML = snap.docs.map(doc => {
+                    const d = doc.data();
+                    const date = d.timestamp ? d.timestamp.toDate().toLocaleString() : 'N/A';
+                    return `
+                        <tr>
+                            <td><small>${date}</small></td>
+                            <td>${d.productName}</td>
+                            <td><span class="badge ${d.action === 'DELETE' ? 'btn-delete' : 'btn-edit'}" style="padding:2px 5px; font-size:10px;">${d.action}</span></td>
+                            <td>${d.oldStock}</td>
+                            <td>${d.newStock}</td>
+                            <td><small>${d.userEmail.split('@')[0]}</small></td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('Error loading logs:', e);
+                logTbody.innerHTML = '<tr><td colspan="6" style="color:red;">Error loading logs.</td></tr>';
+            }
+        });
+    }
 }
 
 function openPrintPage(id, name, price) {
@@ -350,17 +408,22 @@ async function handleEditFormSubmit(e) {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
 
-    const data = {
-        name: newName,
-        category: newCategory,
-        costPrice: newCP,
-        sellingPrice: newSP,
-        stock: newStock,
-        lastUpdated: new Date()
-    };
-
     try {
-        // যদি নতুন ছবি সিলেক্ট করা হয়
+        // Get old data for audit log
+        const productRef = doc(db, 'shops', activeShopId, 'inventory', id);
+        const oldDoc = await getDoc(productRef);
+        const oldData = oldDoc.data();
+
+        const data = {
+            name: newName,
+            category: newCategory,
+            costPrice: newCP,
+            sellingPrice: newSP,
+            stock: newStock,
+            lastUpdated: new Date()
+        };
+
+        // Upload image if selected
         if (imageInput.files && imageInput.files[0]) {
             saveBtn.textContent = 'Uploading Image...';
             const uploadedUrl = await uploadImageToImgBB(imageInput.files[0]);
@@ -369,7 +432,12 @@ async function handleEditFormSubmit(e) {
             }
         }
 
-        await updateDoc(doc(db, 'shops', activeShopId, 'inventory', id), data);
+        await updateDoc(productRef, data);
+
+        // Save audit log if stock changed
+        if (oldData.stock !== newStock) {
+            await saveInventoryLog(id, newName, 'UPDATE', oldData.stock, newStock);
+        }
 
         const expensesRef = collection(db, 'shops', activeShopId, 'expenses');
         const q = query(expensesRef, where("relatedProductId", "==", id));
@@ -404,25 +472,31 @@ async function deleteProduct(id) {
     if (!isAuthorized) return;
 
     try {
-        // ১. প্রথমে এই প্রোডাক্টের সাথে সম্পর্কিত সব খরচ (Expenses) খুঁজে বের করা
+        // Get product data for audit log before deletion
+        const productRef = doc(db, 'shops', activeShopId, 'inventory', id);
+        const productDoc = await getDoc(productRef);
+        const productData = productDoc.data();
+
+        // Save audit log
+        await saveInventoryLog(id, productData.name, 'DELETE', productData.stock, 0);
+
+        // Delete related expenses
         const expensesRef = collection(db, 'shops', activeShopId, 'expenses');
         const q = query(expensesRef, where("relatedProductId", "==", id));
         const querySnapshot = await getDocs(q);
 
-        // ২. খরচগুলো ডিলিট করার জন্য প্রমিস লিস্ট তৈরি করা
         const deleteExpensePromises = [];
         querySnapshot.forEach((docSnap) => {
             deleteExpensePromises.push(deleteDoc(doc(db, 'shops', activeShopId, 'expenses', docSnap.id)));
         });
 
-        // ৩. সব খরচ ডিলিট করা
         if (deleteExpensePromises.length > 0) {
             await Promise.all(deleteExpensePromises);
             console.log(`${deleteExpensePromises.length} related expense records deleted.`);
         }
 
-        // ৪. সবশেষে ইনভেন্টরি থেকে প্রোডাক্টটি ডিলিট করা
-        await deleteDoc(doc(db, 'shops', activeShopId, 'inventory', id));
+        // Delete the product
+        await deleteDoc(productRef);
         
         showStatus('Product and related purchase records deleted successfully.');
     } catch (error) { 
