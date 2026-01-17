@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     
     <!-- লগইন পেজের জন্য একটি নতুন CSS ফাইল -->
-    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/login.css?v=1.1">
     <!-- আপনি চাইলে Google Fonts ব্যবহার করতে পারেন -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,9 +21,23 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('Service Worker Registered'))
-            .catch(err => console.log('Service Worker Failed', err));
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            
+            // যদি নতুন কোনো আপডেট পাওয়া যায়
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    // নতুন আপডেট পাওয়া গেছে! ইউজারকে জানানো বা অটো রিলোড
+                    console.log('New update available. Reloading...');
+                    window.location.reload(); 
+                  }
+                }
+              };
+            };
+
+          }).catch(err => console.log('SW registration failed', err));
         });
       }
     </script>
@@ -72,7 +86,7 @@
         </div>
     </div>
 
-    <script src="js/auth.js" type="module"></script>
+    <script src="js/auth.js?v=1.1" type="module"></script>
     <script src="js/pwa-handler.js"></script>
 </body>
 </html>
