@@ -72,29 +72,58 @@
         </section>
         <!-- ===== END: নতুন ওয়েলকাম সেকশন ===== -->
 
+        <!-- Quick Launchpad -->
+        <section class="quick-launchpad">
+            <button onclick="window.location.href='billing/billing.html'" class="launch-btn pos">
+                <span class="icon">💳</span> New Sale
+            </button>
+            <button onclick="window.location.href='add-product/add-product.html'" class="launch-btn inventory">
+                <span class="icon">📦</span> Add Stock
+            </button>
+            <button onclick="window.location.href='expense/expense.html'" class="launch-btn expense">
+                <span class="icon">📉</span> Add Expense
+            </button>
+            <button onclick="window.location.href='sales-report/report.html'" class="launch-btn report">
+                <span class="icon">📊</span> Reports
+            </button>
+        </section>
+
         <!-- KPI কার্ডস (Key Performance Indicators) -->
         <section class="kpi-cards">
             <div class="kpi-card sales">
-                <h3>Today's Sales</h3>
-                <p id="today-sales">₹0.00</p>
+                <div class="kpi-icon">🛒</div>
+                <div class="kpi-data">
+                    <h3>Today's Sales</h3>
+                    <p id="today-sales">₹0.00</p>
+                </div>
             </div>
             <div class="kpi-card profit">
-                <h3>Today's Profit</h3>
-                <p id="today-profit">₹0.00</p>
+                <div class="kpi-icon">💰</div>
+                <div class="kpi-data">
+                    <h3>Today's Profit</h3>
+                    <p id="today-profit">₹0.00</p>
+                </div>
             </div>
-            <!-- ===== START: ক্যানসেল কার্ড ===== -->
             <div class="kpi-card canceled">
-                <h3>Today's Canceled</h3>
-                <p id="today-canceled">₹0.00</p>
+                <div class="kpi-icon">❌</div>
+                <div class="kpi-data">
+                    <h3>Today's Canceled</h3>
+                    <p id="today-canceled">₹0.00</p>
+                </div>
             </div>
-            <!-- ===== END: ক্যানসেল কার্ড ===== -->
             <div class="kpi-card expense">
-                <h3>Today's Expenses</h3>
-                <p id="today-expenses">₹0.00</p>
+                <div class="kpi-icon">💸</div>
+                <div class="kpi-data">
+                    <h3>Today's Expenses</h3>
+                    <p id="today-expenses">₹0.00</p>
+                </div>
             </div>
             <div class="kpi-card low-stock">
-                <h3>Low Stock Items</h3>
-                <p id="low-stock-count">0</p>
+                <div class="kpi-icon">⚠️</div>
+                <div class="kpi-data">
+                    <h3>Low Stock Items</h3>
+                    <p id="low-stock-count">0</p>
+                </div>
             </div>
         </section>
 
@@ -154,11 +183,60 @@
                 <button id="add-expense-btn" class="btn btn-primary">Add Expense</button>
             </div>
 
-            <!-- লো স্টক অ্যালার্ট -->
-            <div class="card list-card">
-                <h3>Low Stock Alerts</h3>
+            <!-- Low Stock Summary Card -->
+            <div class="card list-card low-stock-summary-card">
+                <h3>⚠️ Low Stock Alerts</h3>
                 <div class="list-scroll-container">
-                    <ul id="lowStockList"><li>Loading...</li></ul>
+                    <ul id="lowStockSummaryList">
+                        <li>Checking inventory...</li>
+                    </ul>
+                </div>
+                <div style="padding: 10px; text-align: center;">
+                    <a href="inventory/inventory.html" class="btn btn-secondary" style="font-size: 12px; width: 100%;">Go to Inventory</a>
+                </div>
+            </div>
+
+            <!-- Daily Sales Goal Card -->
+            <div class="card goal-card">
+                <h3>🎯 Daily Sales Goal</h3>
+                <div class="goal-container">
+                    <div class="circular-progress">
+                        <span id="goal-percent">0%</span>
+                    </div>
+                    <div class="goal-info">
+                        <p>Target: <strong id="target-amount">₹5,000</strong></p>
+                        <p>Remaining: <strong id="remaining-amount">₹5,000</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Valuation Card -->
+            <div class="card valuation-card">
+                <h3>💰 Inventory Valuation</h3>
+                <div class="valuation-data">
+                    <div class="val-item">
+                        <span>Total Cost Value:</span>
+                        <strong id="total-cost-value">₹0.00</strong>
+                    </div>
+                    <div class="val-item">
+                        <span>Expected Sale Value:</span>
+                        <strong id="total-sale-value">₹0.00</strong>
+                    </div>
+                    <hr>
+                    <div class="val-item profit">
+                        <span>Potential Profit:</span>
+                        <strong id="potential-profit">₹0.00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Feed -->
+            <div class="card list-card">
+                <h3>⚡ Recent Activity</h3>
+                <div class="list-scroll-container">
+                    <ul id="recentActivityList">
+                        <li>Loading activities...</li>
+                    </ul>
                 </div>
             </div>
         </section>

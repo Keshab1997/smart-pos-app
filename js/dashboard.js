@@ -34,7 +34,8 @@ const userProfilePicEl = document.getElementById('user-profile-pic');
 // Lists
 const topProductsList = document.getElementById('topProductsList');
 const recentExpensesList = document.getElementById('recentExpensesList');
-const lowStockList = document.getElementById('lowStockList');
+const lowStockSummaryList = document.getElementById('lowStockSummaryList');
+const recentActivityList = document.getElementById('recentActivityList');
 
 // Charts
 let salesProfitChartInstance = null;
@@ -93,17 +94,8 @@ function startClock() {
     setInterval(updateTime, 1000);
 }
 
-/**
- * জিমেইল থেকে ছবি এবং Firestore থেকে দোকানের নাম নিয়ে আসে
- */
 async function updateWelcomeSection(user) {
-    const hour = new Date().getHours();
-    let greeting = "Hello";
-    if (hour < 12) greeting = "Good Morning";
-    else if (hour < 18) greeting = "Good Afternoon";
-    else greeting = "Good Evening";
-
-    if(greetingMsgEl) greetingMsgEl.textContent = `${greeting}!`;
+    updateGreeting();
     if(displayUserEmailEl) displayUserEmailEl.textContent = user.email;
 
     // --- জিমেইল থেকে প্রোফাইল ছবি সেট করা ---
@@ -133,6 +125,16 @@ async function updateWelcomeSection(user) {
         console.error("Error fetching shop details:", error);
         if(displayShopNameEl) displayShopNameEl.textContent = "My Smart Shop";
     }
+}
+
+function updateGreeting() {
+    const hour = new Date().getHours();
+    let greeting = "Good Morning!";
+    if (hour >= 12 && hour < 17) greeting = "Good Afternoon!";
+    else if (hour >= 17 && hour < 21) greeting = "Good Evening!";
+    else if (hour >= 21 || hour < 5) greeting = "Good Night!";
+    
+    if(greetingMsgEl) greetingMsgEl.textContent = greeting;
 }
 
 // ==========================================
@@ -225,6 +227,10 @@ async function loadDashboardData() {
 
         // --- UPDATE LISTS & CHARTS ---
         updateLists(recentExpenses, lowStockItems);
+        updateLowStockSummary();
+        updateDailyGoal(totalSales);
+        calculateValuation();
+        loadRecentActivity();
         updateCharts(totalSales, totalProfit, categoryMap);
 
     } catch (error) {
@@ -253,23 +259,6 @@ function updateLists(expenses, lowStockItems) {
                     <span class="amount">-${formatCurrency(exp.amount)}</span>
                 `;
                 recentExpensesList.appendChild(li);
-            });
-        }
-    }
-
-    // Low Stock
-    if (lowStockList) {
-        lowStockList.innerHTML = '';
-        if (lowStockItems.length === 0) {
-            lowStockList.innerHTML = '<li style="color: green;">All stocks are sufficient.</li>';
-        } else {
-            lowStockItems.slice(0, 5).forEach(item => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <span>${item.name}</span>
-                    <span class="stock-warning">Qty: ${item.stock}</span>
-                `;
-                lowStockList.appendChild(li);
             });
         }
     }
@@ -334,6 +323,134 @@ function updateCharts(sales, profit, categoryMap) {
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
+    }
+}
+
+// Low Stock Summary Function
+async function updateLowStockSummary() {
+    if (!lowStockSummaryList || !activeShopId) return;
+
+    try {
+        const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
+        const q = query(inventoryRef, where('stock', '<=', 5));
+        const querySnapshot = await getDocs(q);
+
+        let listHtml = '';
+        let count = 0;
+
+        if (querySnapshot.empty) {
+            listHtml = '<li style="text-align:center; color: #28a745; padding: 20px;">✅ All items are well stocked!</li>';
+        } else {
+            querySnapshot.forEach((doc) => {
+                const p = doc.data();
+                count++;
+                listHtml += `
+                    <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee;">
+                        <div>
+                            <span style="font-weight: 600; display: block;">${p.name}</span>
+                            <small style="color: #666;">Cat: ${p.category || 'N/A'}</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="color: #dc3545; font-weight: bold; font-size: 1.1rem;">${p.stock}</span>
+                            <small style="color: #dc3545; font-weight: 600;"> ${p.uom || 'Pcs'}</small>
+                        </div>
+                    </li>
+                `;
+            });
+        }
+
+        lowStockSummaryList.innerHTML = listHtml;
+        if (lowStockCountEl) lowStockCountEl.textContent = count;
+
+    } catch (error) {
+        console.error("Error loading low stock summary:", error);
+        lowStockSummaryList.innerHTML = '<li class="text-danger">Failed to load alerts.</li>';
+    }
+}
+
+// Daily Goal Update Function
+function updateDailyGoal(currentSales) {
+    const target = 5000; // You can make this configurable
+    const percent = Math.min(Math.round((currentSales / target) * 100), 100);
+    
+    const goalPercentEl = document.getElementById('goal-percent');
+    const targetAmountEl = document.getElementById('target-amount');
+    const remainingAmountEl = document.getElementById('remaining-amount');
+    
+    if (goalPercentEl) goalPercentEl.textContent = `${percent}%`;
+    if (targetAmountEl) targetAmountEl.textContent = `₹${target.toLocaleString()}`;
+    if (remainingAmountEl) remainingAmountEl.textContent = `₹${Math.max(0, target - currentSales).toLocaleString()}`;
+    
+    const progress = document.querySelector('.circular-progress');
+    if (progress) {
+        progress.style.background = `conic-gradient(#4361ee ${percent * 3.6}deg, #ededed 0deg)`;
+    }
+}
+
+// Inventory Valuation Function
+async function calculateValuation() {
+    if (!activeShopId) return;
+    
+    try {
+        const invRef = collection(db, 'shops', activeShopId, 'inventory');
+        const snap = await getDocs(invRef);
+        
+        let totalCost = 0;
+        let totalSale = 0;
+
+        snap.forEach(doc => {
+            const p = doc.data();
+            const stock = parseInt(p.stock) || 0;
+            totalCost += (stock * (parseFloat(p.costPrice) || 0));
+            totalSale += (stock * (parseFloat(p.sellingPrice) || 0));
+        });
+
+        const totalCostEl = document.getElementById('total-cost-value');
+        const totalSaleEl = document.getElementById('total-sale-value');
+        const potentialProfitEl = document.getElementById('potential-profit');
+        
+        if (totalCostEl) totalCostEl.textContent = formatCurrency(totalCost);
+        if (totalSaleEl) totalSaleEl.textContent = formatCurrency(totalSale);
+        if (potentialProfitEl) potentialProfitEl.textContent = formatCurrency(totalSale - totalCost);
+        
+    } catch (error) {
+        console.error("Error calculating valuation:", error);
+    }
+}
+
+// Recent Activity Function
+async function loadRecentActivity() {
+    if (!recentActivityList || !activeShopId) return;
+    
+    try {
+        const salesRef = collection(db, 'shops', activeShopId, 'sales');
+        const q = query(salesRef, orderBy('createdAt', 'desc'), limit(5));
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+            recentActivityList.innerHTML = '<li style="text-align:center; color:#999;">No recent sales found.</li>';
+            return;
+        }
+        
+        let listHtml = '';
+        snap.forEach(doc => {
+            const s = doc.data();
+            const time = s.createdAt ? s.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now';
+            const itemCount = s.items ? s.items.length : 0;
+            
+            listHtml += `
+                <li>
+                    <strong>${formatCurrency(s.total || 0)}</strong> sale completed
+                    <br><small>${time} • ${itemCount} items</small>
+                </li>
+            `;
+        });
+        
+        recentActivityList.innerHTML = listHtml;
+        
+    } catch (error) {
+        console.error("Error loading recent activity:", error);
+        recentActivityList.innerHTML = '<li style="color:red;">Failed to load activities.</li>';
     }
 }
 
