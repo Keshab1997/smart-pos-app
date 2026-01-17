@@ -40,18 +40,13 @@
         }
 
         .header {
-            padding: 15px;
-            text-align: center;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             background: rgba(0, 0, 0, 0.5);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 100;
-        }
-
-        .header h2 {
-            margin: 0;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
-            color: #fff;
         }
 
         .scanner-wrapper {
@@ -84,8 +79,8 @@
         }
 
         .scan-box {
-            width: 260px;
-            height: 180px;
+            width: 250px;
+            height: 250px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 15px;
             position: relative;
@@ -122,22 +117,15 @@
             100% { top: 5%; }
         }
 
-        .footer {
-            padding: 25px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        }
-
         .status-card {
             background: var(--glass);
-            padding: 12px 20px;
+            padding: 8px 15px;
             border-radius: 50px;
             display: inline-block;
-            font-size: 0.9rem;
+            font-size: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: 0.3s;
+            margin: 10px 15px;
         }
 
         .status-success {
@@ -168,7 +156,7 @@
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 6px 12px;
+            padding: 8px 12px;
             border-radius: 6px;
             font-size: 11px;
             cursor: pointer;
@@ -182,7 +170,7 @@
         }
 
         .controls-section {
-            padding: 12px 15px;
+            padding: 15px;
             background: rgba(255, 255, 255, 0.05);
             text-align: center;
         }
@@ -191,16 +179,15 @@
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            font-size: 18px;
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            font-size: 16px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: 0.3s;
-            opacity: 0.5;
         }
 
         .modal-overlay {
@@ -281,6 +268,11 @@
         #suggestions-list li:hover {
             background: rgba(67, 97, 238, 0.3);
         }
+
+        .mirror-view video {
+            transform: scaleX(-1);
+            -webkit-transform: scaleX(-1);
+        }
     </style>
 </head>
 <body>
@@ -288,10 +280,11 @@
     <div class="flash" id="flash-effect"></div>
 
     <div class="app-container">
-        <header class="header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px;">
+        <header class="header">
             <div id="connection-status" title="Connection Status" style="width: 12px; height: 12px; background: #ff4d4d; border-radius: 50%; box-shadow: 0 0 10px #ff4d4d;"></div>
             <h2 style="font-size: 0.9rem; margin: 0;">Smart POS Scanner</h2>
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 6px;">
+                <button id="camera-toggle-btn" onclick="toggleCamera()" class="history-trigger-btn" title="Camera On/Off" style="background: #ff4d4d;">🛑</button>
                 <button onclick="switchCamera()" class="history-trigger-btn" title="Switch Camera">🔄</button>
                 <button id="torch-btn" onclick="toggleTorch()" class="history-trigger-btn" title="Flashlight">🔦</button>
                 <button class="history-trigger-btn" onclick="openHistoryModal()" title="Scan History">🕒</button>
@@ -300,7 +293,6 @@
 
         <main class="scanner-wrapper">
             <div id="reader"></div>
-            
             <div class="scan-overlay">
                 <div class="scan-box">
                     <div class="laser"></div>
@@ -309,7 +301,9 @@
             </div>
         </main>
 
-        <div id="quick-info" onclick="addCurrentToBill()" style="display:none; margin: 10px 15px 0; padding: 12px; background: rgba(67, 97, 238, 0.25); border-radius: 12px; border: 2px solid var(--primary); text-align: center; cursor: pointer; transition: 0.2s; user-select: none;">
+        <div class="status-card" id="status">Ready to scan...</div>
+
+        <div id="quick-info" onclick="addCurrentToBill()" style="display:none; margin: 10px 15px; padding: 12px; background: rgba(67, 97, 238, 0.25); border-radius: 12px; border: 2px solid var(--primary); text-align: center; cursor: pointer; transition: 0.2s; user-select: none;">
             <span id="info-name" style="font-weight:bold; display:block; margin-bottom: 5px; font-size: 15px; color: #fff;">Product Name</span>
             <span id="info-details" style="opacity:0.9; font-size: 12px; color: #fff;">Price: ₹00 | Stock: 00</span>
             <div style="margin-top: 8px; font-size: 10px; color: var(--primary); font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
@@ -330,17 +324,11 @@
         </div>
 
         <section class="controls-section">
-            <div class="status-card" id="status" style="margin-bottom: 8px;">
-                Ready to scan...
-            </div>
-            
-            <div class="speed-control">
-                <p style="font-size: 10px; margin-bottom: 5px; opacity: 0.7;">Delay: <span id="delay-val">1.5</span>s</p>
-                <div style="display: flex; justify-content: center; gap: 8px;">
-                    <button class="speed-btn" onclick="setDelay(500, 'Fast')">Fast</button>
-                    <button class="speed-btn active" onclick="setDelay(1500, 'Normal')">Normal</button>
-                    <button class="speed-btn" onclick="setDelay(3000, 'Slow')">Slow</button>
-                </div>
+            <div style="margin-bottom: 10px; font-size: 10px; opacity: 0.7;">Delay: <span id="delay-val">1.5</span>s</div>
+            <div style="display: flex; justify-content: center; gap: 8px;">
+                <button class="speed-btn" onclick="setDelay(500, 'Fast')">Fast</button>
+                <button class="speed-btn active" onclick="setDelay(1500, 'Normal')">Normal</button>
+                <button class="speed-btn" onclick="setDelay(3000, 'Slow')">Slow</button>
             </div>
         </section>
     </div>
@@ -378,6 +366,7 @@
         let lastScannedName = null;
         let currentFacingMode = "environment";
         let localInventory = [];
+        let isCameraRunning = true;
 
         if (!shopId) {
             statusEl.innerText = "Please login first!";
@@ -397,6 +386,75 @@
             }
         }
         updateConnectionStatus();
+
+        window.toggleCamera = async () => {
+            const btn = document.getElementById('camera-toggle-btn');
+            const readerEl = document.getElementById('reader');
+            const torchBtn = document.getElementById('torch-btn');
+
+            if (isCameraRunning) {
+                try {
+                    await html5QrCode.stop();
+                    isCameraRunning = false;
+                    
+                    btn.innerText = "▶️";
+                    btn.style.background = "#2ec4b6";
+                    statusEl.innerText = "Camera Off (Battery Saving Mode)";
+                    readerEl.style.opacity = "0.2";
+                    torchBtn.style.opacity = "0.3";
+                    
+                    isTorchOn = false;
+                    torchBtn.style.background = 'rgba(255,255,255,0.1)';
+                    
+                } catch (err) { console.error("Stop Error:", err); }
+            } else {
+                try {
+                    await html5QrCode.start({ facingMode: currentFacingMode }, config, onScanSuccess);
+                    isCameraRunning = true;
+                    
+                    btn.innerText = "🛑";
+                    btn.style.background = "#ff4d4d";
+                    statusEl.innerText = "Camera Active";
+                    readerEl.style.opacity = "1";
+                    torchBtn.style.opacity = "1";
+                    
+                } catch (err) {
+                    console.error("Start Error:", err);
+                    statusEl.innerText = "ক্যামেরা চালু করা যাচ্ছে না!";
+                }
+            }
+        };
+
+        window.switchCamera = async () => {
+            try {
+                currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+                const readerEl = document.getElementById('reader');
+                
+                if (currentFacingMode === "user") {
+                    readerEl.classList.add('mirror-view');
+                } else {
+                    readerEl.classList.remove('mirror-view');
+                }
+                
+                await html5QrCode.stop();
+                statusEl.innerText = "Switching camera...";
+                
+                setTimeout(() => {
+                    html5QrCode.start(
+                        { facingMode: currentFacingMode },
+                        config,
+                        onScanSuccess
+                    ).then(() => {
+                        document.getElementById('torch-btn').style.opacity = "1";
+                        statusEl.innerText = "Camera: " + (currentFacingMode === "user" ? "Front" : "Back");
+                        setTimeout(() => statusEl.innerText = "Ready to scan...", 1500);
+                    });
+                }, 500);
+            } catch (e) {
+                console.error(e);
+                statusEl.innerText = "Camera switch failed!";
+            }
+        };
 
         window.toggleTorch = async () => {
             try {
@@ -463,41 +521,6 @@
                 setTimeout(() => {
                     infoDiv.style.background = "rgba(67, 97, 238, 0.25)";
                 }, 200);
-            }
-        };
-
-        window.switchCamera = async () => {
-            try {
-                currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
-                await html5QrCode.stop();
-                statusEl.innerText = "Switching camera...";
-                
-                setTimeout(() => {
-                    html5QrCode.start(
-                        { facingMode: currentFacingMode },
-                        config,
-                        onScanSuccess
-                    ).then(() => {
-                        document.getElementById('torch-btn').style.opacity = "1";
-                        statusEl.innerText = "Camera switched!";
-                        setTimeout(() => statusEl.innerText = "Ready to scan...", 1500);
-                    });
-                }, 500);
-            } catch (e) {
-                console.error(e);
-                statusEl.innerText = "Camera switch failed!";
-            }
-        };
-
-        window.toggleManualSearch = () => {
-            const box = document.getElementById('manual-search-box');
-            const suggestionsBox = document.getElementById('suggestions-box');
-            box.style.display = (box.style.display === 'none' || !box.style.display) ? 'flex' : 'none';
-            if (box.style.display === 'flex') {
-                document.getElementById('manual-search-input').focus();
-            } else {
-                document.getElementById('manual-search-input').value = '';
-                suggestionsBox.style.display = 'none';
             }
         };
 
@@ -625,14 +648,6 @@
             }
         };
 
-        const getProductName = async (barcode) => {
-            try {
-                const docRef = doc(db, 'shops', shopId, 'inventory', barcode);
-                const docSnap = await getDoc(docRef);
-                return docSnap.exists() ? docSnap.data().name : 'New Product';
-            } catch (e) { return 'New Product'; }
-        };
-
         const showQuickInfo = async (barcode) => {
             try {
                 const docRef = doc(db, 'shops', shopId, 'inventory', barcode);
@@ -733,7 +748,7 @@
             
             setTimeout(() => {
                 isPaused = false;
-                statusEl.innerText = "Ready to scan next...";
+                if (isCameraRunning) statusEl.innerText = "Ready to scan next...";
             }, scanDelay);
         };
 
@@ -741,7 +756,7 @@
         
         const config = { 
             fps: 25,
-            qrbox: { width: 260, height: 180 },
+            qrbox: 250,
             aspectRatio: 1.0,
             formatsToSupport: [
                 Html5QrcodeSupportedFormats.CODE_128,
