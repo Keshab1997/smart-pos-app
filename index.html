@@ -29,33 +29,49 @@
     </script>
 </head>
 <body>
+    <!-- ব্যাকগ্রাউন্ড এনিমেশন কন্টেইনার -->
+    <div class="area">
+        <ul class="circles">
+            <li>🛒</li><li>💰</li><li>💳</li><li>🧾</li><li>📦</li>
+            <li>📊</li><li>📱</li><li>🛒</li><li>💰</li><li>🧾</li>
+        </ul>
+    </div>
+
     <div class="login-wrapper">
-        <div class="login-container">
-            <h1 class="logo-text">Smart POS</h1>
-            <h2>Welcome Back!</h2>
-            <p>Please sign in to access your dashboard.</p>
+        <div class="login-card">
+            <!-- আপনার দেওয়া আইকন -->
+            <div class="icon-box">
+                <img src="https://cdn-icons-png.flaticon.com/512/4964/4964387.png" alt="POS Icon">
+            </div>
+
+            <div class="login-header">
+                <h1>Smart POS</h1>
+                <p>The Future of Business Management</p>
+            </div>
             
             <button id="google-login-btn" class="google-btn">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google logo">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google">
                 <span>Sign in with Google</span>
             </button>
             
-            <div style="margin: 20px 0; color: #999; text-align: center; font-size: 14px;">OR Staff Login</div>
+            <div class="divider">
+                <span>OR STAFF ACCESS</span>
+            </div>
 
-            <form id="staff-login-form" style="width: 100%;">
-                <input type="email" id="login-email" placeholder="Staff Email" required class="form-control" style="margin-bottom:10px; width:100%; padding:12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
-                <input type="password" id="login-password" placeholder="Password" required class="form-control" style="margin-bottom:15px; width:100%; padding:12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
-                <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; background:#4361ee; color:white; border:none; border-radius:5px; font-weight: 600; cursor: pointer;">Login as Staff</button>
+            <form id="staff-login-form" class="staff-form">
+                <input type="email" id="login-email" placeholder="Staff Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit" class="login-submit-btn">Enter Dashboard</button>
             </form>
             
             <div id="login-status" class="status-message"></div>
+
+            <div class="login-footer">
+                <p>Developed by <span>Keshab Sarkar</span></p>
+            </div>
         </div>
-        <footer class="login-footer">
-            <p>&copy; 2025 Smart POS. Developed by Keshab Sarkar.</p>
-        </footer>
     </div>
 
-    <!-- মডিউলার জাভাস্ক্রিপ্ট ফাইল লোড করার জন্য type="module" ব্যবহার করুন -->
     <script src="js/auth.js" type="module"></script>
     <script src="js/pwa-handler.js"></script>
 </body>

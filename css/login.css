@@ -1,97 +1,201 @@
 /* css/login.css */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
 
-/* বেসিক রিসেট এবং ফন্ট সেটআপ */
 body, html {
-    margin: 0;
-    padding: 0;
+    margin: 0; padding: 0;
     height: 100%;
-    font-family: 'Poppins', sans-serif;
-    background-color: #f4f7f6; /* হালকা ধূসর ব্যাকগ্রাউন্ড */
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #0f172a; /* Deep Midnight Blue */
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: hidden;
 }
 
-/* পুরো লগইন পেজের র‍্যাপার */
-.login-wrapper {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    width: 100%;
-}
-
-/* লগইন বক্স */
-.login-container {
-    background-color: #ffffff;
-    padding: 40px 50px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-}
-
-/* লোগো টেক্সট */
-.logo-text {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #2c3e50; /* গাঢ় নীল */
-    margin: 0 0 10px;
-}
-
-.login-container h2 {
-    font-size: 1.5rem;
-    color: #34495e; /* কিছুটা হালকা নীল */
-    margin-bottom: 10px;
-}
-
-.login-container p {
-    color: #7f8c8d; /* ধূসর টেক্সট */
-    margin-bottom: 30px;
-}
-
-/* গুগল লগইন বাটন */
-.google-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 12px 20px;
-    background-color: #ffffff;
-    color: #444;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.3s, box-shadow 0.3s;
-}
-
-.google-btn:hover {
-    background-color: #f8f8f8;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.google-btn img {
-    width: 20px;
-    height: 20px;
-    margin-right: 15px;
-}
-
-/* স্ট্যাটাস মেসেজ (যেমন: লগইন হচ্ছে...) */
-.status-message {
-    margin-top: 20px;
-    color: #3498db;
-    font-size: 0.9rem;
-}
-
-/* ফুটার */
-.login-footer {
+/* --- POS Related Background Animation --- */
+.area {
     position: absolute;
-    bottom: 20px;
+    width: 100%;
+    height: 100vh;
+    z-index: -1;
+}
+
+.circles {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    overflow: hidden; margin: 0; padding: 0;
+}
+
+.circles li {
+    position: absolute;
+    display: block;
+    list-style: none;
+    width: 20px; height: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    animation: animate 25s linear infinite;
+    bottom: -150px;
+    font-size: 30px;
+    display: flex; justify-content: center; align-items: center;
+}
+
+/* আইকনগুলোর পজিশন ও সাইজ */
+.circles li:nth-child(1){ left: 25%; width: 80px; height: 80px; animation-delay: 0s; }
+.circles li:nth-child(2){ left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
+.circles li:nth-child(3){ left: 70%; width: 20px; height: 20px; animation-delay: 4s; }
+.circles li:nth-child(4){ left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 18s; }
+.circles li:nth-child(5){ left: 65%; width: 20px; height: 20px; animation-delay: 0s; }
+.circles li:nth-child(6){ left: 75%; width: 110px; height: 110px; animation-delay: 3s; }
+.circles li:nth-child(7){ left: 35%; width: 150px; height: 150px; animation-delay: 7s; }
+.circles li:nth-child(8){ left: 50%; width: 25px; height: 25px; animation-delay: 15s; animation-duration: 45s; }
+.circles li:nth-child(9){ left: 20%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; }
+.circles li:nth-child(10){ left: 85%; width: 150px; height: 150px; animation-delay: 0s; animation-duration: 11s; }
+
+@keyframes animate {
+    0%{ transform: translateY(0) rotate(0deg); opacity: 1; border-radius: 0; }
+    100%{ transform: translateY(-1000px) rotate(720deg); opacity: 0; border-radius: 50%; }
+}
+
+/* --- Login Card (Glassmorphism) --- */
+.login-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 50px 40px;
+    border-radius: 32px;
     text-align: center;
-    color: #95a5a6;
-    font-size: 0.9rem;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.icon-box img {
+    width: 100px;
+    height: 100px;
+    filter: drop-shadow(0 0 20px rgba(67, 97, 238, 0.5));
+    margin-bottom: 20px;
+}
+
+.login-header h1 {
+    color: #fff;
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(to right, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.login-header p {
+    color: #94a3b8;
+    font-size: 14px;
+    margin: 8px 0 35px;
+}
+
+/* Buttons & Inputs */
+.google-btn {
+    width: 100%;
+    padding: 14px;
+    background: #fff;
+    border: none;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    color: #1e293b;
+}
+
+.google-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+.google-btn img { width: 22px; }
+
+.divider {
+    margin: 30px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.divider span {
+    position: absolute;
+    top: -10px; left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a;
+    padding: 0 15px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.staff-form input {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    color: #fff;
+    box-sizing: border-box;
+    transition: 0.3s;
+}
+
+.staff-form input:focus {
+    outline: none;
+    border-color: #4361ee;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.staff-form input::placeholder {
+    color: #94a3b8;
+}
+
+.login-submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: #4361ee;
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.login-submit-btn:hover {
+    background: #3b82f6;
+    box-shadow: 0 0 20px rgba(67, 97, 238, 0.4);
+}
+
+.status-message {
+    margin-top: 15px;
+    font-size: 13px;
+    color: #ef4444;
+}
+
+.login-footer {
+    margin-top: 40px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.login-footer span {
+    color: #4361ee;
+    font-weight: 700;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .login-card { padding: 40px 25px; }
+    .login-header h1 { font-size: 26px; }
 }
