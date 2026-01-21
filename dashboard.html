@@ -22,15 +22,7 @@
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/navbar.css">
     
-    <!-- নতুন কার্ডের জন্য স্টাইল (ঐচ্ছিক - যদি global.css এ না থাকে) -->
-    <style>
-        .kpi-card.canceled {
-            border-left-color: #fd7e14; /* কমলা রঙ */
-        }
-        .kpi-card.canceled p {
-            color: #fd7e14;
-        }
-    </style>
+
     
     <script>
       if ('serviceWorker' in navigator) {
@@ -104,13 +96,7 @@
                     <p id="today-profit">₹0.00</p>
                 </div>
             </div>
-            <div class="kpi-card canceled">
-                <div class="kpi-icon">❌</div>
-                <div class="kpi-data">
-                    <h3>Today's Canceled</h3>
-                    <p id="today-canceled">₹0.00</p>
-                </div>
-            </div>
+
             <div class="kpi-card expense">
                 <div class="kpi-icon">💸</div>
                 <div class="kpi-data">
