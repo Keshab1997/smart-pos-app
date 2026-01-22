@@ -95,9 +95,21 @@ html, body {
 }
 
 /* আইটেম টেবিল */
-.items-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+.items-table { 
+    width: 100%; 
+    table-layout: fixed; /* টেবিলকে কার্ডের ভেতরে আটকে রাখার জন্য */
+    border-collapse: collapse; 
+    margin: 10px 0; 
+}
 .items-table thead { border-top: 1.5px solid #000; border-bottom: 1.5px solid #000; }
-.items-table th, .items-table td { padding: 5px 2px; vertical-align: top; }
+.items-table th, .items-table td { 
+    padding: 5px 2px; 
+    vertical-align: top;
+    /* লম্বা লেখা ভেঙে নিচে নামানোর জন্য */
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
 .items-table th {
     font-size: 10pt; 
     text-align: left;
@@ -111,13 +123,13 @@ html, body {
 }
 .items-table tbody tr:last-child td { border-bottom: none; }
 
-/* টেবিল কলাম সাইজ */
+/* টেবিল কলাম সাইজ - আইটেমের নামের জন্য বেশি জায়গা */
 .items-table .center { text-align: center; }
 .items-table .right { text-align: right; font-feature-settings: "tnum"; }
-.items-table .item-col { width: 48%; } 
-.items-table .qty-col { width: 12%; text-align: center; }
-.items-table .rate-col { width: 20%; text-align: right; }
-.items-table .total-col { width: 20%; text-align: right; }
+.items-table .item-col { width: 55%; } /* আইটেমের নামের জন্য বেশি জায়গা */
+.items-table .qty-col { width: 10%; text-align: center; }
+.items-table .rate-col { width: 17%; text-align: right; }
+.items-table .total-col { width: 18%; text-align: right; }
 
 /* মোট হিসাব */
 .totals-section { margin-top: 10px; padding: 10px 2px 0 2px; border-top: 1.5px solid #000; }
