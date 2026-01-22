@@ -94,9 +94,13 @@ async function loadAndPrintBill() {
             // আইটেম লিস্ট
             const itemsTbody = document.getElementById('receipt-items');
             saleData.items.forEach(item => {
+                // ম্যাজিক লাইন: যেখানেই '+' পাবে, তার পরে একটা স্পেস যোগ করবে
+                // ফলে 'Punjabi+Dhuti' হয়ে যাবে 'Punjabi+ Dhuti' (যা সুন্দরভাবে র্যাপ হবে)
+                let formattedName = item.name.replace(/\+/g, '+ ');
+                
                 const row = itemsTbody.insertRow();
                 row.innerHTML = `
-                    <td>${item.name}</td>
+                    <td>${formattedName}</td>
                     <td class="center">${item.quantity}</td>
                     <td class="right">${item.price.toFixed(2)}</td>
                     <td class="right">${(item.quantity * item.price).toFixed(2)}</td>

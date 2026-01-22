@@ -130,9 +130,14 @@ html, body {
 /* ১. আইটেমের নাম - নাম ভেঙে নিচে নামবে */
 .items-table .item-col { 
     width: 40%; 
-    white-space: normal; 
+    
+    /* লেখা যাতে শব্দের মাঝখানে না ভাঙে */
+    white-space: normal;
     word-wrap: break-word; 
+    word-break: normal; /* এটিই আসল কাজ করবে */
     overflow-wrap: break-word;
+    
+    padding-right: 5px; /* ডানদিকে একটু ফাঁকা রাখা */
 }
 
 /* ২. পরিমাণ - সংখ্যা ভাঙবে না */
