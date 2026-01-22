@@ -32,7 +32,8 @@ function getCorrectPath(targetPath) {
         currentPath.includes('/shop-details/') ||
         currentPath.includes('/advance-booking/') ||
         currentPath.includes('/staff-management/') ||
-        currentPath.includes('/label-printer/')) {
+        currentPath.includes('/label-printer/') ||
+        currentPath.includes('/cancelled-bills/')) {
             
         return '../' + targetPath;
     }
@@ -186,6 +187,54 @@ async function updateNavUserInfo() {
             const imgEl = document.getElementById('nav-user-img');
             const userRole = localStorage.getItem('userRole');
             const activeShopId = localStorage.getItem('activeShopId');
+
+            // ============================================================
+            // ✅ START: Cancelled Bills Button (Only for Owner)
+            // ============================================================
+            const currentShopId = localStorage.getItem('activeShopId');
+            const isOwner = user.uid === currentShopId;
+
+            if (isOwner) {
+                const sidebarList = document.querySelector('.sidebar-links');
+                
+                if (sidebarList && !document.querySelector('#cancelled-bills-nav')) {
+                    // পাথ ঠিক করা
+                    const isInSubFolder = window.location.pathname.includes('/purchase-record/') || 
+                                        window.location.pathname.includes('/billing/') || 
+                                        window.location.pathname.includes('/inventory/') ||
+                                        window.location.pathname.includes('/sales-report/') ||
+                                        window.location.pathname.includes('/expense/') ||
+                                        window.location.pathname.includes('/add-product/') ||
+                                        window.location.pathname.includes('/shop-details/') ||
+                                        window.location.pathname.includes('/advance-booking/') ||
+                                        window.location.pathname.includes('/staff-management/') ||
+                                        window.location.pathname.includes('/label-printer/') ||
+                                        window.location.pathname.includes('/cancelled-bills/');
+                    const pathPrefix = isInSubFolder ? '../' : '';
+
+                    // নতুন বাটন তৈরি
+                    const li = document.createElement('li');
+                    li.id = 'cancelled-bills-nav';
+                    li.innerHTML = `
+                        <a href="${pathPrefix}cancelled-bills/index.html" style="color: #ef233c;">
+                            <span style="margin-right: 10px;">🚫</span> Cancelled Bills
+                        </a>
+                    `;
+
+                    // Sales Report এর পরে যোগ করা
+                    const salesReportItem = Array.from(sidebarList.children).find(li => 
+                        li.querySelector('a')?.textContent.includes('Sales Report')
+                    );
+                    if (salesReportItem && salesReportItem.nextSibling) {
+                        sidebarList.insertBefore(li, salesReportItem.nextSibling);
+                    } else {
+                        sidebarList.appendChild(li);
+                    }
+                }
+            }
+            // ============================================================
+            // ✅ END
+            // ============================================================
 
             if (userRole === 'owner') {
                 // মালিকের জন্য গুগল প্রোফাইল ছবি

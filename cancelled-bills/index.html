@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cancelled Bills - Smart POS</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <!-- Local CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Navbar Placeholder -->
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="header-section">
+            <h1>🚫 Cancelled Bills History</h1>
+            <p>List of all bills that have been cancelled.</p>
+            
+            <!-- নতুন যোগ করা নোট -->
+            <div style="background-color: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 5px; border: 1px solid #c8e6c9; margin-top: 10px; font-size: 14px; display: inline-block;">
+                ✅ <strong>Note:</strong> Items from cancelled bills have been automatically returned to the <strong>Inventory Stock</strong>.
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <section class="card filter-section">
+            <div class="date-group">
+                <label>From:</label>
+                <input type="date" id="date-from" class="form-control">
+            </div>
+            <div class="date-group">
+                <label>To:</label>
+                <input type="date" id="date-to" class="form-control">
+            </div>
+            <button id="btn-filter" class="btn btn-primary">Filter Data</button>
+            <button id="btn-reset" class="btn btn-secondary">Reset</button>
+        </section>
+
+        <!-- Data Table -->
+        <section class="card table-card">
+            <div class="table-responsive">
+                <table class="cancel-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Bill No</th>
+                            <th>Customer</th>
+                            <th>Amount</th>
+                            <th>Reason for Cancellation</th>
+                            <th>Cancelled By</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cancelled-list-body">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 20px;">Loading cancelled bills...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      }
+    }
+    </script>
+    
+    <script type="module" src="../js/firebase-config.js"></script>
+    <script type="module" src="../js/navbar.js"></script>
+    
+    <!-- Logout Logic -->
+    <script type="module">
+        import { auth } from '../js/firebase-config.js';
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        document.addEventListener('trigger-logout', () => {
+            signOut(auth).then(() => {
+                window.location.href = '../index.html';
+            }).catch((error) => {
+                console.error("Logout error", error);
+            });
+        });
+    </script>
+
+    <!-- Main Script -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>

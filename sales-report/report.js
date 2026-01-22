@@ -1,7 +1,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
-    collection, getDocs, getDoc, query, orderBy, doc, updateDoc, runTransaction
+    collection, getDocs, getDoc, query, orderBy, doc, updateDoc, runTransaction, writeBatch, increment
 } from 'firebase/firestore';
 
 // --- DOM Elements ---
@@ -96,7 +96,8 @@ function calculateTopSummaries(sales) {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     sales.forEach(sale => {
-        if (sale.status === 'canceled') return;
+        // cancelled এবং canceled দুটোই চেক করা হচ্ছে
+        if (sale.status === 'canceled' || sale.status === 'cancelled') return;
         
         const netTotal = sale.total;
         overallTotal += netTotal;
@@ -141,7 +142,7 @@ function filterAndDisplayData() {
         const hasDiscount = (sale.discountAmount || sale.discount || 0) > 0;
 
         if (d < startDate || d > endDate) return false;
-        if (sale.status === 'canceled') return false;
+        if (sale.status === 'canceled' || sale.status === 'cancelled') return false;
 
         // --- ফিল্টার লজিক ফিক্স ---
         let checkMethod = method;
@@ -161,7 +162,7 @@ function calculateFilteredPaymentSummary(sales) {
     let cashTotal = 0, onlineTotal = 0, discountTotal = 0;
 
     sales.forEach(sale => {
-        if (sale.status === 'canceled') return;
+        if (sale.status === 'canceled' || sale.status === 'cancelled') return;
         
         discountTotal += (sale.discountAmount || sale.discount || 0);
 
@@ -202,7 +203,7 @@ function renderSalesTable(sales) {
     }
 
     sales.forEach(sale => {
-        if (sale.status === 'canceled') return;
+        if (sale.status === 'canceled' || sale.status === 'cancelled') return;
         
         const saleDateObj = sale.createdAt.toDate();
         const saleDateStr = formatDate(saleDateObj); 
@@ -267,7 +268,7 @@ function renderSalesTable(sales) {
         // Security Check
         const isToday = isTransactionToday(saleDateObj);
 
-        if (sale.status === 'canceled') {
+        if (sale.status === 'canceled' || sale.status === 'cancelled') {
             row.classList.add('sale-canceled');
             actionHTML = `<span style="color:red; font-weight:bold; font-size:12px;">CANCELED</span>`;
         } else {
@@ -382,40 +383,51 @@ async function handleCancelBill(saleId) {
     if(!confirm("আপনি কি নিশ্চিত? পণ্যগুলো স্টকে ফেরত যাবে এবং এই বিক্রয়টি বাতিল হিসেবে চিহ্নিত হবে।")) return;
 
     try {
-        await runTransaction(db, async (t) => {
-            const sRef = doc(db, 'shops', activeShopId, 'sales', saleId);
-            const sDoc = await t.get(sRef);
-            if(!sDoc.exists()) throw "Sale not found";
-            
-            const saleData = sDoc.data();
-            if(saleData.status === 'canceled') {
-                throw "This sale is already canceled";
-            }
-            
-            const items = saleData.items || [];
-
-            // স্টক ফেরত দেওয়া
-            for (const item of items) {
-                if(!item.id) continue;
-                const pRef = doc(db, 'shops', activeShopId, 'inventory', item.id);
-                const pDoc = await t.get(pRef);
-                if(pDoc.exists()) {
-                    const currentStock = pDoc.data().stock || 0;
-                    t.update(pRef, { stock: currentStock + item.quantity });
-                }
-            }
-            
-            // বিক্রয় বাতিল করা
-            t.update(sRef, { 
-                status: 'canceled',
-                canceledAt: new Date(),
-                cancelReason: reason
-            });
+        // ব্যাচ ব্যবহার করে একসাথে সব আপডেট করা
+        const batch = writeBatch(db);
+        
+        // বিলের ডাটা আনা
+        const saleRef = doc(db, 'shops', activeShopId, 'sales', saleId);
+        const saleSnap = await getDoc(saleRef);
+        
+        if (!saleSnap.exists()) {
+            alert("বিল খুঁজে পাওয়া যায়নি!");
+            return;
+        }
+        
+        const saleData = saleSnap.data();
+        
+        if (saleData.status === 'cancelled' || saleData.status === 'canceled') {
+            alert("এই বিলটি আগেই বাতিল করা হয়েছে।");
+            return;
+        }
+        
+        // বিল ক্যানসেল করা (cancelled-bills মডিউলের সাথে সামঞ্জস্যপূর্ণ)
+        batch.update(saleRef, {
+            status: 'cancelled', // cancelled-bills মডিউলের জন্য
+            cancellationReason: reason,
+            cancelledAt: new Date(),
+            cancelledBy: 'Admin'
         });
-
+        
+        // স্টক ফেরত পাঠানো
+        if (saleData.items && Array.isArray(saleData.items)) {
+            saleData.items.forEach(item => {
+                if (item.id) {
+                    const productRef = doc(db, 'shops', activeShopId, 'inventory', item.id);
+                    batch.update(productRef, {
+                        stock: increment(item.quantity)
+                    });
+                }
+            });
+        }
+        
+        // ব্যাচ কমিট করা
+        await batch.commit();
+        
         // লোকাল ডাটা আপডেট
         const s = allSalesData.find(x => x.id === saleId);
-        if(s) s.status = 'canceled';
+        if(s) s.status = 'cancelled';
         
         calculateTopSummaries(allSalesData);
         filterAndDisplayData();
@@ -423,11 +435,7 @@ async function handleCancelBill(saleId) {
 
     } catch(e) { 
         console.error("Cancel error:", e); 
-        if(e === "This sale is already canceled") {
-            alert("⚠️ এই বিক্রয়টি আগেই বাতিল করা হয়েছে।");
-        } else {
-            alert("❌ বিক্রয় বাতিল করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
-        }
+        alert("❌ বিক্রয় বাতিল করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
     }
 }
 
@@ -441,7 +449,7 @@ function sendReportToWhatsApp() {
 
     allSalesData.forEach(sale => {
         const saleDate = sale.createdAt.toDate();
-        if (saleDate >= startOfToday && sale.status !== 'canceled') {
+        if (saleDate >= startOfToday && sale.status !== 'canceled' && sale.status !== 'cancelled') {
             tTotal += sale.total;
             tDisc += (sale.discountAmount || sale.discount || 0);
             tCount++;
@@ -490,7 +498,7 @@ window.downloadPDF = function() {
 
     // ২. ডাটা প্রসেসিং এবং হিসাব একসাথে করা
     filteredSalesForPDF.forEach(sale => {
-        const isCanceled = sale.status === 'canceled';
+        const isCanceled = sale.status === 'canceled' || sale.status === 'cancelled';
         const billNo = sale.billNumber || sale.billNo || sale.id.substring(0, 6).toUpperCase();
         const date = formatDate(sale.createdAt.toDate());
         
