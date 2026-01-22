@@ -87,10 +87,12 @@ html, body {
 .bill-info div, .customer-details p { 
     display: flex;
     justify-content: flex-start; 
-    margin: 4px 0; 
+    margin: 2px 0; /* লাইনের মাঝখানের গ্যাপও একটু কমানো হলো */
+    gap: 5px; /* লেবেল এবং ভ্যালুর মাঝে সামান্য গ্যাপ */
 }
 .bill-info strong, .customer-details strong {
-    min-width: 80px; 
+    /* আগে এটি 80px ছিল, এখন কমিয়ে 60px করা হলো */
+    min-width: 60px; 
     display: inline-block;
 }
 
