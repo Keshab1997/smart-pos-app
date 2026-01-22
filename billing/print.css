@@ -123,13 +123,38 @@ html, body {
 }
 .items-table tbody tr:last-child td { border-bottom: none; }
 
-/* টেবিল কলাম সাইজ - আইটেমের নামের জন্য বেশি জায়গা */
+/* টেবিল কলাম সাইজ এবং সংখ্যা ভাঙা প্রতিরোধ */
 .items-table .center { text-align: center; }
 .items-table .right { text-align: right; font-feature-settings: "tnum"; }
-.items-table .item-col { width: 55%; } /* আইটেমের নামের জন্য বেশি জায়গা */
-.items-table .qty-col { width: 10%; text-align: center; }
-.items-table .rate-col { width: 17%; text-align: right; }
-.items-table .total-col { width: 18%; text-align: right; }
+
+/* ১. আইটেমের নাম - নাম ভেঙে নিচে নামবে */
+.items-table .item-col { 
+    width: 40%; 
+    white-space: normal; 
+    word-wrap: break-word; 
+    overflow-wrap: break-word;
+}
+
+/* ২. পরিমাণ - সংখ্যা ভাঙবে না */
+.items-table .qty-col { 
+    width: 10%; 
+    text-align: center; 
+    white-space: nowrap;
+}
+
+/* ৩. রেট - সংখ্যা ভাঙবে না, জায়গা বাড়ানো */
+.items-table .rate-col { 
+    width: 25%; 
+    text-align: right; 
+    white-space: nowrap;
+}
+
+/* ৪. মোট - সংখ্যা ভাঙবে না, জায়গা বাড়ানো */
+.items-table .total-col { 
+    width: 25%; 
+    text-align: right; 
+    white-space: nowrap;
+}
 
 /* মোট হিসাব */
 .totals-section { margin-top: 10px; padding: 10px 2px 0 2px; border-top: 1.5px solid #000; }
