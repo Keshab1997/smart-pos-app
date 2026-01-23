@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = 'smart-pos-v1.1'; // আপডেট করলে এখানে v1.2, v1.3 এভাবে বাড়িয়ে দেবেন
+const CACHE_NAME = 'smart-pos-v1.2'; // আপডেট করলে এখানে v1.2, v1.3 এভাবে বাড়িয়ে দেবেন
 const ASSETS = [
   '/',
   '/index.html',
