@@ -26,6 +26,14 @@ body {
     font-family: 'Poppins', sans-serif;
 }
 
+/* Full Screen Display Fix */
+.container {
+    max-width: 98% !important;
+    width: 100%;
+    margin: 0 auto;
+    padding: 10px 20px;
+}
+
 /* ================================== */
 /* --- Cards & Layout --- */
 /* ================================== */

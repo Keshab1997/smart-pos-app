@@ -49,6 +49,16 @@ if (printReportBtn) {
                 return matchesSearch && matchesCategory;
             });
 
+            // ==========================================
+            // বারকোড অনুযায়ী সিরিয়াল সর্ট করা
+            // ==========================================
+            filteredProducts.sort((a, b) => {
+                const barcodeA = String(a.barcode || "0");
+                const barcodeB = String(b.barcode || "0");
+                return barcodeA.localeCompare(barcodeB, undefined, { numeric: true });
+            });
+            // ==========================================
+
             if (filteredProducts.length === 0) {
                 alert("No products found to print with current filters.");
                 return;

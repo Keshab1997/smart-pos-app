@@ -166,6 +166,13 @@ function applyFiltersAndRender(resetPage = true) {
         return matchesSearch && matchesCategory && matchesStock;
     });
     
+    // বারকোড অনুযায়ী সিরিয়াল সর্ট
+    filteredProducts.sort((a, b) => {
+        const barcodeA = String(a.barcode || "0");
+        const barcodeB = String(b.barcode || "0");
+        return barcodeA.localeCompare(barcodeB, undefined, { numeric: true });
+    });
+    
     renderTable();
     setupPagination();
 }

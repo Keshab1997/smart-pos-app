@@ -164,44 +164,47 @@ if (bulkDeleteBtn) {
 // Listen for double clicks on the table body
 if (tableBody) {
     tableBody.addEventListener('dblclick', async (e) => {
-        const cell = e.target;
+        const cell = e.target.closest('td');
+        if (!cell) return;
         const row = cell.parentElement;
         
-        // Only allow editing Cost Price(3), Selling Price(4), Stock(5)
-        // Check cell index
+        // বর্তমান কলাম ইনডেক্স: 0:Chk, 1:Img, 2:Name, 3:Cat, 4:CP, 5:SP, 6:Stock, 7:Bar, 8:Action
         const cellIndex = cell.cellIndex;
         
-        // Columns: 0:Chk, 1:Name, 2:Cat, 3:CP, 4:SP, 5:Stock, 6:Bar, 7:Action
-        if (![3, 4, 5].includes(cellIndex)) return;
+        // শুধু Cost Price(4), Selling Price(5), এবং Stock(6) এডিট করতে পারবে
+        if (![4, 5, 6].includes(cellIndex)) return;
 
-        // Get Product ID from the checkbox in the same row
         const checkbox = row.querySelector('.product-checkbox');
         if (!checkbox) return;
         const productId = checkbox.dataset.id;
         
-        const originalValue = cell.innerText;
+        // সেল এর ভেতরের মূল সংখ্যাটি বের করা (Margin টেক্সট বাদ দিয়ে)
+        const originalText = cell.innerText.split('\n')[0].trim();
+        const originalValue = parseFloat(originalText);
+        
         let fieldName = '';
-        if (cellIndex === 3) fieldName = 'costPrice';
-        if (cellIndex === 4) fieldName = 'sellingPrice';
-        if (cellIndex === 5) fieldName = 'stock';
+        if (cellIndex === 4) fieldName = 'costPrice';
+        if (cellIndex === 5) fieldName = 'sellingPrice';
+        if (cellIndex === 6) fieldName = 'stock';
 
-        // Create Input Field
         const input = document.createElement('input');
         input.type = 'number';
         input.value = originalValue;
-        input.style.width = '80px';
+        input.style.width = '100px';
         input.style.padding = '5px';
+        input.style.borderRadius = '4px';
+        input.style.border = '2px solid #4361ee';
         
-        // Replace text with input
-        cell.innerText = '';
+        cell.innerHTML = ''; 
         cell.appendChild(input);
         input.focus();
 
-        // Save Function
         const saveChange = async () => {
             const newValue = parseFloat(input.value);
-            if (isNaN(newValue) || newValue === parseFloat(originalValue)) {
-                cell.innerText = originalValue; // Cancel if invalid or same
+            
+            if (isNaN(newValue) || newValue === originalValue) {
+                const searchBox = document.getElementById('search-inventory');
+                if(searchBox) searchBox.dispatchEvent(new Event('input'));
                 return;
             }
 
@@ -213,25 +216,28 @@ if (tableBody) {
                     [fieldName]: newValue
                 });
                 
-                // inventory.js will auto update the UI, but strictly for visual feedback:
                 cell.innerText = newValue;
-                cell.style.backgroundColor = '#d4edda'; // Green flash
+                cell.style.backgroundColor = '#d4edda';
                 setTimeout(() => cell.style.backgroundColor = '', 1000);
                 
-                // Recalculate stats
                 calculateStats(user.uid);
+
+                setTimeout(() => {
+                    const searchBox = document.getElementById('search-inventory');
+                    if(searchBox) searchBox.dispatchEvent(new Event('input'));
+                }, 500);
 
             } catch (error) {
                 console.error("Inline Update Error:", error);
                 alert("Update failed!");
-                cell.innerText = originalValue;
+                const searchBox = document.getElementById('search-inventory');
+                if(searchBox) searchBox.dispatchEvent(new Event('input'));
             }
         };
 
-        // Save on Enter key or clicking outside (blur)
         input.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
-                input.blur(); // Triggers blur event
+                input.blur(); 
             }
         });
 
