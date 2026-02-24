@@ -198,6 +198,24 @@ label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 3px; }
     border-radius: 2px;
 }
 
+/* ২-কলাম রেক্ট্যাঙ্গেল শেপ */
+.preview-label.shape-rectangle-2col {
+    border: 1px solid #ccc;
+    background-color: #fff;
+}
+
+/* Individual Sticker Box */
+.individual-sticker-box {
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    border-radius: 2px;
+}
+
+/* মেইন প্রিভিউ এরিয়াতে এলিমেন্টগুলো যাতে বাইরে না যায় */
+.preview-label {
+    padding: 0;
+    overflow: visible !important;
+}
+
 .preview-label.shape-jewelry {
     background-color: white;
     clip-path: polygon(

@@ -1,6 +1,6 @@
 import { auth, db } from '../js/firebase-config.js';
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, query, orderBy, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 
 // --- Global State ---
 let currentUserID = null, allProducts = [];
@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Properties update
     [propXInput, propYInput, propFontSizeInput, propWidthInput, propHeightInput].forEach(el => el.addEventListener('input', e => updateSelectedItemProperty(e.target.id.replace('prop-', ''), e.target.value)));
     propBoldInput.addEventListener('change', e => updateSelectedItemProperty('bold', e.target.checked));
+    document.getElementById('prop-rotation').addEventListener('change', e => updateSelectedItemProperty('rotation', e.target.value));
     
     // Add event listeners for prefix and manual value
     document.getElementById('prop-prefix').addEventListener('input', e => updateSelectedItemProperty('prefix', e.target.value));
@@ -102,19 +103,32 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Reset Position functionality
     document.getElementById('reset-pos-btn').addEventListener('click', resetElementPosition);
+    
+    // Save Design to Item functionality
+    const saveToItemBtn = document.getElementById('save-to-item-btn');
+    if (saveToItemBtn) {
+        saveToItemBtn.addEventListener('click', saveLayoutToActiveItem);
+    }
 
     printBtn.addEventListener('click', handlePrintQueue);
     saveSettingsBtn.addEventListener('click', savePrinterSettings);
     clearQueueBtn.addEventListener('click', () => { 
-        printQueue = []; 
-        currentPreviewProduct = null;
-        previewProductNameEl.textContent = 'Template Default';
-        previewAreaEl.innerHTML = '<p>Select a product to preview.</p>';
-        renderPrintQueue(); 
+        if (confirm('Clear all items from queue?')) {
+            printQueue = []; 
+            currentPreviewProduct = null;
+            currentLabelItems = [];
+            previewProductNameEl.textContent = 'Template Default';
+            previewAreaEl.innerHTML = '<p>Select a product to preview.</p>';
+            propertiesPanelEl.classList.add('hidden');
+            renderPrintQueue();
+            console.log('🗑️ Queue cleared completely');
+        }
     });
 
     if (customShapeInput) customShapeInput.addEventListener('change', handleShapeChange);
     if (saveTemplateBtn) saveTemplateBtn.addEventListener('click', saveCustomTemplate);
+    const updateTemplateBtn = document.getElementById('update-template-btn');
+    if (updateTemplateBtn) updateTemplateBtn.addEventListener('click', updateExistingTemplate);
     if (foldLineSlider) foldLineSlider.addEventListener('input', updateFoldLine);
 
     document.addEventListener('keydown', handleKeyboardShortcuts);
@@ -132,7 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function addNewField() {
     const type = document.getElementById('add-field-type').value;
     
-    // Get template dimensions and shape
     const templateKey = templateSelectEl.value;
     let template = templates[templateKey];
     if (templateKey === 'custom') {
@@ -143,45 +156,43 @@ function addNewField() {
         };
     }
     
-    // Smart positioning based on shape
     let safeX, safeY;
     const shape = template.shape || 'rectangle';
     
     if (shape === 'jewelry-tail-left') {
-        // Left tail: place content on right side (after fold line at 30%)
-        safeX = template.width * 0.5; // Middle of right section
+        safeX = template.width * 0.5;
         safeY = Math.min(5, template.height - 5);
     } else if (shape === 'jewelry-tail-right') {
-        // Right tail: place content on left side (before fold line at 70%)
-        safeX = template.width * 0.35; // Middle of left section
+        safeX = template.width * 0.35;
         safeY = Math.min(5, template.height - 5);
     } else {
-        // Standard shapes
         safeX = template.width > 50 ? 70 : 5;
         safeY = Math.min(5, template.height - 5);
     }
     
-    // Create new item
+    const isBarcode = type === 'barcode';
+    const isBarcodeNumber = type === 'barcode-number';
+    
     const newItem = {
-        placeholder: type,
-        type: 'text',
+        placeholder: isBarcodeNumber ? 'barcode' : type,
+        type: isBarcode ? 'barcode' : 'text',
         x: safeX,
         y: safeY,
         options: { 
             font: '2', 
             size: 1, 
-            prefix: type === 'custom' ? '' : type.charAt(0).toUpperCase() + type.slice(1) + ': ',
-            text: '000', // Dummy value to make it visible
-            bold: false
+            rotation: 0,
+            prefix: (type === 'custom' || isBarcode || isBarcodeNumber) ? '' : type.charAt(0).toUpperCase() + type.slice(1) + ': ',
+            text: (isBarcode || isBarcodeNumber) ? '' : '000',
+            bold: false,
+            height: isBarcode ? 8 : 0,
+            width: isBarcode ? 2 : 0
         }
     };
 
     currentLabelItems.push(newItem);
     updatePreview();
-    
-    // Auto-select for immediate editing
     setTimeout(() => selectItem(currentLabelItems.length - 1), 100);
-    
     showStatus(`${type.charAt(0).toUpperCase() + type.slice(1)} added at X:${safeX.toFixed(1)}, Y:${safeY}`, 'success');
 }
 
@@ -222,6 +233,29 @@ function resetElementPosition() {
     renderOnlyPreview();
     renderLayersList();
     showStatus('Position reset to center', 'success');
+}
+
+function saveLayoutToActiveItem() {
+    console.log('💾 SAVE BUTTON CLICKED');
+    
+    if (!currentPreviewProduct) {
+        alert("Please select an item from the queue first!");
+        return;
+    }
+
+    const itemIndex = printQueue.findIndex(p => p.id === currentPreviewProduct.id);
+    console.log('Saving for:', currentPreviewProduct.name);
+    console.log('Current layout:', currentLabelItems);
+    
+    if (itemIndex !== -1) {
+        printQueue[itemIndex].customLayout = JSON.parse(JSON.stringify(currentLabelItems));
+        console.log('✅ SAVED to queue index:', itemIndex);
+        console.log('Queue item now has:', printQueue[itemIndex].customLayout);
+        showStatus(`✅ Design saved for: ${currentPreviewProduct.name}`, 'success');
+        renderPrintQueue();
+    } else {
+        alert('Item not found in queue!');
+    }
 }
 
 function renderLayersList() {
@@ -293,9 +327,17 @@ function updateFoldLine() {
 async function fetchProducts() {
     if (!currentUserID) return;
     try {
-        const q = query(collection(db, 'shops', currentUserID, 'inventory'), orderBy('name'));
+        const q = query(collection(db, 'shops', currentUserID, 'inventory'));
         const querySnapshot = await getDocs(q);
         allProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort by barcode (numeric order)
+        allProducts.sort((a, b) => {
+            const barcodeA = String(a.barcode || "");
+            const barcodeB = String(b.barcode || "");
+            return barcodeA.localeCompare(barcodeB, undefined, { numeric: true, sensitivity: 'base' });
+        });
+        
         renderProductList();
     } catch (error) {
         console.error("Error fetching products:", error);
@@ -327,8 +369,12 @@ function addToQueue(product) {
     if(existing) {
         existing.printQty += 1;
     } else {
-        // Clone object and add printQty property
-        const p = { ...product, printQty: 1 };
+        // Clone object WITHOUT customLayout initially
+        const p = { 
+            ...product, 
+            printQty: 1
+            // customLayout will be created only when user clicks SAVE button
+        };
         printQueue.push(p);
         // If it's the first item, set as active preview
         if(printQueue.length === 1) setActivePreview(p);
@@ -337,10 +383,28 @@ function addToQueue(product) {
 }
 
 function setActivePreview(product) {
+    console.log('=== SWITCHING PRODUCT ===');
+    console.log('From:', currentPreviewProduct ? currentPreviewProduct.name : 'None');
+    console.log('To:', product.name);
+    console.log('New product has saved layout?', product.customLayout ? 'YES' : 'NO');
+    
     currentPreviewProduct = product;
     previewProductNameEl.textContent = product.name;
-    updatePreview(); // Redraw canvas with this product's data
-    renderPrintQueue(); // Update UI to highlight active row
+    
+    // Load this product's custom layout or use template default
+    if (product.customLayout && product.customLayout.length > 0) {
+        currentLabelItems = JSON.parse(JSON.stringify(product.customLayout));
+        console.log('✅ Loaded SAVED layout:', currentLabelItems);
+    } else {
+        const templateKey = templateSelectEl.value;
+        const template = templates[templateKey];
+        currentLabelItems = JSON.parse(JSON.stringify(template.items));
+        console.log('📄 Loaded DEFAULT template:', currentLabelItems);
+    }
+    
+    updatePreview();
+    renderPrintQueue();
+    console.log('=== SWITCH COMPLETE ===\n');
 }
 
 function renderPrintQueue() {
@@ -352,8 +416,10 @@ function renderPrintQueue() {
         const div = document.createElement('li');
         div.className = `queue-item ${currentPreviewProduct && currentPreviewProduct.id === item.id ? 'active-preview' : ''}`;
         
+        const savedIcon = item.customLayout ? '<span title="Custom Layout Saved" style="color:#28a745; margin-right:3px; font-weight:bold;">💾</span>' : '';
+        
         div.innerHTML = `
-            <div class="q-name" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</div>
+            <div class="q-name" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${savedIcon}${item.name}</div>
             <div class="q-qty"><input type="number" min="1" value="${item.printQty}" class="qty-input"></div>
             <div class="q-act"><button class="btn-remove-queue">×</button></div>
         `;
@@ -410,31 +476,37 @@ function handleTemplateChange() {
 }
 
 function updatePreview() {
-    // If no product selected, create a dummy
     const displayProduct = currentPreviewProduct || { name: 'Example Product', sellingPrice: '120.00', barcode: '12345678' };
-
     previewAreaEl.innerHTML = '';
-    // selectedItem = null; // Removed to preserve selection
-    // propertiesPanelEl.classList.add('hidden'); // Keep panel open if item selected
 
     const templateKey = templateSelectEl.value;
     let template = JSON.parse(JSON.stringify(templates[templateKey]));
     
     if (templateKey === 'custom') {
-        Object.assign(template, {
-            width: parseFloat(customWidthInput.value) || 50,
-            height: parseFloat(customHeightInput.value) || 25,
-            columns: parseInt(customColumnsInput.value) || 1,
-            columnGap: parseFloat(customColumnGapInput.value) || 2,
-            shape: customShapeInput ? customShapeInput.value : 'rectangle'
-        });
+        template.width = parseFloat(customWidthInput.value) || 50;
+        template.height = parseFloat(customHeightInput.value) || 25;
+        template.columnGap = parseFloat(customColumnGapInput.value) || 2;
+        template.shape = customShapeInput ? customShapeInput.value : 'rectangle';
+        
+        if (template.shape === 'rectangle-2col') {
+            template.columns = 2;
+            customColumnsInput.value = 2;
+        } else {
+            template.columns = parseInt(customColumnsInput.value) || 1;
+        }
     }
 
     const previewLabel = document.createElement('div');
-    previewLabel.className = `preview-label shape-${template.shape || 'rectangle'}`;
+    const shapeClass = template.shape ? `shape-${template.shape}` : 'shape-rectangle';
+    previewLabel.className = `preview-label ${shapeClass}`;
+    
     Object.assign(previewLabel.style, {
         width: `${template.width * previewScale}px`,
-        height: `${template.height * previewScale}px`
+        height: `${template.height * previewScale}px`,
+        display: 'flex',
+        gap: `${template.columnGap * previewScale}px`,
+        backgroundColor: 'transparent',
+        border: 'none'
     });
     
     if (currentLabelItems.length === 0) {
@@ -442,25 +514,39 @@ function updatePreview() {
     }
 
     const columns = template.columns || 1;
-    const stickerWidth = columns > 1 ? ((template.width - (template.columnGap * (columns - 1))) / columns) : template.width;
-    
-    // Create items using displayProduct data
-    const firstColumnItems = currentLabelItems.map((item, index) => createDraggableItem(item, displayProduct, index));
+    const stickerWidthMm = (template.width - (template.columnGap * (columns - 1))) / columns;
     
     for (let i = 0; i < columns; i++) {
-        const offsetX = i * (stickerWidth + (template.columnGap || 0));
-        firstColumnItems.forEach((baseElement, index) => {
-            const itemData = currentLabelItems[index];
-            const el = i === 0 ? baseElement : baseElement.cloneNode(true);
+        const sticker = document.createElement('div');
+        sticker.className = 'individual-sticker-box';
+        Object.assign(sticker.style, {
+            width: `${stickerWidthMm * previewScale}px`,
+            height: '100%',
+            backgroundColor: 'white',
+            position: 'relative',
+            overflow: 'hidden',
+            border: '1px solid #eee'
+        });
+
+        currentLabelItems.forEach((itemData, index) => {
+            const el = createDraggableItem(itemData, displayProduct, index);
+            
             Object.assign(el.style, {
-                left: `${(offsetX + itemData.x) * previewScale}px`,
+                left: `${itemData.x * previewScale}px`,
                 top: `${itemData.y * previewScale}px`
             });
-            previewLabel.appendChild(el);
+            
+            if (i > 0) {
+                el.style.pointerEvents = 'none';
+                el.style.opacity = '0.9';
+            }
+            
+            sticker.appendChild(el);
         });
+
+        previewLabel.appendChild(sticker);
     }
     
-    // Add fold line indicator for jewelry tags
     if (template.shape && template.shape.includes('jewelry-tail') && foldLineSlider) {
         const foldLine = document.createElement('div');
         foldLine.id = 'fold-line-indicator';
@@ -507,11 +593,9 @@ function updateItemContent(div, item, product) {
     div.innerHTML = '';
     let value = '';
     
-    // Priority 1: Manual text
-    if (item.options.text !== undefined && item.options.text !== '') {
+    if (item.options.text && item.options.text.trim() !== '') {
         value = item.options.text;
     } 
-    // Priority 2: Product data
     else {
         let productValue = product[item.placeholder] || '';
         if (item.placeholder === 'price' && product.sellingPrice) {
@@ -520,11 +604,9 @@ function updateItemContent(div, item, product) {
         value = productValue;
     }
     
-    // Build display text with prefix
     const prefix = item.options.prefix || '';
     const displayText = prefix + value;
     
-    // Show placeholder if completely empty
     if (displayText.trim() === '') {
         div.textContent = `[${item.placeholder}]`;
         div.style.opacity = "0.4";
@@ -536,6 +618,9 @@ function updateItemContent(div, item, product) {
         div.style.fontStyle = "normal";
         div.style.color = "#000";
     }
+    
+    div.style.transform = `rotate(${item.options.rotation || 0}deg)`;
+    div.style.transformOrigin = 'top left';
     
     if (item.type === 'text') {
         const scaleFactor = item.options.size || 1;
@@ -580,6 +665,7 @@ function updatePropertiesPanel(itemData) {
     propItemNameEl.textContent = itemData.placeholder.toUpperCase();
     propXInput.value = itemData.x.toFixed(1);
     propYInput.value = itemData.y.toFixed(1);
+    document.getElementById('prop-rotation').value = itemData.options.rotation || 0;
     
     const isText = itemData.type === 'text';
     textPropertiesEl.classList.toggle('hidden', !isText);
@@ -589,7 +675,6 @@ function updatePropertiesPanel(itemData) {
         propFontSizeInput.value = itemData.options.size; 
         propBoldInput.checked = itemData.options.bold || false;
         
-        // Update prefix and manual value fields (already in HTML)
         const propPrefixInput = document.getElementById('prop-prefix');
         const propManualValInput = document.getElementById('prop-manual-val');
         
@@ -597,8 +682,8 @@ function updatePropertiesPanel(itemData) {
         if (propManualValInput) propManualValInput.value = itemData.options.text || '';
     } 
     else { 
-        propWidthInput.value = itemData.options.width; 
-        propHeightInput.value = itemData.options.height; 
+        propWidthInput.value = itemData.options.width || 2; 
+        propHeightInput.value = itemData.options.height || 10; 
     }
 }
 
@@ -609,6 +694,8 @@ function updateSelectedItemProperty(prop, value) {
     
     if (prop === 'prefix' || prop === 'text') {
         itemData.options[prop] = value;
+    } else if (prop === 'rotation') {
+        itemData.options.rotation = parseInt(value);
     } else {
         const val = (prop === 'bold') ? value : parseFloat(value);
         const propMap = {
@@ -622,8 +709,11 @@ function updateSelectedItemProperty(prop, value) {
         if (propMap[prop]) { propMap[prop](itemData, val); }
     }
     
-    // Update only the affected elements without full re-render
-    renderOnlyPreview();
+    updatePreview();
+    setTimeout(() => {
+        const els = document.querySelectorAll(`.draggable-item[data-index='${index}']`);
+        if(els.length > 0) els[0].classList.add('selected');
+    }, 10);
 }
 
 // New function: Update preview without losing selection
@@ -656,7 +746,7 @@ function renderOnlyPreview() {
 // --- Printing Logic (The Engine) ---
 
 // 1. Generate Command for ONE product
-function generateTSPL(product, qty) {
+function generateTSPL(product, qty, layout) {
     let template = JSON.parse(JSON.stringify(templates[templateSelectEl.value]));
     if (templateSelectEl.value === 'custom') {
         Object.assign(template, {
@@ -676,8 +766,8 @@ function generateTSPL(product, qty) {
     console.log('GAP 2 mm, 0 mm');
     console.log('CLS');
     
-    // Note: We use `currentLabelItems` because that contains the current edits
-    const itemsToPrint = currentLabelItems;
+    // Use custom layout if provided, otherwise use current
+    const itemsToPrint = layout || currentLabelItems;
 
     for (let i = 0; i < template.columns; i++) {
         const offsetX = i * (stickerWidthDots + columnGapDots);
@@ -729,11 +819,19 @@ async function handlePrintQueue() {
         alert('Queue is empty. Select products first.');
         return;
     }
+    
+    // Save current product's layout before printing
+    if (currentPreviewProduct) {
+        const currentInQueue = printQueue.find(p => p.id === currentPreviewProduct.id);
+        if (currentInQueue) {
+            currentInQueue.customLayout = JSON.parse(JSON.stringify(currentLabelItems));
+        }
+    }
 
     // Combine all commands into one big stream
     let fullJob = "";
     printQueue.forEach(item => {
-        fullJob += generateTSPL(item, item.printQty);
+        fullJob += generateTSPL(item, item.printQty, item.customLayout);
     });
 
     console.log('\n=== FULL PRINT JOB ===');
@@ -846,5 +944,37 @@ async function saveCustomTemplate() {
     } catch (error) {
         console.error("Error saving template:", error);
         alert("Failed to save template.");
+    }
+}
+
+async function updateExistingTemplate() {
+    const templateKey = templateSelectEl.value;
+    const template = templates[templateKey];
+
+    if (!template.firebaseID) {
+        alert("Default templates cannot be updated. Please use 'Save As New Template' to create your own.");
+        return;
+    }
+
+    if (!confirm(`Update template "${template.name}" with current changes?`)) return;
+
+    const updatedData = {
+        width: parseFloat(customWidthInput.value),
+        height: parseFloat(customHeightInput.value),
+        columns: parseInt(customColumnsInput.value),
+        columnGap: parseFloat(customColumnGapInput.value),
+        shape: customShapeInput.value,
+        items: JSON.parse(JSON.stringify(currentLabelItems))
+    };
+
+    try {
+        const templateRef = doc(db, 'shops', currentUserID, 'templates', template.firebaseID);
+        await updateDoc(templateRef, updatedData);
+        templates[templateKey] = { ...templates[templateKey], ...updatedData };
+        showStatus('Template updated successfully!', 'success');
+        updatePreview();
+    } catch (error) {
+        console.error("Error updating template:", error);
+        alert("Failed to update template: " + error.message);
     }
 }
