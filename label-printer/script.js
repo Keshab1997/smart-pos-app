@@ -637,8 +637,19 @@ function updateItemContent(div, item, product) {
         div.style.color = "#000";
     }
     
-    div.style.transform = `rotate(${item.options.rotation || 0}deg)`;
-    div.style.transformOrigin = 'top left';
+    const rotation = item.options.rotation || 0;
+    div.style.transform = `rotate(${rotation}deg)`;
+    
+    // Rotation-specific transform origin
+    if (rotation === 90) {
+        div.style.transformOrigin = 'bottom left';
+    } else if (rotation === 180) {
+        div.style.transformOrigin = 'center';
+    } else if (rotation === 270) {
+        div.style.transformOrigin = 'top right';
+    } else {
+        div.style.transformOrigin = 'top left';
+    }
     
     if (item.type === 'text') {
         const scaleFactor = item.options.size || 1;
