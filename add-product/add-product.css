@@ -23,9 +23,10 @@ body {
 }
 
 .container {
-    max-width: 1400px; /* ওয়াইড স্ক্রিনের জন্য একটু চওড়া করা হলো */
+    max-width: 98% !important;
+    width: 100%;
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 10px 20px;
 }
 
 
