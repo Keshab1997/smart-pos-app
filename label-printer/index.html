@@ -15,124 +15,126 @@
 </head>
 <body>
 
-    <!-- Navbar Placeholder -->
     <div id="navbar-placeholder"></div>
 
-    <!-- Main Content -->
     <main class="container">
         <h1>Advanced Label Designer & Printer</h1>
 
         <div class="printer-layout">
-            <!-- Left Panel: Product Selection -->
+            <!-- Left Panel: Product Selection & Queue -->
             <div class="left-panel card">
-                <h2>1. Select Products</h2>
-                <input type="text" id="search-product" placeholder="Search products..." class="form-control">
-                <div class="product-list-container">
-                    <ul id="product-list">
-                        <p>Loading products...</p>
-                    </ul>
+                
+                <!-- Top Half: Search -->
+                <div class="search-section">
+                    <h2>1. Search Products</h2>
+                    <input type="text" id="search-product" placeholder="Search by name or barcode..." class="form-control">
+                    <div class="product-list-container">
+                        <ul id="product-list">
+                            <p style="padding:10px; color:#666;">Loading products...</p>
+                        </ul>
+                    </div>
                 </div>
-                <p class="selection-counter">Selected: <span id="selected-count">0</span></p>
+
+                <hr style="margin: 10px 0; border-top: 2px dashed #eee;">
+
+                <!-- Bottom Half: Print Queue (New Feature) -->
+                <div class="queue-section">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h2 style="margin:0; font-size:1rem;">Print Queue (<span id="queue-count">0</span>)</h2>
+                        <button id="clear-queue-btn" class="btn-xs-danger" style="font-size:10px; padding:2px 5px;">Clear All</button>
+                    </div>
+                    <div class="queue-header">
+                        <span>Item</span>
+                        <span>Qty</span>
+                        <span>X</span>
+                    </div>
+                    <div class="queue-list-container">
+                        <ul id="print-queue-list">
+                            <p style="padding:10px; color:#999; font-size:12px; text-align:center;">No items selected.</p>
+                        </ul>
+                    </div>
+                </div>
             </div>
 
-            <!-- Middle Panel: Template and Properties -->
+            <!-- Middle Panel: Template -->
             <div class="middle-panel card">
-                <h2>2. Template & Properties</h2>
+                <h2>2. Template & Design</h2>
                 <div class="form-group">
-                    <label for="template-select">Label Template:</label>
+                    <label>Select Template:</label>
                     <select id="template-select" class="form-control"></select>
                 </div>
                 
                 <div id="template-settings">
                     <p id="template-description"></p>
                     <div id="custom-size-settings" class="hidden">
-                        <h4>Custom Label Settings</h4>
+                        <h4>Custom Settings</h4>
                         <div class="form-group-inline">
-                            <div class="form-group">
-                                <label for="custom-width">Width (mm):</label>
-                                <input type="number" id="custom-width" class="form-control" value="50" min="10">
-                            </div>
-                            <div class="form-group">
-                                <label for="custom-height">Height (mm):</label>
-                                <input type="number" id="custom-height" class="form-control" value="25" min="10">
-                            </div>
+                            <div class="form-group"><label>W (mm):</label><input type="number" id="custom-width" class="form-control" value="50"></div>
+                            <div class="form-group"><label>H (mm):</label><input type="number" id="custom-height" class="form-control" value="25"></div>
                         </div>
                         <div class="form-group-inline">
-                            <div class="form-group">
-                                <label for="custom-columns">Stickers/Row:</label>
-                                <input type="number" id="custom-columns" class="form-control" value="1" min="1">
-                            </div>
-                            <div class="form-group">
-                                <label for="custom-columngap">Gap (mm):</label>
-                                <input type="number" id="custom-columngap" class="form-control" value="2" min="0">
-                            </div>
+                            <div class="form-group"><label>Cols:</label><input type="number" id="custom-columns" class="form-control" value="1"></div>
+                            <div class="form-group"><label>Gap:</label><input type="number" id="custom-columngap" class="form-control" value="2"></div>
                         </div>
                     </div>
                 </div>
 
                 <hr>
 
+                <!-- Properties Panel -->
                 <div id="properties-panel" class="hidden">
-                    <h4>Selected Item Properties</h4>
-                    <p><strong>Item:</strong> <span id="prop-item-name"></span></p>
+                    <h4 style="color:#4361ee;">Edit Selected Element</h4>
+                    <p style="font-size:12px;"><strong>Editing:</strong> <span id="prop-item-name"></span></p>
+                    
                     <div class="form-group-inline">
-                        <div class="form-group">
-                            <label for="prop-x">X (mm):</label>
-                            <input type="number" id="prop-x" class="form-control" step="0.1">
-                        </div>
-                        <div class="form-group">
-                            <label for="prop-y">Y (mm):</label>
-                            <input type="number" id="prop-y" class="form-control" step="0.1">
-                        </div>
+                        <div class="form-group"><label>X (mm):</label><input type="number" id="prop-x" class="form-control" step="0.5"></div>
+                        <div class="form-group"><label>Y (mm):</label><input type="number" id="prop-y" class="form-control" step="0.5"></div>
                     </div>
+                    
                     <div id="text-properties" class="hidden">
-                        <div class="form-group">
-                            <label for="prop-fontsize">Font Size:</label>
-                            <input type="number" id="prop-fontsize" class="form-control" min="1">
+                        <div class="form-group"><label>Font Size:</label><input type="number" id="prop-fontsize" class="form-control" min="1"></div>
+                        <div class="form-group" style="display:flex; gap:10px; align-items:center;">
+                            <input type="checkbox" id="prop-bold"> <label for="prop-bold" style="margin:0;">Bold Text</label>
                         </div>
                     </div>
+                    
                     <div id="barcode-properties" class="hidden">
                          <div class="form-group-inline">
-                            <div class="form-group">
-                                <label for="prop-width">Width (mm):</label>
-                                <input type="number" id="prop-width" class="form-control" step="1">
-                            </div>
-                            <div class="form-group">
-                                <label for="prop-height">Height (mm):</label>
-                                <input type="number" id="prop-height" class="form-control" step="1">
-                            </div>
+                            <div class="form-group"><label>W (mm):</label><input type="number" id="prop-width" class="form-control"></div>
+                            <div class="form-group"><label>H (mm):</label><input type="number" id="prop-height" class="form-control"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Panel: Preview and Print -->
+            <!-- Right Panel: Preview -->
             <div class="right-panel card">
                 <h2>3. Preview & Print</h2>
-                <div class="preview-area">
-                    <p>Select a product and template to see a preview.</p>
+                
+                <!-- Preview Area -->
+                <div class="preview-header-info" style="font-size:12px; color:#666; margin-bottom:5px;">
+                    Previewing: <strong id="preview-product-name" style="color:#000;">Template Default</strong>
                 </div>
+                
+                <div class="preview-area">
+                    <p>Select a product to preview.</p>
+                </div>
+
                 <div class="printer-settings-area">
                     <hr>
-                    <h2>Printer Settings</h2>
+                    <h3>Printer Config</h3>
                     <div class="form-group-inline">
-                        <div class="form-group">
-                            <label for="printer-vid">Vendor ID (Hex):</label>
-                            <input type="text" id="printer-vid" class="form-control" placeholder="e.g., 1203">
-                        </div>
-                        <div class="form-group">
-                            <label for="printer-pid">Product ID (Hex):</label>
-                            <input type="text" id="printer-pid" class="form-control" placeholder="e.g., 0272">
-                        </div>
+                        <div class="form-group"><label>VID (Hex):</label><input type="text" id="printer-vid" class="form-control"></div>
+                        <div class="form-group"><label>PID (Hex):</label><input type="text" id="printer-pid" class="form-control"></div>
                     </div>
-                    <button id="save-settings-btn" class="btn btn-secondary">Save Settings</button>
+                    <button id="save-settings-btn" class="btn btn-secondary" style="width:100%;">Save Config</button>
                 </div>
+                
                 <div class="print-actions">
-                    <div class="form-group">
-                        <label for="print-quantity">Copies per Product:</label>
-                        <input type="number" id="print-quantity" class="form-control" value="1" min="1">
+                    <div style="font-size:12px; color:#666;">
+                        Total Labels: <strong id="total-labels-count">0</strong>
                     </div>
-                    <button id="print-btn" class="btn btn-primary">Print Labels</button>
+                    <button id="print-btn" class="btn btn-primary" style="padding:15px;">🖨️ PRINT QUEUE</button>
                 </div>
             </div>
         </div>
@@ -145,21 +147,6 @@
     <script type="importmap">{ "imports": { "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js", "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js", "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js" }}</script>
     <script type="module" src="../js/firebase-config.js"></script>
     <script type="module" src="../js/navbar.js"></script>
-    
-    <!-- লগআউট লজিক হ্যান্ডেল করা -->
-    <script type="module">
-        import { auth } from '../js/firebase-config.js';
-        import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-        document.addEventListener('trigger-logout', () => {
-            signOut(auth).then(() => {
-                window.location.href = '../index.html';
-            }).catch((error) => {
-                console.error("Logout error", error);
-            });
-        });
-    </script>
-    
     <script type="module" src="script.js"></script>
 </body>
 </html>

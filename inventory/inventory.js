@@ -345,8 +345,8 @@ function setupEventListeners() {
 }
 
 function openPrintPage(id, name, price) {
-    const url = `../print-barcode.html?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}`;
-    window.open(url, '_blank', 'width=800,height=600');
+    const url = `../label-printer/index.html?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}`;
+    window.open(url, '_blank', 'width=1000,height=700');
 }
 window.openPrintPage = openPrintPage;
 

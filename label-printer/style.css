@@ -1,337 +1,259 @@
-/* ============================
-   1. CSS ভেরিয়েবল এবং গ্লোবাল সেটআপ
-   ============================ */
-   :root {
-    --primary-color: #007bff;
+/* style.css */
+:root {
+    --primary-color: #4361ee;
     --success-color: #28a745;
-    --danger-color: #dc3545;
-    --text-color: #343a40;
-    --light-text-color: #6c757d;
-    --background-color: #f4f7f9;
-    --white-color: #ffffff;
+    --bg-color: #f4f7f9;
     --border-color: #dee2e6;
-    --shadow-sm: 0 2px 6px rgba(0,0,0,0.05);
 }
 
 body {
-    background-color: var(--background-color);
+    background-color: var(--bg-color);
     font-family: 'Poppins', sans-serif;
-    margin: 0;
-    padding: 0;
-    color: var(--text-color);
-    height: 100vh; /* পুরো স্ক্রিন জুুড়ে থাকবে */
-    overflow: hidden; /* বডি স্ক্রল বন্ধ, শুধু প্যানেল স্ক্রল হবে */
-    display: flex;
-    flex-direction: column;
+    margin: 0; padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    display: flex; flex-direction: column;
 }
 
-/* ============================
-   2. হেডার এবং নেভিগেশন (Compact & Pill Shape)
-   ============================ */
-header {
-    background-color: var(--white-color);
-    padding: 10px 24px;
-    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.04);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #f0f0f0;
-    flex-shrink: 0; /* হেডার ছোট হবে না */
-    z-index: 1000;
-}
-
-.logo {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: var(--primary-color);
-    text-decoration: none;
-    letter-spacing: -0.5px;
-}
-
-.nav-links {
-    list-style: none;
-    display: flex;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-    align-items: center;
-}
-
-.nav-links a {
-    text-decoration: none;
-    color: #555;
-    font-size: 13.5px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 30px; /* Pill Shape */
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
-}
-
-.nav-links a:hover {
-    background-color: #f0f7ff;
-    color: var(--primary-color);
-}
-
-.nav-links a.active {
-    background-color: var(--primary-color);
-    color: var(--white-color);
-    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
-}
-
-/* ============================
-   3. মেইন লেআউট (FIXED HEIGHT)
-   ============================ */
+/* Layout */
 .printer-layout {
     display: grid;
-    grid-template-columns: 300px 1fr 1.2fr; /* ফিক্সড এবং ফ্লুইড কলাম */
-    gap: 20px;
-    padding: 20px;
-    height: calc(100vh - 70px); /* হেডারের হাইট বাদ দিয়ে বাকি সব */
+    grid-template-columns: 300px 280px 1fr; /* বাম প্যানেল একটু বড় করা হয়েছে */
+    gap: 15px;
+    padding: 15px;
+    height: calc(100vh - 70px);
     box-sizing: border-box;
 }
 
-/* কার্ড স্টাইল (প্রতিটি কলামের জন্য) */
 .card {
-    background: var(--white-color);
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-    height: 100%; /* গ্রিডের পুরো হাইট নেবে */
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    display: flex; flex-direction: column;
+    height: 100%;
     border: 1px solid #eee;
-    overflow: hidden; /* কার্ডের বাইরে কিছু যাবে না */
+    overflow: hidden;
 }
 
 .card h2 {
-    font-size: 1.1rem;
-    margin-top: 0;
-    margin-bottom: 15px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
+    font-size: 1rem;
+    margin: 0 0 10px 0;
     color: var(--primary-color);
-    flex-shrink: 0; /* টাইটেল ফিক্সড থাকবে */
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+    flex-shrink: 0;
 }
 
-/* ============================
-   4. বাম প্যানেল (Product List)
-   ============================ */
-.left-panel .form-control {
-    margin-bottom: 15px;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    width: 100%;
-    box-sizing: border-box;
+/* Right Panel Fix */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.right-panel .preview-area {
+    flex: 1;
+    min-height: 0;
+}
+
+.right-panel .printer-settings-area,
+.right-panel .print-actions {
+    flex-shrink: 0;
+}
+
+/* --- Left Panel Split --- */
+.left-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.search-section {
+    flex: 1; /* ৫০% জায়গা */
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .product-list-container {
     flex-grow: 1;
-    overflow-y: auto; /* শুধু লিস্ট স্ক্রল হবে */
-    border: 1px solid #f0f0f0;
-    border-radius: 6px;
-    min-height: 0; /* ফ্লেক্সবক্স স্ক্রলিং ফিক্স */
-}
-
-#product-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#product-list li {
-    padding: 12px 15px;
-    cursor: pointer;
-    border-bottom: 1px solid #f5f5f5;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    transition: background 0.2s;
-}
-
-#product-list li:last-child { border-bottom: none; }
-
-#product-list li:hover {
-    background-color: #f8f9fa;
-}
-
-/* সিলেক্ট করা প্রোডাক্ট */
-#product-list li.selected {
-    background-color: #e6f0ff;
-    border-left: 4px solid var(--primary-color);
-}
-
-#product-list li .product-name {
-    font-weight: 500;
-    font-size: 0.95rem;
-}
-#product-list li .product-barcode {
-    font-size: 0.8rem;
-    color: var(--light-text-color);
-}
-
-.selection-counter {
-    margin-top: 10px;
-    text-align: center;
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--primary-color);
-    flex-shrink: 0;
-}
-
-/* ============================
-   5. মাঝখানের প্যানেল (Properties / Edit)
-   ============================ */
-.middle-panel {
-    overflow-y: auto; /* কন্টেন্ট বেশি হলে স্ক্রল হবে */
-}
-
-.middle-panel .form-group {
-    margin-bottom: 15px;
-}
-
-.middle-panel label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 5px;
-    font-size: 0.9rem;
-}
-
-.middle-panel select, 
-.middle-panel input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    box-sizing: border-box;
-}
-
-#template-settings {
-    background-color: #fafafa;
+    overflow-y: auto;
     border: 1px solid #eee;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 15px;
+    border-radius: 5px;
 }
 
-/* Properties Panel (যেটা আগে হারিয়ে যেত) */
-#properties-panel {
-    border-top: 1px solid #eee;
-    padding-top: 15px;
-    margin-top: 15px;
+.queue-section {
+    flex: 1; /* ৫০% জায়গা */
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
-#properties-panel h4 {
-    margin-top: 0;
-    font-size: 1rem;
-    color: #333;
+.queue-list-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background: #fafafa;
+}
+
+/* Queue List Styles */
+.queue-header {
+    display: grid;
+    grid-template-columns: 1fr 50px 30px;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 5px 10px;
+    background: #eee;
+    border-radius: 4px 4px 0 0;
+}
+
+.queue-item {
+    display: grid;
+    grid-template-columns: 1fr 50px 30px;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.queue-item:hover { background: #f0f7ff; }
+
+/* Active Preview Highlight */
+.queue-item.active-preview {
+    background: #e0e7ff;
+    border-left: 3px solid var(--primary-color);
+}
+
+.queue-item input[type="number"] {
+    width: 40px;
+    padding: 2px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    text-align: center;
+}
+
+.btn-remove-queue {
+    background: none; border: none;
+    color: #ff4d4d; font-weight: bold; cursor: pointer;
+}
+
+/* --- Other Panels --- */
+.form-control {
+    width: 100%; padding: 8px;
+    border: 1px solid #ddd; border-radius: 4px;
+    box-sizing: border-box; margin-bottom: 10px;
+}
+
+.form-group-inline { display: flex; gap: 10px; }
+.form-group { flex: 1; margin-bottom: 10px; }
+label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+
+/* Preview Area */
+.preview-area {
+    flex: 1;
+    min-height: 0;
+    background: #e9ecef;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    display: flex; justify-content: center; align-items: center;
+    overflow: auto;
+    background-image: radial-gradient(#ccc 1px, transparent 1px);
+    background-size: 10px 10px;
     margin-bottom: 10px;
 }
 
-/* ============================
-   6. ডান প্যানেল (Preview & Print)
-   ============================ */
-.right-panel {
-    display: flex;
-    flex-direction: column;
-}
-
-.preview-area {
-    flex-grow: 1;
-    background-color: #e9ecef;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    overflow: auto;
-    position: relative;
-    /* গ্রিড ব্যাকগ্রাউন্ড প্যাটার্ন */
-    background-image: 
-        linear-gradient(45deg, #e0e0e0 25%, transparent 25%), 
-        linear-gradient(-45deg, #e0e0e0 25%, transparent 25%), 
-        linear-gradient(45deg, transparent 75%, #e0e0e0 75%), 
-        linear-gradient(-45deg, transparent 75%, #e0e0e0 75%);
-    background-size: 20px 20px;
-    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-}
-
-/* লেবেল ক্যানভাস */
 .preview-label {
-    background-color: #fff;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    background: white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     position: relative;
     overflow: hidden;
 }
 
-/* ড্রাগ করা আইটেম */
+/* Draggable Items */
 .draggable-item {
     position: absolute;
-    padding: 2px;
     border: 1px dashed transparent;
-    cursor: move;
-    font-family: Arial, sans-serif;
-    line-height: 1;
+    cursor: grab;
     white-space: nowrap;
+    line-height: 1;
 }
-.draggable-item:hover {
-    border-color: var(--primary-color);
-    background-color: rgba(0, 123, 255, 0.05);
-}
-.draggable-item.selected {
-    border: 2px solid var(--primary-color);
-    z-index: 10;
-}
-.draggable-item.barcode svg {
-    display: block;
-}
-
-/* প্রিন্ট বাটন এরিয়া */
-.print-actions {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
-    display: flex;
-    gap: 10px;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.btn-primary { background-color: var(--primary-color); color: white; }
-.btn-primary:hover { background-color: #0069d9; }
+.draggable-item:hover { border-color: blue; }
+.draggable-item.selected { border: 2px solid var(--primary-color); z-index: 100; }
 
 .hidden { display: none !important; }
+.btn-xs-danger { background: #ff4d4d; color: white; border:none; border-radius:3px; cursor:pointer;}
 
-/* ============================
-   7. রেসপন্সিভ ডিজাইন
-   ============================ */
-@media (max-width: 1200px) {
-    .printer-layout {
-        grid-template-columns: 1fr 1fr; /* ২ কলাম */
-        height: auto; /* ফিক্সড হাইট বাদ */
-        overflow-y: auto;
-    }
-    body { overflow-y: auto; }
-    .left-panel {
-        grid-column: 1 / -1; /* লিস্ট পুরো জায়গা নেবে */
-        max-height: 400px;
-    }
-    .card { height: auto; min-height: 400px; }
+/* Printer Settings Area */
+.printer-settings-area {
+    flex-shrink: 0;
+    background: #f8f9fa;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #eee;
+    font-size: 0.85rem;
+    margin-top: 5px;
 }
 
-@media (max-width: 768px) {
-    .printer-layout { grid-template-columns: 1fr; } /* ১ কলাম */
-    .nav-links { display: none; } /* মোবাইল মেনু দরকার হলে আলাদা কোড লাগবে */
+.printer-settings-area hr {
+    margin: 5px 0;
+    border: none;
+    border-top: 1px solid #ddd;
+}
+
+.printer-settings-area h3 {
+    margin: 0 0 5px 0;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.printer-settings-area .form-group-inline {
+    margin-bottom: 3px;
+}
+
+.printer-settings-area input {
+    font-size: 11px;
+    padding: 4px;
+    height: 28px;
+    margin-bottom: 5px;
+}
+
+.printer-settings-area #save-settings-btn {
+    padding: 4px;
+    font-size: 11px;
+    height: 28px;
+}
+
+/* Print Actions */
+.print-actions {
+    flex-shrink: 0;
+    margin-top: 5px;
+    padding-top: 8px;
+    border-top: 2px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.print-actions > div {
+    font-size: 11px;
+}
+
+#print-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 6px rgba(67, 97, 238, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+    .printer-layout { grid-template-columns: 1fr; overflow-y: auto; height: auto; }
+    .card { min-height: 400px; }
+    .left-panel { height: 600px; }
 }

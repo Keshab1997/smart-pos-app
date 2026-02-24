@@ -165,59 +165,10 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- START: Advanced Barcode Label Editor Modal -->
-    <!-- ======================================================== -->
-    <div id="label-editor-modal" class="modal">
-        <div class="modal-content" style="max-width: 95vw; max-height: 95vh; width: auto;">
-            <span class="close-button">&times;</span>
-            <h2>Barcode Label Editor</h2>
-            
-            <div class="editor-layout">
-                <!-- Sidebar for Tools and Properties -->
-                <div class="editor-sidebar">
-                    <h3>Label Properties</h3>
-                    <div class="form-group-inline">
-                        <div class="form-group">
-                            <label for="editor-label-width">Width (mm):</label>
-                            <input type="number" id="editor-label-width" class="form-control" value="50">
-                        </div>
-                        <div class="form-group">
-                            <label for="editor-label-height">Height (mm):</label>
-                            <input type="number" id="editor-label-height" class="form-control" value="30">
-                        </div>
-                    </div>
-                    <hr>
-                    <h3>Selected Item Properties</h3>
-                    <div id="properties-panel" class="properties-panel">
-                        <p>Select an item on the label to edit.</p>
-                    </div>
-                </div>
-
-                <!-- Main Editor Canvas -->
-                <div class="editor-main">
-                    <div id="label-canvas-container">
-                        <div id="label-canvas">
-                            <!-- Draggable items will be rendered here by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-actions">
-                <button id="editor-print-btn" class="btn btn-success">Print Labels</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Invisible container for final printing -->
-    <div id="print-area"></div>
-
-    <!-- ======================================================== -->
     <!-- Scripts -->
     <!-- ======================================================== -->
     <!-- Third-party Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 
     <!-- Firebase and Custom JS -->
     <script type="importmap">
