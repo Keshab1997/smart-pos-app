@@ -10,7 +10,7 @@ let currentPreviewProduct = null; // বর্তমানে এডিটরে
 let currentLabelItems = [], selectedItem = null;
 const DPI = 203; 
 const dotsPerMm = DPI / 25.4;
-const previewScale = 4; 
+const previewScale = 6; 
 
 // --- DOM Elements ---
 const productListEl = document.getElementById('product-list'), searchInput = document.getElementById('search-product');
