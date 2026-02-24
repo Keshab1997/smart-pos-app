@@ -65,6 +65,12 @@
                         <select id="template-select" class="form-control"></select>
                     </div>
                     
+                    <!-- Template Actions (Dynamic) -->
+                    <div id="template-actions" style="margin-bottom: 15px; display: flex; gap: 10px;">
+                        <button id="update-template-btn" class="btn-warning hidden" style="flex:1; background:#ffc107; border:none; padding:8px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:12px;">🔄 Update</button>
+                        <button id="delete-template-btn" class="btn-danger hidden" style="flex:1; background:#ff4d4d; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:12px;">🗑️ Delete</button>
+                    </div>
+                    
                     <div id="template-settings">
                         <p id="template-description"></p>
                         <div id="custom-size-settings" class="hidden">
@@ -96,8 +102,7 @@
                                 <label>Template Name:</label>
                                 <input type="text" id="new-template-name" class="form-control" placeholder="e.g. My Gold Tag">
                             </div>
-                            <button id="save-custom-template-btn" class="btn btn-success" style="width:100%; background:#28a745; color:white; margin-bottom: 10px;">💾 Save As New Template</button>
-                            <button id="update-template-btn" class="btn btn-warning" style="width:100%; background:#ffc107; color:black; font-weight: bold; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">🔄 Update Current Template</button>
+                            <button id="save-custom-template-btn" class="btn btn-success" style="width:100%; background:#28a745; color:white;">💾 Save New Template</button>
                         </div>
                     </div>
 

@@ -128,7 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (customShapeInput) customShapeInput.addEventListener('change', handleShapeChange);
     if (saveTemplateBtn) saveTemplateBtn.addEventListener('click', saveCustomTemplate);
     const updateTemplateBtn = document.getElementById('update-template-btn');
+    const deleteTemplateBtn = document.getElementById('delete-template-btn');
     if (updateTemplateBtn) updateTemplateBtn.addEventListener('click', updateExistingTemplate);
+    if (deleteTemplateBtn) deleteTemplateBtn.addEventListener('click', deleteExistingTemplate);
     if (foldLineSlider) foldLineSlider.addEventListener('input', updateFoldLine);
 
     document.addEventListener('keydown', handleKeyboardShortcuts);
@@ -458,9 +460,26 @@ function handleTemplateChange() {
     const val = templateSelectEl.value;
     const isCustomMode = val === 'custom';
     const t = templates[val];
+    const isUserTemplate = t && t.firebaseID;
     
     customSizeSettingsEl.classList.toggle('hidden', !isCustomMode);
     templateDescriptionEl.classList.toggle('hidden', isCustomMode);
+
+    const updateBtn = document.getElementById('update-template-btn');
+    const deleteBtn = document.getElementById('delete-template-btn');
+    
+    if (isUserTemplate) {
+        updateBtn.classList.remove('hidden');
+        deleteBtn.classList.remove('hidden');
+        customWidthInput.value = t.width;
+        customHeightInput.value = t.height;
+        customColumnsInput.value = t.columns;
+        customColumnGapInput.value = t.columnGap || 0;
+        if (customShapeInput) customShapeInput.value = t.shape || 'rectangle';
+    } else {
+        updateBtn.classList.add('hidden');
+        deleteBtn.classList.add('hidden');
+    }
 
     if (!isCustomMode) {
         templateDescriptionEl.textContent = `Size: ${t.width}mm x ${t.height}mm.`;
@@ -469,7 +488,6 @@ function handleTemplateChange() {
         if(currentLabelItems.length === 0) currentLabelItems = JSON.parse(JSON.stringify(t.items));
     }
     
-    // Reset selection when changing template
     selectedItem = null;
     propertiesPanelEl.classList.add('hidden');
     updatePreview();
@@ -952,11 +970,11 @@ async function updateExistingTemplate() {
     const template = templates[templateKey];
 
     if (!template.firebaseID) {
-        alert("Default templates cannot be updated. Please use 'Save As New Template' to create your own.");
+        alert("Default templates cannot be updated.");
         return;
     }
 
-    if (!confirm(`Update template "${template.name}" with current changes?`)) return;
+    if (!confirm(`Update template "${template.name}"?`)) return;
 
     const updatedData = {
         width: parseFloat(customWidthInput.value),
@@ -971,10 +989,27 @@ async function updateExistingTemplate() {
         const templateRef = doc(db, 'shops', currentUserID, 'templates', template.firebaseID);
         await updateDoc(templateRef, updatedData);
         templates[templateKey] = { ...templates[templateKey], ...updatedData };
-        showStatus('Template updated successfully!', 'success');
+        showStatus('Template updated!', 'success');
         updatePreview();
     } catch (error) {
         console.error("Error updating template:", error);
-        alert("Failed to update template: " + error.message);
+        alert("Failed to update template.");
+    }
+}
+
+async function deleteExistingTemplate() {
+    const val = templateSelectEl.value;
+    const template = templates[val];
+    if (!template.firebaseID) return;
+
+    if (!confirm(`Delete "${template.name}" permanently?`)) return;
+
+    try {
+        await deleteDoc(doc(db, 'shops', currentUserID, 'templates', template.firebaseID));
+        showStatus('Template deleted.', 'success');
+        delete templates[val];
+        populateTemplates();
+    } catch (e) {
+        alert("Error deleting template");
     }
 }
