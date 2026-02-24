@@ -59,50 +59,105 @@
             <!-- Middle Panel: Template -->
             <div class="middle-panel card">
                 <h2>2. Template & Design</h2>
-                <div class="form-group">
-                    <label>Select Template:</label>
-                    <select id="template-select" class="form-control"></select>
-                </div>
-                
-                <div id="template-settings">
-                    <p id="template-description"></p>
-                    <div id="custom-size-settings" class="hidden">
-                        <h4>Custom Settings</h4>
-                        <div class="form-group-inline">
-                            <div class="form-group"><label>W (mm):</label><input type="number" id="custom-width" class="form-control" value="50"></div>
-                            <div class="form-group"><label>H (mm):</label><input type="number" id="custom-height" class="form-control" value="25"></div>
-                        </div>
-                        <div class="form-group-inline">
-                            <div class="form-group"><label>Cols:</label><input type="number" id="custom-columns" class="form-control" value="1"></div>
-                            <div class="form-group"><label>Gap:</label><input type="number" id="custom-columngap" class="form-control" value="2"></div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label>Select Template:</label>
+                        <select id="template-select" class="form-control"></select>
+                    </div>
+                    
+                    <div id="template-settings">
+                        <p id="template-description"></p>
+                        <div id="custom-size-settings" class="hidden">
+                            <h4>Custom Settings</h4>
+                            <div class="form-group-inline">
+                                <div class="form-group"><label>W (mm):</label><input type="number" id="custom-width" class="form-control" value="100"></div>
+                                <div class="form-group"><label>H (mm):</label><input type="number" id="custom-height" class="form-control" value="15"></div>
+                            </div>
+                            <div class="form-group-inline">
+                                <div class="form-group"><label>Cols:</label><input type="number" id="custom-columns" class="form-control" value="1"></div>
+                                <div class="form-group"><label>Gap:</label><input type="number" id="custom-columngap" class="form-control" value="0"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Sticker Shape:</label>
+                                <select id="custom-shape" class="form-control">
+                                    <option value="rectangle">Standard Rectangle</option>
+                                    <option value="jewelry-tail-left">Jewelry Tag (Left Tail) ⬅️</option>
+                                    <option value="jewelry-tail-right">Jewelry Tag (Right Tail) ➡️</option>
+                                    <option value="jewelry">Jewelry Tag (Dumbbell)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="fold-line-control" style="display: none;">
+                                <label>Fold Line Position: <span id="fold-value" style="color: #ff0000; font-weight: bold;">65mm</span></label>
+                                <input type="range" id="fold-line-slider" min="0" max="100" value="65" step="1" style="width: 100%; cursor: pointer;">
+                                <small style="font-size: 10px; color: #666;">Adjust red line to match your sticker's fold</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Template Name:</label>
+                                <input type="text" id="new-template-name" class="form-control" placeholder="e.g. My Gold Tag">
+                            </div>
+                            <button id="save-custom-template-btn" class="btn btn-success" style="width:100%; background:#28a745; color:white;">💾 Save Template</button>
                         </div>
                     </div>
-                </div>
 
-                <hr>
+                    <hr>
 
-                <!-- Properties Panel -->
-                <div id="properties-panel" class="hidden">
-                    <h4 style="color:#4361ee;">Edit Selected Element</h4>
-                    <p style="font-size:12px;"><strong>Editing:</strong> <span id="prop-item-name"></span></p>
-                    
-                    <div class="form-group-inline">
-                        <div class="form-group"><label>X (mm):</label><input type="number" id="prop-x" class="form-control" step="0.5"></div>
-                        <div class="form-group"><label>Y (mm):</label><input type="number" id="prop-y" class="form-control" step="0.5"></div>
+                    <!-- Element Layers List -->
+                    <div class="card-section" style="margin-top: 15px;">
+                        <h4 style="font-size: 12px; color: #666; margin: 0 0 8px 0; font-weight: 600;">📋 Active Elements</h4>
+                        <ul id="element-layers-list"></ul>
                     </div>
-                    
-                    <div id="text-properties" class="hidden">
-                        <div class="form-group"><label>Font Size:</label><input type="number" id="prop-fontsize" class="form-control" min="1"></div>
-                        <div class="form-group" style="display:flex; gap:10px; align-items:center;">
-                            <input type="checkbox" id="prop-bold"> <label for="prop-bold" style="margin:0;">Bold Text</label>
+
+                    <hr>
+
+                    <!-- Add New Field Section -->
+                    <div class="card-section" style="margin-top: 15px; padding: 12px; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px;">
+                        <h4 style="font-size: 13px; margin: 0 0 8px 0; color: #2e7d32; font-weight: 600;">➕ Add New Element</h4>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="add-field-type" class="form-control" style="flex: 2; font-size: 12px; margin-bottom: 0;">
+                                <option value="weight">Weight (Gm)</option>
+                                <option value="color">Color</option>
+                                <option value="size">Size</option>
+                                <option value="karat">Karat</option>
+                                <option value="stone">Stone</option>
+                                <option value="description">Description</option>
+                                <option value="custom">Custom Text</option>
+                            </select>
+                            <button id="add-field-btn" class="btn-primary" style="flex: 1; padding: 8px; cursor: pointer; background: #28a745; border: none; color: white; border-radius: 4px; font-weight: bold; font-size: 12px;">+ ADD</button>
                         </div>
                     </div>
-                    
-                    <div id="barcode-properties" class="hidden">
-                         <div class="form-group-inline">
-                            <div class="form-group"><label>W (mm):</label><input type="number" id="prop-width" class="form-control"></div>
-                            <div class="form-group"><label>H (mm):</label><input type="number" id="prop-height" class="form-control"></div>
+
+                    <hr>
+
+                    <!-- Properties Panel -->
+                    <div id="properties-panel" class="hidden">
+                        <h4 style="color:#4361ee; font-size:13px; margin-bottom:8px;">Edit Selected Element</h4>
+                        <p style="font-size:11px; margin-bottom:8px;"><strong>Editing:</strong> <span id="prop-item-name"></span></p>
+                        
+                        <div class="form-group-inline">
+                            <div class="form-group"><label>X (mm):</label><input type="number" id="prop-x" class="form-control" step="0.5"></div>
+                            <div class="form-group"><label>Y (mm):</label><input type="number" id="prop-y" class="form-control" step="0.5"></div>
                         </div>
+                        
+                        <div id="text-properties" class="hidden">
+                            <div class="form-group"><label>Font Size:</label><input type="number" id="prop-fontsize" class="form-control" min="1"></div>
+                            <div class="form-group" style="display:flex; gap:10px; align-items:center;">
+                                <input type="checkbox" id="prop-bold"> <label for="prop-bold" style="margin:0;">Bold Text</label>
+                            </div>
+                            <!-- Prefix and Manual Value fields -->
+                            <div class="form-group"><label>Prefix:</label><input type="text" id="prop-prefix" class="form-control" placeholder="e.g. Tk. "></div>
+                            <div class="form-group"><label>Manual Value:</label><input type="text" id="prop-manual-val" class="form-control" placeholder="Auto from product"></div>
+                        </div>
+                        
+                        <div id="barcode-properties" class="hidden">
+                             <div class="form-group-inline">
+                                <div class="form-group"><label>W (mm):</label><input type="number" id="prop-width" class="form-control"></div>
+                                <div class="form-group"><label>H (mm):</label><input type="number" id="prop-height" class="form-control"></div>
+                            </div>
+                        </div>
+                        
+                        <hr style="margin: 10px 0;">
+                        <button id="reset-pos-btn" style="width: 100%; padding: 8px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; margin-bottom: 8px;">🎯 Reset to Center</button>
+                        <button id="delete-element-btn" style="width: 100%; padding: 8px; background: #ff4d4d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">🗑️ Delete Element</button>
                     </div>
                 </div>
             </div>

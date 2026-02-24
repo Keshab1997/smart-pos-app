@@ -30,6 +30,12 @@ const textPropertiesEl = document.getElementById('text-properties'), barcodeProp
 const propFontSizeInput = document.getElementById('prop-fontsize'), propWidthInput = document.getElementById('prop-width');
 const propHeightInput = document.getElementById('prop-height');
 const propBoldInput = document.getElementById('prop-bold');
+const customShapeInput = document.getElementById('custom-shape');
+const saveTemplateBtn = document.getElementById('save-custom-template-btn');
+const newTemplateNameInput = document.getElementById('new-template-name');
+const foldLineSlider = document.getElementById('fold-line-slider');
+const foldValueSpan = document.getElementById('fold-value');
+const foldLineControl = document.getElementById('fold-line-control');
 
 // --- Templates ---
 let templates = {
@@ -83,10 +89,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Properties update
     [propXInput, propYInput, propFontSizeInput, propWidthInput, propHeightInput].forEach(el => el.addEventListener('input', e => updateSelectedItemProperty(e.target.id.replace('prop-', ''), e.target.value)));
     propBoldInput.addEventListener('change', e => updateSelectedItemProperty('bold', e.target.checked));
+    
+    // Add event listeners for prefix and manual value
+    document.getElementById('prop-prefix').addEventListener('input', e => updateSelectedItemProperty('prefix', e.target.value));
+    document.getElementById('prop-manual-val').addEventListener('input', e => updateSelectedItemProperty('text', e.target.value));
+    
+    // Add New Field functionality
+    document.getElementById('add-field-btn').addEventListener('click', addNewField);
+    
+    // Delete Element functionality
+    document.getElementById('delete-element-btn').addEventListener('click', deleteSelectedElement);
+    
+    // Reset Position functionality
+    document.getElementById('reset-pos-btn').addEventListener('click', resetElementPosition);
 
     printBtn.addEventListener('click', handlePrintQueue);
     saveSettingsBtn.addEventListener('click', savePrinterSettings);
-    clearQueueBtn.addEventListener('click', () => { printQueue = []; renderPrintQueue(); });
+    clearQueueBtn.addEventListener('click', () => { 
+        printQueue = []; 
+        currentPreviewProduct = null;
+        previewProductNameEl.textContent = 'Template Default';
+        previewAreaEl.innerHTML = '<p>Select a product to preview.</p>';
+        renderPrintQueue(); 
+    });
+
+    if (customShapeInput) customShapeInput.addEventListener('change', handleShapeChange);
+    if (saveTemplateBtn) saveTemplateBtn.addEventListener('click', saveCustomTemplate);
+    if (foldLineSlider) foldLineSlider.addEventListener('input', updateFoldLine);
 
     document.addEventListener('keydown', handleKeyboardShortcuts);
     
@@ -97,6 +126,167 @@ document.addEventListener('DOMContentLoaded', () => {
         addToQueue(p);
     }
 });
+
+// --- Add/Delete Field Functions ---
+
+function addNewField() {
+    const type = document.getElementById('add-field-type').value;
+    
+    // Get template dimensions and shape
+    const templateKey = templateSelectEl.value;
+    let template = templates[templateKey];
+    if (templateKey === 'custom') {
+        template = {
+            width: parseFloat(customWidthInput.value) || 50,
+            height: parseFloat(customHeightInput.value) || 25,
+            shape: customShapeInput ? customShapeInput.value : 'rectangle'
+        };
+    }
+    
+    // Smart positioning based on shape
+    let safeX, safeY;
+    const shape = template.shape || 'rectangle';
+    
+    if (shape === 'jewelry-tail-left') {
+        // Left tail: place content on right side (after fold line at 30%)
+        safeX = template.width * 0.5; // Middle of right section
+        safeY = Math.min(5, template.height - 5);
+    } else if (shape === 'jewelry-tail-right') {
+        // Right tail: place content on left side (before fold line at 70%)
+        safeX = template.width * 0.35; // Middle of left section
+        safeY = Math.min(5, template.height - 5);
+    } else {
+        // Standard shapes
+        safeX = template.width > 50 ? 70 : 5;
+        safeY = Math.min(5, template.height - 5);
+    }
+    
+    // Create new item
+    const newItem = {
+        placeholder: type,
+        type: 'text',
+        x: safeX,
+        y: safeY,
+        options: { 
+            font: '2', 
+            size: 1, 
+            prefix: type === 'custom' ? '' : type.charAt(0).toUpperCase() + type.slice(1) + ': ',
+            text: '000', // Dummy value to make it visible
+            bold: false
+        }
+    };
+
+    currentLabelItems.push(newItem);
+    updatePreview();
+    
+    // Auto-select for immediate editing
+    setTimeout(() => selectItem(currentLabelItems.length - 1), 100);
+    
+    showStatus(`${type.charAt(0).toUpperCase() + type.slice(1)} added at X:${safeX.toFixed(1)}, Y:${safeY}`, 'success');
+}
+
+function deleteSelectedElement() {
+    if (!selectedItem) return;
+    
+    const itemName = currentLabelItems[selectedItem.index].placeholder;
+    
+    if (confirm(`Delete "${itemName}" element?`)) {
+        currentLabelItems.splice(selectedItem.index, 1);
+        selectedItem = null;
+        propertiesPanelEl.classList.add('hidden');
+        updatePreview();
+        renderLayersList();
+        showStatus('Element deleted successfully', 'success');
+    }
+}
+
+function resetElementPosition() {
+    if (!selectedItem) return;
+    
+    const item = currentLabelItems[selectedItem.index];
+    const templateKey = templateSelectEl.value;
+    let template = templates[templateKey];
+    if (templateKey === 'custom') {
+        template = {
+            width: parseFloat(customWidthInput.value) || 50,
+            height: parseFloat(customHeightInput.value) || 25
+        };
+    }
+    
+    item.x = Math.min(10, template.width / 4);
+    item.y = Math.min(5, template.height / 4);
+    
+    propXInput.value = item.x.toFixed(1);
+    propYInput.value = item.y.toFixed(1);
+    
+    renderOnlyPreview();
+    renderLayersList();
+    showStatus('Position reset to center', 'success');
+}
+
+function renderLayersList() {
+    const listEl = document.getElementById('element-layers-list');
+    if (!listEl) return;
+    
+    listEl.innerHTML = '';
+    
+    if (currentLabelItems.length === 0) {
+        listEl.innerHTML = '<li style="padding: 10px; text-align: center; color: #999; font-size: 10px;">No elements yet</li>';
+        return;
+    }
+    
+    currentLabelItems.forEach((item, index) => {
+        const li = document.createElement('li');
+        const isSelected = selectedItem && selectedItem.index === index;
+        
+        if (isSelected) li.classList.add('active');
+        
+        const name = item.options.prefix ? item.options.prefix.replace(':', '').trim() : item.placeholder;
+        const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+        
+        li.innerHTML = `
+            <span style="font-weight: ${isSelected ? 'bold' : 'normal'}; color: ${isSelected ? '#4361ee' : '#333'};">
+                ${index + 1}. ${displayName}
+            </span>
+            <span style="color: #999; font-size: 10px;">[${item.x.toFixed(0)}, ${item.y.toFixed(0)}]</span>
+        `;
+        
+        li.onclick = () => selectItem(index);
+        listEl.appendChild(li);
+    });
+}
+
+// --- Shape and Fold Line Management ---
+
+function handleShapeChange() {
+    const shape = customShapeInput.value;
+    const showFoldControl = shape.includes('jewelry-tail');
+    
+    if (foldLineControl) {
+        foldLineControl.style.display = showFoldControl ? 'block' : 'none';
+    }
+    
+    // Set default fold position based on shape
+    if (shape === 'jewelry-tail-left' && foldLineSlider) {
+        foldLineSlider.value = 65; // 30mm leg + 35mm (half of 70mm)
+        foldValueSpan.textContent = '65mm';
+    } else if (shape === 'jewelry-tail-right' && foldLineSlider) {
+        foldLineSlider.value = 35; // Half of 70mm print area
+        foldValueSpan.textContent = '35mm';
+    }
+    
+    updatePreview();
+}
+
+function updateFoldLine() {
+    const value = foldLineSlider.value;
+    foldValueSpan.textContent = `${value}mm`;
+    
+    const indicator = document.getElementById('fold-line-indicator');
+    if (indicator) {
+        indicator.style.left = `${value * previewScale}px`;
+    }
+}
 
 // --- Logic ---
 
@@ -212,6 +402,10 @@ function handleTemplateChange() {
     } else {
         if(currentLabelItems.length === 0) currentLabelItems = JSON.parse(JSON.stringify(t.items));
     }
+    
+    // Reset selection when changing template
+    selectedItem = null;
+    propertiesPanelEl.classList.add('hidden');
     updatePreview();
 }
 
@@ -220,8 +414,8 @@ function updatePreview() {
     const displayProduct = currentPreviewProduct || { name: 'Example Product', sellingPrice: '120.00', barcode: '12345678' };
 
     previewAreaEl.innerHTML = '';
-    selectedItem = null;
-    propertiesPanelEl.classList.add('hidden');
+    // selectedItem = null; // Removed to preserve selection
+    // propertiesPanelEl.classList.add('hidden'); // Keep panel open if item selected
 
     const templateKey = templateSelectEl.value;
     let template = JSON.parse(JSON.stringify(templates[templateKey]));
@@ -231,12 +425,13 @@ function updatePreview() {
             width: parseFloat(customWidthInput.value) || 50,
             height: parseFloat(customHeightInput.value) || 25,
             columns: parseInt(customColumnsInput.value) || 1,
-            columnGap: parseFloat(customColumnGapInput.value) || 2
+            columnGap: parseFloat(customColumnGapInput.value) || 2,
+            shape: customShapeInput ? customShapeInput.value : 'rectangle'
         });
     }
 
     const previewLabel = document.createElement('div');
-    previewLabel.className = 'preview-label';
+    previewLabel.className = `preview-label shape-${template.shape || 'rectangle'}`;
     Object.assign(previewLabel.style, {
         width: `${template.width * previewScale}px`,
         height: `${template.height * previewScale}px`
@@ -264,7 +459,18 @@ function updatePreview() {
             previewLabel.appendChild(el);
         });
     }
+    
+    // Add fold line indicator for jewelry tags
+    if (template.shape && template.shape.includes('jewelry-tail') && foldLineSlider) {
+        const foldLine = document.createElement('div');
+        foldLine.id = 'fold-line-indicator';
+        const foldPos = parseFloat(foldLineSlider.value) * previewScale;
+        foldLine.style.left = `${foldPos}px`;
+        previewLabel.appendChild(foldLine);
+    }
+    
     previewAreaEl.appendChild(previewLabel);
+    renderLayersList();
 }
 
 function createDraggableItem(item, product, index) {
@@ -300,17 +506,38 @@ function createDraggableItem(item, product, index) {
 function updateItemContent(div, item, product) {
     div.innerHTML = '';
     let value = '';
-    if (item.options.text) { value = item.options.text; } 
+    
+    // Priority 1: Manual text
+    if (item.options.text !== undefined && item.options.text !== '') {
+        value = item.options.text;
+    } 
+    // Priority 2: Product data
     else {
         let productValue = product[item.placeholder] || '';
         if (item.placeholder === 'price' && product.sellingPrice) {
             productValue = parseFloat(product.sellingPrice).toFixed(2);
         }
-        value = (item.options.prefix || '') + productValue;
+        value = productValue;
+    }
+    
+    // Build display text with prefix
+    const prefix = item.options.prefix || '';
+    const displayText = prefix + value;
+    
+    // Show placeholder if completely empty
+    if (displayText.trim() === '') {
+        div.textContent = `[${item.placeholder}]`;
+        div.style.opacity = "0.4";
+        div.style.fontStyle = "italic";
+        div.style.color = "#ff6b6b";
+    } else {
+        div.textContent = displayText;
+        div.style.opacity = "1";
+        div.style.fontStyle = "normal";
+        div.style.color = "#000";
     }
     
     if (item.type === 'text') {
-        div.textContent = value;
         const scaleFactor = item.options.size || 1;
         const fontSize = (item.options.font && item.options.font.includes('TSS') ? 24 : 12) * scaleFactor;
         div.style.fontSize = `${fontSize * previewScale / dotsPerMm}px`;
@@ -319,18 +546,24 @@ function updateItemContent(div, item, product) {
     } 
     else if (item.type === 'barcode' && product.barcode) {
         div.classList.add('barcode');
+        div.innerHTML = '';
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         div.appendChild(svg);
         try {
             JsBarcode(svg, product.barcode, {
-                format: "CODE128", displayValue: false,
-                width: 2, height: 40, margin: 0
+                format: "CODE128", 
+                displayValue: false,
+                width: 2,
+                height: Math.max(30, item.options.height * 4),
+                margin: 0
             });
             Object.assign(div.style, {
-                width: `${(item.options.width || 30) * previewScale}px`,
-                height: `${(item.options.height || 10) * previewScale}px`
+                width: 'auto',
+                height: `${item.options.height * previewScale}px`,
+                overflow: 'visible',
+                opacity: "1"
             });
-        } catch (e) { div.innerHTML = '<span>Invalid</span>'; }
+        } catch (e) { div.innerHTML = '<span style="font-size:8px;">Invalid</span>'; }
     }
 }
 
@@ -340,41 +573,84 @@ function selectItem(index) {
     selectedItem = { index: index };
     updatePropertiesPanel(currentLabelItems[index]);
     propertiesPanelEl.classList.remove('hidden');
+    renderLayersList();
 }
 
 function updatePropertiesPanel(itemData) {
     propItemNameEl.textContent = itemData.placeholder.toUpperCase();
     propXInput.value = itemData.x.toFixed(1);
     propYInput.value = itemData.y.toFixed(1);
+    
     const isText = itemData.type === 'text';
     textPropertiesEl.classList.toggle('hidden', !isText);
     barcodePropertiesEl.classList.toggle('hidden', isText);
+    
     if (isText) { 
         propFontSizeInput.value = itemData.options.size; 
         propBoldInput.checked = itemData.options.bold || false;
+        
+        // Update prefix and manual value fields (already in HTML)
+        const propPrefixInput = document.getElementById('prop-prefix');
+        const propManualValInput = document.getElementById('prop-manual-val');
+        
+        if (propPrefixInput) propPrefixInput.value = itemData.options.prefix || '';
+        if (propManualValInput) propManualValInput.value = itemData.options.text || '';
     } 
-    else { propWidthInput.value = itemData.options.width; propHeightInput.value = itemData.options.height; }
+    else { 
+        propWidthInput.value = itemData.options.width; 
+        propHeightInput.value = itemData.options.height; 
+    }
 }
 
 function updateSelectedItemProperty(prop, value) {
     if (!selectedItem) return;
     const index = selectedItem.index;
     const itemData = currentLabelItems[index];
-    const val = (prop === 'bold') ? value : parseFloat(value);
     
-    const propMap = {
-        'x': (d, v) => d.x = v,
-        'y': (d, v) => d.y = v,
-        'fontsize': (d, v) => d.options.size = v,
-        'bold': (d, v) => d.options.bold = v,
-        'width': (d, v) => d.options.width = v,
-        'height': (d, v) => d.options.height = v,
-    };
-    if (propMap[prop]) { propMap[prop](itemData, val); }
+    if (prop === 'prefix' || prop === 'text') {
+        itemData.options[prop] = value;
+    } else {
+        const val = (prop === 'bold') ? value : parseFloat(value);
+        const propMap = {
+            'x': (d, v) => d.x = v,
+            'y': (d, v) => d.y = v,
+            'fontsize': (d, v) => d.options.size = v,
+            'bold': (d, v) => d.options.bold = v,
+            'width': (d, v) => d.options.width = v,
+            'height': (d, v) => d.options.height = v,
+        };
+        if (propMap[prop]) { propMap[prop](itemData, val); }
+    }
     
-    // Refresh preview with currently active product
-    updatePreview();
-    setTimeout(() => { selectItem(index); }, 50);
+    // Update only the affected elements without full re-render
+    renderOnlyPreview();
+}
+
+// New function: Update preview without losing selection
+function renderOnlyPreview() {
+    const displayProduct = currentPreviewProduct || { name: 'Example Product', sellingPrice: '120.00', barcode: '12345678' };
+    
+    currentLabelItems.forEach((item, index) => {
+        const elements = document.querySelectorAll(`.draggable-item[data-index='${index}']`);
+        elements.forEach(el => {
+            // Update position
+            el.style.left = `${item.x * previewScale}px`;
+            el.style.top = `${item.y * previewScale}px`;
+            
+            // Update content
+            updateItemContent(el, item, displayProduct);
+            
+            // Preserve selection
+            if (selectedItem && selectedItem.index === index) {
+                el.classList.add('selected');
+            }
+        });
+    });
+    
+    // Update properties panel if item is selected
+    if (selectedItem) {
+        updatePropertiesPanel(currentLabelItems[selectedItem.index]);
+    }
 }
 
 // --- Printing Logic (The Engine) ---
@@ -393,6 +669,12 @@ function generateTSPL(product, qty) {
     const columnGapDots = (template.columnGap || 0) * dotsPerMm;
     
     let tspl = `SIZE ${template.width} mm, ${template.height} mm\nGAP 2 mm, 0 mm\nCLS\n`;
+    
+    // Debug: Log TSPL command
+    console.log('=== TSPL Command for', product.name, '===');
+    console.log(`SIZE ${template.width} mm, ${template.height} mm`);
+    console.log('GAP 2 mm, 0 mm');
+    console.log('CLS');
     
     // Note: We use `currentLabelItems` because that contains the current edits
     const itemsToPrint = currentLabelItems;
@@ -413,21 +695,31 @@ function generateTSPL(product, qty) {
                 }
                 value = (item.options.prefix || '') + productValue;
             }
+            
+            // Skip empty fields in print
+            if (!value) return;
+            
             value = value ? value.toString().replace(/"/g, '""') : '';
 
             if (item.type === 'text') {
                 const font = item.options.bold ? '2' : item.options.font || '2';
-                tspl += `TEXT ${x_dot},${y_dot},"${font}",${rotation},${item.options.size},${item.options.size},"${value}"\n`;
+                const cmd = `TEXT ${x_dot},${y_dot},"${font}",${rotation},${item.options.size},${item.options.size},"${value}"`;
+                console.log(cmd);
+                tspl += cmd + '\n';
             } 
             else if (item.type === 'barcode' && product.barcode) {
                 const h = Math.round(item.options.height * dotsPerMm);
                 const narrow = templateSelectEl.value.includes('jewelry') ? 1 : 2;
                 const wide = templateSelectEl.value.includes('jewelry') ? 2 : 4;
-                tspl += `BARCODE ${x_dot},${y_dot},"${item.options.type}",${h},${item.options.human_readable},${rotation},${narrow},${wide},"${product.barcode}"\n`;
+                const cmd = `BARCODE ${x_dot},${y_dot},"${item.options.type}",${h},${item.options.human_readable},${rotation},${narrow},${wide},"${product.barcode}"`;
+                console.log(cmd);
+                tspl += cmd + '\n';
             }
         });
     }
-    tspl += `PRINT ${qty}\n`; // Use individual quantity
+    tspl += `PRINT ${qty}\n`;
+    console.log(`PRINT ${qty}`);
+    console.log('=== End TSPL ===\n');
     return tspl;
 }
 
@@ -444,6 +736,10 @@ async function handlePrintQueue() {
         fullJob += generateTSPL(item, item.printQty);
     });
 
+    console.log('\n=== FULL PRINT JOB ===');
+    console.log(fullJob);
+    console.log('=== END FULL JOB ===\n');
+
     try {
         const device = await navigator.usb.requestDevice({
             filters: [{
@@ -457,10 +753,11 @@ async function handlePrintQueue() {
         const endpoint = device.configuration.interfaces[0].alternate.endpoints.find(e => e.direction === 'out');
         await device.transferOut(endpoint.endpointNumber, new TextEncoder().encode(fullJob));
         await device.close();
-        showStatus('Print job sent!', 'success');
+        showStatus('Print job sent successfully!', 'success');
+        console.log('✓ Print job sent to printer');
     } catch (error) {
         console.error("WebUSB Error:", error);
-        alert(`Printing failed: ${error.message}. Check VID/PID.`);
+        alert(`Printing failed: ${error.message}\n\nTips:\n- Check VID/PID values\n- Windows: Install WinUSB driver using Zadig\n- Use HTTPS or localhost`);
     }
 }
 
@@ -525,4 +822,29 @@ function showStatus(message, type = 'success') {
     div.textContent = message;
     container.appendChild(div);
     setTimeout(() => div.remove(), 3000);
+}
+
+async function saveCustomTemplate() {
+    const name = newTemplateNameInput.value.trim();
+    if (!name) { alert("Please enter a template name"); return; }
+
+    const newTemplate = {
+        name: name,
+        width: parseFloat(customWidthInput.value),
+        height: parseFloat(customHeightInput.value),
+        columns: parseInt(customColumnsInput.value),
+        columnGap: parseFloat(customColumnGapInput.value),
+        shape: customShapeInput.value,
+        items: JSON.parse(JSON.stringify(currentLabelItems))
+    };
+
+    try {
+        await addDoc(collection(db, 'shops', currentUserID, 'templates'), newTemplate);
+        showStatus('Template saved successfully!', 'success');
+        loadUserTemplates();
+        newTemplateNameInput.value = '';
+    } catch (error) {
+        console.error("Error saving template:", error);
+        alert("Failed to save template.");
+    }
 }
