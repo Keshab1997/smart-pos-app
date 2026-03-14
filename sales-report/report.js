@@ -17,6 +17,7 @@ const whatsappBtn = document.getElementById('whatsapp-btn');
 const filteredCashSalesEl = document.getElementById('filtered-cash-sales');
 const filteredCardSalesEl = document.getElementById('filtered-card-sales');
 const filteredTotalDiscountEl = document.getElementById('filtered-total-discount');
+const filteredTotalSalesEl = document.getElementById('filtered-total-sales');
 
 const salesTableBody = document.getElementById('sales-table-body');
 const logoutBtn = document.getElementById('logout-btn');
@@ -159,11 +160,13 @@ function filterAndDisplayData() {
 }
 
 function calculateFilteredPaymentSummary(sales) {
-    let cashTotal = 0, onlineTotal = 0, discountTotal = 0;
+    let cashTotal = 0, onlineTotal = 0, discountTotal = 0, totalSales = 0;
 
     sales.forEach(sale => {
         if (sale.status === 'canceled' || sale.status === 'cancelled') return;
         
+        const saleTotal = sale.total || 0;
+        totalSales += saleTotal;
         discountTotal += (sale.discountAmount || sale.discount || 0);
 
         if (sale.paymentMethod === 'part-payment' && sale.paymentBreakdown) {
@@ -177,12 +180,13 @@ function calculateFilteredPaymentSummary(sales) {
             cashTotal += pCash;
             onlineTotal += pOnline;
         } else if (sale.paymentMethod === 'cash') {
-            cashTotal += (sale.total || 0);
+            cashTotal += saleTotal;
         } else {
-            onlineTotal += (sale.total || 0);
+            onlineTotal += saleTotal;
         }
     });
 
+    if(filteredTotalSalesEl) filteredTotalSalesEl.textContent = `₹${totalSales.toFixed(2)}`;
     if(filteredCashSalesEl) filteredCashSalesEl.textContent = `₹${cashTotal.toFixed(2)}`;
     if(filteredCardSalesEl) filteredCardSalesEl.textContent = `₹${onlineTotal.toFixed(2)}`;
     if(filteredTotalDiscountEl) filteredTotalDiscountEl.textContent = `₹${discountTotal.toFixed(2)}`;
