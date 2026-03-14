@@ -1,7 +1,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
-    collection, getDocs, getDoc, query, orderBy, doc, updateDoc, runTransaction, writeBatch, increment
+    collection, getDocs, getDoc, query, orderBy, doc, updateDoc, runTransaction, writeBatch, increment, where
 } from 'firebase/firestore';
 
 // --- DOM Elements ---
@@ -272,22 +272,15 @@ function renderSalesTable(sales) {
             row.classList.add('sale-canceled');
             actionHTML = `<span style="color:red; font-weight:bold; font-size:12px;">CANCELED</span>`;
         } else {
-            if (isToday) {
-                actionHTML = `
-                    <div class="action-buttons">
-                        <button class="btn-icon btn-edit edit-pay-btn" data-sale-id="${sale.id}" title="Edit Payment">${iconEdit}</button>
-                        <button class="btn-icon btn-print reprint-btn" data-sale-id="${sale.id}" title="Print Receipt">${iconPrint}</button>
-                        <button class="btn-icon btn-delete cancel-bill-btn" data-sale-id="${sale.id}" title="Cancel Bill">${iconTrash}</button>
-                    </div>
-                `;
-            } else {
-                actionHTML = `
-                    <div class="locked-wrapper">
-                        <div class="locked-badge"><i class="fas fa-lock"></i> Locked</div>
-                        <button class="btn-icon btn-print reprint-btn" data-sale-id="${sale.id}" title="Print Old Bill">${iconPrint}</button>
-                    </div>
-                `;
-            }
+            // সব বিলের জন্য সব বাটন দেখাবে (লক সিস্টেম বন্ধ করা হয়েছে)
+            actionHTML = `
+                <div class="action-buttons">
+                    <button class="btn-icon btn-edit edit-pay-btn" data-sale-id="${sale.id}" title="Edit Payment">${iconEdit}</button>
+                    <button class="btn-icon btn-print reprint-btn" data-sale-id="${sale.id}" title="Print Receipt">${iconPrint}</button>
+                    <button class="btn-icon btn-delete cancel-bill-btn" data-sale-id="${sale.id}" title="Cancel Bill">${iconTrash}</button>
+                    <button class="btn-icon btn-edit edit-cp-btn" data-sale-id="${sale.id}" title="Edit Cost Price" style="background:#9b59b6;"><i class="fa-solid fa-dollar-sign"></i></button>
+                </div>
+            `;
         }
 
         row.innerHTML = `
@@ -630,6 +623,7 @@ function setupEventListeners() {
             if (btn.classList.contains('edit-pay-btn')) handleEditPayment(id);
             if (btn.classList.contains('reprint-btn')) window.open(`../billing/print.html?saleId=${id}`, '_blank');
             if (btn.classList.contains('cancel-bill-btn')) handleCancelBill(id);
+            if (btn.classList.contains('edit-cp-btn')) window.openEditCPModal(id);
         });
     }
 
@@ -700,3 +694,141 @@ function setupEventListeners() {
         mobileMenuBtn.addEventListener('click', () => mainNavLinks.classList.toggle('mobile-nav-active'));
     }
 }
+
+
+// ============================================================================
+// 🔴 EDIT COST PRICE (CP) MODAL LOGIC - SYNC WITH INVENTORY & EXPENSE
+// ============================================================================
+let currentEditingSaleId = null;
+let currentEditingSaleData = null;
+
+window.openEditCPModal = async function(saleId) {
+    currentEditingSaleId = saleId;
+    const saleRef = doc(db, 'shops', activeShopId, 'sales', saleId);
+    const snap = await getDoc(saleRef);
+    
+    if(!snap.exists()) {
+        alert("Bill not found!");
+        return;
+    }
+    
+    currentEditingSaleData = snap.data();
+    const editTbody = document.getElementById('edit-cp-tbody');
+    editTbody.innerHTML = '';
+
+    if (currentEditingSaleData.items && Array.isArray(currentEditingSaleData.items)) {
+        currentEditingSaleData.items.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.quantity}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">₹${(item.price || 0).toFixed(2)}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <input type="number" class="form-control edit-cp-input" data-index="${index}" value="${item.costPrice || 0}" style="width: 100px; padding: 5px; border: 2px solid #3498db; border-radius: 4px;">
+                </td>
+            `;
+            editTbody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('edit-cp-modal').style.display = 'flex';
+}
+
+document.getElementById('close-cp-modal')?.addEventListener('click', () => {
+    document.getElementById('edit-cp-modal').style.display = 'none';
+});
+
+document.getElementById('save-cp-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('save-cp-btn');
+    btn.disabled = true;
+    btn.textContent = "Saving & Syncing...";
+
+    try {
+        const inputs = document.querySelectorAll('.edit-cp-input');
+        let updatedItems = [...currentEditingSaleData.items];
+        let newTotalCost = 0;
+
+        // 1. Get new CPs from inputs
+        inputs.forEach(input => {
+            const index = input.getAttribute('data-index');
+            const newCp = parseFloat(input.value) || 0;
+            updatedItems[index].costPrice = newCp;
+        });
+
+        // 2. Calculate new Total Cost
+        updatedItems.forEach(item => {
+            newTotalCost += (item.costPrice * item.quantity);
+        });
+
+        // 3. Calculate new Profit
+        const netTotal = currentEditingSaleData.finalPaidAmount || currentEditingSaleData.total || 0;
+        const newProfit = netTotal - newTotalCost;
+
+        const batch = writeBatch(db);
+
+        // --- A. Update Sale Document ---
+        const saleRef = doc(db, 'shops', activeShopId, 'sales', currentEditingSaleId);
+        batch.update(saleRef, {
+            items: updatedItems,
+            profit: newProfit
+        });
+
+        // --- B. Update Inventory & Expenses ---
+        for (const item of updatedItems) {
+            if (item.id) {
+                // Update Inventory CP
+                const invRef = doc(db, 'shops', activeShopId, 'inventory', item.id);
+                batch.update(invRef, { costPrice: item.costPrice });
+
+                // Update Expense (Find expense by relatedProductId)
+                const expQ = query(
+                    collection(db, 'shops', activeShopId, 'expenses'),
+                    where('relatedProductId', '==', item.id)
+                );
+                const expSnap = await getDocs(expQ);
+                
+                if (!expSnap.empty) {
+                    const expenses = [];
+                    expSnap.forEach(d => {
+                        const data = d.data();
+                        if (data.category === 'inventory_purchase' || data.category === 'Inventory Purchase') {
+                            expenses.push({ id: d.id, ref: d.ref, ...data });
+                        }
+                    });
+                    
+                    if (expenses.length > 0) {
+                        // সবচেয়ে শেষের (Latest) এন্ট্রিটি বের করা
+                        expenses.sort((a, b) => b.date.toMillis() - a.date.toMillis());
+                        const latestExp = expenses[0];
+                        
+                        // নতুন এমাউন্ট হিসাব করা (নতুন দাম * পরিমাণ)
+                        const qty = latestExp.quantity || 1;
+                        const newAmount = item.costPrice * qty;
+                        
+                        // Expense আপডেট করা
+                        batch.update(latestExp.ref, {
+                            unitPrice: item.costPrice,
+                            amount: newAmount
+                        });
+                    }
+                }
+            }
+        }
+
+        // Commit all changes together
+        await batch.commit();
+        
+        alert("✅ Cost Price updated successfully! Inventory and Expenses have been synced.");
+        document.getElementById('edit-cp-modal').style.display = 'none';
+        
+        // Reload Data
+        fetchAllSalesAndRender();
+
+    } catch (error) {
+        console.error("Error updating CP:", error);
+        alert("Failed to update Cost Price.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "💾 Save & Sync Everywhere";
+    }
+});
