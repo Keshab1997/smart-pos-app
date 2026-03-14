@@ -166,25 +166,28 @@ async function loadDashboardData() {
         salesSnapshot.forEach(doc => {
             const sale = doc.data();
             
-            if (sale.status === 'canceled') {
+            // ক্যানসেল করা বিল আলাদা হিসাব করা হচ্ছে
+            if (sale.status === 'canceled' || sale.status === 'cancelled') {
                 totalCanceled += (sale.total || 0);
-            } else {
-                totalSales += (sale.total || 0);
-                
-                // Profit Calculation (Sales - Cost)
-                let saleCost = 0;
-                if (sale.items && Array.isArray(sale.items)) {
-                    sale.items.forEach(item => {
-                        const costPrice = item.purchasePrice || item.costPrice || 0;
-                        saleCost += (costPrice * item.quantity);
-                        
-                        // Category Data
-                        const cat = item.category || 'General';
-                        categoryMap[cat] = (categoryMap[cat] || 0) + (item.price * item.quantity);
-                    });
-                }
-                totalProfit += (sale.total - saleCost);
+                return; // এই বিলটি মোট সেলস/প্রফিটে যোগ হবে না
             }
+            
+            // শুধুমাত্র একটিভ বিলগুলো হিসাব করা হচ্ছে
+            totalSales += (sale.total || 0);
+            
+            // Profit Calculation (Sales - Cost)
+            let saleCost = 0;
+            if (sale.items && Array.isArray(sale.items)) {
+                sale.items.forEach(item => {
+                    const costPrice = item.purchasePrice || item.costPrice || 0;
+                    saleCost += (costPrice * item.quantity);
+                    
+                    // Category Data
+                    const cat = item.category || 'General';
+                    categoryMap[cat] = (categoryMap[cat] || 0) + (item.price * item.quantity);
+                });
+            }
+            totalProfit += (sale.total - saleCost);
         });
 
         // --- B. Fetch Expenses ---

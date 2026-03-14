@@ -1,5 +1,5 @@
 import { db, auth } from '../js/firebase-config.js';
-import { collection, getDocs, query, orderBy, doc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, deleteDoc, updateDoc, writeBatch, where } from 'firebase/firestore';
 
 // --- DOM Elements ---
 const exportBtn = document.getElementById('export-excel-btn');
@@ -212,9 +212,54 @@ if (tableBody) {
                 const user = auth.currentUser;
                 const docRef = doc(db, 'shops', user.uid, 'inventory', productId);
                 
+                // ১. ইনভেন্টরি আপডেট করা
                 await updateDoc(docRef, {
                     [fieldName]: newValue
                 });
+
+                // ==============================================================
+                // 🔴 ২. নতুন লজিক: Cost Price আপডেট হলে Expense অটোমেটিক আপডেট হবে
+                // ==============================================================
+                if (fieldName === 'costPrice') {
+                    try {
+                        // এই প্রোডাক্টের খরচের এন্ট্রিগুলো খোঁজা
+                        const expQ = query(
+                            collection(db, 'shops', user.uid, 'expenses'),
+                            where('relatedProductId', '==', productId)
+                        );
+                        const expSnap = await getDocs(expQ);
+                        
+                        if (!expSnap.empty) {
+                            const expenses = [];
+                            expSnap.forEach(d => {
+                                const data = d.data();
+                                if (data.category === 'inventory_purchase' || data.category === 'Inventory Purchase') {
+                                    expenses.push({ id: d.id, ...data });
+                                }
+                            });
+                            
+                            if (expenses.length > 0) {
+                                // সবচেয়ে শেষের (Latest) এন্ট্রিটি বের করা
+                                expenses.sort((a, b) => b.date.toMillis() - a.date.toMillis());
+                                const latestExp = expenses[0];
+                                
+                                // নতুন এমাউন্ট হিসাব করা (নতুন দাম * পরিমাণ)
+                                const qty = latestExp.quantity || 1;
+                                const newAmount = newValue * qty;
+                                
+                                // Expense আপডেট করা
+                                await updateDoc(doc(db, 'shops', user.uid, 'expenses', latestExp.id), {
+                                    unitPrice: newValue,
+                                    amount: newAmount
+                                });
+                                console.log("✅ Expense auto-synced with new Cost Price.");
+                            }
+                        }
+                    } catch (syncErr) {
+                        console.error("⚠️ Expense sync error:", syncErr);
+                    }
+                }
+                // ==============================================================
                 
                 cell.innerText = newValue;
                 cell.style.backgroundColor = '#d4edda';
