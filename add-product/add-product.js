@@ -714,9 +714,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAIPasteExample() {
         const mode = window.currentActiveMode || 'general';
         const config = modeConfigs[mode];
-        const exampleElement = document.querySelector('#ai-paste-modal .modal-body p');
+        const exampleElement = document.querySelector('#ai-paste-modal .modal-body p:nth-child(3)');
+        
         if (exampleElement && config.aiExample) {
-            exampleElement.innerHTML = `Example: <strong>${config.aiExample}</strong>`;
+            // Mode-specific format instructions
+            const formatExamples = {
+                general: `<strong>Format:</strong> Product Name | CP | Qty | Category | MRP | Rack | Remark<br>
+                         <strong>Example:</strong> Lux Soap | 25 | 50 | COSMETICS | 30 | A-12 | Fragrant`,
+                
+                clothing: `<strong>Format:</strong> Brand | Name | Size | Net CP | Qty | Category | MRP | Color<br>
+                          <strong>Example:</strong> ZARA | Cotton Shirt | XL | 520.50 | 10 | CLOTHING | 650 | Blue`,
+                
+                jewelry: `<strong>Format:</strong> Brand | Name | Weight (gm) | Net CP | Qty | Category | MRP | Purity<br>
+                         <strong>Example:</strong> TANISHQ | Gold Ring | 5.5 | 15750.00 | 2 | JEWELRY | 18000 | 22K`,
+                
+                grocery: `<strong>Format:</strong> Brand | Name | Weight/Unit | Net CP | Qty | Category | MRP | HSN | Expiry<br>
+                         <strong>Example:</strong> SOUL | BUTTER CHKN MASALA | 65gms | 35.43 | 30 | GROCERY | 50 | 21039090 | 12/2025`
+            };
+            
+            exampleElement.innerHTML = formatExamples[mode] || formatExamples.general;
         }
     }
 
@@ -771,7 +787,21 @@ document.addEventListener('DOMContentLoaded', () => {
             let updatedCount = 0;
 
             for (let i = 0; i < lines.length; i++) {
-                const parts = lines[i].split('|').map(p => p.trim());
+                const line = lines[i].trim();
+                if (!line) continue; // Skip empty lines
+                
+                // Support multiple separators: | (pipe), , (comma), or Tab
+                let parts;
+                if (line.includes('|')) {
+                    parts = line.split('|').map(p => p.trim());
+                } else if (line.includes('\t')) {
+                    parts = line.split('\t').map(p => p.trim());
+                } else if (line.includes(',')) {
+                    parts = line.split(',').map(p => p.trim());
+                } else {
+                    continue; // Skip lines without valid separator
+                }
+                
                 const currentMode = window.currentActiveMode || 'general';
                 
                 if (parts.length >= 3) {

@@ -166,10 +166,15 @@
                 <button id="close-ai-modal" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
             </div>
             <div class="modal-body" style="padding: 20px;">
-                <p style="font-size: 14px; color: #555; margin-bottom: 10px;">AI Studio থেকে কপি করা টেক্সট নিচের বক্সে পেস্ট করুন:</p>
+                <p style="font-size: 14px; color: #555; margin-bottom: 10px;">AI Studio থেকে কপি করা টেক্সট পেস্ট করুন অথবা ম্যানুয়ালি টাইপ করুন:</p>
+                <p style="font-size: 13px; color: #888; margin-bottom: 10px;">✅ Separator: <strong>| (pipe)</strong> অথবা <strong>, (comma)</strong> অথবা <strong>Tab</strong></p>
+                <p style="font-size: 13px; color: #2c3e50; margin-bottom: 15px; padding: 10px; background: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 4px;">
+                    <strong>Format:</strong> Product Name | CP | Qty | Category<br>
+                    <strong>Example:</strong> Lux Soap | 25 | 50 | COSMETICS
+                </p>
                 <textarea id="ai-raw-input" 
-                    placeholder="Example: Product Name | CP | Qty | Category" 
-                    style="width: 100%; min-height: 250px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 14px; resize: vertical; outline: none; background: #f9f9f9; box-sizing: border-box;"></textarea>
+                    placeholder="এখানে পেস্ট করুন বা টাইপ করুন...&#10;&#10;উদাহরণ (| দিয়ে):&#10;Lux Soap | 25 | 50 | COSMETICS&#10;Dove Shampoo | 180 | 30 | COSMETICS&#10;&#10;উদাহরণ (comma দিয়ে):&#10;Lux Soap, 25, 50, COSMETICS&#10;Dove Shampoo, 180, 30, COSMETICS" 
+                    style="width: 100%; min-height: 250px; padding: 15px; border: 2px solid #8e44ad; border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 14px; resize: vertical; outline: none; background: #f9f9f9; box-sizing: border-box;"></textarea>
                 <div id="ai-process-status" style="margin-top: 10px; font-size: 13px; font-weight: 600;"></div>
             </div>
             <div class="modal-footer" style="padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px;">

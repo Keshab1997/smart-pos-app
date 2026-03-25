@@ -533,9 +533,64 @@ body {
 }
 
 /* ============================
-   9. Mobile Responsive Styles (FIXED)
+   9. Mobile Responsive Styles (IMPROVED)
    ============================ */
 @media screen and (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .main-card {
+        padding: 15px !important;
+        border-radius: 10px !important;
+    }
+
+    .header-flex {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header-flex h1 {
+        font-size: 22px;
+    }
+
+    /* Mode Buttons Mobile */
+    .mode-btn {
+        font-size: 12px;
+        padding: 6px 12px !important;
+    }
+
+    /* AI Card Mobile */
+    .ai-smart-card {
+        padding: 15px;
+    }
+
+    .ai-card-header h3 {
+        font-size: 16px;
+    }
+
+    .ai-prompt-box {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px;
+    }
+
+    .btn-copy {
+        width: 100%;
+        text-align: center;
+    }
+
+    .ai-action-buttons {
+        flex-direction: column;
+    }
+
+    .btn-ai-google,
+    .btn-ai-paste {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Table Mobile View */
     .card-container table thead {
         display: none;
     }
@@ -549,50 +604,66 @@ body {
     }
 
     .card-container table tr {
-        margin-bottom: 25px;
-        border: 1px solid #eee;
+        margin-bottom: 20px;
+        border: 2px solid #e9ecef;
         border-radius: 12px;
-        padding: 10px;
+        padding: 15px;
         background: #fff;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
     }
 
     .card-container table td {
         text-align: left;
-        padding: 12px 10px 12px 40%;
+        padding: 10px 5px 10px 45%;
         position: relative;
-        border-bottom: 1px solid #f8f9fa;
-        min-height: 55px;
+        border-bottom: 1px solid #f1f3f5;
+        min-height: 50px;
         display: flex;
         align-items: center;
     }
 
     .card-container table td:last-child {
         border-bottom: none;
+        padding-left: 5px;
     }
 
     .card-container table td::before {
         content: attr(data-label);
         position: absolute;
-        left: 12px;
+        left: 10px;
         top: 50%;
         transform: translateY(-50%);
-        width: 35%;
+        width: 40%;
         font-weight: 600;
-        color: #444;
-        font-size: 13px;
+        color: #495057;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
     }
 
     .card-container table input, 
     .card-container table select {
         width: 100% !important;
         margin: 0;
+        font-size: 14px;
     }
 
-    .card-container table td[data-label="Barcode"] div {
+    .card-container table td[data-label="Barcode"] {
+        padding-left: 5px;
+    }
+
+    .card-container table td[data-label="Barcode"]::before {
+        position: static;
+        transform: none;
+        display: block;
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .card-container table td[data-label="Barcode"] .barcode-wrapper {
         width: 100%;
         display: flex;
-        gap: 5px;
+        gap: 8px;
     }
 
     .card-container table td[data-label="Barcode"] input {
@@ -601,30 +672,79 @@ body {
 
     .card-container table td[data-label="Barcode"] .btn-scan-row {
         flex-shrink: 0;
+        font-size: 20px;
+    }
+
+    .card-container table td[data-label="Action"] {
+        padding-left: 5px;
+    }
+
+    .card-container table td[data-label="Action"]::before {
+        display: none;
     }
 
     .remove-row-btn {
         width: 100% !important;
         border-radius: 8px !important;
-        margin-top: 10px;
-        height: 40px;
+        margin-top: 5px;
+        height: 42px;
     }
 
     .remove-row-btn::after {
-        content: " Remove Item";
-        font-size: 14px;
+        content: " Remove This Product";
+        font-size: 13px;
         margin-left: 8px;
         font-weight: 600;
     }
 
-    .form-actions {
-        flex-direction: column;
-        gap: 10px;
+    /* Bill Verification Mobile */
+    div[style*="linear-gradient(135deg, #fff5e6"] {
+        padding: 15px !important;
+    }
+
+    div[style*="linear-gradient(135deg, #fff5e6"] > div:first-child {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+
+    div[style*="linear-gradient(135deg, #fff5e6"] input {
+        width: 100% !important;
+    }
+
+    /* Buttons Mobile */
+    .table-footer-actions,
+    .final-actions {
+        width: 100%;
     }
 
     .btn {
         width: 100%;
         justify-content: center;
+        padding: 12px 20px;
+    }
+
+    .btn-save-all {
+        max-width: 100%;
+        font-size: 15px;
+    }
+
+    /* Barcode Print Area Mobile */
+    #barcodes-container {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .barcode-item {
+        padding: 15px 10px;
+    }
+
+    .barcode-item .product-name-print {
+        font-size: 12px;
+    }
+
+    .barcode-item .product-price-print {
+        font-size: 13px;
     }
 }
 
@@ -642,4 +762,108 @@ body {
 
 .mode-btn:active {
     transform: translateY(0);
+}
+
+
+/* ============================
+   11. Desktop Enhancements (Large Screens)
+   ============================ */
+@media screen and (min-width: 1200px) {
+    .container {
+        max-width: 1400px !important;
+    }
+
+    .main-card {
+        padding: 40px !important;
+    }
+
+    .header-flex h1 {
+        font-size: 32px;
+    }
+
+    .card-container table th {
+        font-size: 0.9rem;
+        padding: 18px 12px;
+    }
+
+    .card-container table td {
+        padding: 14px 12px;
+    }
+
+    .ai-smart-card {
+        padding: 30px;
+    }
+
+    .btn-save-all {
+        max-width: 500px;
+        font-size: 17px;
+        padding: 18px 60px;
+    }
+
+    #barcodes-container {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
+/* ============================
+   12. Tablet Optimization (768px - 1024px)
+   ============================ */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        max-width: 95%;
+        padding: 15px;
+    }
+
+    .main-card {
+        padding: 25px !important;
+    }
+
+    .card-container table th {
+        font-size: 0.8rem;
+        padding: 12px 8px;
+    }
+
+    .card-container table td {
+        padding: 10px 8px;
+    }
+
+    .card-container table input[type="text"],
+    .card-container table input[type="number"] {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
+    .ai-action-buttons {
+        flex-wrap: nowrap;
+    }
+
+    #barcodes-container {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+}
+
+/* ============================
+   13. Print Styles
+   ============================ */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #barcode-print-area,
+    #barcode-print-area * {
+        visibility: visible;
+    }
+
+    #barcode-print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+
+    .barcode-item {
+        page-break-inside: avoid;
+        border: 1px solid #000;
+    }
 }
