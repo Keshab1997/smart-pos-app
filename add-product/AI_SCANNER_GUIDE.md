@@ -13,17 +13,19 @@
 
 **প্রম্পট:**
 ```
-Please analyze this vendor bill image and extract the Product Name, Cost Price (CP), Quantity (Qty), and a suitable Category. Format the output as a simple list where each line follows this exact format: Product Name | CP | Qty | Category. Do not include any headers, currency symbols, or extra text. Just the data.
+Please analyze this vendor bill image and extract the Product Name, Cost Price (CP), Quantity (Qty), MRP/Selling Price (if available), and a suitable Category. Format the output as a simple list where each line follows this exact format: Product Name | CP | Qty | MRP | Category. If MRP is not available, write 0. Do not include any headers, currency symbols, or extra text. Just the data. Example: Cotton Saree | 500 | 10 | 650 | CLOTHING
 ```
 
 ### ধাপ ৪: AI-এর আউটপুট কপি করুন
 AI আপনাকে এই ফরম্যাটে ডেটা দেবে:
 ```
-Lux Soap | 25.50 | 10 | Cosmetics
-Colgate Toothpaste | 45.00 | 5 | Personal Care
-Maggi Noodles | 12.00 | 20 | Food
-Cotton Saree | 500.00 | 3 | Clothing
+Lux Soap | 25.50 | 10 | 30 | Cosmetics
+Colgate Toothpaste | 45.00 | 5 | 55 | Personal Care
+Maggi Noodles | 12.00 | 20 | 0 | Food
+Cotton Saree | 500.00 | 3 | 650 | Clothing
 ```
+
+**নোট:** যদি বিলে MRP না থাকে, AI "0" লিখবে এবং সিস্টেম CP দিয়ে SP সেট করবে।
 
 ### ধাপ ৫: আপনার সিস্টেমে পেস্ট করুন
 1. "Paste AI Data" বাটনে ক্লিক করুন

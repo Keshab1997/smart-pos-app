@@ -240,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     
                     showStatus('✅ আগের সেভ করা ডেটা ফিরিয়ে আনা হয়েছে।', 'success');
+                    calculateTotalCP(); // লোড করার পর টোটাল আপডেট
                 }
             } catch (error) {
                 console.error('Error loading saved data:', error);
@@ -398,10 +399,104 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    addRowBtn.addEventListener('click', addProductRow);
+    addRowBtn.addEventListener('click', () => {
+        addProductRow();
+        calculateTotalCP(); // নতুন রো যোগ হলে টোটাল আপডেট
+    });
 
     // --- Auto-save on input change ---
     productsTbody.addEventListener('input', saveTableToLocal);
+
+    // --- Real-time Total CP Calculator ---
+    function calculateTotalCP() {
+        const rows = productsTbody.querySelectorAll('tr');
+        let totalCP = 0;
+
+        rows.forEach(row => {
+            const cpInput = row.querySelector('.product-cp');
+            const qtyInput = row.querySelector('.product-stock');
+            
+            if (cpInput && qtyInput) {
+                const cp = parseFloat(cpInput.value) || 0;
+                const qty = parseInt(qtyInput.value) || 0;
+                totalCP += (cp * qty);
+            }
+        });
+
+        // টোটাল দেখানো
+        const calculatedTotalElement = document.getElementById('calculated-total-cp');
+        if (calculatedTotalElement) {
+            calculatedTotalElement.textContent = `₹${totalCP.toFixed(2)}`;
+        }
+
+        // বিলের সাথে তুলনা
+        checkBillMatch(totalCP);
+        
+        return totalCP;
+    }
+
+    function checkBillMatch(calculatedTotal) {
+        const originalBillInput = document.getElementById('original-bill-total');
+        const differenceElement = document.getElementById('bill-difference');
+        const statusElement = document.getElementById('bill-match-status');
+        
+        if (!originalBillInput || !differenceElement || !statusElement) return;
+
+        const originalTotal = parseFloat(originalBillInput.value) || 0;
+        
+        if (originalTotal > 0) {
+            const difference = calculatedTotal - originalTotal;
+            differenceElement.textContent = `₹${Math.abs(difference).toFixed(2)}`;
+            
+            if (Math.abs(difference) < 0.01) {
+                // মিলে গেছে!
+                differenceElement.style.color = '#27ae60';
+                statusElement.style.display = 'block';
+                statusElement.style.background = '#d4edda';
+                statusElement.style.color = '#155724';
+                statusElement.textContent = '✅ Perfect Match! Bill verified successfully.';
+            } else if (difference > 0) {
+                // বেশি হয়ে গেছে
+                differenceElement.style.color = '#e74c3c';
+                statusElement.style.display = 'block';
+                statusElement.style.background = '#f8d7da';
+                statusElement.style.color = '#721c24';
+                statusElement.textContent = `⚠️ Calculated total is ₹${difference.toFixed(2)} MORE than bill. Please check entries.`;
+            } else {
+                // কম হয়ে গেছে
+                differenceElement.style.color = '#f39c12';
+                statusElement.style.display = 'block';
+                statusElement.style.background = '#fff3cd';
+                statusElement.style.color = '#856404';
+                statusElement.textContent = `⚠️ Calculated total is ₹${Math.abs(difference).toFixed(2)} LESS than bill. Please check entries.`;
+            }
+        } else {
+            differenceElement.textContent = '₹0.00';
+            differenceElement.style.color = '#666';
+            statusElement.style.display = 'none';
+        }
+    }
+
+    // টেবিলে কোনো পরিবর্তন হলে টোটাল আপডেট
+    productsTbody.addEventListener('input', () => {
+        calculateTotalCP();
+        saveTableToLocal();
+    });
+
+    // রো ডিলিট হলেও টোটাল আপডেট
+    const observer = new MutationObserver(() => {
+        calculateTotalCP();
+    });
+    observer.observe(productsTbody, { childList: true, subtree: true });
+
+    // Original Bill Total ইনপুট চেঞ্জ হলেও চেক করা
+    const originalBillInput = document.getElementById('original-bill-total');
+    if (originalBillInput) {
+        originalBillInput.addEventListener('input', () => {
+            const currentTotal = calculateTotalCP();
+            checkBillMatch(currentTotal);
+        });
+    }
 
     // --- Recalculate All SP Button ---
     const btnRecalculateSP = document.getElementById('btn-recalculate-sp');
@@ -451,6 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.removeItem('temp_product_list');
                 productsTbody.innerHTML = '';
                 addProductRow();
+                calculateTotalCP(); // ক্লিয়ার করলে টোটাল রিসেট
                 showStatus('✅ All rows cleared!', 'success');
             }
         });
@@ -543,7 +639,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const name = parts[0];
                     const cp = parseFloat(parts[1]);
                     const qty = parseInt(parts[2]);
-                    const category = parts.length >= 4 ? parts[3] : '';
+                    const mrp = parts.length >= 4 ? parseFloat(parts[3]) : 0;
+                    const category = parts.length >= 5 ? parts[4] : (parts.length >= 4 && isNaN(parseFloat(parts[3])) ? parts[3] : '');
 
                     if (name && !isNaN(cp) && !isNaN(qty)) {
                         try {
@@ -591,7 +688,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 targetRow.querySelector('.product-name').value = name;
                                 targetRow.querySelector('.product-category').value = category;
                                 targetRow.querySelector('.product-cp').value = cp;
-                                targetRow.querySelector('.product-sp').value = cp;
+                                
+                                // MRP থাকলে সেটা বসানো, না হলে অটো ক্যালকুলেট
+                                if (mrp && mrp > 0) {
+                                    targetRow.querySelector('.product-sp').value = mrp;
+                                } else {
+                                    targetRow.querySelector('.product-sp').value = cp; // ডিফল্ট CP রাখা
+                                }
+                                
                                 targetRow.querySelector('.product-stock').value = qty;
                                 addedCount++;
                             }
@@ -605,7 +709,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             lastRow.querySelector('.product-name').value = name;
                             lastRow.querySelector('.product-category').value = category;
                             lastRow.querySelector('.product-cp').value = cp;
-                            lastRow.querySelector('.product-sp').value = cp;
+                            
+                            // MRP থাকলে সেটা বসানো, না হলে CP
+                            if (mrp && mrp > 0) {
+                                lastRow.querySelector('.product-sp').value = mrp;
+                            } else {
+                                lastRow.querySelector('.product-sp').value = cp;
+                            }
+                            
                             lastRow.querySelector('.product-stock').value = qty;
                             addedCount++;
                         }
@@ -618,7 +729,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (addedCount > 0 || updatedCount > 0) {
                 showStatus(`✅ ফলাফল: ${addedCount}টি নতুন এবং ${updatedCount}টি বিদ্যমান প্রোডাক্ট পাওয়া গেছে।`, 'success');
-                saveTableToLocal(); // AI ডেটা যোগ হলে সেভ করা
+                saveTableToLocal();
+                calculateTotalCP();
                 closeAIModal();
             } else {
                 aiStatus.style.color = "red";
@@ -836,8 +948,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const rows = productsTbody.querySelectorAll('tr');
             if (rows.length > 1) {
                 removeBtn.closest('tr').remove();
+                calculateTotalCP(); // রো ডিলিট হলে টোটাল আপডেট
+                saveTableToLocal(); // লোকাল স্টোরেজ আপডেট
             } else {
-                alert("At least one row must remain.");
+                alert("অন্তত একটি রো থাকতে হবে।");
             }
             return;
         }

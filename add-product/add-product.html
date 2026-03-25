@@ -51,6 +51,31 @@
                     <button type="button" id="add-row-btn" class="btn btn-secondary-light">➕ Add More Rows</button>
                 </div>
 
+                <!-- Total CP Calculator -->
+                <div style="margin: 20px 0; background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%); padding: 20px; border-radius: 10px; border: 2px solid #ff9800; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <h3 style="margin: 0 0 5px 0; color: #e65100; font-size: 16px;">💰 Bill Verification</h3>
+                            <p style="margin: 0; font-size: 13px; color: #f57c00;">Compare with original bill total</p>
+                        </div>
+                        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                            <div style="text-align: center;">
+                                <label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">Calculated Total CP:</label>
+                                <div id="calculated-total-cp" style="font-size: 28px; font-weight: 700; color: #e65100;">₹0.00</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">Original Bill Total:</label>
+                                <input type="number" id="original-bill-total" placeholder="Enter bill total" style="width: 150px; padding: 10px; border: 2px solid #ff9800; border-radius: 8px; font-size: 18px; font-weight: 600; text-align: center;">
+                            </div>
+                            <div style="text-align: center;">
+                                <label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">Difference:</label>
+                                <div id="bill-difference" style="font-size: 24px; font-weight: 700; color: #666;">₹0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="bill-match-status" style="margin-top: 15px; padding: 10px; border-radius: 6px; text-align: center; font-weight: 600; display: none;"></div>
+                </div>
+
                 <!-- Smart Pricing Helper -->
                 <div style="margin: 20px 0; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e1e8f5; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -72,7 +97,7 @@
                     <div class="ai-card-body">
                         <div class="ai-prompt-box">
                             <div class="prompt-content">
-                                <p id="ai-prompt-text">Please analyze this vendor bill image and extract the Product Name, Cost Price (CP), Quantity (Qty), and a suitable Category. Format the output as a simple list where each line follows this exact format: Product Name | CP | Qty | Category. Do not include any headers, currency symbols, or extra text. Just the data.</p>
+                                <p id="ai-prompt-text">Please analyze this vendor bill image and extract the Product Name, Cost Price (CP), Quantity (Qty), MRP/Selling Price (if available), and a suitable Category. Format the output as a simple list where each line follows this exact format: Product Name | CP | Qty | MRP | Category. If MRP is not available, write 0. Do not include any headers, currency symbols, or extra text. Just the data. Example: Cotton Saree | 500 | 10 | 650 | CLOTHING</p>
                             </div>
                             <button type="button" id="btn-copy-prompt" class="btn-copy">Copy Prompt</button>
                         </div>
