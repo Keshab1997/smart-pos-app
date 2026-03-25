@@ -52,22 +52,125 @@ body {
 }
 
 /* ================================== */
-/* --- Filter and Print Controls --- */
+/* --- Filter and Action Controls --- */
 /* ================================== */
-.filter-controls-section {
+/* Inventory Controls Styling */
+.inventory-controls {
+    padding: 20px;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 1.5rem;
+    flex-direction: column;
+    gap: 15px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-.filter-controls {
+/* Filter Row Layout */
+.filter-row {
     display: flex;
-    flex-grow: 1;
-    gap: 1rem;
     flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.search-wrapper {
+    flex: 2;
+    min-width: 250px;
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+}
+
+.search-wrapper input {
+    padding-left: 35px !important;
+    width: 100%;
+}
+
+.stock-filter-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding-left: 10px;
+}
+
+.filter-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    margin-right: 5px;
+}
+
+.stock-filter-wrapper input {
+    border: none !important;
+    width: 60px !important;
+    background: transparent;
+}
+
+/* Action Row Layout */
+.action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f1f1;
+    align-items: center;
+}
+
+.btn-group {
+    display: flex;
+    gap: 8px;
+}
+
+.right-align {
+    margin-left: auto;
+}
+
+/* Button Custom Styles */
+.btn {
+    height: 40px;
+    padding: 0 15px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-print-alt { background: #eef2ff; color: #4361ee; border: 1px solid #dbeafe; }
+.btn-print-alt:hover { background: #4361ee; color: white; }
+
+.btn-pdf { background: #ecfeff; color: #0891b2; border: 1px solid #cffafe; }
+.btn-pdf:hover { background: #0891b2; color: white; }
+
+.btn-excel { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+.btn-excel:hover { background: #16a34a; color: white; }
+
+.btn-logs { background: #f8f9fa; color: #4b5563; border: 1px solid #e5e7eb; }
+.btn-logs:hover { background: #4b5563; color: white; }
+
+.btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
+.btn-danger:hover { background: #dc2626; color: white; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .filter-row, .action-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .right-align { margin-left: 0; }
+    .btn-group { flex-direction: column; }
 }
 
 /* Modern Input Styles */
@@ -94,6 +197,61 @@ body {
 #category-filter {
     min-width: 200px;
     cursor: pointer;
+}
+
+/* Modern Category Select Styling */
+#category-filter {
+    flex: 1;
+    min-width: 180px;
+    height: 45px;
+    padding: 0 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #444;
+    cursor: pointer;
+    appearance: none; /* ডিফল্ট ব্রাউজার স্টাইল রিমুভ */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 15px) center;
+    transition: all 0.2s ease;
+}
+
+#category-filter:hover {
+    border-color: #4361ee;
+    background-color: #fff;
+}
+
+#category-filter:focus {
+    outline: none;
+    border-color: #4361ee;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+/* ড্রপডাউনের ভেতরের অপশনগুলোর জন্য */
+#category-filter option {
+    padding: 10px;
+    background: white;
+    color: #333;
+}
+
+/* Old styles kept for backward compatibility */
+.filter-controls-section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+.filter-controls {
+    display: flex;
+    flex-grow: 1;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .print-controls {

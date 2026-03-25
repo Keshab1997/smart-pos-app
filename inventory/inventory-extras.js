@@ -22,21 +22,33 @@ async function calculateStats(uid) {
         const snapshot = await getDocs(q);
         
         let totalStock = 0;
-        let totalValuation = 0;
+        let totalCostValuation = 0;
+        let totalSaleValuation = 0;
         let totalProducts = snapshot.size;
 
         snapshot.forEach(doc => {
             const data = doc.data();
             const stock = parseInt(data.stock) || 0;
             const cp = parseFloat(data.costPrice) || 0;
+            const sp = parseFloat(data.sellingPrice) || 0;
             
             totalStock += stock;
-            totalValuation += (stock * cp);
+            totalCostValuation += (stock * cp);
+            totalSaleValuation += (stock * sp);
         });
 
+        const potentialProfit = totalSaleValuation - totalCostValuation;
+
         // Update UI
-        if(statItems) statItems.innerText = `${totalProducts} Types (${totalStock} Units)`;
-        if(statValue) statValue.innerText = `₹${totalValuation.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        if(statItems) statItems.innerText = `${totalProducts} Items (${totalStock} Qty)`;
+        if(statValue) statValue.innerText = `₹${totalCostValuation.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        
+        // নতুন ফিল্ডগুলো আপডেট
+        const statSaleVal = document.getElementById('stat-total-sale-value');
+        const statProfit = document.getElementById('stat-potential-profit');
+        
+        if(statSaleVal) statSaleVal.innerText = `₹${totalSaleValuation.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        if(statProfit) statProfit.innerText = `₹${potentialProfit.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
 
     } catch (error) {
         console.error("Stats Error:", error);
@@ -56,13 +68,14 @@ if (exportBtn) {
             const snapshot = await getDocs(q);
             
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Name,Category,Barcode,Cost Price,Selling Price,Stock,Total Value\n"; // Header
+            csvContent += "Name,Category,Rack/Shelf,Barcode,Cost Price,Selling Price,Stock,Total Value\n"; // Header
 
             snapshot.forEach(doc => {
                 const p = doc.data();
                 const row = [
                     `"${p.name.replace(/"/g, '""')}"`, // Handle commas in name
                     p.category || "",
+                    p.remark || "",
                     `'${p.barcode || ""}`, // Prevent excel scientific notation
                     p.costPrice || 0,
                     p.sellingPrice || 0,

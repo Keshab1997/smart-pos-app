@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         row.innerHTML = `
             <td data-label="Product Name"><input type="text" class="product-name" placeholder="e.g., Lux Soap" required></td>
             <td data-label="Category"><input type="text" class="product-category" placeholder="e.g., Cosmetics" required></td>
+            <td data-label="Rack/Shelf"><input type="text" class="product-remark" placeholder="Rack No."></td>
             <td data-label="Cost Price"><input type="number" step="0.01" class="product-cp" placeholder="0.00" required></td>
             <td data-label="Selling Price"><input type="number" step="0.01" class="product-sp" placeholder="0.00" required></td>
             <td data-label="Barcode">
@@ -216,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = row.querySelector('.product-name').value.trim();
             if (name) {
                 const category = row.querySelector('.product-category').value.trim();
+                const remark = row.querySelector('.product-remark').value.trim();
                 const cp = parseFloat(row.querySelector('.product-cp').value);
                 const sp = parseFloat(row.querySelector('.product-sp').value);
                 const barcode = row.querySelector('.product-barcode').value.trim();
@@ -237,7 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     productsToProcess.push({ 
                         name, 
-                        category, 
+                        category,
+                        remark,
                         costPrice: cp, 
                         sellingPrice: sp, 
                         stock, 
@@ -333,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const dataToSave = {
                             name: productData.name,
                             category: productData.category,
+                            remark: productData.remark || '',
                             costPrice: productData.costPrice,
                             sellingPrice: productData.sellingPrice,
                             stock: productData.stock,

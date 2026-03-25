@@ -207,6 +207,7 @@ function renderTable() {
                 <td style="text-align: center;">${imgHtml}</td>
                 <td>${p.name || 'N/A'}</td>
                 <td>${p.category || 'N/A'}</td>
+                <td style="color: #666; font-style: italic; font-size: 0.85rem;">${p.remark || '-'}</td>
                 <td>${cp.toFixed(2)}</td>
                 <td>
                     ${sp.toFixed(2)}
@@ -226,12 +227,15 @@ function renderTable() {
 function updateCategoryFilter(categoryStats, selectedValue) {
     const categories = Object.keys(categoryStats).sort();
 
+    // লেখাগুলো ছোট করার জন্য লজিক পরিবর্তন
     const options = [
-        '<option value="">All Categories</option>',
+        '<option value="">📂 All Categories</option>',
         ...categories.map(cat => {
             const stats = categoryStats[cat];
             const isSelected = cat === selectedValue ? 'selected' : '';
-            const label = `${cat} (Prod: ${stats.types} | Qty: ${stats.totalStock})`;
+            
+            // শুধু ক্যাটাগরির নাম এবং ব্র্যাকেটে কয়টি প্রোডাক্ট আছে সেটা দেখাবে
+            const label = `${cat} (${stats.types})`; 
             return `<option value="${cat}" ${isSelected}>${label}</option>`;
         })
     ];
@@ -265,6 +269,24 @@ function setupEventListeners() {
             applyFiltersAndRender(false);
         }
     });
+
+    // এডিট মডালে ইমেজ প্রিভিউ হ্যান্ডলার
+    const editImageInput = document.getElementById('edit-image');
+    const editImagePreview = document.getElementById('edit-image-preview');
+
+    if (editImageInput) {
+        editImageInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    editImagePreview.src = e.target.result;
+                    editImagePreview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 
     inventoryBody.addEventListener('click', (e) => {
         if (e.target.classList.contains('product-thumb')) {
@@ -356,6 +378,7 @@ function openEditModal(product) {
         'edit-product-id': product.id, 
         'edit-name': product.name, 
         'edit-category': product.category,
+        'edit-remark': product.remark,
         'edit-cp': product.costPrice, 
         'edit-sp': product.sellingPrice, 
         'edit-stock': product.stock,
@@ -408,6 +431,7 @@ async function handleEditFormSubmit(e) {
     const imageInput = document.getElementById('edit-image');
     const newName = document.getElementById('edit-name').value.trim();
     const newCategory = document.getElementById('edit-category').value.trim();
+    const newRemark = document.getElementById('edit-remark').value.trim();
     const newCP = parseFloat(document.getElementById('edit-cp').value);
     const newSP = parseFloat(document.getElementById('edit-sp').value);
     const newStock = parseInt(document.getElementById('edit-stock').value, 10);
@@ -424,6 +448,7 @@ async function handleEditFormSubmit(e) {
         const data = {
             name: newName,
             category: newCategory,
+            remark: newRemark,
             costPrice: newCP,
             sellingPrice: newSP,
             stock: newStock,
