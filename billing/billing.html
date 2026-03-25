@@ -41,6 +41,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     <input type="text" id="product-search" placeholder="Search name or scan barcode (F2)..." autocomplete="off">
                     <button id="start-camera-btn" class="scanner-icon-btn" title="Scan Barcode">📷</button>
+                    <button id="btn-quick-add-modal" class="scanner-icon-btn" title="Quick Add Product" style="background: #2ec4b6; color: white; margin-left: 5px;">➕</button>
                 </div>
                 <span class="browse-label">Categories:</span>
             </div>
@@ -233,6 +234,47 @@
                 <button id="stop-camera-btn" class="close-button">&times;</button>
             </div>
             <div id="reader" style="width: 100%;"></div>
+        </div>
+    </div>
+
+    <!-- Quick Add Product Modal -->
+    <div id="quick-add-modal" class="modal-overlay hidden" style="z-index: 2100;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Quick Add to Inventory</h3>
+                <button id="close-quick-add-btn" class="close-button">&times;</button>
+            </div>
+            <form id="quick-add-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Product Name:</label>
+                        <input type="text" id="qa-name" required placeholder="e.g. New Shirt">
+                    </div>
+                    <div class="form-group">
+                        <label>Category:</label>
+                        <input type="text" id="qa-category" placeholder="General" value="General">
+                    </div>
+                    <div class="form-group-inline" style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Cost Price:</label>
+                            <input type="number" id="qa-cp" required placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Sale Price:</label>
+                            <input type="number" id="qa-sp" required placeholder="0.00" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Initial Stock:</label>
+                        <input type="number" id="qa-stock" value="10" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-save-quick-add">
+                        <span>💾</span> Save & Add to Cart
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

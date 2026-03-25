@@ -901,3 +901,49 @@ h2 { margin-bottom: 20px; }
     .product-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
     .cart-item { grid-template-columns: 1fr 110px 70px 28px; gap: 10px; }
 }
+
+/* =====================================
+   Quick Add Modal Button Styling
+   ===================================== */
+.btn-save-quick-add {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #2ec4b6 0%, #28b4a5 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(46, 196, 182, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-save-quick-add:hover {
+    background: linear-gradient(135deg, #28b4a5 0%, #23a092 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(46, 196, 182, 0.4);
+}
+
+.btn-save-quick-add:active {
+    transform: translateY(0);
+}
+
+.btn-save-quick-add:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Modal Footer Padding Fix */
+#quick-add-modal .modal-footer {
+    padding: 20px;
+    border-top: 1px solid #eee;
+}

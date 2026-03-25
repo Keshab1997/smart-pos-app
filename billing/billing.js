@@ -6,7 +6,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
-    collection, doc, getDocs, getDoc, updateDoc, query, where, orderBy, writeBatch, serverTimestamp, increment, runTransaction, addDoc, onSnapshot, deleteDoc, Timestamp
+    collection, doc, getDocs, getDoc, updateDoc, query, where, orderBy, writeBatch, serverTimestamp, increment, runTransaction, addDoc, onSnapshot, deleteDoc, Timestamp, setDoc
 } from 'firebase/firestore';
 
 // ==========================================================
@@ -72,7 +72,18 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-function initializeBillingPage() {
+async function initializeBillingPage() {
+    // অটো-হোল্ড লজিক: রিফ্রেশ হওয়ার আগে কার্ট ছিল কিনা চেক করা
+    const savedData = localStorage.getItem('temp_cart_before_refresh');
+    if (savedData && activeShopId) {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.cart && parsedData.cart.length > 0) {
+            console.log("Recovered cart found, moving to Hold...");
+            await autoHoldRecoveredBill(parsedData);
+        }
+        localStorage.removeItem('temp_cart_before_refresh');
+    }
+
     updateCartDisplay();
     initializeProducts();
     setupEventListeners();
@@ -290,6 +301,19 @@ function updateCartDisplay() {
     proceedToCheckoutBtn.disabled = cart.length === 0;
     addCartItemEventListeners();
     updateAllTotals();
+
+    // কার্ট সাময়িকভাবে সেভ করা (রিফ্রেশ হ্যান্ডেল করার জন্য)
+    if (cart.length > 0) {
+        localStorage.setItem('temp_cart_before_refresh', JSON.stringify({
+            cart: cart,
+            customer: {
+                name: customerNameInput.value,
+                phone: customerPhoneInput.value
+            }
+        }));
+    } else {
+        localStorage.removeItem('temp_cart_before_refresh');
+    }
 }
 
 function addCartItemEventListeners() {
@@ -649,6 +673,7 @@ function preCheckoutValidation() {
 
 function resetAfterSale() {
     cart = [];
+    localStorage.removeItem('temp_cart_before_refresh'); // বিল কমপ্লিট হলে ক্লিনিং
     checkoutModal.classList.add('hidden');
     [customerNameInput, customerPhoneInput, customerAddressInput, discountValueInput, cashReceivedInput, productSearchInput].forEach(input => input.value = '');
     ['part-cash', 'part-upi', 'part-card'].forEach(id => document.getElementById(id).value = '');
@@ -728,6 +753,7 @@ function renderUnsettledList(snapshot) {
             <td><small>${itemsSummary}</small></td>
             <td><strong>₹${bill.total.toFixed(2)}</strong></td>
             <td>
+                <button class="btn-sm" style="background: #4361ee; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; margin-right: 3px;" onclick="window.editUnsettled('${docSnap.id}')">Edit</button>
                 <button class="btn-sm btn-success" onclick="window.finalizeUnsettled('${docSnap.id}')">Pay</button>
                 <button class="btn-sm btn-danger" onclick="window.deleteUnsettled('${docSnap.id}')">🗑️</button>
             </td>
@@ -759,6 +785,42 @@ async function finalizeUnsettled(billId) {
     } catch (e) {
         console.error("Error finalizing unsettled bill:", e);
         alert("Failed to load bill.");
+    }
+}
+
+async function editUnsettled(billId) {
+    try {
+        const billRef = doc(db, 'shops', activeShopId, 'unsettled_bills', billId);
+        const billSnap = await getDoc(billRef);
+        
+        if (!billSnap.exists()) {
+            alert("Bill not found!");
+            return;
+        }
+        
+        const billData = billSnap.data();
+
+        // ডাটাবেসের আইটেমগুলো মেইন কার্টে নিয়ে আসা
+        cart = billData.items;
+        
+        // কাস্টমার ইনফো সেট করা
+        customerNameInput.value = billData.customerDetails.name || '';
+        customerPhoneInput.value = billData.customerDetails.phone || '';
+        
+        // UI আপডেট করা
+        updateCartDisplay();
+        
+        // পেন্ডিং লিস্টের মডাল বন্ধ করা
+        document.getElementById('unsettled-modal').classList.add('hidden');
+        
+        // পেন্ডিং লিস্ট থেকে এই বিলটি ডিলিট করা
+        await deleteDoc(billRef);
+
+        alert("✏️ Bill loaded to cart. You can now add more products.");
+        
+    } catch (e) {
+        console.error("Error editing bill:", e);
+        alert("Failed to load bill for editing.");
     }
 }
 
@@ -857,7 +919,33 @@ async function manualSettleAll() {
     }
 }
 
+// অটো-হোল্ড ফাংশন: রিফ্রেশ হওয়া ডাটা Firestore-এ সেভ করা
+async function autoHoldRecoveredBill(data) {
+    try {
+        const billData = {
+            items: data.cart,
+            subtotal: data.cart.reduce((sum, item) => sum + (item.sellingPrice || 0) * item.quantity, 0),
+            discount: 0,
+            tax: 0,
+            total: data.cart.reduce((sum, item) => sum + (item.sellingPrice || 0) * item.quantity, 0),
+            customerDetails: {
+                name: data.customer.name || 'Recovered Bill',
+                phone: data.customer.phone || ''
+            },
+            status: 'unsettled',
+            createdAt: serverTimestamp(),
+            isRecovered: true
+        };
+
+        await addDoc(collection(db, 'shops', activeShopId, 'unsettled_bills'), billData);
+        alert("⚠️ Page was refreshed! Your previous items have been moved to 'Pending Bills' (Hold).");
+    } catch (e) {
+        console.error("Auto-hold failed:", e);
+    }
+}
+
 // Make functions globally accessible
+window.editUnsettled = editUnsettled;
 window.finalizeUnsettled = finalizeUnsettled;
 window.deleteUnsettled = deleteUnsettled;
 
@@ -1108,4 +1196,62 @@ function setupEventListeners() {
     document.getElementById('close-summary-modal').addEventListener('click', () => {
         document.getElementById('summary-modal').classList.add('hidden');
     });
+
+    // --- Quick Add Product Logic ---
+    const quickAddModal = document.getElementById('quick-add-modal');
+    const btnOpenQuickAdd = document.getElementById('btn-quick-add-modal');
+    const btnCloseQuickAdd = document.getElementById('close-quick-add-btn');
+    const quickAddForm = document.getElementById('quick-add-form');
+
+    btnOpenQuickAdd.onclick = () => quickAddModal.classList.remove('hidden');
+    btnCloseQuickAdd.onclick = () => quickAddModal.classList.add('hidden');
+
+    quickAddForm.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('qa-name').value.trim();
+        const category = document.getElementById('qa-category').value.trim() || 'General';
+        const cp = parseFloat(document.getElementById('qa-cp').value) || 0;
+        const sp = parseFloat(document.getElementById('qa-sp').value) || 0;
+        const stock = parseInt(document.getElementById('qa-stock').value) || 0;
+
+        if (!activeShopId) return;
+
+        const saveBtn = quickAddForm.querySelector('button[type="submit"]');
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+
+        try {
+            const tempBarcode = "QA-" + Date.now().toString().slice(-6);
+            
+            const newProduct = {
+                name: name,
+                category: category,
+                costPrice: cp,
+                sellingPrice: sp,
+                stock: stock,
+                barcode: tempBarcode,
+                createdAt: serverTimestamp()
+            };
+
+            const docRef = doc(db, 'shops', activeShopId, 'inventory', tempBarcode);
+            await setDoc(docRef, newProduct);
+
+            allProducts.push({ id: tempBarcode, ...newProduct });
+            addToCart({ id: tempBarcode, ...newProduct });
+
+            quickAddForm.reset();
+            document.getElementById('qa-category').value = 'General';
+            document.getElementById('qa-stock').value = '10';
+            quickAddModal.classList.add('hidden');
+            alert(`✅ ${name} added to inventory and cart!`);
+
+        } catch (error) {
+            console.error("Quick add failed:", error);
+            alert("Error saving product.");
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Save & Add to Cart";
+        }
+    };
 }
