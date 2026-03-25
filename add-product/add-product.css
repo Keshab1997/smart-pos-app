@@ -1,9 +1,9 @@
-/* add-product.css - Updated Design */
+/* add-product.css - Updated Modern Design */
 
 /* ============================
    1. CSS ভেরিয়েবল এবং বেসিক সেটআপ
    ============================ */
-   :root {
+:root {
     --primary-color: #007bff;
     --success-color: #28a745;
     --danger-color: #dc3545;
@@ -16,7 +16,7 @@
 
 body {
     background-color: var(--background-color);
-    font-family: 'Poppins', sans-serif; /* ফন্ট কনসিস্টেন্সি */
+    font-family: 'Poppins', sans-serif;
     color: var(--text-color);
     margin: 0;
     padding-bottom: 50px;
@@ -29,37 +29,197 @@ body {
     padding: 10px 20px;
 }
 
+/* ============================
+   2. Main Card Styling
+   ============================ */
+.main-card {
+    border: none !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
+    background: #fff !important;
+    padding: 30px !important;
+    border-radius: 15px !important;
+}
 
+.header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.header-flex h1 {
+    margin: 0 0 5px 0;
+    font-size: 28px;
+    color: #2c3e50;
+}
+
+.header-flex p {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 14px;
+}
 
 /* ============================
-   4. প্রোডাক্ট টেবিল স্টাইল
+   3. AI Smart Card Styling
    ============================ */
+.ai-smart-card {
+    margin-top: 40px;
+    background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+    border: 1px solid #e1e8f5;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(142, 68, 173, 0.08);
+}
+
+.ai-badge {
+    background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+    color: white;
+    padding: 5px 14px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ai-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.ai-card-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.ai-prompt-box {
+    background: #fff;
+    border: 1px solid #dcdde1;
+    border-radius: 10px;
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.prompt-content p {
+    margin: 0;
+    font-size: 13px;
+    color: #7f8c8d;
+    line-height: 1.6;
+    font-style: italic;
+}
+
+.btn-copy {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(46, 204, 113, 0.2);
+}
+
+.btn-copy:hover {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+}
+
+.ai-action-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.btn-ai-google {
+    background: #fff;
+    color: #4285f4;
+    border: 2px solid #4285f4;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-ai-google:hover {
+    background: #4285f4;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(66, 133, 244, 0.3);
+}
+
+.btn-ai-paste {
+    background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(142, 68, 173, 0.2);
+}
+
+.btn-ai-paste:hover {
+    background: linear-gradient(135deg, #7d3c98 0%, #8e44ad 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(142, 68, 173, 0.3);
+}
+
+/* ============================
+   4. Table Styling
+   ============================ */
+.table-responsive {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
 .card-container table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 0; /* বর্ডার স্পেসিং ফিক্স */
+    border-spacing: 0;
     margin-bottom: 20px;
 }
 
 .card-container table th {
-    background-color: #f8f9fa;
-    color: #555;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #495057;
     font-weight: 600;
     font-size: 0.85rem;
-    text-transform: uppercase; /* ক্যাপিটাল লেটার */
+    text-transform: uppercase;
     letter-spacing: 0.5px;
     padding: 15px 10px;
-    border-bottom: 2px solid #eee;
+    border-bottom: 2px solid #dee2e6;
     text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .card-container table td {
     padding: 12px 10px;
     border-bottom: 1px solid #f1f1f1;
-    vertical-align: top; /* ইনপুটগুলো উপরে সমান থাকবে */
+    vertical-align: top;
 }
 
-/* ইনপুট ফিল্ড ডিজাইন */
 .card-container table input[type="text"],
 .card-container table input[type="number"],
 .card-container table select {
@@ -73,14 +233,29 @@ body {
     transition: all 0.2s ease;
 }
 
+/* Product Name এবং Category ফিল্ড বড় করা */
+.card-container table .product-name,
+.card-container table .product-category {
+    min-width: 180px;
+    font-weight: 500;
+}
+
+/* টেক্সট ওভারফ্লো হ্যান্ডলিং */
+.card-container table input[type="text"] {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+}
+
 .card-container table input:focus,
 .card-container table select:focus {
     border-color: var(--primary-color);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1); /* গ্লো ইফেক্ট */
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    z-index: 10;
+    position: relative;
 }
 
-/* টেবিলের রিমুভ বাটন (আইকন) */
 .remove-row-btn {
     background-color: #fff5f5;
     color: #dc3545;
@@ -104,18 +279,19 @@ body {
 }
 
 /* ============================
-   5. অ্যাকশন বাটন (নিচের বাটনগুলো)
+   5. Action Buttons
    ============================ */
-.form-actions {
+.table-footer-actions {
+    margin-top: 15px;
     display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
+    justify-content: flex-start;
 }
 
-/* বাটন স্টাইল */
+.final-actions {
+    margin-top: 30px;
+    text-align: center;
+}
+
 .btn {
     padding: 12px 24px;
     border: none;
@@ -129,22 +305,67 @@ body {
     gap: 8px;
 }
 
-/* Add More Button */
+.btn-secondary-light {
+    background: #f1f2f6;
+    color: #2f3542;
+    border: 1px solid #dfe4ea;
+}
+
+.btn-secondary-light:hover {
+    background: #dfe4ea;
+    transform: translateY(-2px);
+}
+
+.btn-danger-outline {
+    background: transparent;
+    color: #e74c3c;
+    border: 2px solid #e74c3c;
+    transition: all 0.3s ease;
+}
+
+.btn-danger-outline:hover {
+    background: #e74c3c;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+}
+
+.btn-save-all {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    color: white;
+    padding: 16px 50px;
+    font-size: 16px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 5px 20px rgba(39, 174, 96, 0.3);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-save-all:hover {
+    background: linear-gradient(135deg, #229954 0%, #27ae60 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(39, 174, 96, 0.4);
+}
+
 .btn-secondary {
     background-color: #e2e6ea;
     color: #495057;
 }
+
 .btn-secondary:hover {
     background-color: #dbe0e5;
     transform: translateY(-2px);
 }
 
-/* Save Button */
 .btn-primary {
     background-color: var(--success-color);
     color: white;
     box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
+
 .btn-primary:hover {
     background-color: #218838;
     transform: translateY(-2px);

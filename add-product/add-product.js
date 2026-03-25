@@ -47,9 +47,218 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let activeShopId = null;
 
+    // --- Dynamic Category Loading from Database ---
+    async function updateCategoryDatalist() {
+        if (!activeShopId) return;
+        
+        try {
+            const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
+            const { getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+            const querySnapshot = await getDocs(inventoryRef);
+            const categories = new Set(["CLOTHING", "JEWELRY"]); // ডিফল্ট ক্যাটাগরি
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                if (data.category) {
+                    categories.add(data.category.toUpperCase());
+                }
+            });
+
+            const datalist = document.getElementById('category-list');
+            if (datalist) {
+                datalist.innerHTML = '';
+                categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    datalist.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading categories:', error);
+        }
+    }
+
+    // --- Smart Typing Setup for Each Row ---
+    function setupSmartTyping(row) {
+        const cpInput = row.querySelector('.product-cp');
+        const spInput = row.querySelector('.product-sp');
+        const categoryInput = row.querySelector('.product-category');
+        const remarkInput = row.querySelector('.product-remark');
+        const nameInput = row.querySelector('.product-name');
+        const barcodeInput = row.querySelector('.product-barcode');
+        const marginInput = document.getElementById('default-margin');
+
+        // --- Product Name Auto-Complete from Database ---
+        let searchTimeout;
+        if (nameInput && activeShopId) {
+            nameInput.addEventListener('input', async function() {
+                const searchText = this.value.trim().toLowerCase();
+                
+                // ২ অক্ষরের কম হলে সার্চ করবে না
+                if (searchText.length < 2) return;
+
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
+                        const { getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+                        const querySnapshot = await getDocs(inventoryRef);
+                        
+                        let foundProduct = null;
+                        querySnapshot.forEach((doc) => {
+                            const data = doc.data();
+                            if (data.name && data.name.toLowerCase().includes(searchText)) {
+                                foundProduct = { id: doc.id, ...data };
+                                return; // প্রথম ম্যাচ পেলেই থামবে
+                            }
+                        });
+
+                        if (foundProduct) {
+                            // শুধু Name এবং Category অটো-ফিল করা
+                            nameInput.value = foundProduct.name;
+                            if (categoryInput) categoryInput.value = foundProduct.category || '';
+                            
+                            // রো হাইলাইট করা
+                            row.style.backgroundColor = '#e3f2fd';
+                            setTimeout(() => {
+                                row.style.backgroundColor = '';
+                            }, 2000);
+                            
+                            showStatus(`✅ "${foundProduct.name}" পাওয়া গেছে! Category অটো-ফিল করা হয়েছে।`, 'success');
+                        }
+                    } catch (error) {
+                        console.error('Product search error:', error);
+                    }
+                }, 500); // ৫০০ms পর সার্চ করবে (টাইপিং শেষ হওয়ার জন্য অপেক্ষা)
+            });
+        }
+
+        // CP লিখলে অটোমেটিক SP ক্যালকুলেট হওয়া (শুধুমাত্র যদি SP খালি থাকে বা ইউজার ম্যানুয়াল চেঞ্জ না করে)
+        if (cpInput && spInput && marginInput) {
+            let spManuallyEdited = false; // ট্র্যাক করবে ইউজার SP ম্যানুয়ালি এডিট করেছে কি না
+
+            // SP ম্যানুয়ালি এডিট করলে ফ্ল্যাগ সেট করা
+            spInput.addEventListener('input', function() {
+                if (this.value) {
+                    spManuallyEdited = true;
+                } else {
+                    spManuallyEdited = false; // SP খালি করলে আবার অটো ক্যালকুলেশন চালু
+                }
+            });
+
+            // CP চেঞ্জ হলে SP অটো ক্যালকুলেট (শুধু যদি ম্যানুয়ালি এডিট না করা হয়)
+            cpInput.addEventListener('input', function() {
+                const cp = parseFloat(this.value) || 0;
+                const marginPercent = parseFloat(marginInput.value) || 0;
+                
+                // শুধুমাত্র তখনই অটো ক্যালকুলেট করবে যখন SP ম্যানুয়ালি এডিট করা হয়নি
+                if (cp > 0 && marginPercent >= 0 && !spManuallyEdited) {
+                    const calculatedSP = cp + (cp * marginPercent / 100);
+                    spInput.value = Math.round(calculatedSP);
+                }
+            });
+
+            // Margin চেঞ্জ হলেও SP আপডেট (শুধু যদি ম্যানুয়ালি এডিট না করা হয়)
+            marginInput.addEventListener('input', function() {
+                const cp = parseFloat(cpInput.value) || 0;
+                const marginPercent = parseFloat(this.value) || 0;
+                
+                if (cp > 0 && marginPercent >= 0 && !spManuallyEdited) {
+                    const calculatedSP = cp + (cp * marginPercent / 100);
+                    spInput.value = Math.round(calculatedSP);
+                }
+            });
+        }
+
+        // ক্যাটাগরি অনুযায়ী স্মার্ট প্লেসহোল্ডার
+        if (categoryInput && remarkInput) {
+            categoryInput.addEventListener('blur', function() {
+                const cat = this.value.toUpperCase();
+                
+                if (cat === "JEWELRY") {
+                    remarkInput.placeholder = "e.g. 22K, 5.5gm";
+                } else if (cat === "CLOTHING") {
+                    remarkInput.placeholder = "e.g. XL, Cotton";
+                } else {
+                    remarkInput.placeholder = "Rack No.";
+                }
+            });
+
+            // ক্যাটাগরি অটো আপারকেস
+            categoryInput.addEventListener('blur', function() {
+                this.value = this.value.toUpperCase();
+            });
+        }
+    }
+
+    // --- localStorage Auto-Save Functions ---
+    function saveTableToLocal() {
+        const rows = document.querySelectorAll('#products-tbody tr');
+        const data = [];
+        
+        rows.forEach(row => {
+            const name = row.querySelector('.product-name').value;
+            const category = row.querySelector('.product-category').value;
+            const remark = row.querySelector('.product-remark').value;
+            const cp = row.querySelector('.product-cp').value;
+            const sp = row.querySelector('.product-sp').value;
+            const barcode = row.querySelector('.product-barcode').value;
+            const stock = row.querySelector('.product-stock').value;
+
+            // যদি অন্তত নাম বা কস্ট প্রাইস থাকে তবেই সেভ করবে
+            if (name || cp || stock) {
+                data.push({ name, category, remark, cp, sp, barcode, stock });
+            }
+        });
+        
+        if (data.length > 0) {
+            localStorage.setItem('temp_product_list', JSON.stringify(data));
+        }
+    }
+
+    function loadTableFromLocal() {
+        const savedData = localStorage.getItem('temp_product_list');
+        if (savedData) {
+            try {
+                const data = JSON.parse(savedData);
+                if (data.length > 0) {
+                    const tbody = document.getElementById('products-tbody');
+                    tbody.innerHTML = ''; // ডিফল্ট খালি রো মুছে ফেলা
+                    
+                    data.forEach(item => {
+                        addProductRow();
+                        const rows = tbody.querySelectorAll('tr');
+                        const lastRow = rows[rows.length - 1];
+                        
+                        lastRow.querySelector('.product-name').value = item.name || '';
+                        lastRow.querySelector('.product-category').value = item.category || '';
+                        lastRow.querySelector('.product-remark').value = item.remark || '';
+                        lastRow.querySelector('.product-cp').value = item.cp || '';
+                        lastRow.querySelector('.product-sp').value = item.sp || '';
+                        lastRow.querySelector('.product-barcode').value = item.barcode || '';
+                        lastRow.querySelector('.product-stock').value = item.stock || '';
+                    });
+                    
+                    showStatus('✅ আগের সেভ করা ডেটা ফিরিয়ে আনা হয়েছে।', 'success');
+                }
+            } catch (error) {
+                console.error('Error loading saved data:', error);
+                localStorage.removeItem('temp_product_list');
+            }
+        }
+    }
+
     onAuthStateChanged(auth, (user) => {
         if (user) {
             activeShopId = localStorage.getItem('activeShopId'); if (!activeShopId) { window.location.href = '../index.html'; return; }
+            
+            // ডাটাবেস থেকে ক্যাটাগরি লোড করা
+            updateCategoryDatalist();
+            
+            // লোকাল স্টোরেজ থেকে ডেটা লোড করা
+            loadTableFromLocal();
+            
+            // যদি কোনো সেভ ডেটা না থাকে তবে একটি খালি রো যোগ করা
             if (productsTbody.children.length === 0) {
                 addProductRow();
             }
@@ -63,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td data-label="Product Name"><input type="text" class="product-name" placeholder="e.g., Lux Soap" required></td>
-            <td data-label="Category"><input type="text" class="product-category" placeholder="e.g., Cosmetics" required></td>
+            <td data-label="Category"><input type="text" class="product-category" placeholder="e.g., Cosmetics" list="category-list" required></td>
             <td data-label="Rack/Shelf"><input type="text" class="product-remark" placeholder="Rack No."></td>
             <td data-label="Cost Price"><input type="number" step="0.01" class="product-cp" placeholder="0.00" required></td>
             <td data-label="Selling Price"><input type="number" step="0.01" class="product-sp" placeholder="0.00" required></td>
@@ -85,6 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </td>
         `;
         productsTbody.appendChild(row);
+        setupSmartTyping(row);
     }
 
     function showStatus(message, type) {
@@ -189,6 +399,233 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     addRowBtn.addEventListener('click', addProductRow);
+
+    // --- Auto-save on input change ---
+    productsTbody.addEventListener('input', saveTableToLocal);
+
+    // --- Recalculate All SP Button ---
+    const btnRecalculateSP = document.getElementById('btn-recalculate-sp');
+    if (btnRecalculateSP) {
+        btnRecalculateSP.addEventListener('click', () => {
+            const marginInput = document.getElementById('default-margin');
+            const marginPercent = parseFloat(marginInput.value) || 0;
+            const rows = productsTbody.querySelectorAll('tr');
+            let updatedCount = 0;
+
+            rows.forEach(row => {
+                const cpInput = row.querySelector('.product-cp');
+                const spInput = row.querySelector('.product-sp');
+                
+                if (cpInput && spInput) {
+                    const cp = parseFloat(cpInput.value) || 0;
+                    
+                    if (cp > 0) {
+                        const calculatedSP = cp + (cp * marginPercent / 100);
+                        spInput.value = Math.round(calculatedSP);
+                        
+                        // ভিসুয়াল ফিডব্যাক
+                        spInput.style.backgroundColor = '#d4edda';
+                        setTimeout(() => {
+                            spInput.style.backgroundColor = '';
+                        }, 1000);
+                        
+                        updatedCount++;
+                    }
+                }
+            });
+
+            if (updatedCount > 0) {
+                showStatus(`✅ ${updatedCount}টি প্রোডাক্টের SP পুনরায় ক্যালকুলেট করা হয়েছে (${marginPercent}% margin)।`, 'success');
+                saveTableToLocal(); // লোকাল স্টোরেজে সেভ
+            } else {
+                showStatus('⚠️ কোনো CP পাওয়া যায়নি। প্রথমে CP লিখুন।', 'error');
+            }
+        });
+    }
+
+    // --- Clear All Button ---
+    const btnClearAll = document.getElementById('btn-clear-all');
+    if (btnClearAll) {
+        btnClearAll.addEventListener('click', () => {
+            if (confirm("⚠️ আপনি কি নিশ্চিত যে সব রো মুছে ফেলতে চান? এটি লোকাল সেভ ডেটাও ডিলিট করে দেবে।")) {
+                localStorage.removeItem('temp_product_list');
+                productsTbody.innerHTML = '';
+                addProductRow();
+                showStatus('✅ All rows cleared!', 'success');
+            }
+        });
+    }
+
+    // --- AI Prompt Copy Logic ---
+    const btnCopyPrompt = document.getElementById('btn-copy-prompt');
+    if (btnCopyPrompt) {
+        btnCopyPrompt.addEventListener('click', function() {
+            const promptText = document.getElementById('ai-prompt-text').innerText;
+            const btn = this;
+            
+            navigator.clipboard.writeText(promptText).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = "Copied! ✅";
+                btn.style.background = "#27ae60";
+                
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = "#2ecc71";
+                }, 2000);
+            }).catch(() => {
+                alert("❌ Failed to copy. Please copy manually.");
+            });
+        });
+    }
+
+    // --- Custom AI Modal Elements ---
+    const aiPasteModal = document.getElementById('ai-paste-modal');
+    const btnOpenPasteAI = document.getElementById('btn-paste-ai');
+    const btnCloseAIModal = document.getElementById('close-ai-modal');
+    const btnCancelAI = document.getElementById('btn-cancel-ai');
+    const btnProcessAI = document.getElementById('btn-process-ai');
+    const aiRawInput = document.getElementById('ai-raw-input');
+    const aiStatus = document.getElementById('ai-process-status');
+
+    // ১. মডাল ওপেন করা
+    if (btnOpenPasteAI) {
+        btnOpenPasteAI.addEventListener('click', () => {
+            aiRawInput.value = ''; // আগের ডেটা ক্লিয়ার করা
+            aiStatus.innerText = '';
+            aiPasteModal.classList.remove('hidden');
+            setTimeout(() => aiRawInput.focus(), 100);
+        });
+    }
+
+    // ২. মডাল ক্লোজ করা
+    const closeAIModal = () => aiPasteModal.classList.add('hidden');
+    if (btnCloseAIModal) btnCloseAIModal.addEventListener('click', closeAIModal);
+    if (btnCancelAI) btnCancelAI.addEventListener('click', closeAIModal);
+
+    // Modal overlay click to close
+    if (aiPasteModal) {
+        aiPasteModal.addEventListener('click', (e) => {
+            if (e.target.id === 'ai-paste-modal') {
+                closeAIModal();
+            }
+        });
+    }
+
+    // ৩. ডেটা প্রসেস করা
+    if (btnProcessAI) {
+        btnProcessAI.addEventListener('click', async () => {
+            const rawData = aiRawInput.value.trim();
+            if (!rawData) {
+                aiStatus.style.color = "red";
+                aiStatus.innerText = "⚠️ Please paste some data first!";
+                return;
+            }
+
+            if (!activeShopId) {
+                aiStatus.style.color = "red";
+                aiStatus.innerText = "❌ দয়া করে পুনরায় লগইন করুন।";
+                return;
+            }
+
+            aiStatus.style.color = "#4361ee";
+            aiStatus.innerText = "⏳ Processing data, please wait...";
+            btnProcessAI.disabled = true;
+            btnProcessAI.style.opacity = "0.6";
+
+            const lines = rawData.split('\n');
+            let addedCount = 0;
+            let updatedCount = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                const parts = lines[i].split('|').map(p => p.trim());
+                
+                if (parts.length >= 3) {
+                    const name = parts[0];
+                    const cp = parseFloat(parts[1]);
+                    const qty = parseInt(parts[2]);
+                    const category = parts.length >= 4 ? parts[3] : '';
+
+                    if (name && !isNaN(cp) && !isNaN(qty)) {
+                        try {
+                            // ১. চেক করা টেবিলে বর্তমানে কোনো খালি রো আছে কি না
+                            const existingRows = document.querySelectorAll('#products-tbody tr');
+                            let targetRow;
+
+                            // যদি প্রথম আইটেম হয় এবং প্রথম রো-টি খালি থাকে, তবে সেটি ব্যবহার করো
+                            if (i === 0 && existingRows.length === 1 && !existingRows[0].querySelector('.product-name').value.trim()) {
+                                targetRow = existingRows[0];
+                            } else {
+                                // অন্যথায় নতুন রো তৈরি করো
+                                addProductRow();
+                                const updatedRows = document.querySelectorAll('#products-tbody tr');
+                                targetRow = updatedRows[updatedRows.length - 1];
+                            }
+
+                            // ২. ডাটাবেসে এই নামে প্রোডাক্ট আছে কি না চেক করা
+                            const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
+                            const { query: firestoreQuery, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+                            
+                            const q = firestoreQuery(inventoryRef, where("name", "==", name));
+                            const querySnapshot = await getDocs(q);
+
+                            if (!querySnapshot.empty) {
+                                // প্রোডাক্টটি আগে থেকেই আছে!
+                                const existingDoc = querySnapshot.docs[0];
+                                const existingData = existingDoc.data();
+                                const barcode = existingDoc.id;
+
+                                targetRow.querySelector('.product-name').value = name;
+                                targetRow.querySelector('.product-name').readOnly = true;
+                                targetRow.querySelector('.product-category').value = existingData.category || category;
+                                targetRow.querySelector('.product-category').readOnly = true;
+                                targetRow.querySelector('.product-cp').value = cp;
+                                targetRow.querySelector('.product-sp').value = existingData.sellingPrice || cp;
+                                targetRow.querySelector('.product-barcode').value = barcode;
+                                targetRow.querySelector('.product-stock').value = qty;
+                                
+                                // রো-এর কালার হালকা সবুজ করে দেওয়া
+                                targetRow.style.backgroundColor = "#e8f5e9";
+                                updatedCount++;
+                            } else {
+                                // নতুন প্রোডাক্ট
+                                targetRow.querySelector('.product-name').value = name;
+                                targetRow.querySelector('.product-category').value = category;
+                                targetRow.querySelector('.product-cp').value = cp;
+                                targetRow.querySelector('.product-sp').value = cp;
+                                targetRow.querySelector('.product-stock').value = qty;
+                                addedCount++;
+                            }
+                        } catch (error) {
+                            console.error("প্রোডাক্ট চেক করতে সমস্যা:", error);
+                            // এরর হলেও নতুন রো যোগ করা
+                            addProductRow();
+                            const rows = document.querySelectorAll('#products-tbody tr');
+                            const lastRow = rows[rows.length - 1];
+
+                            lastRow.querySelector('.product-name').value = name;
+                            lastRow.querySelector('.product-category').value = category;
+                            lastRow.querySelector('.product-cp').value = cp;
+                            lastRow.querySelector('.product-sp').value = cp;
+                            lastRow.querySelector('.product-stock').value = qty;
+                            addedCount++;
+                        }
+                    }
+                }
+            }
+
+            btnProcessAI.disabled = false;
+            btnProcessAI.style.opacity = "1";
+
+            if (addedCount > 0 || updatedCount > 0) {
+                showStatus(`✅ ফলাফল: ${addedCount}টি নতুন এবং ${updatedCount}টি বিদ্যমান প্রোডাক্ট পাওয়া গেছে।`, 'success');
+                saveTableToLocal(); // AI ডেটা যোগ হলে সেভ করা
+                closeAIModal();
+            } else {
+                aiStatus.style.color = "red";
+                aiStatus.innerText = "❌ সঠিক ফরম্যাটে ডেটা পাওয়া যায়নি।";
+            }
+        });
+    }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -374,6 +811,9 @@ document.addEventListener('DOMContentLoaded', () => {
             displayBarcodes(productsForBarcodeDisplay);
             productsTbody.innerHTML = '';
             addProductRow();
+            
+            // সফলভাবে সেভ হলে লোকাল স্টোরেজ ক্লিয়ার করে দেওয়া
+            localStorage.removeItem('temp_product_list');
 
         } catch (error) {
             console.error("Transaction failed: ", error);

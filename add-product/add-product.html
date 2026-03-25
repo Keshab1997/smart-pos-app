@@ -14,38 +14,90 @@
     <div id="navbar-placeholder"></div>
 
     <main class="container">
-        <div class="card-container">
-            <h1>Add New Products</h1>
-            <p>Fill the table below to add multiple products at once. Barcode will be generated automatically.</p>
+        <div class="card-container main-card">
+            <div class="header-flex">
+                <div>
+                    <h1>📦 Add New Products</h1>
+                    <p>Fill the table below to add multiple products at once.</p>
+                </div>
+                <div class="action-buttons-top">
+                    <button type="button" id="btn-clear-all" class="btn btn-danger-outline">🗑️ Clear All</button>
+                </div>
+            </div>
             
-           <!-- ... অন্যান্য HTML কোড ... -->
-<form id="add-products-form">
-    <table>
-        <thead>
-            <tr>
-                <th>Product Name</th>
-                <th>Category</th>
-                <th>Rack/Shelf</th>
-                <th>Cost Price (CP)</th>
-                <th>Selling Price (SP)</th>
-                <th>Barcode</th>
-                <th>Initial Stock</th>
-                <th>Image</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="products-tbody">
-            <!-- জাভাস্ক্রিপ্ট দিয়ে এখানে সারি যোগ হবে -->
-        </tbody>
-    </table>
-    <div class="form-actions">
-        <button type="button" id="add-row-btn" class="btn btn-secondary">Add More Rows</button>
-        <button type="submit" class="btn btn-primary">Save All Products</button>
-    </div>
-</form>
-<!-- ... অন্যান্য HTML কোড ... -->
+            <form id="add-products-form">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Rack/Shelf</th>
+                                <th>Cost Price (CP)</th>
+                                <th>Selling Price (SP)</th>
+                                <th>Barcode</th>
+                                <th>Initial Stock</th>
+                                <th>Image</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-tbody">
+                            <!-- Rows will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-footer-actions">
+                    <button type="button" id="add-row-btn" class="btn btn-secondary-light">➕ Add More Rows</button>
+                </div>
+
+                <!-- Smart Pricing Helper -->
+                <div style="margin: 20px 0; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e1e8f5; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="font-size: 13px; font-weight: 600; color: #2c3e50;">📈 Default Profit Margin (%):</label>
+                        <input type="number" id="default-margin" value="20" min="0" max="100" style="width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-weight: 600;">
+                    </div>
+                    <button type="button" id="btn-recalculate-sp" class="btn" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 8px 16px; font-size: 13px;">
+                        🔄 Recalculate All SP
+                    </button>
+                    <span style="font-size: 12px; color: #7f8c8d;">SP will auto-calculate based on CP + Margin%</span>
+                </div>
+
+                <!-- AI Smart Assistant Section (Moved to Bottom) -->
+                <div class="ai-smart-card">
+                    <div class="ai-card-header">
+                        <span class="ai-badge">AI Assistant</span>
+                        <h3>🤖 Smart Bill Scanner</h3>
+                    </div>
+                    <div class="ai-card-body">
+                        <div class="ai-prompt-box">
+                            <div class="prompt-content">
+                                <p id="ai-prompt-text">Please analyze this vendor bill image and extract the Product Name, Cost Price (CP), Quantity (Qty), and a suitable Category. Format the output as a simple list where each line follows this exact format: Product Name | CP | Qty | Category. Do not include any headers, currency symbols, or extra text. Just the data.</p>
+                            </div>
+                            <button type="button" id="btn-copy-prompt" class="btn-copy">Copy Prompt</button>
+                        </div>
+                        <div class="ai-action-buttons">
+                            <a href="https://aistudio.google.com/" target="_blank" class="btn btn-ai-google">
+                                <img src="https://www.gstatic.com/lamda/images/favicon_v2_16x16.png" alt="" style="width: 16px; height: 16px;"> Open AI Scanner (Gemini)
+                            </a>
+                            <button type="button" id="btn-paste-ai" class="btn btn-ai-paste">📋 Paste AI Data</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="final-actions">
+                    <button type="submit" class="btn btn-save-all">🚀 Save All Products to Inventory</button>
+                </div>
+            </form>
+            
             <p id="status-message"></p>
         </div>
+
+        <!-- Category Datalist -->
+        <datalist id="category-list">
+            <option value="CLOTHING">
+            <option value="JEWELRY">
+        </datalist>
 
         <div id="barcode-print-area" class="card-container hidden">
             <h2>Generated Barcodes</h2>
@@ -64,6 +116,27 @@
                 <button id="close-scanner-btn" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
             </div>
             <div id="reader" style="width: 100%;"></div>
+        </div>
+    </div>
+    
+    <!-- AI Paste Custom Modal -->
+    <div id="ai-paste-modal" class="modal-overlay hidden" style="z-index: 3000;">
+        <div class="modal-content" style="max-width: 600px; border-top: 5px solid #8e44ad; background: white; padding: 0; border-radius: 10px;">
+            <div class="modal-header" style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; color: #8e44ad;">📋 Paste AI Data</h3>
+                <button id="close-ai-modal" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <p style="font-size: 14px; color: #555; margin-bottom: 10px;">AI Studio থেকে কপি করা টেক্সট নিচের বক্সে পেস্ট করুন:</p>
+                <textarea id="ai-raw-input" 
+                    placeholder="Example: Product Name | CP | Qty | Category" 
+                    style="width: 100%; min-height: 250px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 14px; resize: vertical; outline: none; background: #f9f9f9; box-sizing: border-box;"></textarea>
+                <div id="ai-process-status" style="margin-top: 10px; font-size: 13px; font-weight: 600;"></div>
+            </div>
+            <div class="modal-footer" style="padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px;">
+                <button id="btn-cancel-ai" class="btn btn-secondary" style="background: #eee; color: #333;">Cancel</button>
+                <button id="btn-process-ai" class="btn" style="background: #8e44ad; color: white; padding: 10px 25px;">Process & Add to List</button>
+            </div>
         </div>
     </div>
     
