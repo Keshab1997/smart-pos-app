@@ -227,20 +227,28 @@ function renderTable() {
 function updateCategoryFilter(categoryStats, selectedValue) {
     const categories = Object.keys(categoryStats).sort();
 
-    // লেখাগুলো ছোট করার জন্য লজিক পরিবর্তন
     const options = [
         '<option value="">📂 All Categories</option>',
         ...categories.map(cat => {
             const stats = categoryStats[cat];
             const isSelected = cat === selectedValue ? 'selected' : '';
-            
-            // শুধু ক্যাটাগরির নাম এবং ব্র্যাকেটে কয়টি প্রোডাক্ট আছে সেটা দেখাবে
             const label = `${cat} (${stats.types})`; 
             return `<option value="${cat}" ${isSelected}>${label}</option>`;
         })
     ];
     
     categoryFilter.innerHTML = options.join('');
+    
+    // Update delete category button visibility immediately after updating filter
+    const deleteCategoryBtn = document.getElementById('delete-category-btn');
+    if (deleteCategoryBtn) {
+        if (selectedValue && selectedValue !== '') {
+            deleteCategoryBtn.style.display = 'inline-block';
+            deleteCategoryBtn.setAttribute('data-category', selectedValue);
+        } else {
+            deleteCategoryBtn.style.display = 'none';
+        }
+    }
 }
 
 function setupPagination() {
@@ -260,8 +268,52 @@ function setupEventListeners() {
     hasEventListenersSetup = true;
 
     searchInput.addEventListener('input', () => applyFiltersAndRender(true));
-    categoryFilter.addEventListener('change', () => applyFiltersAndRender(true));
+    categoryFilter.addEventListener('change', () => {
+        // Show/hide delete category button
+        const deleteCategoryBtn = document.getElementById('delete-category-btn');
+        if (deleteCategoryBtn) {
+            const selectedCategory = categoryFilter.value;
+            if (selectedCategory && selectedCategory !== '') {
+                deleteCategoryBtn.style.display = 'inline-block';
+                deleteCategoryBtn.setAttribute('data-category', selectedCategory);
+            } else {
+                deleteCategoryBtn.style.display = 'none';
+            }
+        }
+        applyFiltersAndRender(true);
+    });
     stockLimitFilter.addEventListener('input', () => applyFiltersAndRender(true));
+    
+    // Delete Category Button
+    const deleteCategoryBtn = document.getElementById('delete-category-btn');
+    if (deleteCategoryBtn) {
+        deleteCategoryBtn.addEventListener('click', async () => {
+            const category = deleteCategoryBtn.getAttribute('data-category');
+            if (!category) return;
+            
+            const productsInCategory = allProducts.filter(p => p.category === category);
+            const confirmMsg = `⚠️ Delete entire "${category}" category?\n\nThis will delete ${productsInCategory.length} products permanently.\n\nThis action cannot be undone!`;
+            
+            if (!confirm(confirmMsg)) return;
+            
+            try {
+                deleteCategoryBtn.disabled = true;
+                deleteCategoryBtn.textContent = 'Deleting...';
+                
+                await deleteCategoryWithProducts(category);
+                
+                showStatus(`✅ Category "${category}" and ${productsInCategory.length} products deleted successfully!`, 'success');
+                categoryFilter.value = '';
+                applyFiltersAndRender(true);
+            } catch (error) {
+                console.error('Delete category error:', error);
+                showStatus('❌ Failed to delete category: ' + error.message, 'error');
+            } finally {
+                deleteCategoryBtn.disabled = false;
+                deleteCategoryBtn.textContent = '🗑️ Delete Category';
+            }
+        });
+    }
     
     paginationContainer.addEventListener('click', (e) => {
         if(e.target.matches('.pagination-btn')) {
@@ -535,4 +587,45 @@ async function deleteProduct(id) {
         console.error("Delete Error:", error);
         showStatus('Failed to delete product or related records.', 'error'); 
     }
+}
+
+// Delete entire category with all products
+async function deleteCategoryWithProducts(category) {
+    const isAuthorized = await verifyAdminPIN();
+    if (!isAuthorized) throw new Error('Unauthorized');
+
+    const productsToDelete = allProducts.filter(p => p.category === category);
+    
+    if (productsToDelete.length === 0) {
+        throw new Error('No products found in this category');
+    }
+
+    const deletePromises = [];
+    
+    for (const product of productsToDelete) {
+        // Save audit log
+        const logPromise = saveInventoryLog(
+            product.id, 
+            product.name, 
+            'DELETE_CATEGORY', 
+            product.stock, 
+            0
+        );
+        deletePromises.push(logPromise);
+        
+        // Delete related expenses
+        const expensesRef = collection(db, 'shops', activeShopId, 'expenses');
+        const q = query(expensesRef, where("relatedProductId", "==", product.id));
+        const querySnapshot = await getDocs(q);
+        
+        querySnapshot.forEach((docSnap) => {
+            deletePromises.push(deleteDoc(doc(db, 'shops', activeShopId, 'expenses', docSnap.id)));
+        });
+        
+        // Delete the product
+        const productRef = doc(db, 'shops', activeShopId, 'inventory', product.id);
+        deletePromises.push(deleteDoc(productRef));
+    }
+    
+    await Promise.all(deletePromises);
 }

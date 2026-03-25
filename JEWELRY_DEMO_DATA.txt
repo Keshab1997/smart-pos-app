@@ -1,0 +1,24 @@
+JEWELRY MODE - DEMO AI PASTE DATA
+===================================
+
+Copy the text below and paste it in the "Paste AI Data" modal when Jewelry mode is selected:
+
+TANISHQ | Gold Ring | 5.5 | 15750.00 | 2 | JEWELRY | 18000 | 22K
+KALYAN | Gold Chain | 10.2 | 28500.00 | 1 | JEWELRY | 32000 | 22K
+MALABAR | Diamond Earrings | 3.8 | 45000.00 | 1 | JEWELRY | 52000 | 18K
+PC JEWELLER | Silver Bracelet | 25.0 | 2500.00 | 5 | JEWELRY | 3200 | 92.5%
+SENCO | Gold Necklace | 15.5 | 43250.00 | 1 | JEWELRY | 48000 | 22K
+JOYALUKKAS | Gold Bangle | 20.0 | 56000.00 | 2 | JEWELRY | 62000 | 22K
+TBZ | Platinum Ring | 4.2 | 18900.00 | 1 | JEWELRY | 22000 | PT950
+GIVA | Silver Pendant | 8.5 | 1200.00 | 10 | JEWELRY | 1599 | 92.5%
+CANDERE | Gold Earrings | 6.8 | 19040.00 | 3 | JEWELRY | 22000 | 18K
+BLUESTONE | Diamond Ring | 2.5 | 35000.00 | 1 | JEWELRY | 42000 | 18K
+
+Format: Brand | Name | Weight (gm) | Net CP | Qty | Category | MRP | Purity
+
+Expected Result:
+- Product Name: TANISHQ GOLD RING
+- Weight (gm): 5.5
+- Purity: 22K
+- CP: 15750.00
+- MRP: 18000

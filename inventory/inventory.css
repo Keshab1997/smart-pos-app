@@ -606,3 +606,31 @@ body {
 .form-group-inline .form-group {
     flex: 1;
 }
+
+
+/* Delete Category Button */
+#delete-category-btn {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fee2e2;
+    padding: 0 15px;
+    height: 45px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+#delete-category-btn:hover {
+    background: #dc2626;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+#delete-category-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

@@ -13,6 +13,33 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 // ImgBB API Configuration
 const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267'; 
 
+// --- Mode Configuration ---
+const modeConfigs = {
+    general: {
+        head1: "Rack/Shelf", head2: "Remark",
+        p1: "Rack No.", p2: "Any note",
+        aiExample: "Product Name | CP | Qty | Category | MRP | Rack | Remark"
+    },
+    clothing: {
+        head1: "Size", head2: "Color",
+        p1: "e.g. XL, 32, M", p2: "e.g. Red, Blue",
+        aiExample: "Brand | Name | Size | Net CP | Qty | Category | MRP | Color"
+    },
+    jewelry: {
+        head1: "Weight (gm)", head2: "Purity",
+        p1: "e.g. 5.50, 10.2", p2: "e.g. 22K, 18K",
+        aiExample: "Brand | Name | Weight | Net CP | Qty | Category | MRP | Purity"
+    },
+    grocery: {
+        head1: "Brand Name", head2: "Weight/Unit",
+        p1: "e.g. SOUL, MAGGI, LUX", p2: "e.g. 65gms, 1kg, 500ml",
+        head3: "HSN Code", head4: "Expiry Date",
+        p3: "e.g. 21039090", p4: "e.g. 12/2025",
+        extraColumns: true,
+        aiExample: "Brand | Name | Weight | Net CP | Qty | Category | MRP | HSN | Expiry"
+    }
+};
+
 let html5QrCode;
 let currentBarcodeTarget = null;
 
@@ -46,6 +73,97 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn');
 
     let activeShopId = null;
+
+    // --- Mode Switching Logic ---
+    window.currentActiveMode = 'general';
+    
+    const modeButtons = document.querySelectorAll('.mode-btn');
+    modeButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const selectedMode = this.getAttribute('data-mode');
+            applyModeToTable(selectedMode);
+            
+            // Active button styling
+            modeButtons.forEach(b => {
+                b.style.background = 'white';
+                b.style.color = '#333';
+            });
+            this.style.background = this.style.borderColor;
+            this.style.color = 'white';
+        });
+    });
+
+    function applyModeToTable(mode) {
+        const config = modeConfigs[mode];
+        
+        // Update table headers
+        document.querySelector('.dynamic-head-1').innerText = config.head1;
+        document.querySelector('.dynamic-head-2').innerText = config.head2;
+        
+        // Show/hide extra columns for grocery mode
+        const head3 = document.querySelector('.dynamic-head-3');
+        const head4 = document.querySelector('.dynamic-head-4');
+        
+        if (config.extraColumns) {
+            head3.style.display = '';
+            head4.style.display = '';
+            head3.innerText = config.head3;
+            head4.innerText = config.head4;
+        } else {
+            head3.style.display = 'none';
+            head4.style.display = 'none';
+        }
+
+        // Update existing rows
+        const rows = document.querySelectorAll('#products-tbody tr');
+        rows.forEach(row => {
+            const input1 = row.querySelector('.dynamic-input-1');
+            const input2 = row.querySelector('.dynamic-input-2');
+            const input3 = row.querySelector('.dynamic-input-3');
+            const input4 = row.querySelector('.dynamic-input-4');
+            
+            if (input1) input1.placeholder = config.p1;
+            if (input2) input2.placeholder = config.p2;
+            
+            if (config.extraColumns) {
+                if (input3) {
+                    input3.style.display = '';
+                    input3.placeholder = config.p3;
+                }
+                if (input4) {
+                    input4.style.display = '';
+                    input4.placeholder = config.p4;
+                }
+            } else {
+                if (input3) input3.style.display = 'none';
+                if (input4) input4.style.display = 'none';
+            }
+        });
+
+        // Update AI Prompt based on mode
+        updateAIPrompt(mode);
+
+        window.currentActiveMode = mode;
+        showStatus(`✅ Table mode changed to ${mode.toUpperCase()}`, 'success');
+    }
+
+    // --- AI Prompt Update Function ---
+    function updateAIPrompt(mode) {
+        const aiPromptText = document.getElementById('ai-prompt-text');
+        if (!aiPromptText) return;
+
+        const prompts = {
+            general: "Please analyze this vendor bill image and extract the Product Name, Cost Price (CP), Quantity (Qty), MRP/Selling Price (if available), Category, Rack/Shelf location, and any Remark. Format the output as: Product Name | CP | Qty | MRP | Category | Rack | Remark. If any field is not available, write 0 or leave blank. Example: Lux Soap | 25 | 50 | 30 | COSMETICS | A-12 | Fragrant",
+            
+            clothing: "Please analyze this clothing/garment bill image and extract the Brand, Product Name, Size, Base Rate, GST%, Quantity, MRP, and Color. Calculate Net CP = Base Rate + (Base Rate * GST% / 100). Format the output as: Brand | Name | Size | Net CP | Qty | Category | MRP | Color. If any field is not available, write 0 or leave blank. Example: ZARA | Cotton Shirt | XL | 520.50 | 10 | CLOTHING | 650 | Blue",
+            
+            jewelry: "Please analyze this jewelry bill image and extract the Brand, Product Name, Weight (grams), Base Rate, Making Charges%, Quantity, MRP, and Purity. Calculate Net CP = Base Rate + (Base Rate * Making% / 100). Format the output as: Brand | Name | Weight | Net CP | Qty | Category | MRP | Purity. If any field is not available, write 0 or leave blank. Example: TANISHQ | Gold Ring | 5.5 | 15750.00 | 2 | JEWELRY | 18000 | 22K",
+            
+            grocery: "Analyze this grocery/FMCG bill. For each item, extract: Brand, Product Name, Weight/Unit, Base Rate, GST%, Quantity, MRP, HSN Code, and Expiry Date. Calculate Net CP = Base Rate + (Base Rate * GST% / 100). Format the output as: Brand | Name | Weight | Net CP | Qty | Category | MRP | HSN | Expiry. Do not include headers or currency symbols. Example: SOUL | BUTTER CHKN MASALA | 65gms | 35.43 | 30 | GROCERY | 50 | 21039090 | 12/2025"
+        };
+
+        aiPromptText.textContent = prompts[mode] || prompts.general;
+    }
 
     // --- Dynamic Category Loading from Database ---
     async function updateCategoryDatalist() {
@@ -170,21 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // ক্যাটাগরি অনুযায়ী স্মার্ট প্লেসহোল্ডার
-        if (categoryInput && remarkInput) {
-            categoryInput.addEventListener('blur', function() {
-                const cat = this.value.toUpperCase();
-                
-                if (cat === "JEWELRY") {
-                    remarkInput.placeholder = "e.g. 22K, 5.5gm";
-                } else if (cat === "CLOTHING") {
-                    remarkInput.placeholder = "e.g. XL, Cotton";
-                } else {
-                    remarkInput.placeholder = "Rack No.";
-                }
-            });
-
-            // ক্যাটাগরি অটো আপারকেস
+        // Category auto uppercase
+        if (categoryInput) {
             categoryInput.addEventListener('blur', function() {
                 this.value = this.value.toUpperCase();
             });
@@ -199,15 +304,17 @@ document.addEventListener('DOMContentLoaded', () => {
         rows.forEach(row => {
             const name = row.querySelector('.product-name').value;
             const category = row.querySelector('.product-category').value;
-            const remark = row.querySelector('.product-remark').value;
+            const extra1 = row.querySelector('.dynamic-input-1')?.value || '';
+            const extra2 = row.querySelector('.dynamic-input-2')?.value || '';
+            const extra3 = row.querySelector('.dynamic-input-3')?.value || '';
+            const extra4 = row.querySelector('.dynamic-input-4')?.value || '';
             const cp = row.querySelector('.product-cp').value;
             const sp = row.querySelector('.product-sp').value;
             const barcode = row.querySelector('.product-barcode').value;
             const stock = row.querySelector('.product-stock').value;
 
-            // যদি অন্তত নাম বা কস্ট প্রাইস থাকে তবেই সেভ করবে
             if (name || cp || stock) {
-                data.push({ name, category, remark, cp, sp, barcode, stock });
+                data.push({ name, category, extra1, extra2, extra3, extra4, cp, sp, barcode, stock });
             }
         });
         
@@ -232,7 +339,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         lastRow.querySelector('.product-name').value = item.name || '';
                         lastRow.querySelector('.product-category').value = item.category || '';
-                        lastRow.querySelector('.product-remark').value = item.remark || '';
+                        lastRow.querySelector('.dynamic-input-1').value = item.extra1 || '';
+                        lastRow.querySelector('.dynamic-input-2').value = item.extra2 || '';
+                        if (lastRow.querySelector('.dynamic-input-3')) {
+                            lastRow.querySelector('.dynamic-input-3').value = item.extra3 || '';
+                        }
+                        if (lastRow.querySelector('.dynamic-input-4')) {
+                            lastRow.querySelector('.dynamic-input-4').value = item.extra4 || '';
+                        }
                         lastRow.querySelector('.product-cp').value = item.cp || '';
                         lastRow.querySelector('.product-sp').value = item.sp || '';
                         lastRow.querySelector('.product-barcode').value = item.barcode || '';
@@ -271,10 +385,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addProductRow() {
         const row = document.createElement('tr');
+        const mode = window.currentActiveMode || 'general';
+        const config = modeConfigs[mode];
+        
+        const extraCols = config.extraColumns ? `
+            <td data-label="${config.head3}" style="display:${config.extraColumns ? '' : 'none'}"><input type="text" class="dynamic-input-3" placeholder="${config.p3}"></td>
+            <td data-label="${config.head4}" style="display:${config.extraColumns ? '' : 'none'}"><input type="text" class="dynamic-input-4" placeholder="${config.p4}"></td>
+        ` : `
+            <td data-label="Extra 3" style="display:none"><input type="text" class="dynamic-input-3" style="display:none"></td>
+            <td data-label="Extra 4" style="display:none"><input type="text" class="dynamic-input-4" style="display:none"></td>
+        `;
+        
         row.innerHTML = `
             <td data-label="Product Name"><input type="text" class="product-name" placeholder="e.g., Lux Soap" required></td>
             <td data-label="Category"><input type="text" class="product-category" placeholder="e.g., Cosmetics" list="category-list" required></td>
-            <td data-label="Rack/Shelf"><input type="text" class="product-remark" placeholder="Rack No."></td>
+            <td data-label="${config.head1}"><input type="text" class="dynamic-input-1" placeholder="${config.p1}"></td>
+            <td data-label="${config.head2}"><input type="text" class="dynamic-input-2" placeholder="${config.p2}"></td>
+            ${extraCols}
             <td data-label="Cost Price"><input type="number" step="0.01" class="product-cp" placeholder="0.00" required></td>
             <td data-label="Selling Price"><input type="number" step="0.01" class="product-sp" placeholder="0.00" required></td>
             <td data-label="Barcode">
@@ -583,11 +710,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiRawInput = document.getElementById('ai-raw-input');
     const aiStatus = document.getElementById('ai-process-status');
 
+    // Update AI Paste Modal Example Text
+    function updateAIPasteExample() {
+        const mode = window.currentActiveMode || 'general';
+        const config = modeConfigs[mode];
+        const exampleElement = document.querySelector('#ai-paste-modal .modal-body p');
+        if (exampleElement && config.aiExample) {
+            exampleElement.innerHTML = `Example: <strong>${config.aiExample}</strong>`;
+        }
+    }
+
     // ১. মডাল ওপেন করা
     if (btnOpenPasteAI) {
         btnOpenPasteAI.addEventListener('click', () => {
             aiRawInput.value = ''; // আগের ডেটা ক্লিয়ার করা
             aiStatus.innerText = '';
+            updateAIPasteExample(); // Update example based on current mode
             aiPasteModal.classList.remove('hidden');
             setTimeout(() => aiRawInput.focus(), 100);
         });
@@ -634,18 +772,105 @@ document.addEventListener('DOMContentLoaded', () => {
 
             for (let i = 0; i < lines.length; i++) {
                 const parts = lines[i].split('|').map(p => p.trim());
+                const currentMode = window.currentActiveMode || 'general';
                 
                 if (parts.length >= 3) {
-                    const name = parts[0];
-                    const cp = parseFloat(parts[1]);
-                    const qty = parseInt(parts[2]);
-                    const mrp = parts.length >= 4 ? parseFloat(parts[3]) : 0;
-                    const category = parts.length >= 5 ? parts[4] : (parts.length >= 4 && isNaN(parseFloat(parts[3])) ? parts[3] : '');
+                    let name, cp, qty, mrp, category, extra1, extra2, extra3, extra4;
+                    
+                    // Mode-based parsing
+                    if (currentMode === 'grocery' || currentMode === 'clothing' || currentMode === 'jewelry') {
+                        // New format: Brand | Name | Weight/Size | Net CP | Qty | Category | MRP | Extra3 | Extra4
+                        const brand = parts[0] || '';
+                        const productName = parts[1] || '';
+                        const weightOrSize = parts[2] || '';
+                        
+                        // Grocery Mode: Brand এবং Weight আলাদা কলামে + HSN + Expiry
+                        if (currentMode === 'grocery') {
+                            name = productName.trim().toUpperCase(); // শুধু Product Name
+                            extra1 = brand.trim().toUpperCase();     // Brand Name column
+                            extra2 = weightOrSize.trim();            // Weight/Unit column
+                            extra3 = parts.length >= 8 ? parts[7] : ''; // HSN Code
+                            extra4 = parts.length >= 9 ? parts[8] : ''; // Expiry Date
+                        } else if (currentMode === 'clothing') {
+                            // Clothing: পুরো নাম একসাথে, Size এবং Color আলাদা
+                            name = `${brand} ${productName}`.trim().toUpperCase();
+                            extra1 = weightOrSize.trim();            // Size column
+                            extra2 = parts.length >= 8 ? parts[7] : ''; // Color column
+                            extra3 = '';
+                            extra4 = '';
+                        } else if (currentMode === 'jewelry') {
+                            // Jewelry: পুরো নাম একসাথে, Weight এবং Purity আলাদা
+                            name = `${brand} ${productName}`.trim().toUpperCase();
+                            extra1 = weightOrSize.trim();            // Weight column
+                            extra2 = parts.length >= 8 ? parts[7] : ''; // Purity column
+                            extra3 = '';
+                            extra4 = '';
+                        }
+                        
+                        cp = parseFloat(parts[3]) || 0;
+                        qty = parseInt(parts[4]) || 0;
+                        category = parts[5] || (currentMode === 'grocery' ? 'GROCERY' : currentMode === 'clothing' ? 'CLOTHING' : 'JEWELRY');
+                        mrp = parts.length >= 7 ? parseFloat(parts[6]) : 0;
+                    } else {
+                        // General format: Name | CP | Qty | MRP | Category | Extra1 | Extra2
+                        name = parts[0];
+                        cp = parseFloat(parts[1]);
+                        qty = parseInt(parts[2]);
+                        mrp = parts.length >= 4 ? parseFloat(parts[3]) : 0;
+                        category = parts.length >= 5 ? parts[4] : (parts.length >= 4 && isNaN(parseFloat(parts[3])) ? parts[3] : '');
+                        extra1 = parts.length >= 6 ? parts[5] : '';
+                        extra2 = parts.length >= 7 ? parts[6] : '';
+                        extra3 = '';
+                        extra4 = '';
+                    }
 
                     if (name && !isNaN(cp) && !isNaN(qty)) {
                         try {
-                            // ১. চেক করা টেবিলে বর্তমানে কোনো খালি রো আছে কি না
+                            // ১. প্রথমে টেবিলে একই product আছে কি না চেক করা
                             const existingRows = document.querySelectorAll('#products-tbody tr');
+                            let duplicateRow = null;
+                            
+                            // Grocery mode-এ full name তৈরি করা comparison-এর জন্য
+                            let fullNameToCheck = name;
+                            if (currentMode === 'grocery' && extra1 && extra2) {
+                                fullNameToCheck = `${extra1} ${name} ${extra2}`.trim().toUpperCase();
+                            }
+                            
+                            // টেবিলে একই নাম, CP, এবং extra fields আছে কি না চেক
+                            existingRows.forEach(row => {
+                                const rowName = row.querySelector('.product-name').value.trim().toUpperCase();
+                                const rowExtra1 = row.querySelector('.dynamic-input-1')?.value.trim().toUpperCase() || '';
+                                const rowExtra2 = row.querySelector('.dynamic-input-2')?.value.trim() || '';
+                                const rowCP = parseFloat(row.querySelector('.product-cp').value) || 0;
+                                
+                                let rowFullName = rowName;
+                                if (currentMode === 'grocery' && rowExtra1 && rowExtra2) {
+                                    rowFullName = `${rowExtra1} ${rowName} ${rowExtra2}`.trim().toUpperCase();
+                                }
+                                
+                                // যদি নাম এবং CP মিলে যায়, তাহলে duplicate
+                                if (rowFullName === fullNameToCheck && Math.abs(rowCP - cp) < 0.01) {
+                                    duplicateRow = row;
+                                }
+                            });
+                            
+                            // যদি টেবিলে duplicate পাওয়া যায়, শুধু quantity যোগ করো
+                            if (duplicateRow) {
+                                const currentQty = parseInt(duplicateRow.querySelector('.product-stock').value) || 0;
+                                const newQty = currentQty + qty;
+                                duplicateRow.querySelector('.product-stock').value = newQty;
+                                
+                                // রো হাইলাইট করা
+                                duplicateRow.style.backgroundColor = "#fff3cd";
+                                setTimeout(() => {
+                                    duplicateRow.style.backgroundColor = "";
+                                }, 2000);
+                                
+                                updatedCount++;
+                                continue; // পরবর্তী item-এ যাও
+                            }
+                            
+                            // ২. টেবিলে না থাকলে, নতুন রো তৈরি করা
                             let targetRow;
 
                             // যদি প্রথম আইটেম হয় এবং প্রথম রো-টি খালি থাকে, তবে সেটি ব্যবহার করো
@@ -658,26 +883,61 @@ document.addEventListener('DOMContentLoaded', () => {
                                 targetRow = updatedRows[updatedRows.length - 1];
                             }
 
-                            // ২. ডাটাবেসে এই নামে প্রোডাক্ট আছে কি না চেক করা
+                            // ৩. ডাটাবেসে এই product আছে কি না চেক করা (Full name দিয়ে)
                             const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
-                            const { query: firestoreQuery, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+                            const { getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
                             
-                            const q = firestoreQuery(inventoryRef, where("name", "==", name));
-                            const querySnapshot = await getDocs(q);
+                            // Full name তৈরি করা (Grocery mode-এর জন্য)
+                            let fullNameForDB = name;
+                            if (currentMode === 'grocery' && extra1 && extra2) {
+                                fullNameForDB = `${extra1} ${name} ${extra2}`.trim().toUpperCase();
+                            }
+                            
+                            // সব products load করে match খুঁজা
+                            const allProductsSnap = await getDocs(inventoryRef);
+                            let existingProduct = null;
+                            
+                            allProductsSnap.forEach(doc => {
+                                const data = doc.data();
+                                const dbName = data.name.trim().toUpperCase();
+                                const dbCP = parseFloat(data.costPrice);
+                                
+                                // Name এবং CP match করলে
+                                if (dbName === fullNameForDB.toUpperCase() && Math.abs(dbCP - cp) < 0.01) {
+                                    existingProduct = {
+                                        id: doc.id,
+                                        data: data
+                                    };
+                                }
+                            });
 
-                            if (!querySnapshot.empty) {
+                            if (existingProduct) {
                                 // প্রোডাক্টটি আগে থেকেই আছে!
-                                const existingDoc = querySnapshot.docs[0];
-                                const existingData = existingDoc.data();
-                                const barcode = existingDoc.id;
+                                const barcode = existingProduct.id;
+                                const existingData = existingProduct.data;
 
                                 targetRow.querySelector('.product-name').value = name;
                                 targetRow.querySelector('.product-name').readOnly = true;
-                                targetRow.querySelector('.product-category').value = existingData.category || category;
+                                targetRow.querySelector('.product-category').value = existingData.category || category.toUpperCase();
                                 targetRow.querySelector('.product-category').readOnly = true;
-                                targetRow.querySelector('.product-cp').value = cp;
+                                
+                                // Dynamic fields populate (existing product)
+                                if (targetRow.querySelector('.dynamic-input-1')) {
+                                    targetRow.querySelector('.dynamic-input-1').value = extra1;
+                                }
+                                if (targetRow.querySelector('.dynamic-input-2')) {
+                                    targetRow.querySelector('.dynamic-input-2').value = extra2;
+                                }
+                                if (targetRow.querySelector('.dynamic-input-3')) {
+                                    targetRow.querySelector('.dynamic-input-3').value = extra3;
+                                }
+                                if (targetRow.querySelector('.dynamic-input-4')) {
+                                    targetRow.querySelector('.dynamic-input-4').value = extra4;
+                                }
+                                
+                                targetRow.querySelector('.product-cp').value = cp.toFixed(2);
                                 targetRow.querySelector('.product-sp').value = existingData.sellingPrice || cp;
-                                targetRow.querySelector('.product-barcode').value = barcode;
+                                targetRow.querySelector('.product-barcode').value = barcode; // ✅ Barcode set করা
                                 targetRow.querySelector('.product-stock').value = qty;
                                 
                                 // রো-এর কালার হালকা সবুজ করে দেওয়া
@@ -686,14 +946,31 @@ document.addEventListener('DOMContentLoaded', () => {
                             } else {
                                 // নতুন প্রোডাক্ট
                                 targetRow.querySelector('.product-name').value = name;
-                                targetRow.querySelector('.product-category').value = category;
-                                targetRow.querySelector('.product-cp').value = cp;
+                                targetRow.querySelector('.product-category').value = category.toUpperCase();
                                 
-                                // MRP থাকলে সেটা বসানো, না হলে অটো ক্যালকুলেট
+                                // Dynamic fields populate (new product)
+                                if (targetRow.querySelector('.dynamic-input-1')) {
+                                    targetRow.querySelector('.dynamic-input-1').value = extra1;
+                                }
+                                if (targetRow.querySelector('.dynamic-input-2')) {
+                                    targetRow.querySelector('.dynamic-input-2').value = extra2;
+                                }
+                                if (targetRow.querySelector('.dynamic-input-3')) {
+                                    targetRow.querySelector('.dynamic-input-3').value = extra3;
+                                }
+                                if (targetRow.querySelector('.dynamic-input-4')) {
+                                    targetRow.querySelector('.dynamic-input-4').value = extra4;
+                                }
+                                
+                                targetRow.querySelector('.product-cp').value = cp.toFixed(2);
+                                
+                                // MRP থাকলে সেটা বসানো, না হলে মার্জিন ক্যালকুলেট
                                 if (mrp && mrp > 0) {
                                     targetRow.querySelector('.product-sp').value = mrp;
                                 } else {
-                                    targetRow.querySelector('.product-sp').value = cp; // ডিফল্ট CP রাখা
+                                    const margin = parseFloat(document.getElementById('default-margin').value) || 0;
+                                    const calculatedSP = cp + (cp * margin / 100);
+                                    targetRow.querySelector('.product-sp').value = Math.round(calculatedSP);
                                 }
                                 
                                 targetRow.querySelector('.product-stock').value = qty;
@@ -707,14 +984,31 @@ document.addEventListener('DOMContentLoaded', () => {
                             const lastRow = rows[rows.length - 1];
 
                             lastRow.querySelector('.product-name').value = name;
-                            lastRow.querySelector('.product-category').value = category;
-                            lastRow.querySelector('.product-cp').value = cp;
+                            lastRow.querySelector('.product-category').value = category.toUpperCase();
                             
-                            // MRP থাকলে সেটা বসানো, না হলে CP
+                            // Dynamic fields populate (error fallback)
+                            if (lastRow.querySelector('.dynamic-input-1')) {
+                                lastRow.querySelector('.dynamic-input-1').value = extra1;
+                            }
+                            if (lastRow.querySelector('.dynamic-input-2')) {
+                                lastRow.querySelector('.dynamic-input-2').value = extra2;
+                            }
+                            if (lastRow.querySelector('.dynamic-input-3')) {
+                                lastRow.querySelector('.dynamic-input-3').value = extra3;
+                            }
+                            if (lastRow.querySelector('.dynamic-input-4')) {
+                                lastRow.querySelector('.dynamic-input-4').value = extra4;
+                            }
+                            
+                            lastRow.querySelector('.product-cp').value = cp.toFixed(2);
+                            
+                            // MRP থাকলে সেটা বসানো, না হলে মার্জিন ক্যালকুলেট
                             if (mrp && mrp > 0) {
                                 lastRow.querySelector('.product-sp').value = mrp;
                             } else {
-                                lastRow.querySelector('.product-sp').value = cp;
+                                const margin = parseFloat(document.getElementById('default-margin').value) || 0;
+                                const calculatedSP = cp + (cp * margin / 100);
+                                lastRow.querySelector('.product-sp').value = Math.round(calculatedSP);
                             }
                             
                             lastRow.querySelector('.product-stock').value = qty;
@@ -766,12 +1060,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = row.querySelector('.product-name').value.trim();
             if (name) {
                 const category = row.querySelector('.product-category').value.trim();
-                const remark = row.querySelector('.product-remark').value.trim();
+                const extra1 = row.querySelector('.dynamic-input-1')?.value.trim() || '';
+                const extra2 = row.querySelector('.dynamic-input-2')?.value.trim() || '';
+                const extra3 = row.querySelector('.dynamic-input-3')?.value.trim() || '';
+                const extra4 = row.querySelector('.dynamic-input-4')?.value.trim() || '';
                 const cp = parseFloat(row.querySelector('.product-cp').value);
                 const sp = parseFloat(row.querySelector('.product-sp').value);
                 const barcode = row.querySelector('.product-barcode').value.trim();
                 const stock = parseInt(row.querySelector('.product-stock').value, 10);
                 const imageInput = row.querySelector('.product-image');
+                
+                // Grocery mode-এ full name তৈরি: Brand + Name + Weight
+                const currentMode = window.currentActiveMode || 'general';
+                let finalName = name;
+                if (currentMode === 'grocery' && extra1 && extra2) {
+                    finalName = `${extra1} ${name} ${extra2}`.trim();
+                }
                 
                 if (!category || isNaN(cp) || isNaN(sp) || isNaN(stock) || cp < 0 || sp < 0 || stock < 0) {
                     allRowsValid = false;
@@ -779,17 +1083,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     let imageUrl = null;
                     if (imageInput.files && imageInput.files[0]) {
                         try {
-                            saveButton.textContent = `Uploading image for ${name}...`;
+                            saveButton.textContent = `Uploading image for ${finalName}...`;
                             imageUrl = await uploadImageToImgBB(imageInput.files[0]);
                         } catch (err) {
-                            console.error("Failed to upload image for " + name);
+                            console.error("Failed to upload image for " + finalName);
                         }
                     }
 
                     productsToProcess.push({ 
-                        name, 
+                        name: finalName, 
                         category,
-                        remark,
+                        extraField1: extra1,
+                        extraField2: extra2,
+                        extraField3: extra3,
+                        extraField4: extra4,
                         costPrice: cp, 
                         sellingPrice: sp, 
                         stock, 
@@ -809,23 +1116,106 @@ document.addEventListener('DOMContentLoaded', () => {
         saveButton.textContent = 'Saving to Database...';
 
         try {
-            // --- নতুন লজিক: প্রোডাক্টগুলোকে বারকোড অনুযায়ী গ্রুপ করা ---
+            // --- Barcode-based duplicate check (Priority 1) ---
+            const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
+            const { getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+            const allProductsSnapshot = await getDocs(inventoryRef);
+            
+            // Create maps for both barcode and name+cp
+            const existingByBarcode = new Map(); // barcode -> {data, stock}
+            const existingByNameCP = new Map();   // name+cp -> {barcode, stock}
+            
+            allProductsSnapshot.forEach(doc => {
+                const data = doc.data();
+                const barcode = doc.id;
+                
+                // Map by barcode
+                existingByBarcode.set(barcode, {
+                    data: data,
+                    stock: data.stock || 0
+                });
+                
+                // Map by name+cp
+                const key = `${data.name.trim().toUpperCase()}_${data.costPrice.toFixed(2)}`;
+                existingByNameCP.set(key, {
+                    barcode: barcode,
+                    stock: data.stock || 0,
+                    data: data
+                });
+            });
+            
+            // Group products with smart duplicate detection
             const groupedProducts = [];
-            const barcodeMap = new Map();
+            const processedBarcodes = new Set();
+            const processedKeys = new Set();
 
             productsToProcess.forEach(p => {
-                if (p.barcode) {
-                    if (barcodeMap.has(p.barcode)) {
-                        // যদি একই বারকোড আগে পাওয়া যায়, তবে স্টক যোগ করো
-                        barcodeMap.get(p.barcode).stock += p.stock;
+                const key = `${p.name.trim().toUpperCase()}_${p.costPrice.toFixed(2)}`;
+                let matched = false;
+                
+                // Priority 1: Check by barcode (if product has barcode)
+                if (p.barcode && existingByBarcode.has(p.barcode)) {
+                    if (!processedBarcodes.has(p.barcode)) {
+                        const existing = existingByBarcode.get(p.barcode);
+                        groupedProducts.push({
+                            ...p,
+                            barcode: p.barcode,
+                            stock: p.stock,
+                            isUpdate: true,
+                            existingStock: existing.stock
+                        });
+                        processedBarcodes.add(p.barcode);
+                        processedKeys.add(key);
                     } else {
-                        const newObj = { ...p };
-                        barcodeMap.set(p.barcode, newObj);
-                        groupedProducts.push(newObj);
+                        // Same barcode already processed, add to stock
+                        const existingInGroup = groupedProducts.find(gp => gp.barcode === p.barcode);
+                        if (existingInGroup) {
+                            existingInGroup.stock += p.stock;
+                        }
                     }
-                } else {
-                    // বারকোড না থাকলে প্রতিটি রো-কে আলাদা প্রোডাক্ট হিসেবে ধরো
-                    groupedProducts.push({ ...p });
+                    matched = true;
+                }
+                
+                // Priority 2: Check by name+CP (if no barcode match)
+                if (!matched && existingByNameCP.has(key)) {
+                    const existing = existingByNameCP.get(key);
+                    if (!processedKeys.has(key)) {
+                        groupedProducts.push({
+                            ...p,
+                            barcode: existing.barcode, // Use existing barcode
+                            stock: p.stock,
+                            isUpdate: true,
+                            existingStock: existing.stock
+                        });
+                        processedKeys.add(key);
+                        processedBarcodes.add(existing.barcode);
+                    } else {
+                        // Already processed, add to stock
+                        const existingInGroup = groupedProducts.find(gp => 
+                            gp.name.trim().toUpperCase() === p.name.trim().toUpperCase() && 
+                            Math.abs(gp.costPrice - p.costPrice) < 0.01
+                        );
+                        if (existingInGroup) {
+                            existingInGroup.stock += p.stock;
+                        }
+                    }
+                    matched = true;
+                }
+                
+                // Priority 3: New product
+                if (!matched) {
+                    // Check if already in current batch
+                    const existingInGroup = groupedProducts.find(gp => 
+                        gp.name.trim().toUpperCase() === p.name.trim().toUpperCase() && 
+                        Math.abs(gp.costPrice - p.costPrice) < 0.01 &&
+                        !gp.isUpdate
+                    );
+                    
+                    if (existingInGroup) {
+                        existingInGroup.stock += p.stock;
+                    } else {
+                        groupedProducts.push({ ...p, isUpdate: false });
+                    }
                 }
             });
 
@@ -841,9 +1231,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 // এখন productsToProcess এর বদলে groupedProducts ব্যবহার হবে
                 for (const product of groupedProducts) {
                     let finalBarcode;
-                    if (product.barcode) {
+                    
+                    if (product.isUpdate) {
+                        // Existing product - use existing barcode
+                        finalBarcode = product.barcode;
+                    } else if (product.barcode) {
+                        // New product with manual barcode
                         finalBarcode = product.barcode;
                     } else {
+                        // New product - generate barcode
                         lastProductId++;
                         finalBarcode = String(lastProductId);
                     }
@@ -863,16 +1259,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const { productData, ref, snapshot, finalBarcode } = item;
 
                     if (snapshot.exists()) {
+                        // Product already exists - update stock
                         const dbData = snapshot.data();
-
-                        if (dbData.name.trim().toLowerCase() !== productData.name.trim().toLowerCase()) {
-                            throw new Error(`MISMATCH: Barcode '${finalBarcode}' is for '${dbData.name}', NOT '${productData.name}'.`);
-                        }
-                        
                         const newStockTotal = parseInt(dbData.stock || 0) + productData.stock;
                         
                         const updateData = {
                             stock: newStockTotal,
+                            costPrice: productData.costPrice,
+                            sellingPrice: productData.sellingPrice,
+                            extraField1: productData.extraField1 || dbData.extraField1 || '',
+                            extraField2: productData.extraField2 || dbData.extraField2 || '',
+                            extraField3: productData.extraField3 || dbData.extraField3 || '',
+                            extraField4: productData.extraField4 || dbData.extraField4 || '',
                             lastUpdated: Timestamp.now()
                         };
                         if (productData.imageUrl) {
@@ -882,10 +1280,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         transaction.update(ref, updateData);
 
                     } else {
+                        // New product
                         const dataToSave = {
                             name: productData.name,
                             category: productData.category,
-                            remark: productData.remark || '',
+                            extraField1: productData.extraField1 || '',
+                            extraField2: productData.extraField2 || '',
+                            extraField3: productData.extraField3 || '',
+                            extraField4: productData.extraField4 || '',
                             costPrice: productData.costPrice,
                             sellingPrice: productData.sellingPrice,
                             stock: productData.stock,
