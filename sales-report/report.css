@@ -126,6 +126,65 @@ body {
     font-size: 1.5rem;
 }
 
+/* ============================
+   Compact mode (keep report higher)
+   ============================ */
+.container {
+    margin: 12px auto;
+}
+
+.card {
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 12px;
+}
+
+.summary-boxes {
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.summary-box {
+    padding: 14px 14px;
+    border-radius: 12px;
+}
+
+.summary-box h2,
+.summary-box h4 {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+}
+
+.summary-box p {
+    font-size: 1.55rem;
+}
+
+.filter-section h3 {
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+}
+
+.form-control {
+    padding: 7px 10px;
+    font-size: 0.88rem;
+}
+
+.filtered-summary-boxes {
+    gap: 12px;
+}
+
+.filtered-summary-boxes .summary-box {
+    padding: 12px;
+}
+
+.filtered-summary-boxes .summary-box p {
+    font-size: 1.25rem;
+}
+
+.sales-table-section h3 {
+    margin-bottom: 10px;
+}
+
 /* Filter Box Colors */
 .filtered-summary-boxes .summary-box:nth-child(1) { border-left-color: #27ae60; }
 .filtered-summary-boxes .summary-box:nth-child(1) p { color: #27ae60; }
