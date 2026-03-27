@@ -284,6 +284,7 @@
             <div id="connection-status" title="Connection Status" style="width: 12px; height: 12px; background: #ff4d4d; border-radius: 50%; box-shadow: 0 0 10px #ff4d4d;"></div>
             <h2 style="font-size: 0.9rem; margin: 0;">Smart POS Scanner</h2>
             <div style="display: flex; gap: 6px;">
+                <button onclick="goBack()" class="history-trigger-btn" title="Back">⬅️</button>
                 <button id="camera-toggle-btn" onclick="toggleCamera()" class="history-trigger-btn" title="Camera On/Off" style="background: #ff4d4d;">🛑</button>
                 <button onclick="switchCamera()" class="history-trigger-btn" title="Switch Camera">🔄</button>
                 <button id="torch-btn" onclick="toggleTorch()" class="history-trigger-btn" title="Flashlight">🔦</button>
@@ -781,6 +782,15 @@
             console.error(err);
             statusEl.innerText = "Camera permission denied!";
         });
+
+        window.goBack = () => {
+            // Try returning to previous page; fallback to billing page.
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = './billing.html';
+            }
+        };
     </script>
 </body>
 </html>
