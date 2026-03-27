@@ -34,6 +34,8 @@ html {
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
     touch-action: manipulation;
+    /* Prevent zoom on iOS */
+    -webkit-user-zoom: fixed;
 }
 
 html, body {
@@ -45,17 +47,24 @@ html, body {
     -webkit-touch-callout: none;
 }
 
+/* Prevent all zoom gestures */
+* {
+    touch-action: pan-x pan-y;
+}
+
 /* Allow text selection only in input fields */
 input, textarea {
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
     user-select: text;
+    touch-action: manipulation;
 }
 
 /* Prevent double-tap zoom */
-a, button, .btn {
+a, button, .btn, div, span, p, h1, h2, h3, h4, h5, h6 {
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
