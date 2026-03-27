@@ -2,7 +2,7 @@ import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import { 
     collection, onSnapshot, doc, deleteDoc, updateDoc, 
-    orderBy, query, where, getDocs, getDoc, addDoc, serverTimestamp, limit 
+    orderBy, query, where, getDocs, getDoc, addDoc, serverTimestamp, limit, startAfter 
 } from 'firebase/firestore';
 
 // Inventory Audit Log Function
@@ -63,7 +63,11 @@ let imageModal = null;
 // Global State
 let allProducts = [], filteredProducts = [];
 let currentPage = 1, activeShopId = null, unsubscribe;
-const ROWS_PER_PAGE = 10, LOW_STOCK_THRESHOLD = 10;
+const ROWS_PER_PAGE = 50; // Increased for better UX
+const FIRESTORE_PAGE_SIZE = 100; // Load products in batches
+let lastVisible = null;
+let isLoadingMore = false;
+let hasMoreProducts = true;
 let hasEventListenersSetup = false;
 
 // Authentication
@@ -117,36 +121,134 @@ function createImageModal() {
     });
 }
 
-function loadInventory() {
+async function loadInventory() {
     if (!activeShopId) return;
+    
+    showLoadingState();
+    
+    try {
+        const productsRef = collection(db, 'shops', activeShopId, 'inventory');
+        const q = query(productsRef, orderBy("name"), limit(FIRESTORE_PAGE_SIZE));
+        
+        const snapshot = await getDocs(q);
+        
+        allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        lastVisible = snapshot.docs[snapshot.docs.length - 1];
+        hasMoreProducts = snapshot.docs.length === FIRESTORE_PAGE_SIZE;
+        
+        updateCategoryStats();
+        applyFiltersAndRender(false);
+        
+        // Setup real-time listener for updates only
+        setupRealtimeListener();
+        
+    } catch (error) {
+        console.error('Error loading inventory:', error);
+        showStatus('Failed to load inventory', 'error');
+    }
+}
+
+function setupRealtimeListener() {
     if (unsubscribe) unsubscribe();
     
     const productsRef = collection(db, 'shops', activeShopId, 'inventory');
     const q = query(productsRef, orderBy("name"));
     
     unsubscribe = onSnapshot(q, (snapshot) => {
-        const currentCategory = categoryFilter.value;
-        
-        allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        const categoryStats = {};
-        
-        allProducts.forEach(product => {
-            const cat = product.category;
-            const stock = parseInt(product.stock) || 0;
-
-            if (cat) {
-                if (!categoryStats[cat]) {
-                    categoryStats[cat] = { types: 0, totalStock: 0 };
-                }
-                categoryStats[cat].types += 1;
-                categoryStats[cat].totalStock += stock;
+        snapshot.docChanges().forEach((change) => {
+            const product = { id: change.doc.id, ...change.doc.data() };
+            
+            if (change.type === 'added') {
+                const exists = allProducts.find(p => p.id === product.id);
+                if (!exists) allProducts.push(product);
+            }
+            if (change.type === 'modified') {
+                const index = allProducts.findIndex(p => p.id === product.id);
+                if (index !== -1) allProducts[index] = product;
+            }
+            if (change.type === 'removed') {
+                allProducts = allProducts.filter(p => p.id !== product.id);
             }
         });
-
-        updateCategoryFilter(categoryStats, currentCategory);
+        
+        updateCategoryStats();
         applyFiltersAndRender(false);
     });
+}
+
+async function loadMoreProducts() {
+    if (!hasMoreProducts || isLoadingMore || !lastVisible) return;
+    
+    isLoadingMore = true;
+    showLoadingMoreState();
+    
+    try {
+        const productsRef = collection(db, 'shops', activeShopId, 'inventory');
+        const q = query(
+            productsRef, 
+            orderBy("name"), 
+            startAfter(lastVisible),
+            limit(FIRESTORE_PAGE_SIZE)
+        );
+        
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+            hasMoreProducts = false;
+            return;
+        }
+        
+        const newProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        allProducts = [...allProducts, ...newProducts];
+        lastVisible = snapshot.docs[snapshot.docs.length - 1];
+        hasMoreProducts = snapshot.docs.length === FIRESTORE_PAGE_SIZE;
+        
+        updateCategoryStats();
+        applyFiltersAndRender(false);
+        
+    } catch (error) {
+        console.error('Error loading more products:', error);
+        showStatus('Failed to load more products', 'error');
+    } finally {
+        isLoadingMore = false;
+        hideLoadingMoreState();
+    }
+}
+
+function updateCategoryStats() {
+    const currentCategory = categoryFilter.value;
+    const categoryStats = {};
+    
+    allProducts.forEach(product => {
+        const cat = product.category;
+        const stock = parseInt(product.stock) || 0;
+
+        if (cat) {
+            if (!categoryStats[cat]) {
+                categoryStats[cat] = { types: 0, totalStock: 0 };
+            }
+            categoryStats[cat].types += 1;
+            categoryStats[cat].totalStock += stock;
+        }
+    });
+
+    updateCategoryFilter(categoryStats, currentCategory);
+}
+
+function showLoadingState() {
+    inventoryBody.innerHTML = '<tr><td colspan="9" class="loading-cell">⏳ Loading inventory...</td></tr>';
+}
+
+function showLoadingMoreState() {
+    const loadMoreRow = document.createElement('tr');
+    loadMoreRow.id = 'loading-more-row';
+    loadMoreRow.innerHTML = '<td colspan="9" class="loading-cell">⏳ Loading more products...</td>';
+    inventoryBody.appendChild(loadMoreRow);
+}
+
+function hideLoadingMoreState() {
+    const loadMoreRow = document.getElementById('loading-more-row');
+    if (loadMoreRow) loadMoreRow.remove();
 }
 
 function applyFiltersAndRender(resetPage = true) {
@@ -253,7 +355,56 @@ function updateCategoryFilter(categoryStats, selectedValue) {
 
 function setupPagination() {
     const pageCount = Math.ceil(filteredProducts.length / ROWS_PER_PAGE);
-    paginationContainer.innerHTML = Array.from({ length: pageCount }, (_, i) => `<button class="pagination-btn ${i + 1 === currentPage ? 'active' : ''}" data-page="${i + 1}">${i + 1}</button>`).join('');
+    
+    if (pageCount <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+    
+    const maxButtons = 7;
+    let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let endPage = Math.min(pageCount, startPage + maxButtons - 1);
+    
+    if (endPage - startPage < maxButtons - 1) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+    
+    let buttons = [];
+    
+    if (currentPage > 1) {
+        buttons.push(`<button class="pagination-btn" data-page="${currentPage - 1}">← Prev</button>`);
+    }
+    
+    if (startPage > 1) {
+        buttons.push(`<button class="pagination-btn" data-page="1">1</button>`);
+        if (startPage > 2) buttons.push(`<span class="pagination-dots">...</span>`);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        buttons.push(`<button class="pagination-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`);
+    }
+    
+    if (endPage < pageCount) {
+        if (endPage < pageCount - 1) buttons.push(`<span class="pagination-dots">...</span>`);
+        buttons.push(`<button class="pagination-btn" data-page="${pageCount}">${pageCount}</button>`);
+    }
+    
+    if (currentPage < pageCount) {
+        buttons.push(`<button class="pagination-btn" data-page="${currentPage + 1}">Next →</button>`);
+    }
+    
+    // Load more button if more products available from Firestore
+    if (hasMoreProducts && filteredProducts.length === allProducts.length) {
+        buttons.push(`<button class="pagination-btn btn-load-more" id="load-more-btn">📦 Load More Products</button>`);
+    }
+    
+    paginationContainer.innerHTML = buttons.join('');
+    
+    // Add load more event listener
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', loadMoreProducts);
+    }
 }
 
 function showStatus(message, type = 'success') {
@@ -316,9 +467,10 @@ function setupEventListeners() {
     }
     
     paginationContainer.addEventListener('click', (e) => {
-        if(e.target.matches('.pagination-btn')) {
+        if(e.target.matches('.pagination-btn') && e.target.dataset.page) {
             currentPage = parseInt(e.target.dataset.page, 10);
             applyFiltersAndRender(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
 
