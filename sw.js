@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = 'smart-pos-v21'; // আপডেট করলে এখানে v1.2, v1.3 এভাবে বাড়িয়ে দেবেন
+const CACHE_NAME = 'smart-pos-v2.2'; // ভার্সন আপডেট করুন
 const ASSETS = [
   '/',
   '/index.html',
@@ -12,36 +12,58 @@ const ASSETS = [
   '/js/auth.js'
 ];
 
-// ১. ইন্সটল হওয়ার সময় নতুন ফাইল ক্যাশ করা
+// ১. ইন্সটল এবং ক্যাশ
 self.addEventListener('install', (event) => {
-  self.skipWaiting(); // নতুন সার্ভিস ওয়ার্কারকে সাথে সাথে একটিভ হতে বাধ্য করবে
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
+      console.log('Caching assets...');
       return cache.addAll(ASSETS);
     })
   );
 });
 
-// ২. একটিভেট হওয়ার সময় পুরনো ক্যাশ ডিলিট করা (এটিই আপনার সমস্যার মেইন সমাধান)
+// ২. অ্যাক্টিভেট এবং পুরনো ক্যাশ ডিলিট
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('Deleting old cache:', cache);
+            console.log('Removing old cache:', cache);
             return caches.delete(cache);
           }
         })
       );
     })
   );
+  // নতুন সার্ভিস ওয়ার্কারকে সাথে সাথে কন্ট্রোল নিতে বাধ্য করা
+  return self.clients.claim();
 });
 
+// ৩. স্মার্ট ফেচ স্ট্রাটেজি (Stale-While-Revalidate)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        // নতুন রেসপন্স ক্যাশে আপডেট করা (শুধু আমাদের স্ট্যাটিক ফাইলের জন্য)
+        if (event.request.url.startsWith(self.location.origin)) {
+            caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, networkResponse.clone());
+            });
+        }
+        return networkResponse;
+      }).catch(() => {
+          // অফলাইন থাকলে ক্যাশ থেকে দেবে
+          return cachedResponse;
+      });
+      return cachedResponse || fetchPromise;
     })
   );
+});
+
+// ৪. আপডেট মেসেজ রিসিভ করা
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

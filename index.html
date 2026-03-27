@@ -17,30 +17,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then((reg) => {
-            
-            // যদি নতুন কোনো আপডেট পাওয়া যায়
-            reg.onupdatefound = () => {
-              const installingWorker = reg.installing;
-              installingWorker.onstatechange = () => {
-                if (installingWorker.state === 'installed') {
-                  if (navigator.serviceWorker.controller) {
-                    // নতুন আপডেট পাওয়া গেছে! ইউজারকে জানানো বা অটো রিলোড
-                    console.log('New update available. Reloading...');
-                    window.location.reload(); 
-                  }
-                }
-              };
-            };
-
-          }).catch(err => console.log('SW registration failed', err));
-        });
-      }
-    </script>
 </head>
 <body>
     <!-- ব্যাকগ্রাউন্ড এনিমেশন কন্টেইনার -->
