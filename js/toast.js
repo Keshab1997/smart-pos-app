@@ -1,66 +1,61 @@
-// toast.js - Toast Notification System
+// toast.js - Toastify Wrapper for Beautiful Notifications
 
 class ToastNotification {
     constructor() {
-        this.container = null;
-        this.init();
-    }
-
-    init() {
-        // Create toast container if it doesn't exist
-        if (!document.querySelector('.toast-container')) {
-            this.container = document.createElement('div');
-            this.container.className = 'toast-container';
-            document.body.appendChild(this.container);
-        } else {
-            this.container = document.querySelector('.toast-container');
-        }
+        // Default configuration
+        this.defaultConfig = {
+            duration: 4000,
+            gravity: "top",
+            position: "right",
+            stopOnFocus: true,
+            close: true,
+            style: {
+                borderRadius: "10px",
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "14px",
+                padding: "16px 20px",
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)"
+            }
+        };
     }
 
     show(type, title, message, duration = 4000) {
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-
-        // Icon based on type
-        const icons = {
-            success: '✓',
-            error: '✕',
-            warning: '⚠',
-            info: 'ℹ'
+        const colors = {
+            success: {
+                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                icon: "✓"
+            },
+            error: {
+                background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                icon: "✕"
+            },
+            warning: {
+                background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                icon: "⚠"
+            },
+            info: {
+                background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                icon: "ℹ"
+            }
         };
 
-        const icon = icons[type] || 'ℹ';
+        const config = colors[type] || colors.info;
+        const displayText = message ? `<strong>${title}</strong><br>${message}` : `<strong>${title}</strong>`;
 
-        toast.innerHTML = `
-            <div class="toast-icon">${icon}</div>
-            <div class="toast-content">
-                <div class="toast-title">${title}</div>
-                ${message ? `<div class="toast-message">${message}</div>` : ''}
-            </div>
-            <button class="toast-close" aria-label="Close">&times;</button>
-            <div class="toast-progress" style="animation-duration: ${duration}ms;"></div>
-        `;
-
-        // Add to container
-        this.container.appendChild(toast);
-
-        // Close button functionality
-        const closeBtn = toast.querySelector('.toast-close');
-        closeBtn.addEventListener('click', () => this.remove(toast));
-
-        // Auto remove after duration
-        setTimeout(() => this.remove(toast), duration);
-
-        return toast;
-    }
-
-    remove(toast) {
-        toast.classList.add('hiding');
-        setTimeout(() => {
-            if (toast.parentElement) {
-                toast.parentElement.removeChild(toast);
-            }
-        }, 300);
+        Toastify({
+            text: displayText,
+            duration: duration,
+            gravity: this.defaultConfig.gravity,
+            position: this.defaultConfig.position,
+            stopOnFocus: this.defaultConfig.stopOnFocus,
+            close: this.defaultConfig.close,
+            style: {
+                ...this.defaultConfig.style,
+                background: config.background
+            },
+            escapeMarkup: false,
+            onClick: function(){} // Callback after click
+        }).showToast();
     }
 
     // Shorthand methods
