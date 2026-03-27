@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = 'smart-pos-v7'; // ভার্সন আপডেট করুন
+const CACHE_NAME = 'smart-pos-v8'; // ভার্সন আপডেট করুন
 const ASSETS = [
   '/',
   '/index.html',
@@ -7,9 +7,16 @@ const ASSETS = [
   '/css/global.css',
   '/css/navbar.css',
   '/css/login.css',
+  '/expense/expense.html',
+  '/expense/expense.css',
+  '/expense/expense.js',
+  '/inventory/inventory.html',
+  '/inventory/inventory.css',
+  '/inventory/inventory.js',
   '/js/firebase-config.js',
   '/js/navbar.js',
-  '/js/auth.js'
+  '/js/auth.js',
+  '/js/toast.js'
 ];
 
 // ১. ইন্সটল এবং ক্যাশ
