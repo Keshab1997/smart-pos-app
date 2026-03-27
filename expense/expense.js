@@ -280,13 +280,16 @@ function renderExpenseSheet(data) {
     }, {});
 
     for (const [dateStr, expenses] of Object.entries(grouped)) {
-        // গ্রুপ হেডার
+        let dayTotal = 0; // প্রতিটি দিনের জন্য আলাদা টোটাল শুরু হবে
+
+        // গ্রুপ হেডার (তারিখ)
         expenseSheetBody.innerHTML += `<tr class="date-header-row"><td colspan="7">${dateStr}</td></tr>`;
 
         expenses.forEach(exp => {
             const isInventory = exp.category?.toLowerCase().includes('inventory');
             const amount = parseFloat(exp.amount) || 0;
-            grandTotal += amount;
+            dayTotal += amount; // ওই দিনের টোটালে যোগ হচ্ছে
+            grandTotal += amount; // গ্র্যান্ড টোটালে যোগ হচ্ছে
 
             const tr = document.createElement('tr');
             tr.className = isInventory ? 'row-inventory' : 'row-general-expense';
@@ -305,13 +308,25 @@ function renderExpenseSheet(data) {
             `;
             expenseSheetBody.appendChild(tr);
         });
+
+        // --- প্রতিটি দিনের শেষে Daily Total Row যোগ করা ---
+        const dayTotalRow = document.createElement('tr');
+        dayTotalRow.className = 'day-total-row';
+        dayTotalRow.style.backgroundColor = "#f8f9fa";
+        dayTotalRow.style.fontWeight = "bold";
+        dayTotalRow.innerHTML = `
+            <td colspan="5" style="text-align:right; color: #555;">Total for ${dateStr}:</td>
+            <td class="text-right" style="color: #4361ee; border-top: 1px solid #ddd;">₹${dayTotal.toFixed(2)}</td>
+            <td class="no-print"></td>
+        `;
+        expenseSheetBody.appendChild(dayTotalRow);
     }
 
-    // গ্র্যান্ড টোটাল
+    // গ্র্যান্ড টোটাল (পুরো মাসের বা সিলেক্ট করা সময়ের)
     expenseSheetBody.innerHTML += `
-        <tr style="background:#f1f3f5; font-weight:bold;">
-            <td colspan="5" style="text-align:right;">GRAND TOTAL:</td>
-            <td class="text-right">₹${grandTotal.toFixed(2)}</td>
+        <tr style="background:#eef2ff; font-weight:bold; border-top: 2px solid #4361ee;">
+            <td colspan="5" style="text-align:right; font-size: 1.1rem;">GRAND TOTAL:</td>
+            <td class="text-right" style="font-size: 1.1rem; color: #d32f2f;">₹${grandTotal.toFixed(2)}</td>
             <td class="no-print"></td>
         </tr>`;
     
@@ -635,6 +650,101 @@ if(btnResetFilter) {
     };
 }
 if(btnPrintSheet) btnPrintSheet.onclick = () => window.print();
+
+// PDF Download Functionality
+const btnDownloadPDF = document.getElementById('btn-download-pdf');
+if(btnDownloadPDF) {
+    btnDownloadPDF.onclick = async () => {
+        try {
+            // Show loading toast
+            toast.info('Generating PDF', 'Please wait...');
+            btnDownloadPDF.disabled = true;
+            btnDownloadPDF.textContent = 'Generating...';
+
+            // Get the sheet container
+            const sheetContainer = document.querySelector('.sheet-container');
+            
+            // Temporarily hide no-print elements
+            const noPrintElements = sheetContainer.querySelectorAll('.no-print');
+            noPrintElements.forEach(el => el.style.display = 'none');
+            
+            // Hide Action column (last column) in table
+            const actionHeaders = sheetContainer.querySelectorAll('.expense-sheet-table th:last-child');
+            const actionCells = sheetContainer.querySelectorAll('.expense-sheet-table td:last-child');
+            actionHeaders.forEach(el => el.style.display = 'none');
+            actionCells.forEach(el => el.style.display = 'none');
+            
+            // Show footer for PDF
+            const footer = sheetContainer.querySelector('.sheet-footer');
+            if (footer) footer.style.display = 'flex';
+
+            // Capture the sheet as canvas
+            const canvas = await html2canvas(sheetContainer, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+
+            // Restore no-print elements
+            noPrintElements.forEach(el => el.style.display = '');
+            actionHeaders.forEach(el => el.style.display = '');
+            actionCells.forEach(el => el.style.display = '');
+            if (footer) footer.style.display = 'none';
+
+            // Calculate PDF dimensions
+            const imgWidth = 210; // A4 width in mm
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            // Create PDF
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            const imgData = canvas.toDataURL('image/png');
+            
+            // Add image to PDF
+            if (imgHeight <= 297) {
+                // Single page
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            } else {
+                // Multiple pages
+                let heightLeft = imgHeight;
+                let position = 0;
+                const pageHeight = 297; // A4 height in mm
+                
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+            }
+
+            // Generate filename with date
+            const dateRange = document.getElementById('sheet-period-label').textContent;
+            const filename = `Expense_Sheet_${dateRange.replace(/\s+/g, '_')}.pdf`;
+            
+            // Save PDF
+            pdf.save(filename);
+            
+            // Success toast
+            toast.success('PDF Downloaded!', 'Expense sheet saved successfully.');
+            
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            toast.error('PDF Failed', 'Could not generate PDF. Please try again.');
+        } finally {
+            btnDownloadPDF.disabled = false;
+            btnDownloadPDF.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Download PDF
+            `;
+        }
+    };
+}
 
 // ==========================================================
 // --- AI SMART SCANNER LOGIC (EXPENSE) ---

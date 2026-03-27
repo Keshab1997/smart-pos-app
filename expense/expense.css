@@ -365,6 +365,18 @@ select:focus {
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
+.btn-pdf { 
+    background: #ef4444;
+    color: #fff;
+    border: none;
+}
+
+.btn-pdf:hover { 
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
 /* রেসপন্সিভ (মোবাইল ভিউ) */
 @media (max-width: 1024px) {
     .filter-grid { 
@@ -430,12 +442,14 @@ select:focus {
 .sheet-header p { color: #666; font-style: italic; }
 
 .expense-sheet-table {
-    width: 100%;
+    width: 100% !important;
+    border-collapse: collapse !important;
     table-layout: fixed;
-    border-collapse: collapse;
     font-family: 'Poppins', sans-serif;
     font-size: 0.85rem;
     color: #444;
+    margin-bottom: 20px;
+    border: 2px solid #333 !important; /* টেবিলের বাইরের বর্ডার */
 }
 
 .expense-sheet-table th:nth-child(1), 
@@ -455,8 +469,10 @@ select:focus {
 
 .expense-sheet-table th, 
 .expense-sheet-table td {
-    padding: 10px 12px;
-    border: 1px solid #ddd;
+    padding: 12px 15px; /* বেশি প্যাডিং */
+    border: 1px solid #999 !important; /* সব সাইডে বর্ডার (vertical + horizontal) */
+    word-wrap: break-word;
+    vertical-align: middle;
 }
 
 .expense-sheet-table th {
@@ -475,10 +491,25 @@ select:focus {
 
 /* Date Group Header Row */
 .date-header-row td {
-    background-color: #e9ecef;
-    font-weight: bold;
-    color: var(--text-dark);
-    padding: 8px 15px;
+    background-color: #e3f2fd !important; /* হালকা নীল */
+    font-weight: 700 !important;
+    color: #1565c0 !important; /* গাঢ় নীল */
+    padding: 12px 15px !important;
+    border: 1px solid #999 !important;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+/* Day Total Row - সুন্দর হাইলাইট */
+.day-total-row td {
+    padding: 12px 15px !important;
+    border: 1px solid #999 !important;
+    font-size: 0.95rem !important;
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%) !important; /* হালকা কমলা গ্রেডিয়েন্ট */
+    font-weight: 700 !important;
+    color: #e65100 !important; /* গাঢ় কমলা */
+    border-top: 2px solid #ff9800 !important;
+    border-bottom: 2px solid #ff9800 !important;
 }
 
 /* Edit Button */
@@ -508,14 +539,14 @@ select:focus {
 
 /* কালারগুলো কিছুটা হালকা করা হলো যাতে চোখে না লাগে */
 .row-inventory {
-    color: #c0392b !important; /* গাঢ় লাল থেকে কিছুটা সফট লাল */
-    font-weight: 400 !important;
+    color: #c62828 !important; /* গাঢ় লাল (আগের থেকে সফট) */
+    font-weight: 500 !important;
 }
 
 /* ইনভেন্টরি বাদে অন্য সব খরচ সবুজ রঙে */
 .row-general-expense {
-    color: #218c53 !important; /* সফট গ্রিন */
-    font-weight: 400 !important;
+    color: #2e7d32 !important; /* গাঢ় সবুজ (প্রফেশনাল) */
+    font-weight: 500 !important;
 }
 
 /* ইনলাইন এডিট ইনপুট বক্সের স্টাইল */
@@ -600,7 +631,7 @@ select:focus {
         margin: 1cm; 
     }
 
-    /* প্রিন্ট করার সময় সব টেক্সট কালো করার জন্য */
+    /* প্রিন্টে সব টেক্সট কালো করার জন্য */
     .row-inventory, 
     .row-general-expense, 
     .expense-sheet-table td, 
@@ -616,6 +647,12 @@ select:focus {
     .hamburger-menu, 
     .no-print, 
     #mobile-menu-btn {
+        display: none !important;
+    }
+    
+    /* Action কলাম সম্পূর্ণ হাইড */
+    .expense-sheet-table th:last-child,
+    .expense-sheet-table td:last-child {
         display: none !important;
     }
 
@@ -640,6 +677,10 @@ select:focus {
         margin: 0;
     }
 
+    .expense-sheet-table {
+        width: 100% !important;
+    }
+
     .sheet-header {
         border-bottom: 2px solid #000;
         padding-bottom: 10px;
@@ -656,7 +697,8 @@ select:focus {
     .expense-sheet-table th {
         font-size: 9pt;
         color: #000 !important;
-        border: 0.5pt solid #ccc !important;
+        border: 0.5pt solid #666 !important; /* প্রিন্টে বর্ডার দেখাবে */
+        padding: 8px 10px !important;
     }
 
     .expense-sheet-table th {
@@ -666,10 +708,21 @@ select:focus {
     }
     
     .date-header-row td {
-        background-color: #f0f0f0 !important;
-        border: 1px solid #000 !important;
+        background-color: #e3f2fd !important;
+        border: 1pt solid #666 !important;
         font-weight: bold;
+        color: #000 !important;
         -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .day-total-row td {
+        background-color: #fff3e0 !important;
+        border: 1pt solid #666 !important;
+        font-weight: bold;
+        color: #000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
     .sheet-footer {
@@ -895,48 +948,154 @@ input[list]::-webkit-calendar-picker-indicator {
 }
 
 /* ========================================= */
-/* Mobile-first improvements for Expense page */
+/* --- MOBILE VIEW OPTIMIZATION (FIXED) --- */
 /* ========================================= */
 @media (max-width: 768px) {
-    .page-header h1 {
-        font-size: 1.1rem;
+    .container {
+        padding: 10px !important;
     }
 
-    .ai-smart-card {
-        padding: 14px !important;
-        margin-bottom: 14px !important;
+    /* ১. টেবিল কলামের উইডথ রিসেট করা (সবচেয়ে গুরুত্বপূর্ণ) */
+    .expense-sheet-table th, 
+    .expense-sheet-table td {
+        width: 100% !important;
+        box-sizing: border-box;
     }
 
     .bulk-entry-section,
     .filter-section.card,
     .sheet-container {
+        padding: 15px !important;
+        margin: 10px 0 !important;
+    }
+
+    /* ২. তারিখের রো (Date Header) ঠিক করা */
+    .expense-sheet-table .date-header-row {
+        display: block !important;
+        width: 100% !important;
+        margin: 20px 0 10px 0 !important;
+    }
+    
+    .expense-sheet-table .date-header-row td {
+        display: block !important;
+        width: 100% !important;
+        background: #e3f2fd !important;
+        border-radius: 8px !important;
+        border: 1px solid #90caf9 !important;
+        font-size: 14px !important;
         padding: 12px !important;
-        margin: 12px 0 !important;
+        text-align: center !important;
+        color: #1565c0 !important;
+        white-space: normal !important;
+    }
+
+    /* ৩. ডেইলি টোটাল রো (Day Total) ঠিক করা */
+    .expense-sheet-table .day-total-row {
+        display: block !important;
+        margin: 10px 0 20px 0 !important;
+    }
+    
+    .expense-sheet-table .day-total-row td {
+        display: block !important;
+        width: 100% !important;
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%) !important;
+        border-radius: 8px !important;
+        border: 2px solid #ff9800 !important;
+        padding: 15px !important;
+        text-align: center !important;
+        font-size: 15px !important;
+    }
+
+    /* ৪. মেইন ডাটা টেবিলকে কার্ডে রূপান্তর */
+    .expense-sheet-table,
+    .expense-sheet-table tbody,
+    .expense-sheet-table tr,
+    .expense-sheet-table td {
+        display: block;
+    }
+
+    .expense-sheet-table thead {
+        display: none;
+    }
+
+    /* প্রতিটি খরচের কার্ড */
+    .expense-sheet-table tbody tr:not(.date-header-row):not(.day-total-row) {
+        background: #fff;
+        border: 1px solid #e2e8f0;
         border-radius: 12px;
+        margin-bottom: 15px;
+        padding: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
-    .section-header-flex {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
+    .expense-sheet-table tbody tr:not(.date-header-row):not(.day-total-row) td {
+        border: none !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        padding: 10px 0 !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
-    .section-header-flex h3 {
-        font-size: 1rem;
+    .expense-sheet-table tbody tr:not(.date-header-row):not(.day-total-row) td:last-child {
+        border-bottom: none !important;
     }
 
-    .section-header-flex .btn {
+    /* লেবেল সেট করা */
+    .expense-sheet-table tbody tr:not(.date-header-row):not(.day-total-row) td::before {
+        content: attr(data-label);
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ৫. অ্যাকশন বাটন (Delete/Locked) সুন্দর করা */
+    .expense-sheet-table td.no-print {
+        justify-content: center !important;
+        padding-top: 15px !important;
+        margin-top: 5px;
+    }
+
+    .expense-sheet-table td.no-print::before {
+        display: none;
+    }
+
+    .btn-delete, .btn-edit, .expense-sheet-table td.no-print small {
         width: 100%;
+        padding: 12px !important;
+        font-size: 14px !important;
+        text-align: center;
+        border-radius: 8px;
+        display: block;
     }
 
-    .bulk-controls {
-        flex-direction: column;
-        gap: 8px;
+    .expense-sheet-table td.no-print small {
+        background: #f8fafc;
+        color: #94a3b8;
+        border: 1px solid #e2e8f0;
+        font-weight: 600;
     }
 
-    .bulk-controls .btn {
-        width: 100%;
-        justify-content: center;
+    /* ৬. গ্র্যান্ড টোটাল কার্ড */
+    .expense-sheet-table tbody tr:last-child {
+        background: #4361ee !important;
+        border-radius: 12px !important;
+        padding: 20px !important;
+        margin-top: 20px;
+    }
+    
+    .expense-sheet-table tbody tr:last-child td {
+        color: #fff !important;
+        text-align: center !important;
+        font-size: 18px !important;
+        border: none !important;
+        justify-content: center !important;
+    }
+    
+    .expense-sheet-table tbody tr:last-child td::before {
+        display: none;
     }
 
     /* Bulk entry table -> card rows for easy mobile input */
@@ -992,77 +1151,59 @@ input[list]::-webkit-calendar-picker-indicator {
         font-size: 15px;
     }
 
-    /* Expense sheet table -> card list */
-    .expense-sheet-table thead {
-        display: none;
+    .page-header h1 {
+        font-size: 1.1rem;
     }
 
-    .expense-sheet-table,
-    .expense-sheet-table tbody,
-    .expense-sheet-table tr,
-    .expense-sheet-table td {
-        display: block;
+    .ai-smart-card {
+        padding: 14px !important;
+        margin-bottom: 14px !important;
+    }
+
+    .section-header-flex {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .section-header-flex h3 {
+        font-size: 1rem;
+    }
+
+    .section-header-flex .btn {
         width: 100%;
     }
 
-    .expense-sheet-table .date-header-row td {
-        display: block;
-        background: #eef2ff;
-        border-radius: 10px;
-        margin: 6px 0 8px;
-        border: 1px solid #dbe3ff;
-        font-size: 12px;
+    .bulk-controls {
+        flex-direction: column;
+        gap: 8px;
     }
 
-    .expense-sheet-table tbody tr:not(.date-header-row) {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        margin-bottom: 10px;
-        padding: 8px;
-    }
-
-    .expense-sheet-table tbody tr:not(.date-header-row) td {
-        border: none;
-        border-bottom: 1px dashed #eef2f7;
-        padding: 8px 0;
-        text-align: left !important;
-    }
-
-    .expense-sheet-table tbody tr:not(.date-header-row) td:last-child {
-        border-bottom: none;
-    }
-
-    .expense-sheet-table tbody tr:not(.date-header-row) td::before {
-        content: attr(data-label);
-        display: inline-block;
-        min-width: 92px;
-        margin-right: 8px;
-        font-size: 11px;
-        font-weight: 700;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-    }
-
-    .expense-sheet-table tbody tr:not(.date-header-row) td.no-print {
-        padding-top: 10px;
-    }
-
-    .expense-sheet-table tbody tr:not(.date-header-row) td.no-print::before {
-        content: "";
-        min-width: 0;
-        margin-right: 0;
+    .bulk-controls .btn {
+        width: 100%;
+        justify-content: center;
     }
 
     .filter-actions {
         width: 100%;
+        flex-wrap: wrap;
     }
 
     .filter-actions .btn {
         flex: 1 1 100%;
         width: 100%;
         justify-content: center;
+        margin-bottom: 8px;
+    }
+    
+    /* Mobile এ editable cell hover effect কমানো */
+    .editable-cell:hover {
+        background-color: transparent !important;
+        outline: none;
+    }
+    
+    .editable-cell:after {
+        display: none;
     }
 }
 
