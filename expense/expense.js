@@ -11,11 +11,16 @@ const filterDateFrom = document.getElementById('filter-date-from');
 const filterDateTo = document.getElementById('filter-date-to');
 const filterCategory = document.getElementById('filter-category');
 const filterPurpose = document.getElementById('filter-purpose');
+const filterMethod = document.getElementById('filter-method');
+const filterSource = document.getElementById('filter-source');
+const filterMinAmount = document.getElementById('filter-min-amount');
+const filterMaxAmount = document.getElementById('filter-max-amount');
 const btnApplyFilter = document.getElementById('btn-apply-filter');
 const btnResetFilter = document.getElementById('btn-reset-filter');
 const btnPrintSheet = document.getElementById('btn-print-sheet');
 const expenseSheetBody = document.getElementById('expense-sheet-body');
 const displayTotalExpense = document.getElementById('display-total-expense');
+const displayExpenseCount = document.getElementById('display-expense-count');
 const sheetPeriodLabel = document.getElementById('sheet-period-label');
 const bulkTbody = document.getElementById('bulk-tbody');
 const btnAddBulkRow = document.getElementById('btn-add-bulk-row');
@@ -34,15 +39,19 @@ onAuthStateChanged(auth, (user) => {
         activeShopId = localStorage.getItem('activeShopId');
         if (!activeShopId) { window.location.href = '../index.html'; return; }
 
-        // ডিফল্ট তারিখ সেট (কলকাতা টাইমজোন অনুযায়ী)
-        const nowIST = new Date().toLocaleString('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).split(',')[0];
-        const now = new Date(nowIST);
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
+        // Helper function to format date as YYYY-MM-DD in local timezone
+        const formatDateLocal = (date) => {
+            const offset = date.getTimezoneOffset();
+            const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+            return localDate.toISOString().split('T')[0];
+        };
+
+        // ডিফল্ট তারিখ সেট (লোকাল টাইমজোন অনুযায়ী)
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         
-        filterDateFrom.value = `${year}-${month}-01`;
-        filterDateTo.value = `${year}-${month}-${day}`;
+        filterDateFrom.value = formatDateLocal(firstDayOfMonth);
+        filterDateTo.value = formatDateLocal(now);
 
         loadInitialData();
         loadExpenses();
@@ -54,10 +63,64 @@ onAuthStateChanged(auth, (user) => {
 
 // অটো-ফিল্টার সেটআপ
 function setupAutoFilter() {
-    [filterDateFrom, filterDateTo, filterCategory].forEach(el => {
+    [filterDateFrom, filterDateTo, filterCategory, filterMethod, filterSource].forEach(el => {
+        el.addEventListener('change', () => loadExpenses());
+    });
+    
+    // Real-time search with debounce
+    let searchTimeout;
+    filterPurpose.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => loadExpenses(), 500);
+    });
+    
+    // Amount range filters
+    [filterMinAmount, filterMaxAmount].forEach(el => {
         el.addEventListener('change', () => loadExpenses());
     });
 }
+
+// Quick Date Preset Function
+window.setQuickDate = function(range) {
+    const today = new Date();
+    let fromDate, toDate = new Date();
+
+    // Remove active class from all buttons
+    document.querySelectorAll('.btn-preset').forEach(btn => btn.classList.remove('active'));
+    if (event) event.target.classList.add('active');
+
+    // Helper function to format date as YYYY-MM-DD in local timezone
+    const formatDateLocal = (date) => {
+        const offset = date.getTimezoneOffset();
+        const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+        return localDate.toISOString().split('T')[0];
+    };
+
+    switch (range) {
+        case 'today':
+            fromDate = new Date();
+            break;
+        case 'yesterday':
+            fromDate = new Date();
+            fromDate.setDate(today.getDate() - 1);
+            toDate = new Date(fromDate);
+            break;
+        case 'thisMonth':
+            // মাসের ১ তারিখ নিশ্চিত করা
+            fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            break;
+        case 'lastMonth':
+            fromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            toDate = new Date(today.getFullYear(), today.getMonth(), 0);
+            break;
+    }
+
+    // ইনপুট ফিল্ডে সঠিক লোকাল তারিখ সেট করা
+    filterDateFrom.value = formatDateLocal(fromDate);
+    filterDateTo.value = formatDateLocal(toDate);
+    
+    loadExpenses(); // Auto load after preset
+};
 
 // ক্যাটাগরি এবং পূর্বের পারপাস লোড
 async function loadInitialData() {
@@ -144,7 +207,7 @@ if(btnAddCategory) {
     });
 }
 
-// ডাটা ফেচিং (Month-based query)
+// ডাটা ফেচিং (Month-based query with Advanced Filters)
 async function loadExpenses() {
     if (!activeShopId) return;
     
@@ -166,16 +229,24 @@ async function loadExpenses() {
         const snapshot = await getDocs(q);
         let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        // ক্যাটাগরি ফিল্টার
+        // Advanced Client-side Filtering
         const fCat = filterCategory.value;
         const fPurpose = filterPurpose.value.toLowerCase();
+        const fMethod = filterMethod ? filterMethod.value.toLowerCase() : '';
+        const fSource = filterSource ? filterSource.value.toLowerCase() : '';
+        const fMin = filterMinAmount ? parseFloat(filterMinAmount.value) || 0 : 0;
+        const fMax = filterMaxAmount ? parseFloat(filterMaxAmount.value) || Infinity : Infinity;
         
-        if (fCat) {
-            data = data.filter(exp => exp.category === fCat);
-        }
-        if (fPurpose) {
-            data = data.filter(exp => exp.description.toLowerCase().includes(fPurpose));
-        }
+        data = data.filter(exp => {
+            const matchCat = !fCat || exp.category === fCat;
+            const matchPurpose = !fPurpose || exp.description.toLowerCase().includes(fPurpose);
+            const matchMethod = !fMethod || (exp.method || 'cash').toLowerCase() === fMethod;
+            const matchSource = !fSource || (exp.source || '').toLowerCase() === fSource;
+            const amount = parseFloat(exp.amount) || 0;
+            const matchAmount = amount >= fMin && amount <= fMax;
+            
+            return matchCat && matchPurpose && matchMethod && matchSource && matchAmount;
+        });
 
         sheetPeriodLabel.textContent = `${start.toLocaleDateString()} to ${end.toLocaleDateString()}`;
         
@@ -194,6 +265,7 @@ function renderExpenseSheet(data) {
     if (data.length === 0) {
         expenseSheetBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No records found.</td></tr>`;
         displayTotalExpense.textContent = "₹0.00";
+        if (displayExpenseCount) displayExpenseCount.textContent = "0";
         return;
     }
 
@@ -243,6 +315,7 @@ function renderExpenseSheet(data) {
         </tr>`;
     
     displayTotalExpense.textContent = `₹${grandTotal.toFixed(2)}`;
+    if (displayExpenseCount) displayExpenseCount.textContent = data.length.toString();
 }
 
 // বাল্ক রো যোগ
@@ -358,17 +431,30 @@ window.deleteExpense = async (id) => {
 if(btnApplyFilter) btnApplyFilter.onclick = loadExpenses;
 if(btnResetFilter) {
     btnResetFilter.onclick = () => {
-        // কলকাতা টাইমজোন অনুযায়ী রিসেট
-        const nowIST = new Date().toLocaleString('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).split(',')[0];
-        const now = new Date(nowIST);
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
+        // Helper function to format date as YYYY-MM-DD in local timezone
+        const formatDateLocal = (date) => {
+            const offset = date.getTimezoneOffset();
+            const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+            return localDate.toISOString().split('T')[0];
+        };
+
+        // লোকাল টাইমজোন অনুযায়ী রিসেট
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         
-        filterDateFrom.value = `${year}-${month}-01`;
-        filterDateTo.value = `${year}-${month}-${day}`;
+        filterDateFrom.value = formatDateLocal(firstDayOfMonth);
+        filterDateTo.value = formatDateLocal(now);
         filterCategory.value = '';
         filterPurpose.value = '';
+        if (filterMethod) filterMethod.value = '';
+        if (filterSource) filterSource.value = '';
+        if (filterMinAmount) filterMinAmount.value = '';
+        if (filterMaxAmount) filterMaxAmount.value = '';
+        
+        // Reset active button to "This Month"
+        document.querySelectorAll('.btn-preset').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.btn-preset')[2].classList.add('active');
+        
         loadExpenses();
     };
 }

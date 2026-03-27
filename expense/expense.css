@@ -144,50 +144,273 @@ select:focus {
     box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
 }
 
-/* --- Filter & Actions --- */
-.filter-section {
-    padding: 15px 25px;
-    margin-bottom: 20px;
+/* --- Optimized Advanced Filter & Analytics CSS --- */
+
+.filter-section.card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0 30px 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    border-top: 4px solid #4361ee; /* উপরে একটি নীল বর্ডার দিয়ে প্রিমিয়াম লুক */
 }
 
-.filter-row {
+/* হেডার অংশ: টাইটেল বামে, বাটন ডানে */
+.filter-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.filter-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* কুইক ডেট বাটনগুলো */
+.quick-dates {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-preset {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-preset:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.btn-preset.active {
+    background: #4361ee;
+    color: #ffffff;
+    border-color: #4361ee;
+    box-shadow: 0 4px 10px rgba(67, 97, 238, 0.2);
+}
+
+/* গ্রিড লেআউট: ইনপুটগুলো ৪ কলামে সাজানো */
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* ৪টি সমান কলাম */
+    gap: 15px;
+    align-items: start;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ইনপুট ফিল্ড স্টাইল */
+.filter-section .form-control {
+    width: 100%;
+    height: 40px;
+    padding: 8px 12px;
+    background: #fcfcfc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #334155;
+    transition: all 0.2s ease;
+}
+
+.filter-section .form-control:focus {
+    border-color: #4361ee;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    outline: none;
+}
+
+/* ডেট রেঞ্জ এবং অ্যামাউন্ট রেঞ্জ (পাশাপাশি ইনপুট) */
+.date-input-wrapper, 
+.amount-range {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.date-input-wrapper input,
+.amount-range input {
+    flex: 1;
+}
+
+.date-input-wrapper span {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* সার্চ বার ফুল উইডথ (২ কলাম দখল করবে) */
+.full-width-search {
+    grid-column: span 2;
+}
+
+/* নিচের অংশ: সামারি এবং অ্যাকশন বাটন */
+.filter-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
     flex-wrap: wrap;
     gap: 15px;
 }
 
-.date-filters {
+.summary-pills {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
-    flex: 1;
 }
 
-.btn-print {
-    background-color: #2a9d8f;
-    color: white;
+.pill {
+    background: #f1f5f9;
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.pill strong {
+    color: #1e293b;
+    font-size: 16px;
+    margin-left: 5px;
+    font-weight: 700;
+}
+
+/* অ্যাকশন বাটনগুলো */
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-actions .btn {
+    height: 42px;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
     display: flex;
     align-items: center;
     gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.mini-kpi {
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px dashed #ddd;
-    text-align: right;
+.btn-primary { 
+    background: #4361ee;
+    color: #fff;
+    border: none;
 }
-.kpi-box {
-    display: inline-block;
-    font-size: 1.1rem;
+
+.btn-primary:hover { 
+    background: #3751d4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
 }
-.kpi-box strong {
-    color: #e63946;
-    font-size: 1.4rem;
-    margin-left: 10px;
+
+.btn-secondary { 
+    background: #e2e8f0;
+    color: #475569;
+    border: none;
+}
+
+.btn-secondary:hover { 
+    background: #cbd5e1;
+    color: #1e293b;
+}
+
+.btn-print { 
+    background: #10b981;
+    color: #fff;
+    border: none;
+}
+
+.btn-print:hover { 
+    background: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* রেসপন্সিভ (মোবাইল ভিউ) */
+@media (max-width: 1024px) {
+    .filter-grid { 
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .full-width-search { 
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-header { 
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .quick-dates { 
+        margin-top: 10px;
+        overflow-x: auto;
+        width: 100%;
+        padding-bottom: 5px;
+    }
+    
+    .filter-grid { 
+        grid-template-columns: 1fr;
+    }
+    
+    .full-width-search { 
+        grid-column: span 1;
+    }
+    
+    .filter-footer { 
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .summary-pills { 
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .filter-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
 }
 
 /* --- The Expense Sheet (Table) --- */
@@ -509,4 +732,159 @@ input[list]::-webkit-calendar-picker-indicator {
 .btn-sm {
     padding: 6px 12px;
     font-size: 0.85rem;
+}
+
+/* --- Add Expenses (Excel Style) Section Update --- */
+
+/* ১. মেইন কন্টেইনার ফুল স্ক্রিন করা */
+.bulk-entry-section {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 20px 0;
+    padding: 25px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #eef0f2;
+}
+
+/* ২. টাইটেল এবং অ্যাড ক্যাটাগরি বাটন */
+.section-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header-flex h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+}
+
+/* ৩. টেবিল ডিজাইন (Modern Excel Look) */
+.bulk-entry-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden; /* কোণা গোল রাখার জন্য */
+}
+
+.bulk-entry-table th {
+    background-color: #f7fafc;
+    color: #4a5568;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    padding: 15px 10px;
+    border-bottom: 2px solid #edf2f7;
+    text-align: left;
+}
+
+.bulk-entry-table td {
+    padding: 8px;
+    border-bottom: 1px solid #edf2f7;
+    background: #fff;
+    transition: background 0.2s;
+}
+
+.bulk-entry-table tr:hover td {
+    background: #fdfdfd; /* রো হোভার ইফেক্ট */
+}
+
+/* ৪. ইনপুট ফিল্ডগুলো সুন্দর করা */
+.bulk-entry-table input, 
+.bulk-entry-table select {
+    width: 100%;
+    border: 1px solid transparent; /* ডিফল্ট বর্ডার হাইড */
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #f8fafc;
+    color: #2d3748;
+    transition: all 0.2s ease;
+}
+
+/* ইনপুট ফোকাস করলে বর্ডার আসবে */
+.bulk-entry-table input:focus, 
+.bulk-entry-table select:focus {
+    outline: none;
+    border-color: #4361ee;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+/* ৫. অ্যামাউন্ট ফিল্ড স্পেশাল স্টাইল */
+.bulk-amount-input {
+    font-weight: 700;
+    color: #4361ee;
+    text-align: right;
+}
+
+/* ৬. ডিলিট (x) বাটন */
+.btn-remove-row {
+    width: 30px;
+    height: 30px;
+    background: #fff5f5;
+    color: #f56565;
+    border: 1px solid #feb2b2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-remove-row:hover {
+    background: #f56565;
+    color: #fff;
+    transform: scale(1.1);
+}
+
+/* ৭. নিচের কন্ট্রোল বাটনগুলো (+ Add Row & Save) */
+.bulk-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.btn-add-row {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    padding: 10px 20px;
+    font-weight: 600;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-add-row:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.btn-save-all {
+    background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+    color: #ffffff;
+    padding: 12px 35px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+}
+
+.btn-save-all:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
 }
