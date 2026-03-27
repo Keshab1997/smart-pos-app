@@ -1,22 +1,105 @@
 // sw.js
-const CACHE_NAME = 'smart-pos-v8'; // ভার্সন আপডেট করুন
+const CACHE_NAME = 'smart-pos-v9'; // ভার্সন আপডেট করুন
 const ASSETS = [
   '/',
   '/index.html',
+  '/admin.html',
   '/dashboard.html',
+  
+  // CSS Files
   '/css/global.css',
   '/css/navbar.css',
   '/css/login.css',
-  '/expense/expense.html',
-  '/expense/expense.css',
-  '/expense/expense.js',
-  '/inventory/inventory.html',
-  '/inventory/inventory.css',
-  '/inventory/inventory.js',
+  '/css/dashboard.css',
+  '/css/admin.css',
+  
+  // JS Files
   '/js/firebase-config.js',
   '/js/navbar.js',
   '/js/auth.js',
-  '/js/toast.js'
+  '/js/toast.js',
+  '/js/dashboard.js',
+  '/js/admin.js',
+  '/js/pwa-handler.js',
+  '/js/shop-helper.js',
+  
+  // Expense Module
+  '/expense/expense.html',
+  '/expense/expense.css',
+  '/expense/expense.js',
+  
+  // Inventory Module
+  '/inventory/inventory.html',
+  '/inventory/inventory.css',
+  '/inventory/inventory.js',
+  '/inventory/inventory-extras.js',
+  '/inventory/print-report.js',
+  
+  // Billing Module
+  '/billing/billing.html',
+  '/billing/billing.css',
+  '/billing/billing.js',
+  '/billing/print.html',
+  '/billing/print.css',
+  '/billing/print.js',
+  '/billing/mobile-scanner.html',
+  
+  // Add Product Module
+  '/add-product/add-product.html',
+  '/add-product/add-product.css',
+  '/add-product/add-product.js',
+  '/add-product/print.css',
+  '/add-product/print-handler.js',
+  
+  // Purchase Record Module
+  '/purchase-record/purchase-record.html',
+  '/purchase-record/purchase-record.css',
+  '/purchase-record/purchase-record.js',
+  '/purchase-record/purchase-dashboard.html',
+  '/purchase-record/purchase-dashboard.css',
+  '/purchase-record/purchase-dashboard.js',
+  
+  // Sales Report Module
+  '/sales-report/report.html',
+  '/sales-report/report.css',
+  '/sales-report/report.js',
+  '/sales-report/profit-loss.html',
+  '/sales-report/profit-loss.css',
+  '/sales-report/profit-loss.js',
+  
+  // Advance Booking Module
+  '/advance-booking/index.html',
+  '/advance-booking/booking.css',
+  '/advance-booking/booking.js',
+  '/advance-booking/booking-print.html',
+  '/advance-booking/booking-print.js',
+  
+  // Shop Details Module
+  '/shop-details/shop-details.html',
+  '/shop-details/shop-details.css',
+  '/shop-details/shop-details.js',
+  
+  // Cancelled Bills Module
+  '/cancelled-bills/index.html',
+  '/cancelled-bills/style.css',
+  '/cancelled-bills/script.js',
+  
+  // Label Printer Module
+  '/label-printer/index.html',
+  '/label-printer/style.css',
+  '/label-printer/script.js',
+  
+  // Staff Management Module
+  '/staff-management/index.html',
+  '/staff-management/staff.js',
+  
+  // Print Barcode
+  '/print-barcode.html',
+  '/print-barcode.css',
+  '/print-barcode.js',
+  
+  // Manifest
+  '/manifest.json'
 ];
 
 // ১. ইন্সটল এবং ক্যাশ
