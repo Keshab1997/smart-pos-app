@@ -53,9 +53,15 @@ self.addEventListener('fetch', (event) => {
           networkResponse &&
           networkResponse.ok
         ) {
-            caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, networkResponse.clone());
-            });
+            // In some browsers/workloads clone() may fail if stream got locked.
+            try {
+              const responseForCache = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseForCache).catch(() => {});
+              });
+            } catch (e) {
+              // Skip cache update for this response and still return network response.
+            }
         }
         return networkResponse;
       }).catch(() => {

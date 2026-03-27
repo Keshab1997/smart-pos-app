@@ -209,73 +209,144 @@ function downloadPdfReport() {
     }
 
     const { jsPDF } = jsPdfNs;
-    const docPdf = new jsPDF({ unit: 'pt', format: 'a4' });
+    // Match the clean portrait design
+    const docPdf = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait' });
 
-    const title = buildReportTitle();
-    const generatedAt = new Intl.DateTimeFormat('en-IN', { timeZone: KOLKATA_TZ, dateStyle: 'medium', timeStyle: 'short' }).format(new Date());
+    const reportTitle = 'Purchase Detail Report';
+    const filterTitle = buildReportTitle().replace('Purchase Report • ', 'Report Filter: ');
+    const generatedAt = new Intl.DateTimeFormat('en-IN', {
+        timeZone: KOLKATA_TZ,
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    }).format(new Date());
+
+    const grandTotal = currentData.reduce((sum, r) => sum + toNumber(r?.totalAmount || 0, 0), 0);
+
+    const pageWidth = docPdf.internal.pageSize.getWidth();
+    const pageHeight = docPdf.internal.pageSize.getHeight();
+
+    // Header (centered, minimal)
+    docPdf.setFont('helvetica', 'normal');
+    docPdf.setFontSize(9);
+    docPdf.setTextColor(90);
+    docPdf.text(generatedAt, 40, 28);
 
     docPdf.setFont('helvetica', 'bold');
-    docPdf.setFontSize(14);
-    docPdf.text(title, 40, 40);
+    docPdf.setFontSize(16);
+    docPdf.setTextColor(30);
+    docPdf.text(reportTitle, pageWidth / 2, 58, { align: 'center' });
 
     docPdf.setFont('helvetica', 'normal');
-    docPdf.setFontSize(10);
-    docPdf.text(`Generated: ${generatedAt}`, 40, 58);
+    docPdf.setFontSize(9);
+    docPdf.setTextColor(90);
+    docPdf.text(filterTitle, pageWidth / 2, 76, { align: 'center' });
 
-    // Flatten rows for autoTable
-    const rows = [];
-    currentData.forEach((r) => {
-        const items = Array.isArray(r?.items) ? r.items : [];
+    // Body rows (bill header + items + bill total)
+    const body = [];
+    const rowKinds = [];
+    let sl = 0;
+
+    currentData.forEach((bill) => {
+        sl += 1;
+        const billName = bill?.billName || 'Unnamed Bill';
+        const billDate = formatDateUi(bill?.date || '');
+        const items = Array.isArray(bill?.items) ? bill.items : [];
+
+        body.push([String(sl), `${billName}  (Date: ${billDate})`, '', '']);
+        rowKinds.push('bill');
+
         if (items.length === 0) {
-            rows.push([
-                formatDateUi(r?.date || ''),
-                r?.billName || '',
-                '-',
-                '-',
-                '-',
-                formatMoney(r?.totalAmount || 0)
-            ]);
-            return;
+            body.push(['', '• No items', '-', '0.00']);
+            rowKinds.push('item');
+        } else {
+            items.forEach((it) => {
+                body.push([
+                    '',
+                    `• ${it?.itemName || ''}`,
+                    it?.itemQty || '-',
+                    formatMoney(it?.itemPrice || 0)
+                ]);
+                rowKinds.push('item');
+            });
         }
-        items.forEach((it, idx) => {
-            rows.push([
-                idx === 0 ? formatDateUi(r?.date || '') : '',
-                idx === 0 ? (r?.billName || '') : '',
-                it?.itemName || '',
-                it?.itemQty || '-',
-                formatMoney(it?.itemPrice || 0),
-                idx === 0 ? formatMoney(r?.totalAmount || 0) : ''
-            ]);
-        });
-        // spacer row
-        rows.push(['', '', '', '', '', '']);
+
+        body.push(['', 'Bill Total:', '', formatMoney(bill?.totalAmount || 0)]);
+        rowKinds.push('total');
     });
 
+    // Table
     docPdf.autoTable({
-        startY: 78,
-        head: [['Date', 'Supplier/Bill', 'Item', 'Qty', 'Line Total (₹)', 'Bill Total (₹)']],
-        body: rows,
-        styles: { fontSize: 9, cellPadding: 4, valign: 'top' },
-        headStyles: { fillColor: [44, 62, 80] },
+        startY: 96,
+        margin: { left: 50, right: 50, top: 96, bottom: 70 },
+        tableWidth: pageWidth - 100,
+        theme: 'grid',
+        head: [['SL', 'Description / Item Name', 'Qty', 'Price (Rs.)']],
+        body,
+        styles: {
+            fontSize: 9,
+            cellPadding: 5,
+            valign: 'middle',
+            overflow: 'linebreak',
+            lineColor: [220, 220, 220],
+            lineWidth: 0.6
+        },
+        headStyles: {
+            fillColor: [245, 245, 245],
+            textColor: 60,
+            fontStyle: 'bold',
+            lineColor: [200, 200, 200],
+            lineWidth: 0.8
+        },
         columnStyles: {
-            0: { cellWidth: 70 },
-            1: { cellWidth: 140 },
-            2: { cellWidth: 170 },
-            3: { cellWidth: 60 },
-            4: { cellWidth: 80, halign: 'right' },
-            5: { cellWidth: 80, halign: 'right' }
+            0: { cellWidth: 34, halign: 'center' },
+            1: { cellWidth: 280, halign: 'left' },
+            2: { cellWidth: 60, halign: 'center' },
+            3: { cellWidth: 70, halign: 'right' }
         },
         didParseCell: (data) => {
-            // lighter spacer row
-            const isSpacer = data.row?.raw?.every((c) => c === '');
-            if (isSpacer) {
+            const kind = rowKinds[data.row.index];
+            if (!kind) return;
+
+            if (kind === 'bill') {
+                data.cell.styles.fontStyle = 'bold';
                 data.cell.styles.fillColor = [255, 255, 255];
-                data.cell.styles.lineWidth = 0;
+                if (data.column.index === 2 || data.column.index === 3) {
+                    data.cell.text = [''];
+                }
+            }
+
+            if (kind === 'total') {
+                data.cell.styles.fontStyle = 'bold';
+                if (data.column.index === 3) {
+                    data.cell.styles.halign = 'right';
+                }
+                if (data.column.index === 2) data.cell.text = [''];
             }
         }
     });
 
-    const filenameSafe = title.replaceAll(/[^\w\- ]+/g, '').replaceAll(/\s+/g, '_').slice(0, 60);
+    // Grand total bar (like screenshot)
+    const lastY = docPdf.lastAutoTable?.finalY || 96;
+    const barY = Math.min(pageHeight - 56, lastY + 16);
+    docPdf.setFillColor(245, 245, 245);
+    docPdf.rect(50, barY, pageWidth - 100, 24, 'F');
+    docPdf.setFont('helvetica', 'bold');
+    docPdf.setFontSize(10);
+    docPdf.setTextColor(80);
+    docPdf.text('GRAND TOTAL COST:', 50 + 10, barY + 16);
+    const gtText = `Rs. ${formatMoney(grandTotal)}`;
+    docPdf.text(gtText, pageWidth - 50 - 10, barY + 16, { align: 'right' });
+
+    // Footer line
+    docPdf.setFont('helvetica', 'normal');
+    docPdf.setFontSize(8);
+    docPdf.setTextColor(120);
+    docPdf.text(`Generated via Smart POS • Printed on: ${generatedAt}`, pageWidth / 2, pageHeight - 20, { align: 'center' });
+
+    const filenameSafe = reportTitle
+        .replaceAll(/[^\w\- ]+/g, '')
+        .replaceAll(/\s+/g, '_')
+        .slice(0, 60);
     docPdf.save(`${filenameSafe || 'purchase_report'}.pdf`);
 }
 
