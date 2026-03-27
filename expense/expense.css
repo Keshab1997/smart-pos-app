@@ -28,6 +28,19 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* মেথড ব্যাজ স্টাইল */
+.badge-cash { color: #218c53; font-weight: bold; text-transform: uppercase; font-size: 11px; }
+.badge-online { color: #4361ee; font-weight: bold; text-transform: uppercase; font-size: 11px; }
+.badge-card { color: #7209b7; font-weight: bold; text-transform: uppercase; font-size: 11px; }
+
+/* টেবিল কলাম অ্যাডজাস্টমেন্ট */
+.expense-sheet-table th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    padding: 12px 8px;
+    font-size: 13px;
+}
+
 /* --- Entry Form Section --- */
 .add-expense-section {
     margin-bottom: 20px;
@@ -419,15 +432,15 @@ select:focus {
     }
 
     .expense-sheet-table th {
-        background-color: #ddd !important;
-        color: black !important;
+        background-color: #eee !important;
+        color: #000 !important;
         -webkit-print-color-adjust: exact;
     }
     
     .date-header-row td {
         background-color: #f0f0f0 !important;
-        border: 1px solid #000;
-        font-weight: 600 !important;
+        border: 1px solid #000 !important;
+        font-weight: bold;
         -webkit-print-color-adjust: exact;
     }
 

@@ -52,6 +52,31 @@
             </div>
         </section>
 
+        <!-- AI Smart Assistant Section for Expenses -->
+        <section class="card ai-smart-card" style="margin-bottom: 25px; border-top: 5px solid #8e44ad; background: #f9f6ff;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                <span style="background: #8e44ad; color: white; padding: 5px 12px; border-radius: 50px; font-size: 11px; font-weight: bold;">AI ASSISTANT</span>
+                <h3 style="margin: 0; font-size: 18px;">🤖 Smart Expense Scanner</h3>
+            </div>
+            
+            <div style="background: white; padding: 15px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px;">
+                <p style="font-size: 13px; color: #555; margin: 0 0 10px 0; font-style: italic;">
+                    "নিচের প্রম্পটটি কপি করে <b>AI Studio</b>-তে আপনার এক্সেল বা ডায়েরির ছবিসহ দিন। তারপর AI যে ডাটা দিবে তা <b>Paste AI Data</b> বাটনে ক্লিক করে এখানে দিন।"
+                </p>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <code id="ai-expense-prompt" style="flex: 1; background: #f1f1f1; padding: 8px; border-radius: 5px; font-size: 12px; color: #333;">Please analyze this expense list image and extract: Date, Category, Purpose, Method, Source, and Amount. Format as: Date | Category | Purpose | Method | Source | Amount. Example: 2026-03-17 | Salary | Staff Salary - Mali | online | Axis Bank | 5400</code>
+                    <button type="button" id="btn-copy-expense-prompt" class="btn" style="background: #2ecc71; color: white; padding: 8px 15px; font-size: 12px; width: auto;">Copy Prompt</button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <a href="https://aistudio.google.com/" target="_blank" class="btn" style="background: white; color: #4285f4; border: 2px solid #4285f4; flex: 1; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold;">
+                    <img src="https://www.gstatic.com/lamda/images/favicon_v2_16x16.png" style="width:16px;"> Open AI Studio
+                </a>
+                <button type="button" id="btn-open-ai-modal" class="btn" style="background: #8e44ad; color: white; flex: 1; font-weight: bold;">📋 Paste AI Data</button>
+            </div>
+        </section>
+
         <!-- মেইন বাল্ক এন্ট্রি সেকশন -->
         <section class="card bulk-expense-section no-print">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -92,15 +117,17 @@
                 <table class="expense-sheet-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Category</th>
-                            <th>Purpose / Details</th>
-                            <th class="text-right">Amount (₹)</th>
-                            <th class="no-print" style="text-align: center;">Actions</th>
+                            <th style="width: 10%;">Time</th>
+                            <th style="width: 15%;">Category</th>
+                            <th style="width: 25%;">Description</th>
+                            <th style="width: 12%;">Method</th>
+                            <th style="width: 13%;">Source</th>
+                            <th style="width: 12%; text-align: right;">Amount</th>
+                            <th style="width: 13%; text-align: center;" class="no-print">Action</th>
                         </tr>
                     </thead>
                     <tbody id="expense-sheet-body">
-                        <!-- Data will be loaded here -->
+                        <!-- JS will load data here -->
                     </tbody>
                 </table>
             </div>
@@ -118,6 +145,23 @@
         </section>
 
     </main>
+
+    <!-- AI Paste Modal -->
+    <div id="ai-paste-modal" class="modal-overlay hidden" style="z-index: 3000;">
+        <div class="modal-content" style="max-width: 600px; border-top: 5px solid #8e44ad;">
+            <div class="modal-header">
+                <h3 style="margin: 0; color: #8e44ad;">📋 Paste Expense Data</h3>
+                <button id="close-ai-modal" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <textarea id="ai-raw-input" placeholder="এখানে AI থেকে কপি করা ডাটা পেস্ট করুন...&#10;উদাহরণ:&#10;2026-03-17 | Salary | Soumita Salary | online | Axis Bank | 2333" 
+                style="width: 100%; min-height: 200px; padding: 12px; border: 2px solid #8e44ad; border-radius: 8px; font-family: monospace;"></textarea>
+            </div>
+            <div class="modal-footer" style="padding: 15px; text-align: right;">
+                <button id="btn-process-ai" class="btn" style="background: #8e44ad; color: white; padding: 10px 25px;">Process & Fill Table</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Firebase & JS -->
     <script type="importmap">
