@@ -290,14 +290,15 @@ function renderExpenseSheet(data) {
 
             const tr = document.createElement('tr');
             tr.className = isInventory ? 'row-inventory' : 'row-general-expense';
+            tr.dataset.expenseId = exp.id;
             
             tr.innerHTML = `
                 <td data-label="Time">${exp.date.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                <td data-label="Category">${exp.category}</td>
-                <td data-label="Description">${exp.description}</td>
-                <td data-label="Method"><span class="badge-${(exp.method || 'cash').toLowerCase()}">${exp.method || 'Cash'}</span></td>
-                <td data-label="Source">${exp.source || 'N/A'}</td>
-                <td data-label="Amount" class="text-right">₹${amount.toFixed(2)}</td>
+                <td data-label="Category" class="${!isInventory ? 'editable-cell' : ''}" data-field="category">${exp.category}</td>
+                <td data-label="Description" class="${!isInventory ? 'editable-cell' : ''}" data-field="description">${exp.description}</td>
+                <td data-label="Method" class="${!isInventory ? 'editable-cell' : ''}" data-field="method"><span class="badge-${(exp.method || 'cash').toLowerCase()}">${exp.method || 'Cash'}</span></td>
+                <td data-label="Source" class="${!isInventory ? 'editable-cell' : ''}" data-field="source">${exp.source || 'N/A'}</td>
+                <td data-label="Amount" class="text-right ${!isInventory ? 'editable-cell' : ''}" data-field="amount">₹${amount.toFixed(2)}</td>
                 <td data-label="Action" class="no-print" style="text-align:center;">
                     ${!isInventory ? `<button class="btn-delete" onclick="deleteExpense('${exp.id}')">Delete</button>` : '<small>Locked</small>'}
                 </td>
@@ -316,6 +317,171 @@ function renderExpenseSheet(data) {
     
     displayTotalExpense.textContent = `₹${grandTotal.toFixed(2)}`;
     if (displayExpenseCount) displayExpenseCount.textContent = data.length.toString();
+    
+    // Inline Edit Event Listeners যোগ করা
+    setupInlineEdit();
+}
+
+// ==========================================
+// --- INLINE EDIT FUNCTIONALITY ---
+// ==========================================
+function setupInlineEdit() {
+    const editableCells = document.querySelectorAll('.editable-cell');
+    
+    editableCells.forEach(cell => {
+        cell.addEventListener('click', function() {
+            // যদি ইতিমধ্যে এডিট মোডে থাকে তাহলে রিটার্ন
+            if (this.querySelector('input') || this.querySelector('select')) return;
+            
+            const field = this.dataset.field;
+            const currentValue = this.textContent.trim().replace('₹', '').replace(/,/g, '');
+            const expenseId = this.closest('tr').dataset.expenseId;
+            
+            // ব্যাকআপ রাখা
+            const originalContent = this.innerHTML;
+            
+            // ফিল্ড অনুযায়ী ইনপুট তৈরি
+            if (field === 'category') {
+                const select = document.createElement('select');
+                select.className = 'inline-edit-input';
+                expenseCategories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.textContent = cat;
+                    if (cat === currentValue) option.selected = true;
+                    select.appendChild(option);
+                });
+                this.innerHTML = '';
+                this.appendChild(select);
+                select.focus();
+                
+                select.addEventListener('change', () => saveInlineEdit(expenseId, field, select.value, this, originalContent));
+                select.addEventListener('blur', () => saveInlineEdit(expenseId, field, select.value, this, originalContent));
+                
+            } else if (field === 'method') {
+                const select = document.createElement('select');
+                select.className = 'inline-edit-input';
+                ['Cash', 'Online', 'Card'].forEach(method => {
+                    const option = document.createElement('option');
+                    option.value = method;
+                    option.textContent = method;
+                    if (method.toLowerCase() === currentValue.toLowerCase()) option.selected = true;
+                    select.appendChild(option);
+                });
+                this.innerHTML = '';
+                this.appendChild(select);
+                select.focus();
+                
+                select.addEventListener('change', () => saveInlineEdit(expenseId, field, select.value, this, originalContent));
+                select.addEventListener('blur', () => saveInlineEdit(expenseId, field, select.value, this, originalContent));
+                
+            } else if (field === 'source') {
+                const select = document.createElement('select');
+                select.className = 'inline-edit-input';
+                ['Box', 'Bank', 'Owner'].forEach(source => {
+                    const option = document.createElement('option');
+                    option.value = source;
+                    option.textContent = source;
+                    if (source.toLowerCase() === currentValue.toLowerCase() || source === currentValue) option.selected = true;
+                    select.appendChild(option);
+                });
+                this.innerHTML = '';
+                this.appendChild(select);
+                select.focus();
+                
+                select.addEventListener('change', () => saveInlineEdit(expenseId, field, select.value, this, originalContent));
+                select.addEventListener('blur', () => saveInlineEdit(expenseId, field, select.value, this, originalContent));
+                
+            } else if (field === 'amount') {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'inline-edit-input';
+                input.value = currentValue;
+                input.step = '0.01';
+                input.min = '0.01';
+                this.innerHTML = '';
+                this.appendChild(input);
+                input.focus();
+                input.select();
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        saveInlineEdit(expenseId, field, input.value, this, originalContent);
+                    } else if (e.key === 'Escape') {
+                        this.innerHTML = originalContent;
+                    }
+                });
+                input.addEventListener('blur', () => saveInlineEdit(expenseId, field, input.value, this, originalContent));
+                
+            } else {
+                // Text fields (description)
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'inline-edit-input';
+                input.value = currentValue;
+                this.innerHTML = '';
+                this.appendChild(input);
+                input.focus();
+                input.select();
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        saveInlineEdit(expenseId, field, input.value, this, originalContent);
+                    } else if (e.key === 'Escape') {
+                        this.innerHTML = originalContent;
+                    }
+                });
+                input.addEventListener('blur', () => saveInlineEdit(expenseId, field, input.value, this, originalContent));
+            }
+        });
+    });
+}
+
+// Inline Edit সেভ করার ফাংশন
+async function saveInlineEdit(expenseId, field, newValue, cell, originalContent) {
+    // যদি ইনপুট না থাকে (ইতিমধ্যে সেভ হয়ে গেছে) তাহলে রিটার্ন
+    if (!cell.querySelector('input') && !cell.querySelector('select')) return;
+    
+    const trimmedValue = newValue.trim();
+    
+    // ভ্যালিডেশন
+    if (!trimmedValue || (field === 'amount' && parseFloat(trimmedValue) <= 0)) {
+        alert('Invalid value!');
+        cell.innerHTML = originalContent;
+        return;
+    }
+    
+    try {
+        // Firestore আপডেট
+        const expenseRef = doc(db, 'shops', activeShopId, 'expenses', expenseId);
+        await updateDoc(expenseRef, {
+            [field]: field === 'amount' ? parseFloat(trimmedValue) : trimmedValue
+        });
+        
+        // UI আপডেট
+        if (field === 'amount') {
+            cell.innerHTML = `₹${parseFloat(trimmedValue).toFixed(2)}`;
+        } else if (field === 'method') {
+            cell.innerHTML = `<span class="badge-${trimmedValue.toLowerCase()}">${trimmedValue}</span>`;
+        } else {
+            cell.textContent = trimmedValue;
+        }
+        
+        // সাকসেস ইফেক্ট
+        cell.style.backgroundColor = '#d4edda';
+        setTimeout(() => {
+            cell.style.backgroundColor = '';
+        }, 1000);
+        
+        // টোটাল রিক্যালকুলেট করা (শুধু amount চেঞ্জ হলে)
+        if (field === 'amount') {
+            loadExpenses();
+        }
+    } catch (error) {
+        console.error('Error updating expense:', error);
+        alert('Failed to update!');
+        cell.innerHTML = originalContent;
+    }
 }
 
 // বাল্ক রো যোগ

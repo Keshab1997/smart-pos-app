@@ -521,14 +521,16 @@ select:focus {
 /* ইনলাইন এডিট ইনপুট বক্সের স্টাইল */
 .inline-edit-input {
     width: 100%;
-    height: 30px;
-    padding: 2px 5px;
-    border: 2px solid var(--primary-color);
-    border-radius: 4px;
+    height: 35px;
+    padding: 5px 8px;
+    border: 2px solid #4361ee;
+    border-radius: 6px;
     font-size: 14px;
-    font-family: 'Poppins', monospace;
+    font-family: 'Poppins', sans-serif;
     box-sizing: border-box;
     outline: none;
+    background: #fff;
+    box-shadow: 0 0 8px rgba(67, 97, 238, 0.2);
 }
 
 /* এডিটেবল সেলের জন্য কার্সর পরিবর্তন */
@@ -536,26 +538,29 @@ select:focus {
     cursor: pointer;
     position: relative;
     transition: background-color 0.2s;
+    padding: 10px 12px !important;
 }
 
 .editable-cell:hover {
-    background-color: #f0f7ff;
+    background-color: #f0f7ff !important;
+    outline: 1px dashed #4361ee;
 }
 
 .editable-cell:after {
     content: '✎';
     position: absolute;
-    right: 5px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 10px;
-    color: #aaa;
+    font-size: 11px;
+    color: #4361ee;
     opacity: 0;
     transition: opacity 0.2s;
+    pointer-events: none;
 }
 
 .editable-cell:hover:after {
-    opacity: 1;
+    opacity: 0.6;
 }
 
 /* টেবিল রো হোভার ইফেক্ট (ইউজার ফ্রেন্ডলি করার জন্য) */
