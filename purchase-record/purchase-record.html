@@ -98,7 +98,12 @@
                 </div>
 
                 <div class="ai-field">
-                    <label for="aiPromptBox">Prompt (copy + paste to AI studio)</label>
+                    <div class="ai-label-row">
+                        <label for="aiPromptBox">Prompt (copy + paste to AI studio)</label>
+                        <button id="copyAiPromptBtn" class="btn btn-outline btn-sm" type="button">
+                            <i class="fas fa-copy"></i> Copy Prompt
+                        </button>
+                    </div>
                     <textarea id="aiPromptBox" readonly></textarea>
                     <div class="ai-hint">
                         AI studio খুলবে, promptটা কপি হয়ে যাবে। একই ছবি AI studio তে upload করে দিন।

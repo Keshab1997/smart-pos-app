@@ -177,6 +177,7 @@ function createRecordCard(data, id) {
             </div>
             <div class="record-right">
                 <span class="record-total">₹ ${formatMoney(data.totalAmount)}</span>
+                ${data.billImageUrl ? `<a class="bill-image-link" href="${escapeHtml(data.billImageUrl)}" target="_blank" rel="noopener noreferrer" title="View bill image" onclick="event.stopPropagation()"><i class="fas fa-receipt"></i> View Bill</a>` : ``}
                 <span class="click-hint">Click to view items</span>
             </div>
         </div>

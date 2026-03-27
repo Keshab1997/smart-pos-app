@@ -311,6 +311,24 @@
     margin-bottom: 6px;
 }
 
+.ai-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.ai-label-row label {
+    margin-bottom: 0;
+}
+
+.btn-sm {
+    padding: 7px 10px;
+    font-size: 0.85rem;
+    border-radius: 8px;
+}
+
 .ai-field textarea {
     width: 100%;
     min-height: 100px;

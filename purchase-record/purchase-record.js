@@ -15,12 +15,69 @@ const applyAiOutputBtn = document.getElementById('applyAiOutputBtn');
 const billImageInput = document.getElementById('billImageInput');
 const billImagePreview = document.getElementById('billImagePreview');
 const aiPromptBox = document.getElementById('aiPromptBox');
+const copyAiPromptBtn = document.getElementById('copyAiPromptBtn');
 const aiOutputJson = document.getElementById('aiOutputJson');
 const aiAssistStatus = document.getElementById('aiAssistStatus');
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/prompts/new_chat';
 const PURCHASE_DRAFT_KEY = 'purchase_record_draft_v1';
 let draftSaveTimer = null;
+
+// ================= ImageBB (store bill image URL with record) =================
+// NOTE: Project already uses ImgBB in other modules (inventory/staff/add-product).
+const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267';
+
+async function compressImageToJpegBlob(file, { maxWidth = 1400, quality = 0.78 } = {}) {
+    // If it's already small-ish, upload as-is to keep it fast.
+    if (!file || file.size < 550 * 1024) return file;
+
+    const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Failed to read image.'));
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+    });
+
+    const img = await new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onerror = () => reject(new Error('Invalid image.'));
+        image.onload = () => resolve(image);
+        image.src = dataUrl;
+    });
+
+    const scale = Math.min(1, maxWidth / (img.width || maxWidth));
+    const w = Math.max(1, Math.round((img.width || maxWidth) * scale));
+    const h = Math.max(1, Math.round((img.height || maxWidth) * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.drawImage(img, 0, 0, w, h);
+
+    const blob = await new Promise((resolve) => {
+        canvas.toBlob((b) => resolve(b), 'image/jpeg', quality);
+    });
+
+    // If blob creation failed, fall back to original file.
+    return blob || file;
+}
+
+async function uploadBillImageToImgBB(file) {
+    const blobOrFile = await compressImageToJpegBlob(file);
+    const formData = new FormData();
+    formData.append('image', blobOrFile);
+
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: 'POST',
+        body: formData
+    });
+
+    const data = await response.json();
+    return data?.success ? (data?.data?.url || null) : null;
+}
 
 // পেজ লোড হলে
 window.addEventListener('DOMContentLoaded', () => {
@@ -184,6 +241,11 @@ function clearAllEntries() {
     calculateTotal();
     localStorage.removeItem(PURCHASE_DRAFT_KEY);
     if (aiOutputJson) aiOutputJson.value = '';
+    if (billImageInput) billImageInput.value = '';
+    if (billImagePreview) {
+        billImagePreview.src = '';
+        billImagePreview.style.display = 'none';
+    }
     setAiStatus('All entries cleared.');
 }
 
@@ -234,6 +296,19 @@ async function copyTextToClipboard(text) {
     } catch {
         return false;
     }
+}
+
+async function ensurePromptAndCopy() {
+    const prompt = buildAiPrompt();
+    if (aiPromptBox && !aiPromptBox.value) aiPromptBox.value = prompt;
+
+    const ok = await copyTextToClipboard(aiPromptBox?.value || prompt);
+    if (!ok && aiPromptBox) {
+        aiPromptBox.focus();
+        aiPromptBox.select();
+    }
+    setAiStatus(ok ? "Prompt copied." : "Prompt ready. Copy it manually (selected).");
+    return ok;
 }
 
 function showToast(message) {
@@ -337,17 +412,35 @@ if (openAiStudioBtn) {
     });
 }
 
+// --- One-click copy prompt ---
+if (copyAiPromptBtn) {
+    copyAiPromptBtn.addEventListener('click', async () => {
+        await ensurePromptAndCopy();
+    });
+}
+
 // --- Select bill image (preview only; AI Studio upload is manual) ---
 if (selectBillImageBtn && billImageInput && billImagePreview) {
     selectBillImageBtn.addEventListener('click', () => billImageInput.click());
 
-    billImageInput.addEventListener('change', () => {
+    billImageInput.addEventListener('change', async () => {
         const file = billImageInput.files?.[0];
         if (!file) return;
         const url = URL.createObjectURL(file);
         billImagePreview.src = url;
         billImagePreview.style.display = 'block';
-        setAiStatus("Bill image selected. Upload the same image in AI Studio.");
+
+        // Prompt should appear immediately after selecting an image.
+        const prompt = buildAiPrompt();
+        if (aiPromptBox) aiPromptBox.value = prompt;
+
+        // Best-effort copy (may be blocked by browser permissions).
+        const copied = await copyTextToClipboard(prompt);
+        setAiStatus(
+            copied
+                ? "Bill image selected. Prompt copied—paste it in AI Studio and upload the same image there."
+                : "Bill image selected. Prompt is ready—copy it and paste in AI Studio, then upload the same image there."
+        );
     });
 }
 
@@ -435,12 +528,31 @@ saveBtn.addEventListener('click', async () => {
     saveBtn.disabled = true;
 
     try {
+        // Upload bill image (optional) and store URL with record.
+        let billImageUrl = null;
+        const billFile = billImageInput?.files?.[0] || null;
+        if (billFile) {
+            setAiStatus('Uploading bill image...');
+            try {
+                billImageUrl = await uploadBillImageToImgBB(billFile);
+                if (!billImageUrl) {
+                    setAiStatus('Bill image upload failed. Saving record without image...', true);
+                } else {
+                    setAiStatus('Bill image uploaded. Saving record...');
+                }
+            } catch (e) {
+                console.error('Bill image upload failed', e);
+                setAiStatus('Bill image upload error. Saving record without image...', true);
+            }
+        }
+
         // ফায়ারবেস কালেকশনে ডকুমেন্ট তৈরি
         await addDoc(collection(db, "shops", activeShopId, "purchase_notes_isolated"), {
             date: date,
             billName: billName || "Unnamed Bill",
             items: items, // পুরো আইটেম লিস্ট (Qty সহ) সেভ হচ্ছে
             totalAmount: totalAmount,
+            billImageUrl: billImageUrl || null,
             shopId: activeShopId,
             createdByUid: user.uid,
             createdByEmail: user.email || null,

@@ -124,6 +124,24 @@
     padding-top: 3px;
 }
 
+.bill-image-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #8b5cf6;
+    text-decoration: none;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(139, 92, 246, 0.10);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.bill-image-link:hover {
+    background: rgba(139, 92, 246, 0.16);
+}
+
 /* --- Record Card --- */
 .record-card,
 #recordsList {
