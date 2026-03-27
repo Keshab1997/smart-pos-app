@@ -41,11 +41,13 @@
     gap: 15px;
     /* form-group এর ভেতরে label+input থাকে বলে center করলে বাটনগুলো ভেসে যায় */
     align-items: flex-end;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
 }
 
 .filter-section .form-group {
     margin-bottom: 0 !important; /* global.css এর margin-bottom override */
+    flex: 0 0 auto;
 }
 
 .filter-section label {
@@ -57,7 +59,8 @@
     text-transform: uppercase;
 }
 
-.filter-section input[type="date"] {
+.filter-section input[type="date"],
+.filter-section input[type="month"] {
     height: 42px;
     padding: 10px 15px;
     border: 1px solid #cbd5e1;
@@ -82,6 +85,15 @@
     align-items: center;
     gap: 8px;
     text-decoration: none;
+}
+
+/* keep buttons and fields on one line (scroll on small screens) */
+.filter-section::-webkit-scrollbar {
+    height: 8px;
+}
+.filter-section::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 999px;
 }
 
 .filter-section .btn-blue,
@@ -113,6 +125,10 @@
     min-height: 42px;
     height: 42px;
     justify-content: center;
+}
+
+#loadMoreWrap .btn {
+    min-width: 220px;
 }
 
 /* record header right side */

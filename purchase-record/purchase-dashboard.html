@@ -39,12 +39,26 @@
             <!-- Filter Section -->
             <div class="filter-section">
                 <div class="form-group">
-                    <label for="filterDate">Filter by Date:</label>
-                    <input type="date" id="filterDate">
+                    <label for="filterFromDate">From:</label>
+                    <input type="date" id="filterFromDate">
+                </div>
+
+                <div class="form-group">
+                    <label for="filterToDate">To:</label>
+                    <input type="date" id="filterToDate">
+                </div>
+
+                <div class="form-group">
+                    <label for="filterMonth">Month:</label>
+                    <input type="month" id="filterMonth">
                 </div>
                 
                 <button id="filterBtn" class="btn btn-blue">
                     <i class="fas fa-search"></i> Search
+                </button>
+
+                <button id="thisMonthBtn" class="btn btn-outline" type="button">
+                    <i class="fas fa-calendar"></i> This Month
                 </button>
                 
                 <button id="showAllBtn" class="btn btn-outline">
@@ -55,6 +69,10 @@
                 <button id="printBtn" class="btn btn-purple">
                     <i class="fas fa-print"></i> Print Report
                 </button>
+
+                <button id="pdfBtn" class="btn btn-green" type="button">
+                    <i class="fas fa-file-pdf"></i> Download PDF
+                </button>
             </div>
 
             <!-- Records List Container -->
@@ -64,6 +82,12 @@
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Loading records...</p>
                 </div>
+            </div>
+
+            <div id="loadMoreWrap" style="display:none; text-align:center; margin: 18px 0 6px;">
+                <button id="loadMoreBtn" class="btn btn-outline" type="button">
+                    <i class="fas fa-chevron-down"></i> Load More
+                </button>
             </div>
 
         </div>
@@ -89,5 +113,9 @@
     
     <!-- Main Dashboard Logic -->
     <script type="module" src="purchase-dashboard.js"></script>
+
+    <!-- PDF (jsPDF + autoTable) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
 </body>
 </html>

@@ -1,4 +1,5 @@
-import { db, auth, collection, addDoc, serverTimestamp } from "../js/firebase-config.js";
+import { db, auth, collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from "../js/firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const tableBody = document.getElementById('tableBody');
 const grandTotalEl = document.getElementById('grandTotal');
@@ -22,6 +23,10 @@ const aiAssistStatus = document.getElementById('aiAssistStatus');
 const AI_STUDIO_URL = 'https://aistudio.google.com/prompts/new_chat';
 const PURCHASE_DRAFT_KEY = 'purchase_record_draft_v1';
 let draftSaveTimer = null;
+
+// If URL has ?id=... then we are editing an existing record.
+const editRecordId = new URLSearchParams(window.location.search).get('id');
+let existingBillImageUrl = null;
 
 // ================= ImageBB (store bill image URL with record) =================
 // NOTE: Project already uses ImgBB in other modules (inventory/staff/add-product).
@@ -81,8 +86,77 @@ async function uploadBillImageToImgBB(file) {
 
 // পেজ লোড হলে
 window.addEventListener('DOMContentLoaded', () => {
-    restoreDraftOrInit();
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            window.location.href = '../index.html';
+            return;
+        }
+
+        if (editRecordId) {
+            initEditMode(editRecordId);
+        } else {
+            restoreDraftOrInit();
+        }
+    });
 });
+
+async function initEditMode(recordId) {
+    try {
+        const activeShopId = localStorage.getItem('activeShopId');
+        if (!activeShopId) {
+            alert("Active shop not found. Please login again.");
+            window.location.href = '../index.html';
+            return;
+        }
+
+        setAiStatus('Loading record...');
+        saveBtn.disabled = true;
+
+        const ref = doc(db, "shops", activeShopId, "purchase_notes_isolated", recordId);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) throw new Error('Record not found.');
+
+        const data = snap.data() || {};
+        // Header UI hint
+        if (saveBtn) saveBtn.innerHTML = `<i class="fas fa-save"></i> UPDATE RECORD`;
+
+        // Meta
+        billDateInput.value = data?.date || '';
+        billNameInput.value = data?.billName || '';
+
+        existingBillImageUrl = data?.billImageUrl || null;
+        if (existingBillImageUrl && billImagePreview) {
+            billImagePreview.src = existingBillImageUrl;
+            billImagePreview.style.display = 'block';
+        }
+
+        // Items
+        tableBody.innerHTML = '';
+        const items = Array.isArray(data?.items) ? data.items : [];
+        if (items.length === 0) {
+            for (let i = 0; i < 5; i++) createRow();
+        } else {
+            items.forEach((item) => {
+                createRow();
+                const row = tableBody.lastElementChild;
+                // Support both structured and legacy fields
+                setRowData(row, {
+                    itemName: item?.itemName ?? '',
+                    itemQtyValue: item?.itemQtyValue ?? '',
+                    itemUnit: item?.itemUnit ?? '',
+                    itemUnitPrice: item?.itemUnitPrice ?? ''
+                });
+            });
+        }
+        calculateTotal();
+        setAiStatus('Edit mode: update and save.');
+    } catch (e) {
+        console.error(e);
+        setAiStatus(e?.message || 'Failed to load record.', true);
+    } finally {
+        saveBtn.disabled = false;
+    }
+}
 
 // নতুন রো তৈরি (Qty সহ)
 function createRow() {
@@ -546,16 +620,34 @@ saveBtn.addEventListener('click', async () => {
             }
         }
 
-        // ফায়ারবেস কালেকশনে ডকুমেন্ট তৈরি
-        await addDoc(collection(db, "shops", activeShopId, "purchase_notes_isolated"), {
+        const payload = {
             date: date,
             billName: billName || "Unnamed Bill",
             items: items, // পুরো আইটেম লিস্ট (Qty সহ) সেভ হচ্ছে
             totalAmount: totalAmount,
-            billImageUrl: billImageUrl || null,
             shopId: activeShopId,
             createdByUid: user.uid,
-            createdByEmail: user.email || null,
+            createdByEmail: user.email || null
+        };
+
+        // Keep old image if editing and no new image chosen.
+        payload.billImageUrl = billImageUrl || existingBillImageUrl || null;
+
+        if (editRecordId) {
+            // Update existing record
+            const ref = doc(db, "shops", activeShopId, "purchase_notes_isolated", editRecordId);
+            await updateDoc(ref, {
+                ...payload,
+                updatedAt: serverTimestamp()
+            });
+            alert("✅ Updated Successfully!");
+            window.location.href = 'purchase-dashboard.html';
+            return;
+        }
+
+        // Create new record
+        await addDoc(collection(db, "shops", activeShopId, "purchase_notes_isolated"), {
+            ...payload,
             createdAt: serverTimestamp()
         });
 
