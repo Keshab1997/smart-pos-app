@@ -292,13 +292,13 @@ function renderExpenseSheet(data) {
             tr.className = isInventory ? 'row-inventory' : 'row-general-expense';
             
             tr.innerHTML = `
-                <td>${exp.date.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                <td>${exp.category}</td>
-                <td>${exp.description}</td>
-                <td><span class="badge-${(exp.method || 'cash').toLowerCase()}">${exp.method || 'Cash'}</span></td>
-                <td>${exp.source || 'N/A'}</td>
-                <td class="text-right">₹${amount.toFixed(2)}</td>
-                <td class="no-print" style="text-align:center;">
+                <td data-label="Time">${exp.date.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                <td data-label="Category">${exp.category}</td>
+                <td data-label="Description">${exp.description}</td>
+                <td data-label="Method"><span class="badge-${(exp.method || 'cash').toLowerCase()}">${exp.method || 'Cash'}</span></td>
+                <td data-label="Source">${exp.source || 'N/A'}</td>
+                <td data-label="Amount" class="text-right">₹${amount.toFixed(2)}</td>
+                <td data-label="Action" class="no-print" style="text-align:center;">
                     ${!isInventory ? `<button class="btn-delete" onclick="deleteExpense('${exp.id}')">Delete</button>` : '<small>Locked</small>'}
                 </td>
             `;
@@ -325,29 +325,29 @@ function addBulkRow() {
     const today = new Date().toLocaleString('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).split(',')[0];
     
     tr.innerHTML = `
-        <td><input type="date" class="bulk-date" value="${today}"></td>
-        <td><input type="text" class="bulk-desc" list="purpose-suggestions" placeholder="Purpose..."></td>
-        <td>
+        <td data-label="Date"><input type="date" class="bulk-date" value="${today}"></td>
+        <td data-label="Purpose"><input type="text" class="bulk-desc" list="purpose-suggestions" placeholder="Purpose..."></td>
+        <td data-label="Category">
             <select class="bulk-category">
                 ${expenseCategories.map(c => `<option value="${c}">${c}</option>`).join('')}
             </select>
         </td>
-        <td>
+        <td data-label="Method">
             <select class="bulk-method">
                 <option value="Cash">Cash</option>
                 <option value="Online">Online</option>
                 <option value="Card">Card</option>
             </select>
         </td>
-        <td>
+        <td data-label="Source">
             <select class="bulk-source">
                 <option value="Box">Box</option>
                 <option value="Owner">Owner</option>
                 <option value="Bank">Bank</option>
             </select>
         </td>
-        <td><input type="number" class="bulk-amount" placeholder="0.00" step="0.01" min="0.01"></td>
-        <td><button type="button" class="btn-delete" onclick="this.closest('tr').remove()">×</button></td>
+        <td data-label="Amount"><input type="number" class="bulk-amount" placeholder="0.00" step="0.01" min="0.01"></td>
+        <td data-label="Action"><button type="button" class="btn-delete" onclick="this.closest('tr').remove()">×</button></td>
     `;
     
     // অটো ক্যাটাগরি সিলেক্ট
@@ -560,30 +560,30 @@ function addBulkRowWithData(date, cat, desc, method, source, amount) {
         .join('');
 
     tr.innerHTML = `
-        <td><input type="date" class="bulk-date" value="${date}"></td>
-        <td><input type="text" class="bulk-desc" value="${desc}" placeholder="Purpose..."></td>
-        <td>
+        <td data-label="Date"><input type="date" class="bulk-date" value="${date}"></td>
+        <td data-label="Purpose"><input type="text" class="bulk-desc" value="${desc}" placeholder="Purpose..."></td>
+        <td data-label="Category">
             <select class="bulk-category">
                 <option value="${cat}" selected>${cat}</option>
                 ${catOptions}
             </select>
         </td>
-        <td>
+        <td data-label="Method">
             <select class="bulk-method">
                 <option value="Cash" ${method === 'cash' ? 'selected' : ''}>Cash</option>
                 <option value="Online" ${method === 'online' ? 'selected' : ''}>Online</option>
                 <option value="Card" ${method === 'card' ? 'selected' : ''}>Card</option>
             </select>
         </td>
-        <td>
+        <td data-label="Source">
             <select class="bulk-source">
                 <option value="Box" ${source === 'box' ? 'selected' : ''}>Box</option>
                 <option value="Bank" ${source === 'bank' ? 'selected' : ''}>Bank</option>
                 <option value="Owner" ${source === 'owner' ? 'selected' : ''}>Owner</option>
             </select>
         </td>
-        <td><input type="number" class="bulk-amount" value="${amount}" step="0.01" min="0.01"></td>
-        <td><button type="button" class="btn-delete" onclick="this.closest('tr').remove()">×</button></td>
+        <td data-label="Amount"><input type="number" class="bulk-amount" value="${amount}" step="0.01" min="0.01"></td>
+        <td data-label="Action"><button type="button" class="btn-delete" onclick="this.closest('tr').remove()">×</button></td>
     `;
     
     bulkTbody.appendChild(tr);

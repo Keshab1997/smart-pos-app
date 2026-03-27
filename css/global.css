@@ -16,6 +16,13 @@
     --border-color: #dee2e6;
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
     --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --radius-lg: 12px;
+    --tap-highlight: rgba(0,0,0,0);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --vh: 1vh; /* set by JS for iOS */
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25,6 +32,8 @@ body {
     background-color: var(--background-color);
     color: var(--text-color);
     line-height: 1.6;
+    -webkit-tap-highlight-color: var(--tap-highlight);
+    text-rendering: optimizeLegibility;
 }
 
 .container {
@@ -32,6 +41,71 @@ body {
     width: 100%;
     margin: 0 auto;
     padding: 10px 20px;
+}
+
+/* ============================
+   Native-like mobile defaults
+   ============================ */
+html, body {
+    height: 100%;
+}
+
+body {
+    overscroll-behavior-y: none;
+    touch-action: manipulation;
+}
+
+@supports (-webkit-touch-callout: none) {
+    /* iOS: use JS-set --vh for stable height (prevents jump on address bar) */
+    .use-vh {
+        min-height: calc(var(--vh) * 100);
+    }
+}
+
+/* Better touch targets */
+button, .btn, a, input, select, textarea {
+    -webkit-tap-highlight-color: var(--tap-highlight);
+}
+
+/* Reduce accidental zoom / keep inputs readable on iOS */
+input, select, textarea {
+    font-size: 16px;
+}
+
+/* Utility: safe-area padding container */
+.safe-area {
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+}
+
+/* Mobile spacing + card feel across pages */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px 12px;
+        max-width: 100% !important;
+    }
+
+    .card, .modal-content {
+        border-radius: var(--radius-lg);
+    }
+
+    .btn {
+        border-radius: 10px;
+        padding: 10px 14px;
+    }
+
+    /* Make tables scroll cleanly on mobile */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Common headings slightly tighter */
+    h1 { font-size: 1.35rem; }
+    h2 { font-size: 1.15rem; }
+    h3 { font-size: 1.05rem; }
 }
 
 /* ============================

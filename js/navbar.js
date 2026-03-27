@@ -319,6 +319,32 @@ function setupNavbarEvents() {
 
 // DOM লোড হওয়ার পর নেভবার লোড করা
 document.addEventListener('DOMContentLoaded', () => {
+    // Native-like mobile enhancements (applies globally)
+    try {
+        const ua = navigator.userAgent || '';
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(ua) || (navigator.maxTouchPoints || 0) > 1;
+        document.documentElement.classList.toggle('is-mobile', Boolean(isMobile));
+
+        // PWA standalone detection
+        const isStandalone =
+            window.matchMedia?.('(display-mode: standalone)')?.matches ||
+            window.matchMedia?.('(display-mode: fullscreen)')?.matches ||
+            window.navigator.standalone === true;
+        document.documentElement.classList.toggle('is-standalone', Boolean(isStandalone));
+
+        // iOS 100vh fix via --vh
+        const setVh = () => {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+            document.body.classList.add('use-vh');
+        };
+        setVh();
+        window.addEventListener('resize', setVh, { passive: true });
+        window.addEventListener('orientationchange', setVh, { passive: true });
+    } catch (e) {
+        // ignore
+    }
+
     // প্রথমে একবার লোড করা
     loadNavbar();
 });
