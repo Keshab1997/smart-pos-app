@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = 'smart-pos-v2.2'; // ভার্সন আপডেট করুন
+const CACHE_NAME = 'smart-pos-v4'; // ভার্সন আপডেট করুন
 const ASSETS = [
   '/',
   '/index.html',
@@ -46,7 +46,13 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
         // নতুন রেসপন্স ক্যাশে আপডেট করা (শুধু আমাদের স্ট্যাটিক ফাইলের জন্য)
-        if (event.request.url.startsWith(self.location.origin)) {
+        // NOTE: cache.put() consumes the response body; only do this for GET requests.
+        if (
+          event.request.method === 'GET' &&
+          event.request.url.startsWith(self.location.origin) &&
+          networkResponse &&
+          networkResponse.ok
+        ) {
             caches.open(CACHE_NAME).then((cache) => {
                 cache.put(event.request, networkResponse.clone());
             });

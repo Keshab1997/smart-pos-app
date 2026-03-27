@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:," />
     <title>Purchase Note Record</title>
     <!-- তোমার মেইন CSS ফাইল থাকলে এখানে লিঙ্ক করতে পারো, না হলে নিচের CSS কাজ করবে -->
     <link rel="stylesheet" href="purchase-record.css">
@@ -51,7 +52,8 @@
                             <th width="5%">No.</th>
                             <th width="45%">Item Name (পণ্যের নাম)</th>
                             <th width="20%">Qty / Unit (পরিমাণ)</th>
-                            <th width="25%">Price (₹)</th>
+                            <th width="15%">Unit Price (₹)</th>
+                            <th width="15%">Line Total (₹)</th>
                             <th width="5%">❌</th>
                         </tr>
                     </thead>
@@ -66,6 +68,9 @@
                 <button id="addRowBtn" class="btn btn-blue">
                     <i class="fas fa-plus"></i> Add Row
                 </button>
+                <button id="clearAllBtn" class="btn btn-outline" type="button">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
                 
                 <div class="total-display">
                     Total: <span id="grandTotal">0.00</span> ₹
@@ -74,6 +79,42 @@
                 <button id="saveBtn" class="btn btn-green">
                     <i class="fas fa-save"></i> SAVE RECORD
                 </button>
+            </div>
+
+            <!-- ================= AI ASSIST (Prompt + Auto-fill) ================= -->
+            <div class="ai-assist">
+                <div class="ai-top-row">
+                    <button id="selectBillImageBtn" class="btn btn-outline" type="button">
+                        <i class="fas fa-image"></i> Select Bill Image
+                    </button>
+                    <button id="openAiStudioBtn" class="btn btn-purple" type="button">
+                        <i class="fas fa-wand-magic-sparkles"></i> Open AI Studio
+                    </button>
+                </div>
+
+                <input type="file" id="billImageInput" accept="image/*" style="display:none;">
+                <div class="ai-preview">
+                    <img id="billImagePreview" alt="Selected bill preview" style="display:none;">
+                </div>
+
+                <div class="ai-field">
+                    <label for="aiPromptBox">Prompt (copy + paste to AI studio)</label>
+                    <textarea id="aiPromptBox" readonly></textarea>
+                    <div class="ai-hint">
+                        AI studio খুলবে, promptটা কপি হয়ে যাবে। একই ছবি AI studio তে upload করে দিন।
+                    </div>
+                </div>
+
+                <div class="ai-field">
+                    <label for="aiOutputJson">Paste AI output JSON here</label>
+                    <textarea id="aiOutputJson" placeholder='{"billName":"...","date":"YYYY-MM-DD","items":[{"itemName":"...","itemQty":1,"itemUnit":"pcs","unitPrice":10.5}]}'></textarea>
+                </div>
+
+                <button id="applyAiOutputBtn" class="btn btn-green" type="button">
+                    <i class="fas fa-magic"></i> Auto-fill From JSON
+                </button>
+
+                <div id="aiAssistStatus" class="ai-status"></div>
             </div>
         </div>
     </div>

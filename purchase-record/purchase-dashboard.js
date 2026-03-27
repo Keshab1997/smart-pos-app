@@ -1,4 +1,5 @@
-import { db, collection, query, where, orderBy, getDocs, deleteDoc, doc } from "../js/firebase-config.js";
+import { db, auth, collection, query, where, orderBy, getDocs, deleteDoc, doc } from "../js/firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const recordsList = document.getElementById('recordsList');
 const filterDateInput = document.getElementById('filterDate');
@@ -9,9 +10,34 @@ const printBtn = document.getElementById('printBtn');
 // বর্তমানে প্রদর্শিত ডাটা স্টোর করার জন্য ভেরিয়েবল
 let currentData = [];
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+function toNumber(value, fallback = 0) {
+    const num = typeof value === 'number' ? value : parseFloat(value);
+    return Number.isFinite(num) ? num : fallback;
+}
+
+function formatMoney(value) {
+    return toNumber(value, 0).toFixed(2);
+}
+
 // পেজ লোড হলে সব ডাটা দেখাবে
 window.addEventListener('DOMContentLoaded', () => {
-    loadRecords();
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            // rules সাধারণত auth ছাড়া allow করে না; তাই login-এ পাঠিয়ে দিচ্ছি
+            window.location.href = '../index.html';
+            return;
+        }
+        loadRecords();
+    });
 });
 
 // ফিল্টার বাটন ক্লিক
@@ -54,11 +80,27 @@ async function loadRecords(dateFilter = null) {
         </div>`;
     
     try {
-        const recordsRef = collection(db, "purchase_notes_isolated");
+        const activeShopId = localStorage.getItem('activeShopId');
+        const user = auth?.currentUser;
+        if (!user) {
+            recordsList.innerHTML = '<p style="text-align: center; color: red;">Please login first.</p>';
+            return;
+        }
+        if (!activeShopId) {
+            recordsList.innerHTML = '<p style="text-align: center; color: red;">Active shop not found. Please login again.</p>';
+            return;
+        }
+
+        const recordsRef = collection(db, "shops", activeShopId, "purchase_notes_isolated");
         let q;
 
         if (dateFilter) {
-            q = query(recordsRef, where("date", "==", dateFilter));
+            // Use shopId to satisfy security rules (app stores shop-scoped data).
+            q = query(
+                recordsRef,
+                where("date", "==", dateFilter),
+                orderBy("date", "desc")
+            );
         } else {
             q = query(recordsRef, orderBy("date", "desc"));
         }
@@ -88,6 +130,21 @@ async function loadRecords(dateFilter = null) {
 
     } catch (error) {
         console.error("Error getting documents: ", error);
+        if (error?.code === 'permission-denied') {
+            const activeShopId = localStorage.getItem('activeShopId');
+            const user = auth?.currentUser;
+            recordsList.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #c0392b;">
+                    <p><strong>Access denied.</strong> Firestore rules blocked reading purchase records.</p>
+                    <p style="font-size:12px; opacity:0.9; margin-top:10px;">
+                        Debug: shopId=${escapeHtml(activeShopId)} • uid=${escapeHtml(user?.uid)} • email=${escapeHtml(user?.email)}
+                    </p>
+                    <p style="font-size:12px; opacity:0.9; margin-top:10px;">
+                        If you recently changed rules, try saving a NEW record first.
+                    </p>
+                </div>`;
+            return;
+        }
         recordsList.innerHTML = '<p style="text-align: center; color: red;">Error loading data. Check console.</p>';
     }
 }
@@ -104,9 +161,9 @@ function createRecordCard(data, id) {
             itemsHtml += `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${item.itemName}</td>
-                    <td>${item.itemQty || '-'}</td>
-                    <td>₹ ${parseFloat(item.itemPrice).toFixed(2)}</td>
+                    <td>${escapeHtml(item.itemName)}</td>
+                    <td>${escapeHtml(item.itemQty || '-')}</td>
+                    <td>₹ ${formatMoney(item.itemPrice)}</td>
                 </tr>
             `;
         });
@@ -115,11 +172,11 @@ function createRecordCard(data, id) {
     card.innerHTML = `
         <div class="record-header" onclick="toggleDetails('${id}')">
             <div class="record-info">
-                <h3>${data.billName || 'Unknown Shop'}</h3>
-                <span class="record-date"><i class="far fa-calendar-alt"></i> ${data.date}</span>
+                <h3>${escapeHtml(data.billName || 'Unknown Shop')}</h3>
+                <span class="record-date"><i class="far fa-calendar-alt"></i> ${escapeHtml(data.date)}</span>
             </div>
             <div class="record-right">
-                <span class="record-total">₹ ${parseFloat(data.totalAmount).toFixed(2)}</span>
+                <span class="record-total">₹ ${formatMoney(data.totalAmount)}</span>
                 <span class="click-hint">Click to view items</span>
             </div>
         </div>
@@ -152,7 +209,7 @@ function createRecordCard(data, id) {
 //   FULL DETAILS PRINT FUNCTION
 // =======================================================
 function printReport() {
-    const grandTotal = currentData.reduce((sum, record) => sum + parseFloat(record.totalAmount || 0), 0);
+    const grandTotal = currentData.reduce((sum, record) => sum + toNumber(record.totalAmount || 0, 0), 0);
     const reportDate = filterDateInput.value ? `Date: ${filterDateInput.value}` : "All Records History";
 
     const printWindow = window.open('', '', 'height=600,width=800');
@@ -164,8 +221,8 @@ function printReport() {
             <tr class="bill-header-row">
                 <td>${index + 1}</td>
                 <td colspan="3">
-                    <strong>${record.billName}</strong> 
-                    <span style="font-size: 12px; color: #555; margin-left: 10px;">(Date: ${record.date})</span>
+                    <strong>${escapeHtml(record.billName)}</strong> 
+                    <span style="font-size: 12px; color: #555; margin-left: 10px;">(Date: ${escapeHtml(record.date)})</span>
                 </td>
             </tr>
         `;
@@ -175,9 +232,9 @@ function printReport() {
                 tableContent += `
                     <tr class="item-row">
                         <td></td>
-                        <td style="padding-left: 25px;">• ${item.itemName}</td>
-                        <td style="text-align: center;">${item.itemQty || '-'}</td>
-                        <td style="text-align: right;">${parseFloat(item.itemPrice).toFixed(2)}</td>
+                        <td style="padding-left: 25px;">• ${escapeHtml(item.itemName)}</td>
+                        <td style="text-align: center;">${escapeHtml(item.itemQty || '-')}</td>
+                        <td style="text-align: right;">${formatMoney(item.itemPrice)}</td>
                     </tr>
                 `;
             });
@@ -186,7 +243,7 @@ function printReport() {
         tableContent += `
             <tr class="bill-total-row">
                 <td colspan="3" style="text-align: right;">Bill Total:</td>
-                <td style="text-align: right;">₹ ${parseFloat(record.totalAmount).toFixed(2)}</td>
+                <td style="text-align: right;">₹ ${formatMoney(record.totalAmount)}</td>
             </tr>
             <tr><td colspan="4" style="border: none; height: 10px;"></td></tr>
         `;
@@ -266,7 +323,8 @@ window.deleteRecord = async function(id) {
     }
 
     try {
-        await deleteDoc(doc(db, "purchase_notes_isolated", id));
+        const activeShopId = localStorage.getItem('activeShopId');
+        await deleteDoc(doc(db, "shops", activeShopId, "purchase_notes_isolated", id));
         
         // অ্যারে থেকে রিমুভ করা
         currentData = currentData.filter(item => item.id !== id);

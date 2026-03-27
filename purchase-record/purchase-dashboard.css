@@ -39,8 +39,13 @@
     margin-bottom: 30px;
     display: flex;
     gap: 15px;
+    /* form-group এর ভেতরে label+input থাকে বলে center করলে বাটনগুলো ভেসে যায় */
     align-items: flex-end;
     flex-wrap: wrap;
+}
+
+.filter-section .form-group {
+    margin-bottom: 0 !important; /* global.css এর margin-bottom override */
 }
 
 .filter-section label {
@@ -53,6 +58,7 @@
 }
 
 .filter-section input[type="date"] {
+    height: 42px;
     padding: 10px 15px;
     border: 1px solid #cbd5e1;
     border-radius: 8px;
@@ -63,7 +69,8 @@
 }
 
 /* Buttons */
-.btn {
+.filter-section .btn,
+.page-header .btn {
     padding: 10px 20px;
     border-radius: 8px;
     font-weight: 500;
@@ -77,23 +84,52 @@
     text-decoration: none;
 }
 
-.btn-blue { background-color: #3b82f6; color: white; }
-.btn-blue:hover { background-color: #2563eb; }
+.filter-section .btn-blue,
+.page-header .btn-blue { background-color: #3b82f6; color: white; }
+.filter-section .btn-blue:hover,
+.page-header .btn-blue:hover { background-color: #2563eb; }
 
-.btn-green { background-color: #10b981; color: white; }
-.btn-green:hover { background-color: #059669; }
+.filter-section .btn-green,
+.page-header .btn-green { background-color: #10b981; color: white; }
+.filter-section .btn-green:hover,
+.page-header .btn-green:hover { background-color: #059669; }
 
-.btn-purple { background-color: #8b5cf6; color: white; }
-.btn-purple:hover { background-color: #7c3aed; }
+.filter-section .btn-purple,
+.page-header .btn-purple { background-color: #8b5cf6; color: white; }
+.filter-section .btn-purple:hover,
+.page-header .btn-purple:hover { background-color: #7c3aed; }
 
-.btn-outline {
+.filter-section .btn-outline,
+.page-header .btn-outline {
     background-color: #f1f5f9;
     color: #475569;
     border: 1px solid #e2e8f0;
 }
-.btn-outline:hover { background-color: #e2e8f0; color: #1e293b; }
+.filter-section .btn-outline:hover,
+.page-header .btn-outline:hover { background-color: #e2e8f0; color: #1e293b; }
+
+.filter-section .btn,
+.page-header .btn {
+    min-height: 42px;
+    height: 42px;
+    justify-content: center;
+}
+
+/* record header right side */
+.record-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    padding-top: 3px;
+}
 
 /* --- Record Card --- */
+.record-card,
+#recordsList {
+    width: 100%;
+}
+
 .record-card {
     background: white;
     margin-bottom: 20px;
@@ -123,7 +159,7 @@
 .record-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     cursor: pointer;
     padding: 20px 25px;
     background: #fff;
@@ -210,7 +246,6 @@
     cursor: pointer;
     margin-top: 20px;
     font-size: 0.85rem;
-    float: right;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -235,4 +270,36 @@
 .loading-state i {
     font-size: 2.5rem;
     margin-bottom: 15px;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .filter-section .btn,
+    .page-header .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .record-header {
+        padding: 16px 18px;
+    }
+
+    .record-info h3 {
+        font-size: 1.1rem;
+    }
+
+    .record-total {
+        font-size: 1.2rem;
+    }
 }

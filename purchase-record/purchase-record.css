@@ -91,7 +91,7 @@
     width: 100%;
     border-collapse: collapse;
     background-color: #fff;
-    min-width: 600px; /* টেবিল যেন খুব ছোট না হয়ে যায় */
+    min-width: 780px; /* নতুন কলাম যোগ হওয়ায় একটু বড় */
 }
 
 #excelTable thead {
@@ -135,6 +135,37 @@
     vertical-align: middle;
 }
 
+/* Qty + Unit combined input */
+.qty-unit-wrap {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 0 6px;
+}
+
+.qty-unit-wrap input {
+    height: 40px;
+}
+
+.qty-unit-wrap .item-qty-value {
+    width: 55%;
+    padding: 0 8px;
+}
+
+.qty-unit-wrap .item-unit {
+    width: 45%;
+    padding: 0 8px;
+}
+
+/* Line total cell */
+.line-total-cell {
+    padding: 0 10px !important;
+    vertical-align: middle;
+    font-weight: 600;
+    color: #2c3e50;
+    white-space: nowrap;
+}
+
 /* ডিলিট বাটন ডিজাইন (JS দিয়ে তৈরি হবে) */
 .delete-btn {
     background: #ffeded;
@@ -164,6 +195,8 @@
     padding: 15px 20px;
     border-radius: 8px;
     border-top: 2px solid #e9ecef;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .total-display {
@@ -229,6 +262,78 @@
     color: white;
 }
 
+.btn-purple {
+    background-color: #8b5cf6;
+    color: white;
+}
+.btn-purple:hover {
+    background-color: #7c3aed;
+}
+
+/* ================= AI ASSIST (Prompt + JSON Auto-fill) ================= */
+.ai-assist {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.ai-top-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.ai-preview {
+    margin: 8px 0 14px;
+}
+
+.ai-preview img {
+    max-width: 100%;
+    max-height: 180px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    display: block;
+}
+
+.ai-field {
+    margin-top: 10px;
+}
+
+.ai-field label {
+    font-weight: 700;
+    color: #34495e;
+    font-size: 0.95rem;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.ai-field textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    resize: vertical;
+}
+
+.ai-hint {
+    margin-top: 6px;
+    color: #7f8c8d;
+    font-size: 0.85rem;
+}
+
+.ai-status {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    white-space: pre-wrap;
+}
+
 /* --- Responsive Adjustments --- */
 @media (max-width: 768px) {
     .container {
@@ -265,6 +370,11 @@
     .page-header .btn-outline {
         width: 100%;
         text-align: center;
+        justify-content: center;
+    }
+
+    .ai-top-row .btn {
+        width: 100%;
         justify-content: center;
     }
 }
