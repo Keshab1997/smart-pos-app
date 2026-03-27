@@ -480,72 +480,204 @@ document.getElementById('close-ai-modal').onclick = () => aiModal.classList.add(
 // ৩. ডাটা প্রসেস এবং টেবিল ফিলাপ (Smart Header Detection সহ)
 document.getElementById('btn-process-ai').addEventListener('click', () => {
     const rawData = document.getElementById('ai-raw-input').value.trim();
-    if (!rawData) return alert("Please paste data first!");
+    const statusDiv = document.getElementById('ai-process-status');
+    
+    if (!rawData) {
+        statusDiv.innerHTML = '<span style="color: red;">⚠️ Please paste data first!</span>';
+        return;
+    }
 
     const lines = rawData.split('\n');
     bulkTbody.innerHTML = ''; // টেবিল ক্লিয়ার করা
 
-    let count = 0;
+    let successCount = 0;
+    let skippedCount = 0;
+    let errorLines = [];
     
     // হেডার চেনার জন্য কিছু কী-ওয়ার্ড
-    const headerKeywords = ["date", "category", "paid by", "payee", "purpose", "amount", "status"];
+    const headerKeywords = ["date", "category", "paid by", "payee", "purpose", "amount", "status", "method", "source"];
 
-    lines.forEach(line => {
+    // স্মার্ট তারিখ পার্সিং ফাংশন
+    function parseSmartDate(dateStr) {
+        if (!dateStr) return getTodayDate();
+        
+        // ইতিমধ্যে YYYY-MM-DD ফরম্যাটে আছে কিনা চেক
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            return dateStr;
+        }
+        
+        // DD/MM/YYYY বা DD-MM-YYYY ফরম্যাট
+        const parts = dateStr.split(/[\/\-\.]/); // slash, dash, dot সাপোর্ট
+        
+        if (parts.length === 3) {
+            let day, month, year;
+            
+            // যদি প্রথম অংশ 4 ডিজিটের হয় তাহলে YYYY-MM-DD
+            if (parts[0].length === 4) {
+                year = parts[0];
+                month = parts[1].padStart(2, '0');
+                day = parts[2].padStart(2, '0');
+            } else {
+                // DD-MM-YYYY বা DD/MM/YYYY
+                day = parts[0].padStart(2, '0');
+                month = parts[1].padStart(2, '0');
+                year = parts[2];
+                
+                // 2-digit year কে 4-digit এ কনভার্ট
+                if (year.length === 2) {
+                    year = '20' + year;
+                }
+            }
+            
+            return `${year}-${month}-${day}`;
+        }
+        
+        return getTodayDate(); // পার্স করতে না পারলে আজকের তারিখ
+    }
+    
+    // আজকের তারিখ YYYY-MM-DD ফরম্যাটে
+    function getTodayDate() {
+        return new Date().toLocaleString('en-CA', { 
+            timeZone: 'Asia/Kolkata', 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit' 
+        }).split(',')[0];
+    }
+    
+    // স্মার্ট ক্যাটাগরি ম্যাচিং
+    function findBestCategory(inputCat) {
+        if (!inputCat) return expenseCategories[0];
+        
+        const input = inputCat.toLowerCase().trim();
+        
+        // Exact match
+        const exactMatch = expenseCategories.find(cat => cat.toLowerCase() === input);
+        if (exactMatch) return exactMatch;
+        
+        // Partial match (শুরুতে মিললে)
+        const partialMatch = expenseCategories.find(cat => 
+            cat.toLowerCase().startsWith(input) || input.startsWith(cat.toLowerCase())
+        );
+        if (partialMatch) return partialMatch;
+        
+        // Contains match
+        const containsMatch = expenseCategories.find(cat => 
+            cat.toLowerCase().includes(input) || input.includes(cat.toLowerCase())
+        );
+        if (containsMatch) return containsMatch;
+        
+        // কোনো ম্যাচ না পেলে ইনপুট ক্যাটাগরিই রিটার্ন (নতুন ক্যাটাগরি হিসেবে)
+        return inputCat;
+    }
+
+    lines.forEach((line, index) => {
         if (!line.trim()) return; // খালি লাইন বাদ
 
-        // ট্যাব বা পাইপ দিয়ে কলাম আলাদা করা
-        const cols = line.split(/\t|\|/).map(c => c.trim());
+        // ট্যাব, পাইপ (|) অথবা কমা (,) দিয়ে কলাম আলাদা করা
+        const cols = line.split(/\t|\||,/).map(c => c.trim());
 
         // --- Smart Header Detection ---
-        // যদি প্রথম বা দ্বিতীয় কলামে হেডার কী-ওয়ার্ড থাকে, তবে এই লাইনটি স্কিপ করবে
-        const firstColLower = cols[0].toLowerCase();
+        const firstColLower = cols[0] ? cols[0].toLowerCase() : "";
         const secondColLower = cols[1] ? cols[1].toLowerCase() : "";
         
-        const isHeader = headerKeywords.some(key => firstColLower.includes(key) || secondColLower.includes(key));
+        const isHeader = headerKeywords.some(key => 
+            firstColLower.includes(key) || secondColLower.includes(key)
+        );
         
         if (isHeader) {
             console.log("Header detected and skipped:", line);
-            return; // এই লাইনটি প্রসেস না করে পরের লাইনে চলে যাবে
+            skippedCount++;
+            return;
         }
 
-        // তোমার ছবির কলাম সিকোয়েন্স: [0]Date, [1]Category, [2]Paid By, [3]Payee, [4]Purpose, [5]Amount
-        if (cols.length >= 5) {
-            count++;
-            const rawDate = cols[0];
-            const category = cols[1];
-            const paidBy = cols[2] ? cols[2].toLowerCase() : "";
-            const payee = cols[3] || "";
-            const purposeText = cols[4] || "";
-            const amount = cols[5] ? cols[5].replace(/[^0-9.]/g, '') : "0";
+        // কমপক্ষে 3টি কলাম থাকতে হবে (Date, Category, Amount minimum)
+        if (cols.length < 3) {
+            console.log("Invalid row (too few columns):", line);
+            errorLines.push(`Line ${index + 1}: Too few columns`);
+            skippedCount++;
+            return;
+        }
 
-            // Purpose এবং Payee মিলিয়ে ডেসক্রিপশন
-            const finalPurpose = `${purposeText} - ${payee}`.replace(/^ - | - $/g, '');
-
-            // স্মার্ট মেথড ডিটেকশন
-            let method = "cash";
-            if (paidBy.includes("bank") || paidBy.includes("axis") || paidBy.includes("online") || paidBy.includes("upi")) {
-                method = "online";
+        try {
+            // ফ্লেক্সিবল কলাম ম্যাপিং
+            let rawDate, category, purpose, method, source, amount;
+            
+            if (cols.length === 6) {
+                // Full format: Date | Category | Purpose | Method | Source | Amount
+                [rawDate, category, purpose, method, source, amount] = cols;
+            } else if (cols.length === 5) {
+                // Missing one field: Date | Category | Purpose | Method | Amount
+                [rawDate, category, purpose, method, amount] = cols;
+                source = "box"; // ডিফল্ট
+            } else if (cols.length === 4) {
+                // Date | Category | Purpose | Amount
+                [rawDate, category, purpose, amount] = cols;
+                method = "cash";
+                source = "box";
+            } else if (cols.length === 3) {
+                // Minimum: Date | Category | Amount
+                [rawDate, category, amount] = cols;
+                purpose = category; // ক্যাটাগরিই পারপাস হিসেবে
+                method = "cash";
+                source = "box";
+            } else {
+                // 6+ columns: extra data ignore
+                [rawDate, category, purpose, method, source, amount] = cols;
             }
 
-            // স্মার্ট সোর্স ডিটেকশন
-            let source = "box";
-            if (paidBy.includes("bank") || paidBy.includes("axis")) {
-                source = "bank";
-            } else if (paidBy.includes("anup") || paidBy.includes("dada") || paidBy.includes("owner")) {
-                source = "owner";
+            // ভ্যালিডেশন এবং ক্লিনিং
+            const finalDate = parseSmartDate(rawDate);
+            const finalCategory = findBestCategory(category);
+            const finalPurpose = purpose || finalCategory;
+            const finalMethod = method ? method.toLowerCase() : "cash";
+            const finalSource = source ? source.toLowerCase() : "box";
+            const finalAmount = amount ? amount.replace(/[^0-9.]/g, '') : "0";
+
+            // অ্যামাউন্ট ভ্যালিডেশন
+            if (parseFloat(finalAmount) <= 0) {
+                console.log("Invalid amount:", line);
+                errorLines.push(`Line ${index + 1}: Invalid amount`);
+                skippedCount++;
+                return;
             }
 
-            // টেবিলে রো ইনজেক্ট করা
-            addBulkRowWithData(rawDate, category, finalPurpose, method, source, amount);
+            // টেবিলে রো যোগ করা
+            addBulkRowWithData(
+                finalDate, 
+                finalCategory, 
+                finalPurpose, 
+                finalMethod, 
+                finalSource, 
+                finalAmount
+            );
+            
+            successCount++;
+        } catch (error) {
+            console.error("Error processing line:", line, error);
+            errorLines.push(`Line ${index + 1}: Processing error`);
+            skippedCount++;
         }
     });
 
-    if (count > 0) {
-        alert(`✅ Successfully imported ${count} records! Header was skipped automatically.`);
-        aiModal.classList.add('hidden');
-        document.getElementById('ai-raw-input').value = '';
+    // স্ট্যাটাস মেসেজ দেখানো
+    if (successCount > 0) {
+        statusDiv.innerHTML = `<span style="color: green;">✅ Successfully imported ${successCount} records!</span>`;
+        if (skippedCount > 0) {
+            statusDiv.innerHTML += `<br><span style="color: orange;">⚠️ Skipped ${skippedCount} rows (headers/invalid data)</span>`;
+        }
+        
+        // 3 সেকেন্ড পর মডাল বন্ধ
+        setTimeout(() => {
+            aiModal.classList.add('hidden');
+            document.getElementById('ai-raw-input').value = '';
+            statusDiv.innerHTML = '';
+        }, 3000);
     } else {
-        alert("❌ No valid data rows found! Please copy from Excel correctly.");
+        statusDiv.innerHTML = `<span style="color: red;">❌ No valid data found!</span>`;
+        if (errorLines.length > 0) {
+            statusDiv.innerHTML += `<br><small>${errorLines.slice(0, 3).join('<br>')}</small>`;
+        }
     }
 });
 

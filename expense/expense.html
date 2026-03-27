@@ -202,17 +202,29 @@
 
     <!-- AI Paste Modal -->
     <div id="ai-paste-modal" class="modal-overlay hidden" style="z-index: 3000;">
-        <div class="modal-content" style="max-width: 600px; border-top: 5px solid #8e44ad;">
+        <div class="modal-content ai-modal-custom">
             <div class="modal-header">
                 <h3 style="margin: 0; color: #8e44ad;">📋 Paste Expense Data</h3>
                 <button id="close-ai-modal" class="close-button">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 20px;">
-                <textarea id="ai-raw-input" placeholder="এখানে AI থেকে কপি করা ডাটা পেস্ট করুন...&#10;উদাহরণ:&#10;2026-03-17 | Salary | Soumita Salary | online | Axis Bank | 2333" 
-                style="width: 100%; min-height: 200px; padding: 12px; border: 2px solid #8e44ad; border-radius: 8px; font-family: monospace;"></textarea>
+            <div class="modal-body">
+                <!-- ফরম্যাট ইনস্ট্রাকশন বক্স -->
+                <div class="format-guide">
+                    <p><strong>✅ সঠিক ফরম্যাট:</strong> Date | Category | Purpose | Method | Source | Amount</p>
+                    <p><strong>💡 উদাহরণ (পাইপ):</strong> 2026-03-17 | Salary | Staff Salary | online | Axis Bank | 5000</p>
+                    <p><strong>💡 উদাহরণ (কমা):</strong> 2026-03-17, Salary, Staff Salary, online, Axis Bank, 5000</p>
+                </div>
+                
+                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">AI Studio থেকে কপি করা টেক্সটটি নিচে পেস্ট করুন:</p>
+                
+                <textarea id="ai-raw-input" 
+                    placeholder="এখানে পেস্ট করুন... (পাইপ বা কমা দিয়ে আলাদা করুন)&#10;যেমন: 2026-03-27 | Tea | Office Tea | cash | Box | 120&#10;অথবা: 2026-03-27, Tea, Office Tea, cash, Box, 120" 
+                    class="ai-textarea-style"></textarea>
+                
+                <div id="ai-process-status" style="margin-top: 10px; font-size: 13px; font-weight: 600;"></div>
             </div>
-            <div class="modal-footer" style="padding: 15px; text-align: right;">
-                <button id="btn-process-ai" class="btn" style="background: #8e44ad; color: white; padding: 10px 25px;">Process & Fill Table</button>
+            <div class="modal-footer">
+                <button id="btn-process-ai" class="btn btn-process-purple">Process & Fill Table</button>
             </div>
         </div>
     </div>

@@ -1060,3 +1060,96 @@ input[list]::-webkit-calendar-picker-indicator {
         justify-content: center;
     }
 }
+
+/* AI Modal Custom Styling */
+.ai-modal-custom {
+    max-width: 600px !important;
+    border-top: 6px solid #8e44ad !important;
+    border-radius: 15px !important;
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+.ai-modal-custom .modal-header {
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ai-modal-custom .modal-body {
+    padding: 20px;
+}
+
+/* ফরম্যাট গাইড বক্স */
+.format-guide {
+    background: #f3e8ff;
+    border-left: 5px solid #8e44ad;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.format-guide p {
+    margin: 5px 0;
+    font-size: 13px;
+    color: #4a148c;
+    line-height: 1.4;
+}
+
+/* টেক্সট এরিয়া স্টাইল */
+.ai-textarea-style {
+    width: 100%;
+    min-height: 220px;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    resize: vertical;
+    outline: none;
+    background: #fafafa;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+.ai-textarea-style:focus {
+    border-color: #8e44ad;
+    background: #fff;
+    box-shadow: 0 0 8px rgba(142, 68, 173, 0.1);
+}
+
+/* বাটন স্টাইল */
+.btn-process-purple {
+    background: #8e44ad !important;
+    color: white !important;
+    padding: 12px 30px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    width: auto !important;
+    transition: all 0.3s;
+}
+
+.btn-process-purple:hover {
+    background: #7030a0 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(142, 68, 173, 0.3);
+}
+
+.ai-modal-custom .modal-footer {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+    text-align: right;
+}
+
+/* ক্লোজ বাটন পজিশন */
+.ai-modal-custom .close-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
