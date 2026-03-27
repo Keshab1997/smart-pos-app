@@ -196,12 +196,12 @@ if(btnAddCategory) {
                     bulkTbody.innerHTML = '';
                     for(let i=0; i<5; i++) addBulkRow();
                     
-                    alert("✅ ক্যাটাগরি সফলভাবে যোগ করা হয়েছে!");
+                    toast.success('Category Added!', `"${trimmedCat}" has been added successfully.`);
                 } catch (e) {
-                    alert("❌ ক্যাটাগরি সেভ করতে সমস্যা হয়েছে!");
+                    toast.error('Error', 'ক্যাটাগরি সেভ করতে সমস্যা হয়েছে!');
                 }
             } else {
-                alert("⚠️ এই ক্যাটাগরি ইতিমধ্যে আছে!");
+                toast.warning('Duplicate', 'এই ক্যাটাগরি ইতিমধ্যে আছে!');
             }
         }
     });
@@ -446,7 +446,7 @@ async function saveInlineEdit(expenseId, field, newValue, cell, originalContent)
     
     // ভ্যালিডেশন
     if (!trimmedValue || (field === 'amount' && parseFloat(trimmedValue) <= 0)) {
-        alert('Invalid value!');
+        toast.error('Invalid Value', 'Please enter a valid value.');
         cell.innerHTML = originalContent;
         return;
     }
@@ -473,13 +473,15 @@ async function saveInlineEdit(expenseId, field, newValue, cell, originalContent)
             cell.style.backgroundColor = '';
         }, 1000);
         
+        toast.success('Updated!', `${field.charAt(0).toUpperCase() + field.slice(1)} updated successfully.`, 2000);
+        
         // টোটাল রিক্যালকুলেট করা (শুধু amount চেঞ্জ হলে)
         if (field === 'amount') {
             loadExpenses();
         }
     } catch (error) {
         console.error('Error updating expense:', error);
-        alert('Failed to update!');
+        toast.error('Update Failed', 'Could not update the expense.');
         cell.innerHTML = originalContent;
     }
 }
@@ -548,7 +550,7 @@ if(btnSaveBulk) {
             if (desc && category) {
                 // ভ্যালিডেশন: অ্যামাউন্ট অবশ্যই ০ এর বেশি
                 if (isNaN(amount) || amount <= 0) {
-                    alert(`Error: Amount for "${desc}" must be greater than 0!`);
+                    toast.error('Invalid Amount', `Amount for "${desc}" must be greater than 0!`);
                     return;
                 }
 
@@ -568,18 +570,21 @@ if(btnSaveBulk) {
             }
         }
 
-        if (batch.length === 0) return alert("Please fill at least one row!");
+        if (batch.length === 0) {
+            toast.warning('Empty Data', 'Please fill at least one row!');
+            return;
+        }
 
         try {
             btnSaveBulk.disabled = true;
             for (const item of batch) {
                 await addDoc(collection(db, 'shops', activeShopId, 'expenses'), item);
             }
-            alert("✅ Expenses Saved!");
-            location.reload(); 
+            toast.success('Saved!', 'Expenses saved successfully!');
+            setTimeout(() => location.reload(), 1000); 
         } catch (e) {
             console.error(e);
-            alert("Save failed!");
+            toast.error('Save Failed', 'Could not save expenses. Please try again.');
             btnSaveBulk.disabled = false;
         }
     };
@@ -587,9 +592,14 @@ if(btnSaveBulk) {
 
 // ডিলিট ফাংশন
 window.deleteExpense = async (id) => {
-    if(confirm("Are you sure?")) {
-        await deleteDoc(doc(db, 'shops', activeShopId, 'expenses', id));
-        loadExpenses();
+    if(confirm("Are you sure you want to delete this expense?")) {
+        try {
+            await deleteDoc(doc(db, 'shops', activeShopId, 'expenses', id));
+            toast.success('Deleted!', 'Expense deleted successfully.');
+            loadExpenses();
+        } catch (error) {
+            toast.error('Delete Failed', 'Could not delete expense.');
+        }
     }
 };
 
@@ -634,7 +644,9 @@ if(btnPrintSheet) btnPrintSheet.onclick = () => window.print();
 document.getElementById('btn-copy-expense-prompt').addEventListener('click', () => {
     const promptText = document.getElementById('ai-expense-prompt').innerText;
     navigator.clipboard.writeText(promptText).then(() => {
-        alert("Prompt Copied! Now open AI Studio, upload your image and paste the prompt.");
+        toast.success('Copied!', 'Prompt copied to clipboard. Now open AI Studio.');
+    }).catch(() => {
+        toast.error('Copy Failed', 'Could not copy to clipboard.');
     });
 });
 
