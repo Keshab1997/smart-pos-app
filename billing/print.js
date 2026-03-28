@@ -167,29 +167,56 @@ async function loadAndPrintBill() {
                 if (pb.card > 0) breakdownArea.innerHTML += `<div class="summary-line"><span>Card Paid</span><span>₹${pb.card.toFixed(2)}</span></div>`;
             }
 
-            // মালিকের জন্য প্রিন্ট এবং শেয়ারিং অপশন
+            // --- WhatsApp Share Function ---
+            const shareOnWhatsApp = () => {
+                const currentUrl = window.location.origin + window.location.pathname;
+                const longUrl = `${currentUrl}?saleId=${saleId}&uid=${userId}`;
+                const finalLink = readyShortLink || longUrl;
+
+                let message = `*INVOICE: ${waShopName.toUpperCase()}*\n`;
+                message += `--------------------------\n`;
+                message += `*Bill No:* ${waBillNo}\n`;
+                message += `*Date:* ${document.getElementById('bill-date').textContent}\n`;
+                message += `--------------------------\n`;
+                
+                // আইটেম লিস্ট সামারি
+                saleData.items.forEach(item => {
+                    message += `• ${item.name} (${item.quantity}) - ₹${(item.quantity * item.price).toFixed(2)}\n`;
+                });
+                
+                message += `--------------------------\n`;
+                if (saleData.discount > 0) message += `*Discount:* -₹${saleData.discount.toFixed(2)}\n`;
+                message += `*Grand Total: ₹${waGrandTotal}*\n`;
+                message += `--------------------------\n\n`;
+                message += `Click to view full digital bill:\n${finalLink}\n\n`;
+                message += `Thank you for shopping with us! 🙏`;
+
+                let cleanPhone = waCustomerPhone.replace(/[^0-9]/g, ''); 
+                if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+
+                const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+                window.open(waUrl, '_blank');
+            };
+
+            // বাটন ইভেন্ট লিসেনার
+            const shareBtn = document.getElementById('whatsapp-share-btn');
+            if (waCustomerPhone) {
+                shareBtn.addEventListener('click', shareOnWhatsApp);
+            } else {
+                shareBtn.style.opacity = '0.5';
+                shareBtn.title = "No phone number available";
+            }
+
+            // মালিকের জন্য প্রিন্ট এবং শেয়ারিং অপশন (অটো)
             if (!isPublicView) {
-                window.onafterprint = function() { 
-                    if (waCustomerPhone) {
-                        if (confirm("Print Done. Send Bill to Customer via WhatsApp?")) {
-                            const currentUrl = window.location.origin + window.location.pathname;
-                            const longUrl = `${currentUrl}?saleId=${saleId}&uid=${userId}`;
-                            const finalLink = readyShortLink || longUrl;
-
-                            let message = `*INVOICE: ${waShopName}*\n`;
-                            message += `Bill No: ${waBillNo}\n`;
-                            message += `Total: ₹${waGrandTotal}\n\n`;
-                            message += `Click to view your bill:\n${finalLink}\n\n`;
-                            message += `Thank you for shopping with us!`;
-
-                            let cleanPhone = waCustomerPhone.replace(/[^0-9]/g, ''); 
-                            if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
-
-                            window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-                        } else { window.close(); }
-                    } else { window.close(); }
-                };
-                setTimeout(() => window.print(), 1200);
+                setTimeout(() => {
+                    window.print();
+                    window.onafterprint = function() { 
+                        if (waCustomerPhone && confirm("Print Done. Send Bill to Customer via WhatsApp?")) {
+                            shareOnWhatsApp();
+                        }
+                    };
+                }, 1200);
             }
 
         } catch (error) {
@@ -203,15 +230,9 @@ async function loadAndPrintBill() {
     } else {
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // স্টাফ বা মালিক যেই হোক, আমরা activeShopId ব্যবহার করব
                 const activeShopId = localStorage.getItem('activeShopId');
-                
-                if (activeShopId) {
-                    fetchAndRenderBill(activeShopId, false);
-                } else {
-                    // যদি কোনো কারণে activeShopId না থাকে, তবে ইউজারের নিজের আইডি ট্রাই করবে
-                    fetchAndRenderBill(user.uid, false);
-                }
+                if (activeShopId) { fetchAndRenderBill(activeShopId, false); } 
+                else { fetchAndRenderBill(user.uid, false); }
             } else {
                 document.body.innerHTML = '<h1>Please login to view this page.</h1>';
             }
