@@ -72,8 +72,16 @@ async function loadAndPrintBill() {
                     <h1 class="shop-name">${shopData.shopName}</h1>
                     <p class="shop-address">${shopData.shopAddress || ''}</p>
                     <p class="shop-contact">Phone: ${shopData.shopPhone || ''} | Email: ${shopData.email || ''}</p>
+                    ${shopData.shopGstin ? `<p class="shop-gstin">GSTIN: ${shopData.shopGstin}</p>` : ''}
                 `;
+                if (shopData.receiptFooter) {
+                    document.getElementById('receipt-footer-note').textContent = shopData.receiptFooter;
+                }
             }
+
+            // ইনভয়েস টাইটেল
+            const invoiceTitle = (saleData.gstData && saleData.gstData.rate > 0) ? "TAX INVOICE" : "RETAIL INVOICE";
+            document.getElementById('invoice-type-title').textContent = invoiceTitle;
 
             // বিল তথ্য
             document.getElementById('bill-no').textContent = waBillNo;
@@ -89,13 +97,17 @@ async function loadAndPrintBill() {
                     document.getElementById('customer-phone-p').style.display = 'block';
                     document.getElementById('customer-phone').textContent = waCustomerPhone;
                 }
+                if (saleData.customerDetails.address) {
+                    document.getElementById('customer-address-p').style.display = 'block';
+                    document.getElementById('customer-address').textContent = saleData.customerDetails.address;
+                }
             }
 
             // আইটেম লিস্ট
             const itemsTbody = document.getElementById('receipt-items');
+            let totalQty = 0;
             saleData.items.forEach(item => {
-                // ম্যাজিক লাইন: যেখানেই '+' পাবে, তার পরে একটা স্পেস যোগ করবে
-                // ফলে 'Punjabi+Dhuti' হয়ে যাবে 'Punjabi+ Dhuti' (যা সুন্দরভাবে র্যাপ হবে)
+                totalQty += item.quantity;
                 let formattedName = item.name.replace(/\+/g, '+ ');
                 
                 const row = itemsTbody.insertRow();
@@ -106,6 +118,9 @@ async function loadAndPrintBill() {
                     <td class="right">${(item.quantity * item.price).toFixed(2)}</td>
                 `;
             });
+
+            document.getElementById('total-items-count').textContent = saleData.items.length;
+            document.getElementById('total-items-qty').textContent = totalQty;
 
             document.getElementById('receipt-subtotal').textContent = `₹${saleData.subtotal.toFixed(2)}`;
             
@@ -127,8 +142,30 @@ async function loadAndPrintBill() {
                 document.getElementById('receipt-discount').textContent = `- ₹${saleData.discount.toFixed(2)}`;
             }
 
+            // অ্যাডভান্স
+            if (saleData.advanceAdjusted > 0) {
+                document.getElementById('advance-line').style.display = 'flex';
+                document.getElementById('receipt-advance').textContent = `- ₹${saleData.advanceAdjusted.toFixed(2)}`;
+            }
+
             document.getElementById('receipt-total').textContent = `₹${(saleData.finalPaidAmount || saleData.total).toFixed(2)}`;
             document.getElementById('payment-method').textContent = saleData.paymentMethod.toUpperCase();
+
+            // পেমেন্ট ব্রেকডাউন রেন্ডার
+            const breakdownArea = document.getElementById('payment-breakdown-area');
+            breakdownArea.innerHTML = '';
+            
+            if (saleData.paymentMethod === 'cash' && saleData.paymentBreakdown) {
+                breakdownArea.innerHTML = `
+                    <div class="summary-line"><span>Cash Received</span><span>₹${saleData.paymentBreakdown.cashReceived.toFixed(2)}</span></div>
+                    <div class="summary-line"><span>Change Returned</span><span>₹${saleData.paymentBreakdown.changeReturned.toFixed(2)}</span></div>
+                `;
+            } else if (saleData.paymentMethod === 'part-payment' && saleData.paymentBreakdown) {
+                const pb = saleData.paymentBreakdown;
+                if (pb.cash > 0) breakdownArea.innerHTML += `<div class="summary-line"><span>Cash Paid</span><span>₹${pb.cash.toFixed(2)}</span></div>`;
+                if (pb.online > 0) breakdownArea.innerHTML += `<div class="summary-line"><span>Online/UPI Paid</span><span>₹${pb.online.toFixed(2)}</span></div>`;
+                if (pb.card > 0) breakdownArea.innerHTML += `<div class="summary-line"><span>Card Paid</span><span>₹${pb.card.toFixed(2)}</span></div>`;
+            }
 
             // মালিকের জন্য প্রিন্ট এবং শেয়ারিং অপশন
             if (!isPublicView) {

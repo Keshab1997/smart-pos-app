@@ -20,6 +20,10 @@
             <h1 class="shop-name">Loading Shop Details...</h1>
         </header>
         
+        <div class="invoice-title-container">
+            <h2 id="invoice-type-title">RETAIL INVOICE</h2>
+        </div>
+
         <!-- বিলের প্রাথমিক তথ্য -->
         <section class="bill-info">
             <div><strong>Bill No:</strong> <span id="bill-no">N/A</span></div>
@@ -37,20 +41,22 @@
         <table class="items-table">
             <thead>
                 <tr>
-                    <!-- ============================================== -->
-                    <!-- === আপনার জন্য এই লাইনগুলো পরিবর্তন করা হয়েছে === -->
-                    <!-- ============================================== -->
                     <th class="item-col">Item</th>
                     <th class="qty-col">Qty</th>
                     <th class="rate-col">Rate</th>
                     <th class="total-col">Total</th>
-                    <!-- ============================================== -->
                 </tr>
             </thead>
             <tbody id="receipt-items">
                 <!-- আইটেমগুলো এখানে লোড হবে -->
             </tbody>
         </table>
+
+        <!-- আইটেম সামারি -->
+        <div class="items-summary-line">
+            <span>Total Items: <span id="total-items-count">0</span></span>
+            <span>Total Qty: <span id="total-items-qty">0</span></span>
+        </div>
 
         <!-- মোট টাকার হিসাব -->
         <section class="totals-section">
@@ -75,9 +81,15 @@
                 <span>Discount</span>
                 <span id="receipt-discount"></span>
             </div>
+
+            <div class="summary-line" id="advance-line" style="display: none;">
+                <span>Advance Adjusted</span>
+                <span id="receipt-advance"></span>
+            </div>
+
             <hr class="separator">
             <div class="summary-line grand-total">
-                <strong>Total Amount</strong>
+                <strong>Net Payable</strong>
                 <strong id="receipt-total"></strong>
             </div>
         </section>
@@ -85,32 +97,13 @@
         <!-- পেমেন্টের বিস্তারিত -->
         <section class="payment-details">
             <div class="summary-line">
-                <span>Payment Method</span>
+                <strong>Payment Mode:</strong>
                 <span id="payment-method"></span>
             </div>
             
-            <!-- ক্যাশ পেমেন্টের জন্য -->
-            <div id="cash-payment-info" class="payment-breakdown" style="display: none;">
-                <div class="summary-line">
-                    <span>Cash Received</span>
-                    <span id="cash-received"></span>
-                </div>
-                <div class="summary-line">
-                    <span>Change Returned</span>
-                    <span id="change-returned"></span>
-                </div>
-            </div>
-
-            <!-- পার্ট-পেমেন্টের জন্য -->
-            <div id="part-payment-info" class="payment-breakdown" style="display: none;">
-                <div class="summary-line">
-                    <span>Paid by Cash</span>
-                    <span id="cash-paid"></span>
-                </div>
-                <div class="summary-line">
-                    <span>Paid by Card/Online</span>
-                    <span id="card-paid"></span>
-                </div>
+            <!-- পেমেন্ট ব্রেকডাউন (ডাইনামিক্যালি লোড হবে) -->
+            <div id="payment-breakdown-area" class="payment-breakdown">
+                <!-- JavaScript will fill this -->
             </div>
         </section>
 
@@ -118,7 +111,7 @@
         <footer class="receipt-footer">
             <!-- দোকানের কাস্টম ফুটার নোট এখানে লোড হবে -->
             <p id="receipt-footer-note">Thank you for your purchase!</p>
-            
+            <p class="powered-by">Powered by Smart POS</p>
         </footer>
     </div><!-- /.receipt -->
     </div><!-- /.page-wrapper -->
