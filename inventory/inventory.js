@@ -418,6 +418,28 @@ function showStatus(message, type = 'success') {
 function setupEventListeners() {
     hasEventListenersSetup = true;
 
+    // Fullscreen toggle
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                fullscreenBtn.textContent = '✕ Exit Fullscreen';
+                fullscreenBtn.classList.add('active');
+            } else {
+                document.exitFullscreen();
+                fullscreenBtn.textContent = '⛶ Fullscreen';
+                fullscreenBtn.classList.remove('active');
+            }
+        });
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                fullscreenBtn.textContent = '⛶ Fullscreen';
+                fullscreenBtn.classList.remove('active');
+            }
+        });
+    }
+
     searchInput.addEventListener('input', () => applyFiltersAndRender(true));
     categoryFilter.addEventListener('change', () => {
         // Show/hide delete category button
@@ -781,3 +803,229 @@ async function deleteCategoryWithProducts(category) {
     
     await Promise.all(deletePromises);
 }
+
+
+// ============================================================
+// STOCK TAKING MODULE
+// ============================================================
+(function initStocktake() {
+    const modal       = document.getElementById('stocktake-modal');
+    const tbody       = document.getElementById('stocktake-tbody');
+    const catFilter   = document.getElementById('stocktake-category-filter');
+    const searchInput = document.getElementById('stocktake-search');
+    const summary     = document.getElementById('stocktake-summary');
+
+    let stocktakeProducts = [];
+
+    // Open modal
+    document.getElementById('stocktake-btn').addEventListener('click', () => {
+        openStocktake();
+    });
+
+    // Close modal
+    document.getElementById('close-stocktake').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+
+    // Fullscreen toggle for stocktake modal
+    const fsBtn = document.getElementById('stocktake-fullscreen-btn');
+    fsBtn.addEventListener('click', () => {
+        const modalContent = modal.querySelector('.modal-content');
+        if (!document.fullscreenElement) {
+            modalContent.requestFullscreen();
+            fsBtn.textContent = '✕ Exit Fullscreen';
+        } else {
+            document.exitFullscreen();
+            fsBtn.textContent = '⛶ Fullscreen';
+        }
+    });
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) fsBtn.textContent = '⛶ Fullscreen';
+    });
+
+    function openStocktake() {
+        stocktakeProducts = [...allProducts].sort((a, b) => {
+            const catA = (a.category || '').localeCompare(b.category || '');
+            if (catA !== 0) return catA;
+            return (a.name || '').localeCompare(b.name || '');
+        });
+
+        // Populate category filter
+        const cats = [...new Set(stocktakeProducts.map(p => p.category).filter(Boolean))].sort();
+        catFilter.innerHTML = '<option value="">All Categories</option>' +
+            cats.map(c => `<option value="${c}">${c}</option>`).join('');
+
+        renderStocktakeTable();
+        modal.style.display = 'flex';
+    }
+
+    function renderStocktakeTable(filterCat = '', filterSearch = '') {
+        const filtered = stocktakeProducts.filter(p => {
+            const matchCat    = !filterCat    || p.category === filterCat;
+            const matchSearch = !filterSearch || (p.name || '').toLowerCase().includes(filterSearch.toLowerCase()) || (p.barcode || '').includes(filterSearch);
+            return matchCat && matchSearch;
+        });
+
+        let serial = 1;
+        let lastCat = '';
+        tbody.innerHTML = filtered.map(p => {
+            let catRow = '';
+            if (p.category !== lastCat) {
+                lastCat = p.category;
+                catRow = `<tr style="background:#e8f4fd;"><td colspan="7" style="font-weight:700; font-size:13px; padding:8px 12px; color:#1e3c72;">📂 ${p.category || 'Uncategorized'}</td></tr>`;
+            }
+            const sysStock = parseInt(p.stock) || 0;
+            return `${catRow}
+            <tr data-id="${p.id}" class="stocktake-row">
+                <td style="text-align:center; color:#999; font-size:12px;">${serial++}</td>
+                <td style="font-weight:500;">${p.name || ''}</td>
+                <td style="font-size:12px; color:#666;">${p.category || ''}</td>
+                <td style="font-size:12px; color:#888;">${p.barcode || '-'}</td>
+                <td style="text-align:center; font-weight:700;">${sysStock}</td>
+                <td style="text-align:center; background:#fffde7;">
+                    <input type="number" class="actual-input" min="0" placeholder="—"
+                        style="width:70px; padding:5px; border:2px solid #fdd835; border-radius:6px; text-align:center; font-weight:700; font-size:14px;"
+                        data-system="${sysStock}" data-id="${p.id}" data-name="${p.name}">
+                </td>
+                <td class="diff-cell" style="text-align:center; font-weight:700; color:#999;">—</td>
+            </tr>`;
+        }).join('');
+
+        updateSummary();
+        setupActualInputs();
+    }
+
+    function setupActualInputs() {
+        tbody.querySelectorAll('.actual-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const actual  = parseInt(this.value);
+                const system  = parseInt(this.dataset.system);
+                const diffCell = this.closest('tr').querySelector('.diff-cell');
+
+                if (isNaN(actual) || this.value === '') {
+                    diffCell.textContent = '—';
+                    diffCell.style.color = '#999';
+                } else {
+                    const diff = actual - system;
+                    diffCell.textContent = diff > 0 ? `+${diff}` : diff;
+                    diffCell.style.color = diff === 0 ? '#16a34a' : diff > 0 ? '#2563eb' : '#dc2626';
+                    this.closest('tr').style.background = diff === 0 ? '#f0fdf4' : diff > 0 ? '#eff6ff' : '#fff5f5';
+                }
+                updateSummary();
+            });
+        });
+    }
+
+    function updateSummary() {
+        const inputs   = tbody.querySelectorAll('.actual-input');
+        let filled = 0, mismatch = 0;
+        inputs.forEach(inp => {
+            if (inp.value !== '') {
+                filled++;
+                if (parseInt(inp.value) !== parseInt(inp.dataset.system)) mismatch++;
+            }
+        });
+        summary.innerHTML = `<strong>${filled}</strong> counted &nbsp;|&nbsp; <span style="color:#dc2626;"><strong>${mismatch}</strong> mismatch</span> &nbsp;|&nbsp; ${inputs.length} total`;
+    }
+
+    // Filter events
+    catFilter.addEventListener('change',   () => renderStocktakeTable(catFilter.value, searchInput.value));
+    searchInput.addEventListener('input',  () => renderStocktakeTable(catFilter.value, searchInput.value));
+
+    // Scan to highlight
+    document.getElementById('stocktake-scan-btn').addEventListener('click', () => {
+        const barcode = prompt('Scan or type barcode:');
+        if (!barcode) return;
+        const row = tbody.querySelector(`tr[data-id]`);
+        const allRows = tbody.querySelectorAll('tr[data-id]');
+        let found = null;
+        allRows.forEach(r => {
+            const inp = r.querySelector('.actual-input');
+            if (inp && inp.dataset.id) {
+                const p = stocktakeProducts.find(x => x.id === inp.dataset.id);
+                if (p && (p.barcode === barcode || p.id === barcode)) found = r;
+            }
+        });
+        if (found) {
+            found.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            found.style.outline = '3px solid #f59e0b';
+            found.querySelector('.actual-input').focus();
+            setTimeout(() => found.style.outline = '', 3000);
+        } else {
+            alert('Product not found: ' + barcode);
+        }
+    });
+
+    // Print Sheet
+    document.getElementById('stocktake-print-btn').addEventListener('click', () => {
+        document.getElementById('stocktake-print-date').textContent = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+
+        const printTbody = document.getElementById('stocktake-print-tbody');
+        let serial = 1, lastCat = '';
+
+        printTbody.innerHTML = stocktakeProducts.map(p => {
+            let catRow = '';
+            if (p.category !== lastCat) {
+                lastCat = p.category;
+                catRow = `<tr style="background:#e8f4fd;"><td colspan="7" style="font-weight:700; padding:6px 8px;">📂 ${p.category || 'Uncategorized'}</td></tr>`;
+            }
+            const inp = tbody.querySelector(`.actual-input[data-id="${p.id}"]`);
+            const actual = inp && inp.value !== '' ? inp.value : '';
+            const diff   = actual !== '' ? parseInt(actual) - (parseInt(p.stock) || 0) : '';
+            const diffStr = diff !== '' ? (diff > 0 ? `+${diff}` : diff) : '';
+            return `${catRow}<tr>
+                <td style="border:1px solid #ccc; padding:6px; text-align:center;">${serial++}</td>
+                <td style="border:1px solid #ccc; padding:6px;">${p.name || ''}</td>
+                <td style="border:1px solid #ccc; padding:6px;">${p.category || ''}</td>
+                <td style="border:1px solid #ccc; padding:6px;">${p.barcode || ''}</td>
+                <td style="border:1px solid #ccc; padding:6px; text-align:center;">${p.stock || 0}</td>
+                <td style="border:1px solid #ccc; padding:6px; text-align:center; background:#fffde7;">${actual}</td>
+                <td style="border:1px solid #ccc; padding:6px; text-align:center; color:${diff < 0 ? 'red' : diff > 0 ? 'blue' : 'green'};">${diffStr}</td>
+            </tr>`;
+        }).join('');
+
+        const printArea = document.getElementById('stocktake-print-area');
+        printArea.style.display = 'block';
+        window.print();
+        printArea.style.display = 'none';
+    });
+
+    // Update Stock
+    document.getElementById('stocktake-submit-btn').addEventListener('click', async () => {
+        const inputs = tbody.querySelectorAll('.actual-input');
+        const toUpdate = [];
+        inputs.forEach(inp => {
+            if (inp.value !== '') {
+                const actual = parseInt(inp.value);
+                const system = parseInt(inp.dataset.system);
+                if (actual !== system) {
+                    toUpdate.push({ id: inp.dataset.id, name: inp.dataset.name, oldStock: system, newStock: actual });
+                }
+            }
+        });
+
+        if (toUpdate.length === 0) { alert('কোনো পরিবর্তন নেই।'); return; }
+
+        if (!confirm(`${toUpdate.length}টি product এর stock update করবেন?`)) return;
+
+        document.getElementById('stocktake-submit-btn').textContent = 'Updating...';
+        document.getElementById('stocktake-submit-btn').disabled = true;
+
+        try {
+            for (const item of toUpdate) {
+                const productRef = doc(db, 'shops', activeShopId, 'inventory', item.id);
+                await updateDoc(productRef, { stock: item.newStock, lastUpdated: new Date() });
+                await saveInventoryLog(item.id, item.name, 'STOCKTAKE', item.oldStock, item.newStock);
+            }
+            modal.style.display = 'none';
+            showStatus(`✅ ${toUpdate.length}টি product এর stock update হয়েছে!`, 'success');
+        } catch (e) {
+            console.error(e);
+            showStatus('❌ Update failed: ' + e.message, 'error');
+        } finally {
+            document.getElementById('stocktake-submit-btn').textContent = '✅ Update Stock';
+            document.getElementById('stocktake-submit-btn').disabled = false;
+        }
+    });
+})();

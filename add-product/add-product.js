@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             general: "Analyze this vendor/distributor bill. Extract per product: Product Name, Base Rate (before discount), GST%, Discount%, Qty, MRP, Category, Rack, Remark. Do NOT calculate Net CP. Format: Product Name | Base Rate | GST% | Disc% | Qty | MRP | Category | Rack | Remark. Missing fields = 0. No headers/currency. Example: Lux Soap | 22.50 | 18 | 5 | 50 | 30 | COSMETICS | A-12 | Fragrant",
             clothing: "Analyze this clothing/garment bill. Extract per item: Brand, Product Name, Size, Base Rate, GST%, Discount%, Qty, MRP, Color. Do NOT calculate Net CP. Format: Brand | Product Name | Size | Base Rate | GST% | Disc% | Qty | MRP | Color. Missing = 0. No headers/currency. Example: ZARA | Cotton Shirt | XL | 450 | 12 | 5 | 10 | 650 | Blue",
             jewelry: "Analyze this jewelry bill. Extract per item: Brand, Product Name, Weight(gm), Base Rate, Making Charges%, Discount%, Qty, MRP, Purity. Do NOT calculate Net CP. Format: Brand | Product Name | Weight | Base Rate | Making% | Disc% | Qty | MRP | Purity. Missing = 0. No headers/currency. Example: TANISHQ | Gold Ring | 5.5 | 5800 | 12 | 0 | 2 | 18000 | 22K",
-            grocery: "Analyze this grocery/FMCG bill. Extract per item: Brand, Product Name, Weight/Unit, Base Rate, GST%, Discount%, Qty, MRP, HSN Code, Expiry Date. Do NOT calculate Net CP. Format: Brand | Product Name | Weight | Base Rate | GST% | Disc% | Qty | MRP | HSN | Expiry. Missing = 0. No headers/currency. Example: SOUL | BUTTER CHKN MASALA | 65gms | 28 | 18 | 10 | 30 | 50 | 21039090 | 12/2025"
+            grocery: "Analyze this grocery/FMCG bill. Extract per item: Brand, Product Name, Weight/Unit, Base Rate, GST%, Discount%, Qty, MRP, HSN Code, Expiry Date, and Sub-Category. For Sub-Category, choose the most appropriate from: PERSONAL CARE, STAPLES, EDIBLE OIL, SNACKS, DAIRY, BEVERAGES, HOUSEHOLD, SPICES & CONDIMENTS, BAKERY, FROZEN, PHARMACY. Do NOT calculate Net CP. Format: Brand | Product Name | Weight | Base Rate | GST% | Disc% | Qty | MRP | HSN | Expiry | Sub-Category. Missing = 0. No headers/currency. Example: SOUL | BUTTER CHKN MASALA | 65gms | 28 | 18 | 10 | 30 | 50 | 21039090 | 12/2025 | SPICES & CONDIMENTS"
         };
 
         aiPromptText.textContent = prompts[mode] || prompts.general;
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
             const { getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
             const querySnapshot = await getDocs(inventoryRef);
-            const categories = new Set(["CLOTHING", "JEWELRY"]); // ডিফল্ট ক্যাটাগরি
+            const categories = new Set(["CLOTHING", "JEWELRY", "PERSONAL CARE", "STAPLES", "EDIBLE OIL", "SNACKS", "DAIRY", "BEVERAGES", "HOUSEHOLD", "SPICES & CONDIMENTS", "BAKERY", "FROZEN", "PHARMACY", "STATIONERY", "ELECTRONICS"]);
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
@@ -762,8 +762,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 jewelry: `<strong>Format:</strong> Brand | Product Name | Weight(gm) | Base Rate | Making% | Disc% | Qty | MRP | Purity<br>
                          <strong>Example:</strong> TANISHQ | Gold Ring | 5.5 | 5800 | 12 | 0 | 2 | 18000 | 22K`,
 
-                grocery: `<strong>Format:</strong> Brand | Product Name | Weight/Unit | Base Rate | GST% | Disc% | Qty | MRP | HSN | Expiry<br>
-                         <strong>Example:</strong> SOUL | BUTTER CHKN MASALA | 65gms | 28 | 18 | 10 | 30 | 50 | 21039090 | 12/2025`
+                grocery: `<strong>Format:</strong> Brand | Product Name | Weight/Unit | Base Rate | GST% | Disc% | Qty | MRP | HSN | Expiry | Sub-Category<br>
+                         <strong>Example:</strong> SOUL | BUTTER CHKN MASALA | 65gms | 28 | 18 | 10 | 30 | 50 | 21039090 | 12/2025 | SPICES & CONDIMENTS`
             };
             
             exampleElement.innerHTML = formatExamples[mode] || formatExamples.general;
@@ -853,7 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         mrp    = parseFloat(parts[7]) || 0;
                         extra3 = parts[8] || '';           // HSN Code
                         extra4 = parts[9] || '';           // Expiry Date
-                        category = 'GROCERY';
+                        category = (parts[10] || 'GROCERY').trim().toUpperCase();
                     } else if (currentMode === 'clothing') {
                         // Format: Brand | Name | Size | Base Rate | GST% | Disc% | Qty | MRP | Color
                         const brand = parts[0] || '';
@@ -1066,31 +1066,20 @@ document.addEventListener('DOMContentLoaded', () => {
                             lastRow.querySelector('.product-name').value = name;
                             lastRow.querySelector('.product-category').value = category.toUpperCase();
                             
-                            // Dynamic fields populate (error fallback)
-                            if (lastRow.querySelector('.dynamic-input-1')) {
-                                lastRow.querySelector('.dynamic-input-1').value = extra1;
-                            }
-                            if (lastRow.querySelector('.dynamic-input-2')) {
-                                lastRow.querySelector('.dynamic-input-2').value = extra2;
-                            }
-                            if (lastRow.querySelector('.dynamic-input-3')) {
-                                lastRow.querySelector('.dynamic-input-3').value = extra3;
-                            }
-                            if (lastRow.querySelector('.dynamic-input-4')) {
-                                lastRow.querySelector('.dynamic-input-4').value = extra4;
-                            }
-                            
+                            if (lastRow.querySelector('.dynamic-input-1')) lastRow.querySelector('.dynamic-input-1').value = extra1;
+                            if (lastRow.querySelector('.dynamic-input-2')) lastRow.querySelector('.dynamic-input-2').value = extra2;
+                            if (lastRow.querySelector('.dynamic-input-3')) lastRow.querySelector('.dynamic-input-3').value = extra3;
+                            if (lastRow.querySelector('.dynamic-input-4')) lastRow.querySelector('.dynamic-input-4').value = extra4;
+                            if (lastRow.querySelector('.product-base-rate')) lastRow.querySelector('.product-base-rate').value = baseRate || '';
+                            if (lastRow.querySelector('.product-gst')) lastRow.querySelector('.product-gst').value = gst || '';
+                            if (lastRow.querySelector('.product-disc')) lastRow.querySelector('.product-disc').value = disc || '';
                             lastRow.querySelector('.product-cp').value = cp.toFixed(2);
-                            
-                            // MRP থাকলে সেটা বসানো, না হলে মার্জিন ক্যালকুলেট
                             if (mrp && mrp > 0) {
                                 lastRow.querySelector('.product-sp').value = mrp;
                             } else {
                                 const margin = parseFloat(document.getElementById('default-margin').value) || 0;
-                                const calculatedSP = cp + (cp * margin / 100);
-                                lastRow.querySelector('.product-sp').value = Math.round(calculatedSP);
+                                lastRow.querySelector('.product-sp').value = Math.round(cp + (cp * margin / 100));
                             }
-                            
                             lastRow.querySelector('.product-stock').value = qty;
                             addedCount++;
                         }

@@ -157,6 +157,12 @@ body {
 .btn-excel { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
 .btn-excel:hover { background: #16a34a; color: white; }
 
+.btn-fullscreen { background: #faf5ff; color: #7c3aed; border: 1px solid #ede9fe; }
+.btn-fullscreen:hover { background: #7c3aed; color: white; }
+
+.btn-stocktake { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.btn-stocktake:hover { background: #15803d; color: white; }
+
 .btn-logs { background: #f8f9fa; color: #4b5563; border: 1px solid #e5e7eb; }
 .btn-logs:hover { background: #4b5563; color: white; }
 
@@ -658,4 +664,77 @@ body {
 #delete-category-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* ================================== */
+/* --- Stock Taking Print Styles --- */
+/* ================================== */
+@media print {
+    body > *:not(#stocktake-print-area) {
+        display: none !important;
+    }
+    #stocktake-print-area {
+        display: block !important;
+    }
+}
+
+/* ================================== */
+/* --- Fullscreen Mode --- */
+/* ================================== */
+:fullscreen .container,
+:-webkit-full-screen .container,
+:-moz-full-screen .container {
+    max-width: 100% !important;
+    padding: 10px 15px;
+}
+
+:fullscreen #navbar-placeholder,
+:-webkit-full-screen #navbar-placeholder,
+:-moz-full-screen #navbar-placeholder {
+    display: none !important;
+}
+
+:fullscreen .stats-section,
+:-webkit-full-screen .stats-section,
+:-moz-full-screen .stats-section {
+    display: none !important;
+}
+
+:fullscreen .table-responsive,
+:-webkit-full-screen .table-responsive,
+:-moz-full-screen .table-responsive {
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+}
+
+:fullscreen body,
+:-webkit-full-screen body,
+:-moz-full-screen body {
+    background: #fff;
+}
+
+#fullscreen-btn.active {
+    background: #7c3aed;
+    color: white;
+}
+
+/* Stocktake modal fullscreen */
+#stocktake-modal .modal-content:fullscreen,
+#stocktake-modal .modal-content:-webkit-full-screen,
+#stocktake-modal .modal-content:-moz-full-screen {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#stocktake-modal .modal-content:fullscreen > div:last-child,
+#stocktake-modal .modal-content:-webkit-full-screen > div:last-child,
+#stocktake-modal .modal-content:-moz-full-screen > div:last-child {
+    flex: 1;
+    max-height: unset !important;
+    overflow-y: auto;
 }

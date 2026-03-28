@@ -74,6 +74,8 @@
                 </div>
 
                 <div class="btn-group right-align">
+                    <button id="fullscreen-btn" class="btn btn-fullscreen" title="Toggle Fullscreen">⛶ Fullscreen</button>
+                    <button id="stocktake-btn" class="btn btn-stocktake">📋 Stock Taking</button>
                     <button id="view-logs-btn" class="btn btn-logs">📜 Audit Logs</button>
                     <button id="bulk-delete-btn" class="btn btn-danger" style="display: none;">🗑️ Delete (<span id="selected-count">0</span>)</button>
                 </div>
@@ -112,6 +114,68 @@
     <!-- ======================================================= -->
     <!-- Modals -->
     <!-- ======================================================= -->
+
+    <!-- Stock Taking Modal -->
+    <div id="stocktake-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:900px; padding:0;">
+            <div style="padding:20px 25px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg,#1e3c72,#2a5298); border-radius:12px 12px 0 0;">
+                <div>
+                    <h2 style="margin:0; color:white; font-size:20px;">📋 Stock Taking</h2>
+                    <p style="margin:4px 0 0; color:rgba(255,255,255,0.7); font-size:13px;">Actual stock গুনে এখানে লিখুন — difference automatically দেখাবে</p>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button id="stocktake-scan-btn" class="btn" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3);">📷 Scan to Find</button>
+                    <button id="stocktake-print-btn" class="btn" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3);">🖨️ Print Sheet</button>
+                    <button id="stocktake-fullscreen-btn" class="btn" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3);">⛶ Fullscreen</button>
+                    <button id="stocktake-submit-btn" class="btn" style="background:#00c853; color:white;">✅ Update Stock</button>
+                    <span class="close-button" id="close-stocktake" style="position:static; color:white; font-size:24px; cursor:pointer;">&times;</span>
+                </div>
+            </div>
+            <div style="padding:15px 25px; background:#f8f9fa; border-bottom:1px solid #eee; display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                <select id="stocktake-category-filter" class="form-control" style="max-width:200px;"><option value="">All Categories</option></select>
+                <input type="text" id="stocktake-search" class="form-control" placeholder="🔍 Search product..." style="max-width:250px;">
+                <span id="stocktake-summary" style="font-size:13px; color:#666; margin-left:auto;"></span>
+            </div>
+            <div style="max-height:55vh; overflow-y:auto;">
+                <table class="data-table" style="min-width:700px;">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">#</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Barcode</th>
+                            <th style="text-align:center;">System Stock</th>
+                            <th style="text-align:center; background:#fff9c4;">Actual Count</th>
+                            <th style="text-align:center;">Difference</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stocktake-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stocktake Print Area (hidden) -->
+    <div id="stocktake-print-area" style="display:none;">
+        <div style="padding:20px;">
+            <h2 style="text-align:center; margin-bottom:5px;">📋 Stock Taking Sheet</h2>
+            <p style="text-align:center; font-size:13px; color:#666; margin-bottom:20px;">Date: <span id="stocktake-print-date"></span></p>
+            <table id="stocktake-print-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+                <thead>
+                    <tr style="background:#f0f0f0;">
+                        <th style="border:1px solid #ccc; padding:8px; width:40px;">#</th>
+                        <th style="border:1px solid #ccc; padding:8px;">Product Name</th>
+                        <th style="border:1px solid #ccc; padding:8px; width:130px;">Category</th>
+                        <th style="border:1px solid #ccc; padding:8px; width:100px;">Barcode</th>
+                        <th style="border:1px solid #ccc; padding:8px; width:80px; text-align:center;">System</th>
+                        <th style="border:1px solid #ccc; padding:8px; width:80px; text-align:center; background:#fff9c4;">Actual</th>
+                        <th style="border:1px solid #ccc; padding:8px; width:80px; text-align:center;">Diff</th>
+                    </tr>
+                </thead>
+                <tbody id="stocktake-print-tbody"></tbody>
+            </table>
+        </div>
+    </div>
 
     <!-- Product Edit Modal -->
     <div id="edit-modal" class="modal">
