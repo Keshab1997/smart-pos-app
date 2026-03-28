@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', function() {
             const selectedMode = this.getAttribute('data-mode');
             applyModeToTable(selectedMode);
+            localStorage.setItem('selectedBusinessMode', selectedMode);
             
             // Active button styling
             modeButtons.forEach(b => {
@@ -92,6 +93,15 @@ document.addEventListener('DOMContentLoaded', () => {
             this.style.color = 'white';
         });
     });
+
+    // Restore saved mode on page load
+    const savedMode = localStorage.getItem('selectedBusinessMode') || 'general';
+    applyModeToTable(savedMode);
+    const savedModeBtn = document.querySelector(`.mode-btn[data-mode="${savedMode}"]`);
+    if (savedModeBtn) {
+        savedModeBtn.style.background = savedModeBtn.style.borderColor;
+        savedModeBtn.style.color = 'white';
+    }
 
     function applyModeToTable(mode) {
         const config = modeConfigs[mode];
@@ -122,21 +132,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const input3 = row.querySelector('.dynamic-input-3');
             const input4 = row.querySelector('.dynamic-input-4');
             
-            if (input1) input1.placeholder = config.p1;
-            if (input2) input2.placeholder = config.p2;
+            if (input1) {
+                input1.placeholder = config.p1;
+                input1.closest('td').setAttribute('data-label', config.head1);
+            }
+            if (input2) {
+                input2.placeholder = config.p2;
+                input2.closest('td').setAttribute('data-label', config.head2);
+            }
             
             if (config.extraColumns) {
                 if (input3) {
                     input3.style.display = '';
                     input3.placeholder = config.p3;
+                    input3.closest('td').style.display = '';
+                    input3.closest('td').setAttribute('data-label', config.head3);
                 }
                 if (input4) {
                     input4.style.display = '';
                     input4.placeholder = config.p4;
+                    input4.closest('td').style.display = '';
+                    input4.closest('td').setAttribute('data-label', config.head4);
                 }
             } else {
-                if (input3) input3.style.display = 'none';
-                if (input4) input4.style.display = 'none';
+                if (input3) input3.closest('td').style.display = 'none';
+                if (input4) input4.closest('td').style.display = 'none';
             }
         });
 
@@ -153,13 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!aiPromptText) return;
 
         const prompts = {
-            general: "Please analyze this vendor bill image and extract the Product Name, Cost Price (CP), Quantity (Qty), MRP/Selling Price (if available), Category, Rack/Shelf location, and any Remark. Format the output as: Product Name | CP | Qty | MRP | Category | Rack | Remark. If any field is not available, write 0 or leave blank. Example: Lux Soap | 25 | 50 | 30 | COSMETICS | A-12 | Fragrant",
-            
-            clothing: "Please analyze this clothing/garment bill image and extract the Brand, Product Name, Size, Base Rate, GST%, Quantity, MRP, and Color. Calculate Net CP = Base Rate + (Base Rate * GST% / 100). Format the output as: Brand | Name | Size | Net CP | Qty | Category | MRP | Color. If any field is not available, write 0 or leave blank. Example: ZARA | Cotton Shirt | XL | 520.50 | 10 | CLOTHING | 650 | Blue",
-            
-            jewelry: "Please analyze this jewelry bill image and extract the Brand, Product Name, Weight (grams), Base Rate, Making Charges%, Quantity, MRP, and Purity. Calculate Net CP = Base Rate + (Base Rate * Making% / 100). Format the output as: Brand | Name | Weight | Net CP | Qty | Category | MRP | Purity. If any field is not available, write 0 or leave blank. Example: TANISHQ | Gold Ring | 5.5 | 15750.00 | 2 | JEWELRY | 18000 | 22K",
-            
-            grocery: "Analyze this grocery/FMCG bill. For each item, extract: Brand, Product Name, Weight/Unit, Base Rate, GST%, Quantity, MRP, HSN Code, and Expiry Date. Calculate Net CP = Base Rate + (Base Rate * GST% / 100). Format the output as: Brand | Name | Weight | Net CP | Qty | Category | MRP | HSN | Expiry. Do not include headers or currency symbols. Example: SOUL | BUTTER CHKN MASALA | 65gms | 35.43 | 30 | GROCERY | 50 | 21039090 | 12/2025"
+            general: "Analyze this vendor/distributor bill. Extract per product: Product Name, Base Rate (before discount), GST%, Discount%, Qty, MRP, Category, Rack, Remark. Do NOT calculate Net CP. Format: Product Name | Base Rate | GST% | Disc% | Qty | MRP | Category | Rack | Remark. Missing fields = 0. No headers/currency. Example: Lux Soap | 22.50 | 18 | 5 | 50 | 30 | COSMETICS | A-12 | Fragrant",
+            clothing: "Analyze this clothing/garment bill. Extract per item: Brand, Product Name, Size, Base Rate, GST%, Discount%, Qty, MRP, Color. Do NOT calculate Net CP. Format: Brand | Product Name | Size | Base Rate | GST% | Disc% | Qty | MRP | Color. Missing = 0. No headers/currency. Example: ZARA | Cotton Shirt | XL | 450 | 12 | 5 | 10 | 650 | Blue",
+            jewelry: "Analyze this jewelry bill. Extract per item: Brand, Product Name, Weight(gm), Base Rate, Making Charges%, Discount%, Qty, MRP, Purity. Do NOT calculate Net CP. Format: Brand | Product Name | Weight | Base Rate | Making% | Disc% | Qty | MRP | Purity. Missing = 0. No headers/currency. Example: TANISHQ | Gold Ring | 5.5 | 5800 | 12 | 0 | 2 | 18000 | 22K",
+            grocery: "Analyze this grocery/FMCG bill. Extract per item: Brand, Product Name, Weight/Unit, Base Rate, GST%, Discount%, Qty, MRP, HSN Code, Expiry Date. Do NOT calculate Net CP. Format: Brand | Product Name | Weight | Base Rate | GST% | Disc% | Qty | MRP | HSN | Expiry. Missing = 0. No headers/currency. Example: SOUL | BUTTER CHKN MASALA | 65gms | 28 | 18 | 10 | 30 | 50 | 21039090 | 12/2025"
         };
 
         aiPromptText.textContent = prompts[mode] || prompts.general;
@@ -200,13 +217,35 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupSmartTyping(row) {
         const cpInput = row.querySelector('.product-cp');
         const spInput = row.querySelector('.product-sp');
+        const baseRateInput = row.querySelector('.product-base-rate');
+        const gstInput = row.querySelector('.product-gst');
+        const discInput = row.querySelector('.product-disc');
         const categoryInput = row.querySelector('.product-category');
-        const remarkInput = row.querySelector('.product-remark');
         const nameInput = row.querySelector('.product-name');
-        const barcodeInput = row.querySelector('.product-barcode');
         const marginInput = document.getElementById('default-margin');
 
-        // --- Product Name Auto-Complete from Database ---
+        // --- Net CP Auto-Calculate: Base Rate + GST% - Disc% ---
+        function recalcNetCP() {
+            const base = parseFloat(baseRateInput.value) || 0;
+            const gst = parseFloat(gstInput.value) || 0;
+            const disc = parseFloat(discInput.value) || 0;
+            if (base > 0) {
+                const afterDisc = base - (base * disc / 100);
+                const netCP = afterDisc + (afterDisc * gst / 100);
+                cpInput.value = netCP.toFixed(2);
+                // SP ও update করা যদি manually edit না হয়
+                const marginPercent = parseFloat(marginInput.value) || 0;
+                if (!spManuallyEdited && marginPercent >= 0) {
+                    spInput.value = Math.round(netCP + (netCP * marginPercent / 100));
+                }
+                calculateTotalCP();
+            }
+        }
+
+        if (baseRateInput) baseRateInput.addEventListener('input', recalcNetCP);
+        if (gstInput) gstInput.addEventListener('input', recalcNetCP);
+        if (discInput) discInput.addEventListener('input', recalcNetCP);
+
         let searchTimeout;
         if (nameInput && activeShopId) {
             nameInput.addEventListener('input', async function() {
@@ -251,39 +290,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // CP লিখলে অটোমেটিক SP ক্যালকুলেট হওয়া (শুধুমাত্র যদি SP খালি থাকে বা ইউজার ম্যানুয়াল চেঞ্জ না করে)
+        // CP / SP auto-calculate
         if (cpInput && spInput && marginInput) {
-            let spManuallyEdited = false; // ট্র্যাক করবে ইউজার SP ম্যানুয়ালি এডিট করেছে কি না
-
-            // SP ম্যানুয়ালি এডিট করলে ফ্ল্যাগ সেট করা
             spInput.addEventListener('input', function() {
-                if (this.value) {
-                    spManuallyEdited = true;
-                } else {
-                    spManuallyEdited = false; // SP খালি করলে আবার অটো ক্যালকুলেশন চালু
-                }
+                spManuallyEdited = !!this.value;
             });
 
-            // CP চেঞ্জ হলে SP অটো ক্যালকুলেট (শুধু যদি ম্যানুয়ালি এডিট না করা হয়)
             cpInput.addEventListener('input', function() {
                 const cp = parseFloat(this.value) || 0;
                 const marginPercent = parseFloat(marginInput.value) || 0;
-                
-                // শুধুমাত্র তখনই অটো ক্যালকুলেট করবে যখন SP ম্যানুয়ালি এডিট করা হয়নি
-                if (cp > 0 && marginPercent >= 0 && !spManuallyEdited) {
-                    const calculatedSP = cp + (cp * marginPercent / 100);
-                    spInput.value = Math.round(calculatedSP);
+                if (cp > 0 && !spManuallyEdited) {
+                    spInput.value = Math.round(cp + (cp * marginPercent / 100));
                 }
             });
 
-            // Margin চেঞ্জ হলেও SP আপডেট (শুধু যদি ম্যানুয়ালি এডিট না করা হয়)
             marginInput.addEventListener('input', function() {
                 const cp = parseFloat(cpInput.value) || 0;
                 const marginPercent = parseFloat(this.value) || 0;
-                
-                if (cp > 0 && marginPercent >= 0 && !spManuallyEdited) {
-                    const calculatedSP = cp + (cp * marginPercent / 100);
-                    spInput.value = Math.round(calculatedSP);
+                if (cp > 0 && !spManuallyEdited) {
+                    spInput.value = Math.round(cp + (cp * marginPercent / 100));
                 }
             });
         }
@@ -308,13 +333,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const extra2 = row.querySelector('.dynamic-input-2')?.value || '';
             const extra3 = row.querySelector('.dynamic-input-3')?.value || '';
             const extra4 = row.querySelector('.dynamic-input-4')?.value || '';
+            const baseRate = row.querySelector('.product-base-rate')?.value || '';
+            const gst = row.querySelector('.product-gst')?.value || '';
+            const disc = row.querySelector('.product-disc')?.value || '';
             const cp = row.querySelector('.product-cp').value;
             const sp = row.querySelector('.product-sp').value;
             const barcode = row.querySelector('.product-barcode').value;
             const stock = row.querySelector('.product-stock').value;
 
             if (name || cp || stock) {
-                data.push({ name, category, extra1, extra2, extra3, extra4, cp, sp, barcode, stock });
+                data.push({ name, category, extra1, extra2, extra3, extra4, baseRate, gst, disc, cp, sp, barcode, stock });
             }
         });
         
@@ -347,6 +375,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (lastRow.querySelector('.dynamic-input-4')) {
                             lastRow.querySelector('.dynamic-input-4').value = item.extra4 || '';
                         }
+                        if (lastRow.querySelector('.product-base-rate')) lastRow.querySelector('.product-base-rate').value = item.baseRate || '';
+                        if (lastRow.querySelector('.product-gst')) lastRow.querySelector('.product-gst').value = item.gst || '';
+                        if (lastRow.querySelector('.product-disc')) lastRow.querySelector('.product-disc').value = item.disc || '';
                         lastRow.querySelector('.product-cp').value = item.cp || '';
                         lastRow.querySelector('.product-sp').value = item.sp || '';
                         lastRow.querySelector('.product-barcode').value = item.barcode || '';
@@ -402,6 +433,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <td data-label="${config.head1}"><input type="text" class="dynamic-input-1" placeholder="${config.p1}"></td>
             <td data-label="${config.head2}"><input type="text" class="dynamic-input-2" placeholder="${config.p2}"></td>
             ${extraCols}
+            <td data-label="Base Rate"><input type="number" step="0.01" class="product-base-rate" placeholder="0.00"></td>
+            <td data-label="GST%"><input type="number" step="0.01" class="product-gst" placeholder="0" min="0" max="100"></td>
+            <td data-label="Disc%"><input type="number" step="0.01" class="product-disc" placeholder="0" min="0" max="100"></td>
             <td data-label="Cost Price"><input type="number" step="0.01" class="product-cp" placeholder="0.00" required></td>
             <td data-label="Selling Price"><input type="number" step="0.01" class="product-sp" placeholder="0.00" required></td>
             <td data-label="Barcode">
@@ -719,17 +753,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (exampleElement && config.aiExample) {
             // Mode-specific format instructions
             const formatExamples = {
-                general: `<strong>Format:</strong> Product Name | CP | Qty | Category | MRP | Rack | Remark<br>
-                         <strong>Example:</strong> Lux Soap | 25 | 50 | COSMETICS | 30 | A-12 | Fragrant`,
-                
-                clothing: `<strong>Format:</strong> Brand | Name | Size | Net CP | Qty | Category | MRP | Color<br>
-                          <strong>Example:</strong> ZARA | Cotton Shirt | XL | 520.50 | 10 | CLOTHING | 650 | Blue`,
-                
-                jewelry: `<strong>Format:</strong> Brand | Name | Weight (gm) | Net CP | Qty | Category | MRP | Purity<br>
-                         <strong>Example:</strong> TANISHQ | Gold Ring | 5.5 | 15750.00 | 2 | JEWELRY | 18000 | 22K`,
-                
-                grocery: `<strong>Format:</strong> Brand | Name | Weight/Unit | Net CP | Qty | Category | MRP | HSN | Expiry<br>
-                         <strong>Example:</strong> SOUL | BUTTER CHKN MASALA | 65gms | 35.43 | 30 | GROCERY | 50 | 21039090 | 12/2025`
+                general: `<strong>Format:</strong> Product Name | Base Rate | GST% | Disc% | Qty | MRP | Category | Rack | Remark<br>
+                         <strong>Example:</strong> Lux Soap | 22.50 | 18 | 5 | 50 | 30 | COSMETICS | A-12 | Fragrant`,
+
+                clothing: `<strong>Format:</strong> Brand | Product Name | Size | Base Rate | GST% | Disc% | Qty | MRP | Color<br>
+                          <strong>Example:</strong> ZARA | Cotton Shirt | XL | 450 | 12 | 5 | 10 | 650 | Blue`,
+
+                jewelry: `<strong>Format:</strong> Brand | Product Name | Weight(gm) | Base Rate | Making% | Disc% | Qty | MRP | Purity<br>
+                         <strong>Example:</strong> TANISHQ | Gold Ring | 5.5 | 5800 | 12 | 0 | 2 | 18000 | 22K`,
+
+                grocery: `<strong>Format:</strong> Brand | Product Name | Weight/Unit | Base Rate | GST% | Disc% | Qty | MRP | HSN | Expiry<br>
+                         <strong>Example:</strong> SOUL | BUTTER CHKN MASALA | 65gms | 28 | 18 | 10 | 30 | 50 | 21039090 | 12/2025`
             };
             
             exampleElement.innerHTML = formatExamples[mode] || formatExamples.general;
@@ -805,53 +839,67 @@ document.addEventListener('DOMContentLoaded', () => {
                 const currentMode = window.currentActiveMode || 'general';
                 
                 if (parts.length >= 3) {
-                    let name, cp, qty, mrp, category, extra1, extra2, extra3, extra4;
-                    
-                    // Mode-based parsing
-                    if (currentMode === 'grocery' || currentMode === 'clothing' || currentMode === 'jewelry') {
-                        // New format: Brand | Name | Weight/Size | Net CP | Qty | Category | MRP | Extra3 | Extra4
+                    let name, baseRate, gst, disc, cp, qty, mrp, category, extra1, extra2, extra3, extra4;
+
+                    if (currentMode === 'grocery') {
+                        // Format: Brand | Name | Weight | Base Rate | GST% | Disc% | Qty | MRP | HSN | Expiry
+                        extra1 = parts[0] || '';           // Brand
+                        name   = parts[1] || '';           // Product Name
+                        extra2 = parts[2] || '';           // Weight/Unit
+                        baseRate = parseFloat(parts[3]) || 0;
+                        gst    = parseFloat(parts[4]) || 0;
+                        disc   = parseFloat(parts[5]) || 0;
+                        qty    = parseInt(parts[6]) || 0;
+                        mrp    = parseFloat(parts[7]) || 0;
+                        extra3 = parts[8] || '';           // HSN Code
+                        extra4 = parts[9] || '';           // Expiry Date
+                        category = 'GROCERY';
+                    } else if (currentMode === 'clothing') {
+                        // Format: Brand | Name | Size | Base Rate | GST% | Disc% | Qty | MRP | Color
                         const brand = parts[0] || '';
-                        const productName = parts[1] || '';
-                        const weightOrSize = parts[2] || '';
-                        
-                        // Grocery Mode: Brand এবং Weight আলাদা কলামে + HSN + Expiry
-                        if (currentMode === 'grocery') {
-                            name = productName.trim().toUpperCase(); // শুধু Product Name
-                            extra1 = brand.trim().toUpperCase();     // Brand Name column
-                            extra2 = weightOrSize.trim();            // Weight/Unit column
-                            extra3 = parts.length >= 8 ? parts[7] : ''; // HSN Code
-                            extra4 = parts.length >= 9 ? parts[8] : ''; // Expiry Date
-                        } else if (currentMode === 'clothing') {
-                            // Clothing: পুরো নাম একসাথে, Size এবং Color আলাদা
-                            name = `${brand} ${productName}`.trim().toUpperCase();
-                            extra1 = weightOrSize.trim();            // Size column
-                            extra2 = parts.length >= 8 ? parts[7] : ''; // Color column
-                            extra3 = '';
-                            extra4 = '';
-                        } else if (currentMode === 'jewelry') {
-                            // Jewelry: পুরো নাম একসাথে, Weight এবং Purity আলাদা
-                            name = `${brand} ${productName}`.trim().toUpperCase();
-                            extra1 = weightOrSize.trim();            // Weight column
-                            extra2 = parts.length >= 8 ? parts[7] : ''; // Purity column
-                            extra3 = '';
-                            extra4 = '';
-                        }
-                        
-                        cp = parseFloat(parts[3]) || 0;
-                        qty = parseInt(parts[4]) || 0;
-                        category = parts[5] || (currentMode === 'grocery' ? 'GROCERY' : currentMode === 'clothing' ? 'CLOTHING' : 'JEWELRY');
-                        mrp = parts.length >= 7 ? parseFloat(parts[6]) : 0;
+                        name   = `${brand} ${parts[1] || ''}`.trim().toUpperCase();
+                        extra1 = parts[2] || '';           // Size
+                        baseRate = parseFloat(parts[3]) || 0;
+                        gst    = parseFloat(parts[4]) || 0;
+                        disc   = parseFloat(parts[5]) || 0;
+                        qty    = parseInt(parts[6]) || 0;
+                        mrp    = parseFloat(parts[7]) || 0;
+                        extra2 = parts[8] || '';           // Color
+                        extra3 = ''; extra4 = '';
+                        category = 'CLOTHING';
+                    } else if (currentMode === 'jewelry') {
+                        // Format: Brand | Name | Weight | Base Rate | Making% | Disc% | Qty | MRP | Purity
+                        const brand = parts[0] || '';
+                        name   = `${brand} ${parts[1] || ''}`.trim().toUpperCase();
+                        extra1 = parts[2] || '';           // Weight
+                        baseRate = parseFloat(parts[3]) || 0;
+                        gst    = parseFloat(parts[4]) || 0;
+                        disc   = parseFloat(parts[5]) || 0;
+                        qty    = parseInt(parts[6]) || 0;
+                        mrp    = parseFloat(parts[7]) || 0;
+                        extra2 = parts[8] || '';           // Purity
+                        extra3 = ''; extra4 = '';
+                        category = 'JEWELRY';
                     } else {
-                        // General format: Name | CP | Qty | MRP | Category | Extra1 | Extra2
-                        name = parts[0];
-                        cp = parseFloat(parts[1]);
-                        qty = parseInt(parts[2]);
-                        mrp = parts.length >= 4 ? parseFloat(parts[3]) : 0;
-                        category = parts.length >= 5 ? parts[4] : (parts.length >= 4 && isNaN(parseFloat(parts[3])) ? parts[3] : '');
-                        extra1 = parts.length >= 6 ? parts[5] : '';
-                        extra2 = parts.length >= 7 ? parts[6] : '';
-                        extra3 = '';
-                        extra4 = '';
+                        // General: Name | Base Rate | GST% | Disc% | Qty | MRP | Category | Rack | Remark
+                        name     = parts[0] || '';
+                        baseRate = parseFloat(parts[1]) || 0;
+                        gst      = parseFloat(parts[2]) || 0;
+                        disc     = parseFloat(parts[3]) || 0;
+                        qty      = parseInt(parts[4]) || 0;
+                        mrp      = parseFloat(parts[5]) || 0;
+                        category = parts[6] || '';
+                        extra1   = parts[7] || '';         // Rack
+                        extra2   = parts[8] || '';         // Remark
+                        extra3 = ''; extra4 = '';
+                    }
+
+                    // Net CP calculate: (Base Rate - Disc%) + GST%
+                    if (baseRate > 0) {
+                        const afterDisc = baseRate - (baseRate * disc / 100);
+                        cp = afterDisc + (afterDisc * gst / 100);
+                    } else {
+                        cp = 0;
                     }
 
                     if (name && !isNaN(cp) && !isNaN(qty)) {
@@ -965,9 +1013,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                     targetRow.querySelector('.dynamic-input-4').value = extra4;
                                 }
                                 
+                                if (targetRow.querySelector('.product-base-rate')) targetRow.querySelector('.product-base-rate').value = baseRate || '';
+                                if (targetRow.querySelector('.product-gst')) targetRow.querySelector('.product-gst').value = gst || '';
+                                if (targetRow.querySelector('.product-disc')) targetRow.querySelector('.product-disc').value = disc || '';
                                 targetRow.querySelector('.product-cp').value = cp.toFixed(2);
                                 targetRow.querySelector('.product-sp').value = existingData.sellingPrice || cp;
-                                targetRow.querySelector('.product-barcode').value = barcode; // ✅ Barcode set করা
+                                targetRow.querySelector('.product-barcode').value = barcode;
                                 targetRow.querySelector('.product-stock').value = qty;
                                 
                                 // রো-এর কালার হালকা সবুজ করে দেওয়া
@@ -992,17 +1043,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                     targetRow.querySelector('.dynamic-input-4').value = extra4;
                                 }
                                 
+                                if (targetRow.querySelector('.product-base-rate')) targetRow.querySelector('.product-base-rate').value = baseRate || '';
+                                if (targetRow.querySelector('.product-gst')) targetRow.querySelector('.product-gst').value = gst || '';
+                                if (targetRow.querySelector('.product-disc')) targetRow.querySelector('.product-disc').value = disc || '';
                                 targetRow.querySelector('.product-cp').value = cp.toFixed(2);
-                                
-                                // MRP থাকলে সেটা বসানো, না হলে মার্জিন ক্যালকুলেট
                                 if (mrp && mrp > 0) {
                                     targetRow.querySelector('.product-sp').value = mrp;
                                 } else {
                                     const margin = parseFloat(document.getElementById('default-margin').value) || 0;
-                                    const calculatedSP = cp + (cp * margin / 100);
-                                    targetRow.querySelector('.product-sp').value = Math.round(calculatedSP);
+                                    targetRow.querySelector('.product-sp').value = Math.round(cp + (cp * margin / 100));
                                 }
-                                
                                 targetRow.querySelector('.product-stock').value = qty;
                                 addedCount++;
                             }
@@ -1328,11 +1378,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         transaction.set(ref, dataToSave);
                     }
 
-                    // এক্সপেন্স সেভ করার সময়ও গ্রুপ করা স্টক অনুযায়ী অ্যামাউন্ট ক্যালকুলেট হবে
+                    // নতুন purchase এর জন্যই শুধু expense entry তৈরি হবে
+                    // existing product এ stock add হলে নতুন purchase record তৈরি হবে (history)
                     if (productData.costPrice > 0 && productData.stock > 0) {
                         const totalCost = productData.costPrice * productData.stock;
                         const expenseRef = doc(collection(db, 'shops', activeShopId, 'expenses'));
-                        
                         const expenseData = {
                             description: `Purchase: ${productData.name}`,
                             amount: totalCost,
@@ -1340,7 +1390,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             quantity: productData.stock,
                             unitPrice: productData.costPrice,
                             date: Timestamp.now(),
-                            relatedProductId: finalBarcode
+                            relatedProductId: finalBarcode,
+                            isRestock: productData.isUpdate || false
                         };
                         transaction.set(expenseRef, expenseData);
                     }

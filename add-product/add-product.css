@@ -224,36 +224,124 @@ body {
 .card-container table input[type="number"],
 .card-container table select {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
+    padding: 10px 14px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
     font-size: 14px;
-    color: #333;
+    color: #2c3e50;
+    background-color: #fafafa;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.card-container table input[type="text"]:hover,
+.card-container table input[type="number"]:hover,
+.card-container table select:hover {
+    border-color: #b0bec5;
     background-color: #fff;
-    transition: all 0.2s ease;
 }
 
-/* Product Name এবং Category ফিল্ড বড় করা */
-.card-container table .product-name,
+/* Base Rate, GST%, Disc% ফিল্ড */
+.card-container table .product-base-rate,
+.card-container table .product-gst,
+.card-container table .product-disc {
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    background-color: #fffbf0;
+    border-color: #f0d080;
+    text-align: center;
+    padding: 6px 4px;
+}
+
+.card-container table .product-base-rate:focus,
+.card-container table .product-gst:focus,
+.card-container table .product-disc:focus {
+    border-color: #e6a817;
+    box-shadow: 0 0 0 3px rgba(230, 168, 23, 0.15);
+}
+
+/* Product Name এবং Category ফিল্ড */
+.card-container table .product-name {
+    min-width: 200px;
+    font-weight: 600;
+    background-color: #f0f4ff;
+    border-color: #c5d0f5;
+}
+
 .card-container table .product-category {
-    min-width: 180px;
-    font-weight: 500;
+    min-width: 120px;
+    font-weight: 600;
+    background-color: #f0f4ff;
+    border-color: #c5d0f5;
 }
 
-/* টেক্সট ওভারফ্লো হ্যান্ডলিং */
-.card-container table input[type="text"] {
-    white-space: nowrap;
-    overflow: visible;
-    text-overflow: clip;
+.card-container table .product-name:hover,
+.card-container table .product-category:hover {
+    background-color: #e8eeff;
+    border-color: #a0b0f0;
+}
+
+/* CP, SP, Base Rate ফিল্ড */
+.card-container table .product-cp,
+.card-container table .product-sp {
+    width: 85px;
+    min-width: 85px;
+    text-align: right;
+}
+
+.card-container table .product-base-rate {
+    width: 75px;
+    min-width: 75px;
+}
+
+/* Barcode ফিল্ড */
+.card-container table .product-barcode {
+    min-width: 110px;
+    width: 110px;
+}
+
+/* Stock ফিল্ড */
+.card-container table .product-stock {
+    width: 55px;
+    min-width: 55px;
+    text-align: center;
+}
+
+/* Dynamic fields (Rack, Remark, Size, Color etc) */
+.card-container table .dynamic-input-1,
+.card-container table .dynamic-input-2 {
+    min-width: 80px;
+    width: 80px;
+}
+
+.card-container table .dynamic-input-3,
+.card-container table .dynamic-input-4 {
+    min-width: 75px;
+    width: 75px;
+}
+
+/* Image input */
+.card-container table .product-image {
+    width: 90px;
+    min-width: 90px;
+    font-size: 11px;
 }
 
 .card-container table input:focus,
 .card-container table select:focus {
-    border-color: var(--primary-color);
+    border-color: #4a90e2;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15), inset 0 1px 3px rgba(0,0,0,0.04);
     z-index: 10;
     position: relative;
+}
+
+.card-container table .product-name:focus,
+.card-container table .product-category:focus {
+    border-color: #3a7bd5;
+    box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.2), inset 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .remove-row-btn {
@@ -267,14 +355,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     margin: 0 auto;
 }
 
 .remove-row-btn:hover {
     background-color: #dc3545;
     color: white;
-    transform: rotate(90deg);
     box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3);
 }
 
@@ -781,15 +868,6 @@ body {
         font-size: 32px;
     }
 
-    .card-container table th {
-        font-size: 0.9rem;
-        padding: 18px 12px;
-    }
-
-    .card-container table td {
-        padding: 14px 12px;
-    }
-
     .ai-smart-card {
         padding: 30px;
     }
@@ -802,6 +880,100 @@ body {
 
     #barcodes-container {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
+/* ============================
+   14. Desktop Compact Table Layout
+   ============================ */
+@media screen and (min-width: 769px) {
+    .table-responsive {
+        max-height: 60vh;
+        overflow-y: auto;
+        overflow-x: auto;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        scroll-behavior: smooth;
+    }
+
+    .table-responsive::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #c0c0c0;
+        border-radius: 10px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #999;
+    }
+
+    .card-container table {
+        min-width: 1200px;
+    }
+
+    .card-container table thead {
+        display: table-header-group;
+    }
+
+    .card-container table th {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: linear-gradient(135deg, #2c3e50 0%, #3d5166 100%);
+        color: #fff;
+        font-size: 0.78rem;
+        padding: 10px 8px;
+        white-space: nowrap;
+        border-bottom: 2px solid #1a252f;
+    }
+
+    .card-container table tr {
+        display: table-row;
+    }
+
+    .card-container table td {
+        display: table-cell;
+        padding: 6px 6px;
+        border-bottom: 1px solid #f1f1f1;
+        vertical-align: middle;
+    }
+
+    .card-container table td::before {
+        display: none;
+    }
+
+    .card-container table tbody tr:hover {
+        background-color: #f0f7ff;
+    }
+
+    .card-container table tbody tr:nth-child(even) {
+        background-color: #fafafa;
+    }
+
+    .card-container table input[type="text"],
+    .card-container table input[type="number"] {
+        padding: 6px 8px;
+        font-size: 13px;
+    }
+
+    .remove-row-btn {
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 50% !important;
+        margin: 0 auto !important;
+        transform: none;
+    }
+
+    .remove-row-btn::after {
+        display: none !important;
     }
 }
 

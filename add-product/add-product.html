@@ -25,23 +25,37 @@
                 </div>
             </div>
             
+            <!-- Business Mode Selector -->
+                <div style="margin: 0 0 20px 0; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6;">
+                    <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #495057;">🏪 Business Type (Table Mode)</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="mode-btn" data-mode="general" style="padding: 8px 16px; border: 2px solid #6c757d; background: white; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;">🏬 General</button>
+                        <button type="button" class="mode-btn" data-mode="clothing" style="padding: 8px 16px; border: 2px solid #e83e8c; background: white; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;">👗 Clothing</button>
+                        <button type="button" class="mode-btn" data-mode="jewelry" style="padding: 8px 16px; border: 2px solid #ffc107; background: white; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;">💍 Jewelry</button>
+                        <button type="button" class="mode-btn" data-mode="grocery" style="padding: 8px 16px; border: 2px solid #28a745; background: white; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;">🛒 Grocery</button>
+                    </div>
+                </div>
+
             <form id="add-products-form">
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th>Product Name</th>
-                                <th>Category</th>
-                                <th class="dynamic-head-1">Rack/Shelf</th>
-                                <th class="dynamic-head-2">Remark</th>
-                                <th class="dynamic-head-3" style="display:none;">Extra 3</th>
-                                <th class="dynamic-head-4" style="display:none;">Extra 4</th>
-                                <th>Cost Price (CP)</th>
-                                <th>Selling Price (SP)</th>
-                                <th>Barcode</th>
-                                <th>Initial Stock</th>
-                                <th>Image</th>
-                                <th>Action</th>
+                                <th style="min-width:200px">Product Name</th>
+                                <th style="min-width:120px">Category</th>
+                                <th class="dynamic-head-1" style="min-width:80px">Rack/Shelf</th>
+                                <th class="dynamic-head-2" style="min-width:80px">Remark</th>
+                                <th class="dynamic-head-3" style="display:none; min-width:75px">Extra 3</th>
+                                <th class="dynamic-head-4" style="display:none; min-width:75px">Extra 4</th>
+                                <th style="min-width:75px">Base Rate</th>
+                                <th style="min-width:55px">GST%</th>
+                                <th style="min-width:55px">Disc%</th>
+                                <th style="min-width:85px">CP</th>
+                                <th style="min-width:85px">SP</th>
+                                <th style="min-width:110px">Barcode</th>
+                                <th style="min-width:55px">Stock</th>
+                                <th style="min-width:90px">Image</th>
+                                <th style="min-width:50px">Del</th>
                             </tr>
                         </thead>
                         <tbody id="products-tbody">
@@ -52,17 +66,6 @@
 
                 <div class="table-footer-actions">
                     <button type="button" id="add-row-btn" class="btn btn-secondary-light">➕ Add More Rows</button>
-                </div>
-
-                <!-- Business Mode Selector -->
-                <div style="margin: 20px 0; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6;">
-                    <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #495057;">🏪 Business Type (Table Mode)</h3>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" class="mode-btn" data-mode="general" style="padding: 8px 16px; border: 2px solid #6c757d; background: white; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;">🏬 General</button>
-                        <button type="button" class="mode-btn" data-mode="clothing" style="padding: 8px 16px; border: 2px solid #e83e8c; background: white; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;">👗 Clothing</button>
-                        <button type="button" class="mode-btn" data-mode="jewelry" style="padding: 8px 16px; border: 2px solid #ffc107; background: white; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;">💍 Jewelry</button>
-                        <button type="button" class="mode-btn" data-mode="grocery" style="padding: 8px 16px; border: 2px solid #28a745; background: white; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;">🛒 Grocery</button>
-                    </div>
                 </div>
 
                 <!-- Total CP Calculator -->
