@@ -1,7 +1,7 @@
 import { db, auth } from '../js/firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import { 
-    collection, onSnapshot, doc, deleteDoc, updateDoc, 
+    collection, onSnapshot, doc, deleteDoc, updateDoc, setDoc,
     orderBy, query, where, getDocs, getDoc, addDoc, serverTimestamp, limit, startAfter 
 } from 'firebase/firestore';
 
@@ -316,7 +316,9 @@ function renderTable() {
                     <br><small style="color: #28a745; font-weight: bold;">Margin: ${margin}%</small>
                 </td>
                 <td class="stock-cell"><strong>${stock}</strong></td>
-                <td>${p.barcode || 'N/A'}</td>
+                <td class="barcode-cell" data-id="${p.id}" data-barcode="${p.barcode || ''}" title="Click to edit barcode" style="cursor:pointer;">
+                    <span class="barcode-display">${p.barcode || '<span style="color:#ccc;">—</span>'}</span>
+                </td>
                 <td class="action-buttons">
                     <button class="btn btn-sm btn-edit" data-id="${p.id}" title="Edit">Edit</button>
                     <button class="btn btn-sm btn-delete" data-id="${p.id}" title="Delete">Delete</button>
@@ -500,6 +502,33 @@ function setupEventListeners() {
     const editImageInput = document.getElementById('edit-image');
     const editImagePreview = document.getElementById('edit-image-preview');
 
+    // Barcode real-time duplicate check
+    const editBarcodeInput = document.getElementById('edit-barcode');
+    const barcodeDupMsg    = document.getElementById('barcode-duplicate-msg');
+    if (editBarcodeInput) {
+        editBarcodeInput.addEventListener('input', function() {
+            const val       = this.value.trim();
+            const currentId = document.getElementById('edit-product-id').value;
+            barcodeDupMsg.style.display = 'none';
+            this.classList.remove('input-shake');
+
+            if (!val) return;
+
+            const dup = allProducts.find(p => p.id === val && p.id !== currentId);
+            if (dup) {
+                barcodeDupMsg.style.display = 'block';
+                barcodeDupMsg.textContent   = `❌ Duplicate! "${dup.name}" এ ইতিমধ্যে এই barcode আছে`;
+                this.classList.remove('input-shake');
+                void this.offsetWidth; // reflow to restart animation
+                this.classList.add('input-shake');
+                document.getElementById('edit-save-btn').disabled = true;
+            } else {
+                barcodeDupMsg.style.display = 'none';
+                document.getElementById('edit-save-btn').disabled = false;
+            }
+        });
+    }
+
     if (editImageInput) {
         editImageInput.addEventListener('change', function() {
             const file = this.files[0];
@@ -510,6 +539,106 @@ function setupEventListeners() {
                     editImagePreview.style.display = 'block';
                 }
                 reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Paste Zone setup
+    const pasteZone      = document.getElementById('img-paste-zone');
+    const pasteZoneText  = document.getElementById('paste-zone-text');
+    const pasteZoneLoad  = document.getElementById('paste-zone-uploading');
+    const pasteZoneInput = document.getElementById('paste-zone-input');
+
+    pasteZone.addEventListener('click', () => {
+        pasteZoneInput.focus();
+        pasteZone.style.borderColor = '#2563eb';
+        pasteZone.style.background  = '#eff6ff';
+    });
+
+    pasteZoneInput.addEventListener('blur', () => {
+        pasteZone.style.borderColor = '#93c5fd';
+        pasteZone.style.background  = '#f0f9ff';
+    });
+
+    async function handleImagePaste(file) {
+        if (!file || !file.type.startsWith('image/')) return;
+
+        const reader = new FileReader();
+        reader.onload = ev => {
+            editImagePreview.src = ev.target.result;
+            editImagePreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+
+        pasteZoneText.style.display = 'none';
+        pasteZoneLoad.style.display = 'block';
+        pasteZone.style.borderColor = '#f59e0b';
+        pasteZone.style.background  = '#fffbeb';
+
+        const saveBtn = document.getElementById('edit-save-btn');
+        saveBtn.disabled = true;
+
+        const uploadedUrl = await uploadImageToImgBB(file);
+
+        pasteZoneText.style.display = 'block';
+        pasteZoneLoad.style.display = 'none';
+        saveBtn.disabled = false;
+        pasteZoneInput.innerHTML = '';
+
+        if (uploadedUrl) {
+            window.switchImgTab('url');
+            document.getElementById('edit-image-url').value = uploadedUrl;
+            editImagePreview.src = uploadedUrl;
+            editImagePreview.style.display = 'block';
+            pasteZone.style.borderColor = '#22c55e';
+            pasteZone.style.background  = '#f0fdf4';
+            pasteZoneText.querySelector('div:first-child').textContent  = '\u2705';
+            pasteZoneText.querySelector('div:nth-child(2)').textContent = 'Image uploaded!';
+            showStatus('\u2705 Image pasted & uploaded!', 'success');
+        } else {
+            pasteZone.style.borderColor = '#dc2626';
+            pasteZone.style.background  = '#fff5f5';
+            showStatus('\u274c Image upload failed', 'error');
+        }
+    }
+
+    // contenteditable paste
+    pasteZoneInput.addEventListener('paste', e => {
+        e.preventDefault();
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (const item of items) {
+            if (item.type.startsWith('image/')) {
+                handleImagePaste(item.getAsFile());
+                break;
+            }
+        }
+    });
+
+    // Modal-level fallback paste
+    document.getElementById('edit-modal').addEventListener('paste', e => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (const item of items) {
+            if (item.type.startsWith('image/')) {
+                e.preventDefault();
+                handleImagePaste(item.getAsFile());
+                break;
+            }
+        }
+    });
+
+    // Image URL preview
+    const editImageUrl = document.getElementById('edit-image-url');
+    if (editImageUrl) {
+        editImageUrl.addEventListener('input', function() {
+            const url = this.value.trim();
+            if (url) {
+                editImagePreview.src = url;
+                editImagePreview.style.display = 'block';
+                editImagePreview.onerror = () => { editImagePreview.style.display = 'none'; };
+            } else {
+                editImagePreview.style.display = 'none';
             }
         });
     }
@@ -551,7 +680,76 @@ function setupEventListeners() {
     window.addEventListener('click', (e) => { if (e.target === editModal) editModal.style.display = 'none'; });
     
     editForm.addEventListener('submit', handleEditFormSubmit);
-    
+
+    // Barcode inline edit
+    inventoryBody.addEventListener('click', e => {
+        const cell = e.target.closest('.barcode-cell');
+        if (!cell || cell.querySelector('input')) return;
+
+        const id          = cell.dataset.id;
+        const oldBarcode  = cell.dataset.barcode;
+        const span        = cell.querySelector('.barcode-display');
+
+        const input = document.createElement('input');
+        input.type  = 'text';
+        input.value = oldBarcode;
+        input.style.cssText = 'width:100%; padding:4px 8px; border:2px solid #4361ee; border-radius:6px; font-size:13px; font-weight:600;';
+        cell.innerHTML = '';
+        cell.appendChild(input);
+        input.focus();
+        input.select();
+
+        const dupHint = document.createElement('div');
+        dupHint.style.cssText = 'font-size:11px; color:#dc2626; margin-top:3px; display:none;';
+        cell.appendChild(dupHint);
+
+        input.addEventListener('input', () => {
+            const val = input.value.trim();
+            const dup = allProducts.find(p => p.id === val && p.id !== id);
+            if (dup) {
+                dupHint.style.display = 'block';
+                dupHint.textContent   = `❌ "${dup.name}" এ আছে`;
+                input.style.borderColor = '#dc2626';
+                input.classList.remove('input-shake');
+                void input.offsetWidth;
+                input.classList.add('input-shake');
+            } else {
+                dupHint.style.display = 'none';
+                input.style.borderColor = '#4361ee';
+            }
+        });
+
+        async function saveInlineBarcode() {
+            const newBarcode = input.value.trim();
+            const dup = allProducts.find(p => p.id === newBarcode && p.id !== id);
+            if (dup) {
+                input.focus();
+                return;
+            }
+            if (newBarcode === oldBarcode) {
+                renderTable();
+                return;
+            }
+            try {
+                const product = allProducts.find(p => p.id === id);
+                if (!product) return;
+                const newRef = doc(db, 'shops', activeShopId, 'inventory', newBarcode);
+                await setDoc(newRef, { ...product, barcode: newBarcode, id: undefined, lastUpdated: new Date() });
+                await deleteDoc(doc(db, 'shops', activeShopId, 'inventory', id));
+                showStatus(`✅ Barcode updated: ${oldBarcode} → ${newBarcode}`, 'success');
+            } catch (err) {
+                showStatus('❌ Barcode update failed', 'error');
+                renderTable();
+            }
+        }
+
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter')  saveInlineBarcode();
+            if (e.key === 'Escape') renderTable();
+        });
+        input.addEventListener('blur', saveInlineBarcode);
+    });
+
     // View Logs button event listener
     const viewLogsBtn = document.getElementById('view-logs-btn');
     if (viewLogsBtn) {
@@ -596,10 +794,52 @@ function openPrintPage(id, name, price) {
     const url = `../label-printer/index.html?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}`;
     window.open(url, '_blank', 'width=1000,height=700');
 }
+window.switchImgTab = function(tab) {
+    const fileSection = document.getElementById('img-file-section');
+    const urlSection  = document.getElementById('img-url-section');
+    const fileBtn     = document.getElementById('img-tab-file');
+    const urlBtn      = document.getElementById('img-tab-url');
+    if (tab === 'file') {
+        fileSection.style.display = 'block';
+        urlSection.style.display  = 'none';
+        fileBtn.style.background  = '#4361ee'; fileBtn.style.color = 'white'; fileBtn.style.borderColor = '#4361ee';
+        urlBtn.style.background   = 'white';   urlBtn.style.color  = '#666';  urlBtn.style.borderColor  = '#ddd';
+    } else {
+        fileSection.style.display = 'none';
+        urlSection.style.display  = 'block';
+        urlBtn.style.background   = '#4361ee'; urlBtn.style.color  = 'white'; urlBtn.style.borderColor  = '#4361ee';
+        fileBtn.style.background  = 'white';   fileBtn.style.color = '#666';  fileBtn.style.borderColor = '#ddd';
+    }
+};
+
 window.openPrintPage = openPrintPage;
+window.inventoryState = {
+    get allProducts() { return allProducts; },
+    set allProducts(v) { allProducts = v; },
+    get activeShopId() { return activeShopId; },
+    get filteredProducts() { return filteredProducts; }
+};
+window.inventoryFns = {
+    showStatus,
+    applyFiltersAndRender,
+    renderTable,
+    updateCategoryStats,
+    saveInventoryLog
+};
 
 function openEditModal(product) {
     editForm.reset();
+    // Paste zone reset
+    const pz = document.getElementById('img-paste-zone');
+    if (pz) {
+        pz.style.borderColor = '#93c5fd';
+        pz.style.background  = '#f0f9ff';
+        const t = document.getElementById('paste-zone-text');
+        if (t) {
+            t.querySelector('div:first-child').textContent  = '📋';
+            t.querySelector('div:nth-child(2)').textContent = 'এখানে Click করে Ctrl+V চাপুন';
+        }
+    }
     Object.entries({
         'edit-product-id': product.id, 
         'edit-name': product.name, 
@@ -661,6 +901,16 @@ async function handleEditFormSubmit(e) {
     const newCP = parseFloat(document.getElementById('edit-cp').value);
     const newSP = parseFloat(document.getElementById('edit-sp').value);
     const newStock = parseInt(document.getElementById('edit-stock').value, 10);
+    const newBarcode = document.getElementById('edit-barcode').value.trim();
+
+    // Barcode duplicate check
+    if (newBarcode) {
+        const existing = allProducts.find(p => p.id === newBarcode && p.id !== id);
+        if (existing) {
+            showStatus(`❌ Barcode "${newBarcode}" already used by "${existing.name}"`, 'error');
+            return;
+        }
+    }
 
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
@@ -685,12 +935,38 @@ async function handleEditFormSubmit(e) {
         if (imageInput.files && imageInput.files[0]) {
             saveBtn.textContent = 'Uploading Image...';
             const uploadedUrl = await uploadImageToImgBB(imageInput.files[0]);
-            if (uploadedUrl) {
-                data.imageUrl = uploadedUrl;
+            if (uploadedUrl) data.imageUrl = uploadedUrl;
+        } else {
+            const urlInput = document.getElementById('edit-image-url');
+            if (urlInput && urlInput.value.trim()) {
+                data.imageUrl = urlInput.value.trim();
             }
         }
 
-        await updateDoc(productRef, data);
+        // Barcode change হলে — নতুন doc বানাও, পুরনোটা delete করো
+        if (newBarcode && newBarcode !== id) {
+            const newRef = doc(db, 'shops', activeShopId, 'inventory', newBarcode);
+            data.barcode = newBarcode;
+            data.name = newName;
+            data.category = newCategory;
+            data.remark = newRemark;
+            data.costPrice = newCP;
+            data.sellingPrice = newSP;
+            data.stock = newStock;
+            data.imageUrl = data.imageUrl || oldData.imageUrl || null;
+            data.createdAt = oldData.createdAt || new Date();
+            await setDoc(newRef, data);
+            await deleteDoc(productRef);
+            // expenses এ relatedProductId update
+            const expRef = collection(db, 'shops', activeShopId, 'expenses');
+            const expQ = query(expRef, where('relatedProductId', '==', id));
+            const expSnap = await getDocs(expQ);
+            expSnap.forEach(async d => {
+                await updateDoc(doc(db, 'shops', activeShopId, 'expenses', d.id), { relatedProductId: newBarcode });
+            });
+        } else {
+            await updateDoc(productRef, data);
+        }
 
         // Save audit log if stock changed
         if (oldData.stock !== newStock) {

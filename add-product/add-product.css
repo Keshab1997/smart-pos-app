@@ -1039,3 +1039,73 @@ body {
         border: 1px solid #000;
     }
 }
+
+/* Image input tabs in table rows */
+.img-input-wrap {
+    min-width: 90px;
+}
+
+.img-tabs {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 5px;
+}
+
+.img-tab-btn {
+    flex: 1;
+    padding: 3px;
+    border: 1px solid #ddd;
+    background: #f8f9fa;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.img-tab-btn.active {
+    background: #4361ee;
+    border-color: #4361ee;
+    color: white;
+}
+
+.img-tab-content input[type="file"],
+.img-tab-content input[type="url"] {
+    width: 100%;
+    font-size: 11px;
+    padding: 4px 6px;
+}
+
+.row-paste-zone {
+    border: 1.5px dashed #93c5fd;
+    border-radius: 6px;
+    padding: 6px;
+    text-align: center;
+    background: #f0f9ff;
+    cursor: pointer;
+    position: relative;
+}
+
+.row-paste-zone:focus-within {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.row-paste-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.row-paste-hint {
+    font-size: 11px;
+    color: #0369a1;
+    font-weight: 600;
+}
+
+.row-paste-status {
+    font-size: 11px;
+    font-weight: 600;
+    color: #0369a1;
+}

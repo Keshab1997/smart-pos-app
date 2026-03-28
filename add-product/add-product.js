@@ -319,6 +319,91 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.value = this.value.toUpperCase();
             });
         }
+
+        // Image tabs setup
+        const imgWrap    = row.querySelector('.img-input-wrap');
+        const tabBtns    = row.querySelectorAll('.img-tab-btn');
+        const tabContents = row.querySelectorAll('.img-tab-content');
+        const preview    = row.querySelector('.product-image-preview');
+
+        function showPreview(src) {
+            if (src) { preview.src = src; preview.style.display = 'block'; }
+            else { preview.style.display = 'none'; }
+        }
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const tab = btn.dataset.tab;
+                tabContents.forEach(c => c.style.display = c.dataset.tab === tab ? 'block' : 'none');
+            });
+        });
+
+        // File preview
+        const fileInput = row.querySelector('.product-image');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                if (this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = e => showPreview(e.target.result);
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+
+        // URL preview
+        const urlInput = row.querySelector('.product-image-url');
+        if (urlInput) {
+            urlInput.addEventListener('input', function() {
+                showPreview(this.value.trim());
+            });
+        }
+
+        // Paste zone
+        const pasteZone  = row.querySelector('.row-paste-zone');
+        const pasteInput = row.querySelector('.row-paste-input');
+        const pasteHint  = row.querySelector('.row-paste-hint');
+        const pasteStatus = row.querySelector('.row-paste-status');
+
+        if (pasteZone && pasteInput) {
+            pasteZone.addEventListener('click', () => pasteInput.focus());
+
+            pasteInput.addEventListener('paste', async e => {
+                e.preventDefault();
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                for (const item of items) {
+                    if (item.type.startsWith('image/')) {
+                        const file = item.getAsFile();
+                        // instant preview
+                        const reader = new FileReader();
+                        reader.onload = ev => showPreview(ev.target.result);
+                        reader.readAsDataURL(file);
+
+                        pasteHint.style.display  = 'none';
+                        pasteStatus.style.display = 'inline';
+                        pasteStatus.textContent   = '\u23f3 Uploading...';
+
+                        const url = await uploadImageToImgBB(file);
+                        pasteInput.innerHTML = '';
+
+                        if (url) {
+                            showPreview(url);
+                            // URL tab e switch
+                            tabBtns.forEach(b => b.classList.remove('active'));
+                            row.querySelector('.img-tab-btn[data-tab="url"]').classList.add('active');
+                            tabContents.forEach(c => c.style.display = c.dataset.tab === 'url' ? 'block' : 'none');
+                            urlInput.value = url;
+                            pasteStatus.textContent = '\u2705 Done!';
+                        } else {
+                            pasteStatus.textContent = '\u274c Failed';
+                        }
+                        break;
+                    }
+                }
+            });
+        }
     }
 
     // --- localStorage Auto-Save Functions ---
@@ -445,7 +530,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </td>
             <td data-label="Initial Stock"><input type="number" class="product-stock" placeholder="0" required></td>
-            <td data-label="Image"><input type="file" class="product-image" accept="image/*" style="font-size: 12px; width: 100%;"></td>
+            <td data-label="Image">
+                <div class="img-input-wrap">
+                    <div class="img-tabs">
+                        <button type="button" class="img-tab-btn active" data-tab="file">📂</button>
+                        <button type="button" class="img-tab-btn" data-tab="url">🔗</button>
+                        <button type="button" class="img-tab-btn" data-tab="paste">📋</button>
+                    </div>
+                    <div class="img-tab-content" data-tab="file">
+                        <input type="file" class="product-image" accept="image/*">
+                    </div>
+                    <div class="img-tab-content" data-tab="url" style="display:none;">
+                        <input type="url" class="product-image-url" placeholder="Image URL">
+                    </div>
+                    <div class="img-tab-content" data-tab="paste" style="display:none;">
+                        <div class="row-paste-zone">
+                            <div contenteditable="true" class="row-paste-input"></div>
+                            <span class="row-paste-hint">📋 Click হলে Ctrl+V</span>
+                            <span class="row-paste-status" style="display:none;"></span>
+                        </div>
+                    </div>
+                    <img class="product-image-preview" src="" style="display:none; width:40px; height:40px; object-fit:cover; border-radius:4px; margin-top:4px; border:1px solid #ddd;">
+                </div>
+            </td>
             <td data-label="Action">
                 <button type="button" class="remove-row-btn" title="Remove Row">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -1156,6 +1263,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             imageUrl = await uploadImageToImgBB(imageInput.files[0]);
                         } catch (err) {
                             console.error("Failed to upload image for " + finalName);
+                        }
+                    } else {
+                        const urlInput = row.querySelector('.product-image-url');
+                        if (urlInput && urlInput.value.trim()) {
+                            imageUrl = urlInput.value.trim();
                         }
                     }
 
