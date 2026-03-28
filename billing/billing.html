@@ -54,8 +54,8 @@
         </div>
 
         <!-- ডান দিক: বিলিং কার্ট -->
-        <div class="cart-section">
-            <h2>Billing Cart</h2>
+        <div class="cart-section" id="cart-section">
+            <h2 id="cart-toggle-header">🛒 Cart <span id="cart-count-badge" style="display:none;">0</span> <span id="cart-toggle-icon">▲</span></h2>
             <div id="cart-items">
                 <p class="empty-cart-message">Your cart is empty.</p>
             </div>
@@ -306,6 +306,11 @@
             });
         });
     </script>
+
+    <!-- Toastify -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="../js/toast.js"></script>
 
     <!-- html5-qrcode লাইব্রেরি -->
     <script src="https://unpkg.com/html5-qrcode"></script>

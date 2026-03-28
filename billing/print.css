@@ -1,241 +1,285 @@
 /* ============================================================= */
-/* print.css - Mobile Friendly Card View + Thermal Print (v7.0) */
+/* print.css - Clean Receipt View (Mobile + Desktop + Print)     */
 /* ============================================================= */
 
-/* --- ১. প্রিন্টার পেজ সেটআপ (শুধুমাত্র প্রিন্টের জন্য কাজ করবে) --- */
 @page {
     size: 80mm auto;
-    margin: 0; /* প্রিন্টারে মার্জিন ০ রাখা ভালো, কন্টেন্ট দিয়ে নিয়ন্ত্রণ করব */
+    margin: 0;
 }
 
-/* --- ২. বেসিক সেটআপ এবং মোবাইল স্ক্রিন ভিউ --- */
+/* ===== BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 html, body {
     width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    font-family: 'Arial Narrow', 'Arial', sans-serif;
-    /* মোবাইলে অ্যাপের মতো ফিল দেওয়ার জন্য ব্যাকগ্রাউন্ড কালার */
-    background-color: #eef2f5; 
+    min-height: 100%;
+    font-family: 'Arial Narrow', Arial, sans-serif;
+    background-color: #f0f2f5;
     color: #000;
-    /* বিলটি স্ক্রিনের মাঝখানে আনার জন্য */
+}
+
+/* ===== NAVBAR AREA ===== */
+#navbar-placeholder {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* ===== PAGE WRAPPER ===== */
+.page-wrapper {
     display: flex;
-    justify-content: center;
-    align-items: flex-start; 
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 40px;
+    min-height: 100vh;
 }
 
-/* কাস্টমার ভিউতে মেনু এবং অপ্রয়োজনীয় বাটন হাইড করার জন্য */
-.is-customer-view #navbar-placeholder,
-.is-customer-view #mobile-menu-btn,
-.is-customer-view .no-print,
-.is-customer-view header:not(.shop-header),
-.is-customer-view nav,
-.is-customer-view .hamburger {
-    display: none !important;
-}
-
-/* --- ৩. রশিদের মেইন কন্টেইনার (মোবাইল কার্ড স্টাইল) --- */
-.receipt {
-    /* স্ক্রিন ভিউ: মোবাইলে সুন্দর কার্ডের মতো দেখাবে */
+/* ===== ACTION BUTTONS (Print / Share) ===== */
+.print-actions {
     width: 100%;
-    max-width: 400px; /* মোবাইলে এর চেয়ে চওড়া হবে না */
-    margin: 20px auto;
-    padding: 15px; /* স্ক্রিনে একটু ফাঁকা জায়গা থাকবে */
-    background-color: #fff;
-    box-sizing: border-box;
-    /* শ্যাডো এবং গোল কোণা (অ্যাপ স্টাইল) */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    position: relative;
-    z-index: 1;
-}
-
-/* ============================================================= */
-/* ৪. ভিতরের সব ডিজাইন (আপনার v6.1 ফন্ট সাইজ এবং লেআউট)         */
-/* ============================================================= */
-
-/* দোকানের তথ্য */
-.shop-header { text-align: center; padding-bottom: 10px; border-bottom: 2px solid #000; margin-bottom: 10px; }
-.shop-header .shop-name {
-    font-size: 24pt; 
-    font-weight: 700; 
-    margin: 0 0 5px 0;
-    line-height: 1.2;
-}
-.shop-header .shop-address, .shop-header .shop-contact, .shop-header .shop-gstin {
-    font-size: 12pt; 
-    font-weight: bold;
-    margin: 4px 0;
-}
-
-/* বিল ও কাস্টমার তথ্য */
-.bill-info, .customer-details { 
-    padding: 8px 0; 
-    margin-bottom: 8px; 
-    border-bottom: 1px dashed #555; 
-}
-.bill-info {
-    font-size: 11pt;
-    font-weight: bold;
-}
-.customer-details {
-    font-size: 12pt; 
-    font-weight: bold;
-}
-
-/* অ্যালাইনমেন্ট ঠিক করা */
-.bill-info div, .customer-details p { 
+    max-width: 420px;
     display: flex;
-    justify-content: flex-start; 
-    margin: 2px 0; /* লাইনের মাঝখানের গ্যাপও একটু কমানো হলো */
-    gap: 5px; /* লেবেল এবং ভ্যালুর মাঝে সামান্য গ্যাপ */
-}
-.bill-info strong, .customer-details strong {
-    /* আগে এটি 80px ছিল, এখন কমিয়ে 60px করা হলো */
-    min-width: 60px; 
-    display: inline-block;
+    gap: 10px;
+    margin-bottom: 16px;
 }
 
-/* আইটেম টেবিল */
-.items-table { 
-    width: 100%; 
-    table-layout: fixed; /* টেবিলকে কার্ডের ভেতরে আটকে রাখার জন্য */
-    border-collapse: collapse; 
-    margin: 10px 0; 
+.print-actions button {
+    flex: 1;
+    padding: 11px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
 }
-.items-table thead { border-top: 1.5px solid #000; border-bottom: 1.5px solid #000; }
-.items-table th, .items-table td { 
-    padding: 5px 2px; 
-    vertical-align: top;
-    /* লম্বা লেখা ভেঙে নিচে নামানোর জন্য */
-    white-space: normal;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+
+.btn-print  { background: #4361ee; color: #fff; }
+.btn-share  { background: #25d366; color: #fff; }
+.btn-close  { background: #e9ecef; color: #333; }
+
+/* ===== RECEIPT CARD ===== */
+.receipt {
+    width: 100%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+    padding: 20px 18px 24px;
+    position: relative;
 }
+
+/* ===== SHOP HEADER ===== */
+.shop-header {
+    text-align: center;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #000;
+    margin-bottom: 12px;
+}
+
+.shop-header .shop-name {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+}
+
+.shop-header .shop-address,
+.shop-header .shop-contact,
+.shop-header .shop-gstin {
+    font-size: 12px;
+    font-weight: 600;
+    margin: 3px 0;
+    color: #333;
+}
+
+/* ===== BILL INFO ===== */
+.bill-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px dashed #aaa;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    gap: 10px;
+}
+
+.bill-info div { display: flex; flex-direction: column; gap: 3px; }
+.bill-info div:last-child { text-align: right; }
+
+/* ===== CUSTOMER DETAILS ===== */
+.customer-details {
+    padding: 8px 0;
+    border-bottom: 1px dashed #aaa;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.customer-details p { margin: 3px 0; }
+
+/* ===== ITEMS TABLE ===== */
+.items-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    margin: 8px 0 4px;
+}
+
+.items-table thead tr {
+    border-top: 1.5px solid #000;
+    border-bottom: 1.5px solid #000;
+}
+
 .items-table th {
-    font-size: 10pt; 
-    text-align: left;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
+    padding: 5px 3px;
+    letter-spacing: 0.3px;
 }
+
 .items-table td {
-    font-size: 11.5pt; 
-    font-weight: bold;
-    border-bottom: 1px dotted #999;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 3px;
+    border-bottom: 1px dotted #ccc;
+    vertical-align: top;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
+
 .items-table tbody tr:last-child td { border-bottom: none; }
 
-/* টেবিল কলাম সাইজ এবং সংখ্যা ভাঙা প্রতিরোধ */
-.items-table .center { text-align: center; }
-.items-table .right { text-align: right; font-feature-settings: "tnum"; }
+.item-col  { width: 42%; }
+.qty-col   { width: 10%; text-align: center; }
+.rate-col  { width: 24%; text-align: right; white-space: nowrap; }
+.total-col { width: 24%; text-align: right; white-space: nowrap; }
 
-/* ১. আইটেমের নাম - নাম ভেঙে নিচে নামবে */
-.items-table .item-col { 
-    width: 40%; 
-    
-    /* লেখা যাতে শব্দের মাঝখানে না ভাঙে */
-    white-space: normal;
-    word-wrap: break-word; 
-    word-break: normal; /* এটিই আসল কাজ করবে */
-    overflow-wrap: break-word;
-    
-    padding-right: 5px; /* ডানদিকে একটু ফাঁকা রাখা */
+.center { text-align: center; }
+.right  { text-align: right; }
+
+/* ===== TOTALS ===== */
+.totals-section {
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1.5px solid #000;
 }
 
-/* ২. পরিমাণ - সংখ্যা ভাঙবে না */
-.items-table .qty-col { 
-    width: 10%; 
-    text-align: center; 
-    white-space: nowrap;
-}
-
-/* ৩. রেট - সংখ্যা ভাঙবে না, জায়গা বাড়ানো */
-.items-table .rate-col { 
-    width: 25%; 
-    text-align: right; 
-    white-space: nowrap;
-}
-
-/* ৪. মোট - সংখ্যা ভাঙবে না, জায়গা বাড়ানো */
-.items-table .total-col { 
-    width: 25%; 
-    text-align: right; 
-    white-space: nowrap;
-}
-
-/* মোট হিসাব */
-.totals-section { margin-top: 10px; padding: 10px 2px 0 2px; border-top: 1.5px solid #000; }
 .summary-line {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 4px 0;
-    font-size: 11pt; 
-    font-weight: bold; 
-}
-.separator { border: none; border-top: 1px dashed #555; margin: 5px 0; }
-.grand-total {
-    font-size: 16pt; 
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
 }
 
-/* পেমেন্ট এবং ফুটার */
+.separator {
+    border: none;
+    border-top: 1px dashed #888;
+    margin: 6px 0;
+}
+
+.grand-total {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #1a1a1a;
+    padding: 6px 0 !important;
+}
+
+/* ===== PAYMENT DETAILS ===== */
 .payment-details {
-    padding: 10px 0;
-    border-top: 1px dashed #555;
+    padding: 10px 0 0;
+    border-top: 1px dashed #aaa;
     margin-top: 10px;
 }
+
 .payment-breakdown {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px dotted #999;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dotted #ccc;
 }
-.receipt-footer { margin-top: 15px; text-align: center; font-size: 10pt; }
-.receipt-footer p { margin: 4px 0; }
-.receipt-footer .powered-by { margin-top: 10px; font-style: italic; color: #555; }
 
+/* ===== FOOTER ===== */
+.receipt-footer {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 11px;
+    color: #555;
+    border-top: 1px dashed #aaa;
+    padding-top: 12px;
+}
 
-/* ============================================================= */
-/* ৫. প্রিন্ট মিডিয়া কোয়েরি (এখানেই আসল ম্যাজিক)                 */
-/* ============================================================= */
+.receipt-footer p { margin: 3px 0; }
+.receipt-footer .powered-by { margin-top: 8px; font-style: italic; color: #999; }
+
+/* ===== CUSTOMER VIEW (no navbar) ===== */
+.is-customer-view #navbar-placeholder { display: none !important; }
+
+/* ===== DESKTOP ===== */
+@media (min-width: 769px) {
+    body { background-color: #e8eaf0; }
+
+    .page-wrapper { padding: 30px 20px 60px; }
+
+    .receipt {
+        max-width: 480px;
+        padding: 28px 28px 32px;
+        border-radius: 14px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+
+    .shop-header .shop-name { font-size: 26px; }
+    .items-table td { font-size: 14px; }
+    .grand-total { font-size: 20px !important; }
+}
+
+/* ===== PRINT ===== */
 @media print {
-    /* নেভিগেশন বার, হ্যামবার্গার মেনু এবং অন্যান্য বাটন হাইড করা */
-    #navbar-placeholder, 
-    .no-print, 
-    #mobile-menu-btn, 
-    header:not(.shop-header), 
-    nav, 
-    .hamburger {
+    html, body {
+        background: #fff !important;
+        width: 80mm;
+    }
+
+    #navbar-placeholder,
+    .print-actions,
+    .no-print,
+    nav,
+    header:not(.shop-header) {
         display: none !important;
     }
 
-    /* প্রিন্টের সময় ব্যাকগ্রাউন্ড সাদা, কোনো প্যাডিং নেই */
-    body { 
-        background-color: #fff; 
-        display: block; /* flex রিমুভ করা হচ্ছে */
+    .page-wrapper {
+        padding: 0 !important;
+        min-height: unset;
     }
 
-    /* প্রিন্টের সময় কার্ড স্টাইল রিমুভ এবং থার্মাল সাইজ সেট */
     .receipt {
-        width: 72mm !important; /* বা 100% */
+        width: 72mm !important;
         max-width: none !important;
-        margin: 0 auto !important; /* অটো মার্জিন */
-        padding: 0 !important; /* কার্ডের প্যাডিং রিমুভ */
-        box-shadow: none !important; /* শ্যাডো রিমুভ */
-        border-radius: 0 !important; /* রাউন্ড কর্নার রিমুভ */
+        margin: 0 !important;
+        padding: 2mm 2mm !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
         border: none !important;
     }
 
-    /* সব এলিমেন্টের কালার কালো নিশ্চিত করা */
-    * { 
-        background: transparent !important; 
-        color: #000 !important; 
-        text-shadow: none !important; 
-        box-shadow: none !important; 
-    }
-    
-    /* প্রিন্টের সময় অপ্রয়োজনীয় স্ক্রলবার লুকানো */
-    html, body {
-        height: auto;
-        overflow: visible;
+    .shop-header .shop-name { font-size: 16pt; }
+    .shop-header .shop-address,
+    .shop-header .shop-contact { font-size: 9pt; }
+
+    .bill-info, .customer-details, .summary-line { font-size: 9pt; }
+    .items-table th { font-size: 8pt; }
+    .items-table td { font-size: 10pt; }
+    .grand-total { font-size: 13pt !important; }
+
+    * {
+        background: transparent !important;
+        color: #000 !important;
+        box-shadow: none !important;
     }
 }

@@ -900,6 +900,243 @@ h2 { margin-bottom: 20px; }
     .billing-container { padding: 15px; }
     .product-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
     .cart-item { grid-template-columns: 1fr 110px 70px 28px; gap: 10px; }
+
+    /* ===== UNSETTLED MODAL MOBILE ===== */
+    .wide-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+    }
+
+    #unsettled-modal .modal-body {
+        padding: 10px !important;
+        overflow-y: auto;
+    }
+
+    /* Table কে card layout-এ রূপান্তর */
+    .unsettled-table thead {
+        display: none;
+    }
+
+    .unsettled-table, 
+    .unsettled-table tbody, 
+    .unsettled-table tr {
+        display: block;
+        width: 100%;
+    }
+
+    .unsettled-table tr {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        padding: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto auto;
+        gap: 4px 10px;
+    }
+
+    .unsettled-table td {
+        display: block;
+        border: none;
+        padding: 2px 0;
+        font-size: 13px;
+    }
+
+    /* Time - small top left */
+    .unsettled-table td:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+        font-size: 11px;
+        color: #999;
+    }
+
+    /* Customer name - bold */
+    .unsettled-table td:nth-child(2) {
+        grid-column: 1;
+        grid-row: 2;
+        font-weight: 700;
+        font-size: 15px;
+        color: #333;
+    }
+
+    /* Items summary */
+    .unsettled-table td:nth-child(3) {
+        grid-column: 1 / 3;
+        grid-row: 3;
+        color: #777;
+        font-size: 12px;
+    }
+
+    /* Total - top right */
+    .unsettled-table td:nth-child(4) {
+        grid-column: 2;
+        grid-row: 1 / 3;
+        text-align: right;
+        font-size: 18px;
+        color: #28a745;
+        font-weight: 800;
+        align-self: center;
+    }
+
+    /* Action buttons - full width bottom */
+    .unsettled-table td:nth-child(5) {
+        grid-column: 1 / 3;
+        grid-row: 4;
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .unsettled-table td:nth-child(5) .btn-sm {
+        flex: 1;
+        padding: 8px 0;
+        font-size: 13px;
+        text-align: center;
+        border-radius: 6px;
+    }
+
+    /* ===== MOBILE BILLING LAYOUT ===== */
+    .full-screen-billing {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 1fr auto !important;
+        height: calc(100vh - 110px) !important;
+        gap: 0 !important;
+        padding: 8px 8px 0 8px !important;
+    }
+
+    /* Product section takes full height, leaves room for cart bar */
+    .product-selection {
+        height: auto !important;
+        max-height: calc(100vh - 200px) !important;
+        overflow: hidden;
+        border-radius: 10px 10px 0 0 !important;
+        border-bottom: none !important;
+    }
+
+    #category-product-list {
+        height: calc(100% - 55px) !important;
+    }
+
+    /* Cart section becomes a bottom sheet */
+    .cart-section {
+        position: fixed !important;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: auto !important;
+        max-height: 70vh;
+        border-radius: 16px 16px 0 0 !important;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.15) !important;
+        z-index: 500;
+        transition: max-height 0.3s ease;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 0 !important;
+    }
+
+    .cart-section.collapsed {
+        max-height: 60px !important;
+    }
+
+    /* Cart header / toggle bar */
+    .cart-section h2 {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        margin: 0;
+        font-size: 1rem;
+        background: #4361ee;
+        color: white;
+        cursor: pointer;
+        border-radius: 16px 16px 0 0;
+        user-select: none;
+        flex-shrink: 0;
+    }
+
+    #cart-items {
+        overflow-y: auto;
+        flex-grow: 1;
+        padding: 0 12px;
+        min-height: 0;
+    }
+
+    .cart-footer {
+        padding: 10px 12px;
+        flex-shrink: 0;
+        background: #fff;
+    }
+
+    .cart-footer .cart-actions {
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    .cart-footer .cart-actions button {
+        flex: 1;
+        padding: 10px 8px;
+        font-size: 0.85rem;
+    }
+
+    #footer-total-amount {
+        font-size: 1.4rem !important;
+    }
+
+    /* Cart item compact on mobile */
+    .cart-item {
+        grid-template-columns: 1fr 100px 65px 28px !important;
+        gap: 8px !important;
+        padding: 8px 0 !important;
+    }
+
+    .item-name { font-size: 0.85rem; }
+    .item-price { font-size: 0.78rem; }
+    .item-total { font-size: 0.9rem; }
+
+    /* Cart badge on h2 */
+    #cart-count-badge {
+        background: #ff4d4d;
+        color: white;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        margin-left: 6px;
+    }
+
+    #cart-toggle-icon {
+        font-size: 1.2rem;
+        transition: transform 0.3s;
+    }
+
+    .cart-section.collapsed #cart-toggle-icon {
+        transform: rotate(180deg);
+    }
+
+    /* Add bottom padding to product list so cart bar doesn't cover it */
+    #category-product-list,
+    #search-results + #category-product-list {
+        padding-bottom: 70px;
+    }
+
+    .billing-dashboard-bar-slim {
+        padding: 4px 10px;
+        gap: 8px;
+        font-size: 11px;
+    }
 }
 
 /* =====================================

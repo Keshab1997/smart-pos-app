@@ -116,7 +116,7 @@ async function checkPendingBooking() {
             customerNameInput.value = bookingData.customerName || '';
             customerPhoneInput.value = bookingData.phone || '';
             
-            alert(`Booking Detected for: ${bookingData.customerName}\nAdvance Paid: ₹${bookingData.advancePaid}`);
+            toast.info('Booking Detected', `${bookingData.customerName} | Advance: ₹${bookingData.advancePaid}`);
             updateAllTotals();
         }
     } catch (error) {
@@ -238,7 +238,7 @@ function handleBarcodeScan(barcode) {
         productSearchInput.value = '';
         searchResultsContainer.style.display = 'none';
     } else {
-        alert(`No product found with barcode: "${barcode}"`);
+        toast.error('Not Found', `No product matched barcode: "${barcode}"`);
     }
 }
 
@@ -252,7 +252,7 @@ function addProductToCart(product) {
 function addToCart(product) {
     if (!product || !product.id) return;
     if (product.stock <= 0) {
-        alert(`❌ '${product.name}' স্টক শেষ (Out of Stock)!`);
+        toast.error('Out of Stock', `'${product.name}' স্টক শেষ!`);
         return;
     }
     const existingItem = cart.find(item => item.id === product.id);
@@ -261,7 +261,7 @@ function addToCart(product) {
             existingItem.quantity++;
             playBeep();
         } else {
-            alert(`⚠️ স্টকে মাত্র ${product.stock} টি আছে!`);
+            toast.warning('Stock Limit', `স্টকে মাত্র ${product.stock} টি আছে!`);
             return;
         }
     } else {
@@ -302,6 +302,19 @@ function updateCartDisplay() {
     addCartItemEventListeners();
     updateAllTotals();
 
+    // Mobile: cart badge & auto-expand
+    const badge = document.getElementById('cart-count-badge');
+    const cartSection = document.getElementById('cart-section');
+    if (badge) {
+        const totalQty = cart.reduce((sum, i) => sum + i.quantity, 0);
+        badge.textContent = totalQty;
+        badge.style.display = totalQty > 0 ? 'inline-flex' : 'none';
+    }
+    // Mobile: cart stays collapsed, user opens manually
+    if (cartSection && window.innerWidth <= 768) {
+        cartSection.classList.add('collapsed');
+    }
+
     // কার্ট সাময়িকভাবে সেভ করা (রিফ্রেশ হ্যান্ডেল করার জন্য)
     if (cart.length > 0) {
         localStorage.setItem('temp_cart_before_refresh', JSON.stringify({
@@ -323,7 +336,7 @@ function addCartItemEventListeners() {
         let newQuantity = item.quantity + change;
         const productFromStock = allProducts.find(p => p.id === productId);
         if (newQuantity > productFromStock.stock) {
-            alert(`⚠️ স্টকে মাত্র ${productFromStock.stock} টি আছে!`);
+            toast.warning('Stock Limit', `স্টকে মাত্র ${productFromStock.stock} টি আছে!`);
             newQuantity = productFromStock.stock;
         }
         if (newQuantity <= 0) {
@@ -345,7 +358,7 @@ function addCartItemEventListeners() {
             if (isNaN(newQty) || newQty <= 0) {
                 cart = cart.filter(i => i.id !== productId);
             } else if (newQty > productFromStock.stock) {
-                alert(`⚠️ স্টকে মাত্র ${productFromStock.stock} টি আছে!`);
+                toast.warning('Stock Limit', `স্টকে মাত্র ${productFromStock.stock} টি আছে!`);
                 newQty = productFromStock.stock;
             }
             
@@ -646,7 +659,7 @@ async function generateFinalBill() {
         await initializeProducts();
     } catch (error) {
         console.error("Error during checkout:", error);
-        alert(`Checkout failed: ${error.message}`);
+        toast.error('Checkout Failed', error.message);
     } finally {
         generateBillBtn.disabled = false;
         generateBillBtn.textContent = 'Generate Bill & Finalize';
@@ -655,7 +668,7 @@ async function generateFinalBill() {
 
 function preCheckoutValidation() {
     if (cart.length === 0) {
-        alert("Cart is empty.");
+        toast.warning('Cart Empty', 'Please add products first.');
         return false;
     }
     const amountToPay = currentTotals.payableTotal;
@@ -663,7 +676,7 @@ function preCheckoutValidation() {
     if (selectedPaymentMethod === 'cash') {
         const cashReceived = parseFloat(cashReceivedInput.value);
         if (!isNaN(cashReceived) && cashReceived < amountToPay) {
-            alert("Cash received is less than payable amount.");
+            toast.error('Insufficient Cash', 'Cash received is less than payable amount.');
             cashReceivedInput.focus();
             return false;
         }
@@ -694,7 +707,7 @@ function resetAfterSale() {
 // ==========================================================
 async function holdCurrentBill() {
     if (cart.length === 0) {
-        alert("Cart is empty!");
+        toast.warning('Cart Empty', 'Add products before holding a bill.');
         return;
     }
     
@@ -714,11 +727,11 @@ async function holdCurrentBill() {
 
     try {
         await addDoc(collection(db, 'shops', activeShopId, 'unsettled_bills'), billData);
-        alert("Bill put on HOLD.");
+        toast.success('Bill on Hold', 'Bill saved to pending list.');
         resetAfterSale();
     } catch (e) {
         console.error("Error holding bill:", e);
-        alert("Failed to hold bill.");
+        toast.error('Hold Failed', 'Could not save bill to pending.');
     }
 }
 
@@ -768,7 +781,7 @@ async function finalizeUnsettled(billId) {
         const billSnap = await getDoc(billRef);
         
         if (!billSnap.exists()) {
-            alert("Bill not found!");
+            toast.error('Not Found', 'Bill not found!');
             return;
         }
         
@@ -784,7 +797,7 @@ async function finalizeUnsettled(billId) {
         await deleteDoc(billRef);
     } catch (e) {
         console.error("Error finalizing unsettled bill:", e);
-        alert("Failed to load bill.");
+        toast.error('Load Failed', 'Could not load bill.');
     }
 }
 
@@ -794,7 +807,7 @@ async function editUnsettled(billId) {
         const billSnap = await getDoc(billRef);
         
         if (!billSnap.exists()) {
-            alert("Bill not found!");
+            toast.error('Not Found', 'Bill not found!');
             return;
         }
         
@@ -816,11 +829,11 @@ async function editUnsettled(billId) {
         // পেন্ডিং লিস্ট থেকে এই বিলটি ডিলিট করা
         await deleteDoc(billRef);
 
-        alert("✏️ Bill loaded to cart. You can now add more products.");
+        toast.info('Bill Loaded', 'You can now add more products.');
         
     } catch (e) {
         console.error("Error editing bill:", e);
-        alert("Failed to load bill for editing.");
+        toast.error('Edit Failed', 'Could not load bill for editing.');
     }
 }
 
@@ -831,7 +844,7 @@ async function deleteUnsettled(billId) {
         await deleteDoc(doc(db, 'shops', activeShopId, 'unsettled_bills', billId));
     } catch (e) {
         console.error("Error deleting unsettled bill:", e);
-        alert("Failed to delete bill.");
+        toast.error('Delete Failed', 'Could not delete bill.');
     }
 }
 
@@ -858,7 +871,7 @@ async function autoSettleOldBills() {
             batch.delete(billDoc.ref);
         });
         await batch.commit();
-        alert(`✅ ${snapshot.size} forgotten bills from yesterday settled as CASH.`);
+        toast.success('Auto Settled', `${snapshot.size} old bills settled as Cash.`);
     }
 }
 
@@ -889,7 +902,7 @@ async function manualSettleAll() {
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-        alert("No pending bills to settle.");
+        toast.info('No Pending Bills', 'Nothing to settle.');
         return;
     }
 
@@ -912,10 +925,10 @@ async function manualSettleAll() {
     
     try {
         await batch.commit();
-        alert(`✅ ${snapshot.size} bills settled successfully.`);
+        toast.success('All Settled', `${snapshot.size} bills settled as Cash.`);
     } catch (e) {
         console.error("Error settling bills:", e);
-        alert("Failed to settle bills.");
+        toast.error('Settle Failed', 'Could not settle bills.');
     }
 }
 
@@ -938,7 +951,7 @@ async function autoHoldRecoveredBill(data) {
         };
 
         await addDoc(collection(db, 'shops', activeShopId, 'unsettled_bills'), billData);
-        alert("⚠️ Page was refreshed! Your previous items have been moved to 'Pending Bills' (Hold).");
+        toast.warning('Page Refreshed', 'Previous cart moved to Pending Bills.');
     } catch (e) {
         console.error("Auto-hold failed:", e);
     }
@@ -1049,6 +1062,17 @@ function handlePaymentMethodChange() {
 function setupEventListeners() {
     productSearchInput.addEventListener('input', handleSearch);
 
+    // Mobile cart toggle
+    const cartToggleHeader = document.getElementById('cart-toggle-header');
+    const cartSection = document.getElementById('cart-section');
+    if (cartToggleHeader && cartSection) {
+        cartToggleHeader.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                cartSection.classList.toggle('collapsed');
+            }
+        });
+    }
+
     // Camera Scanner Event Listeners
     const startCameraBtn = document.getElementById('start-camera-btn');
     const stopCameraBtn = document.getElementById('stop-camera-btn');
@@ -1066,7 +1090,7 @@ function setupEventListeners() {
             stopScanner();
         }).catch((err) => {
             console.error("Camera start error:", err);
-            alert("ক্যামেরা চালু করতে সমস্যা হয়েছে। অনুগ্রহ করে ক্যামেরা পারমিশন দিন।");
+            toast.error('Camera Error', 'ক্যামেরা পারমিশন দিন।');
             scannerContainer.classList.add('hidden');
         });
     });
@@ -1244,11 +1268,11 @@ function setupEventListeners() {
             document.getElementById('qa-category').value = 'General';
             document.getElementById('qa-stock').value = '10';
             quickAddModal.classList.add('hidden');
-            alert(`✅ ${name} added to inventory and cart!`);
+            toast.success('Product Added', `${name} added to inventory & cart!`);
 
         } catch (error) {
             console.error("Quick add failed:", error);
-            alert("Error saving product.");
+            toast.error('Save Failed', 'Could not save product.');
         } finally {
             saveBtn.disabled = false;
             saveBtn.textContent = "Save & Add to Cart";
