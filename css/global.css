@@ -45,6 +45,8 @@ html, body {
     -ms-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    width: 100%;
 }
 
 /* Prevent all zoom gestures */
@@ -80,7 +82,7 @@ body {
     max-width: 98% !important;
     width: 100%;
     margin: 0 auto;
-    padding: 10px 20px;
+    padding: 10px 15px; /* Reduced from 20px */
 }
 
 /* ============================

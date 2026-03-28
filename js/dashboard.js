@@ -162,29 +162,35 @@ async function loadDashboardData() {
         let totalProfit = 0;
         let totalCanceled = 0;
         const categoryMap = {}; // পাই চার্টের জন্য
+        const productMap = {};  // টপ সেলিং প্রোডাক্টের জন্য
 
         salesSnapshot.forEach(doc => {
             const sale = doc.data();
             
-            // ক্যানসেল করা বিল আলাদা হিসাব করা হচ্ছে
             if (sale.status === 'canceled' || sale.status === 'cancelled') {
                 totalCanceled += (sale.total || 0);
-                return; // এই বিলটি মোট সেলস/প্রফিটে যোগ হবে না
+                return;
             }
             
-            // শুধুমাত্র একটিভ বিলগুলো হিসাব করা হচ্ছে
             totalSales += (sale.total || 0);
             
-            // Profit Calculation (Sales - Cost)
             let saleCost = 0;
             if (sale.items && Array.isArray(sale.items)) {
                 sale.items.forEach(item => {
                     const costPrice = item.purchasePrice || item.costPrice || 0;
                     saleCost += (costPrice * item.quantity);
                     
-                    // Category Data
+                    // Category Data for Pie Chart
                     const cat = item.category || 'General';
                     categoryMap[cat] = (categoryMap[cat] || 0) + (item.price * item.quantity);
+
+                    // Product Data for Top Selling
+                    const pName = item.name || 'Unknown Product';
+                    if (!productMap[pName]) {
+                        productMap[pName] = { qty: 0, revenue: 0 };
+                    }
+                    productMap[pName].qty += (item.quantity || 0);
+                    productMap[pName].revenue += (item.price * item.quantity);
                 });
             }
             totalProfit += (sale.total - saleCost);
@@ -213,7 +219,7 @@ async function loadDashboardData() {
         inventorySnapshot.forEach(doc => {
             const item = doc.data();
             const stock = parseInt(item.stock) || 0;
-            const minStock = parseInt(item.minStockAlert) || 5; // Default alert level
+            const minStock = parseInt(item.minStockAlert) || 5;
 
             if (stock <= minStock) {
                 lowStockCount++;
@@ -229,7 +235,7 @@ async function loadDashboardData() {
         if(lowStockCountEl) lowStockCountEl.textContent = lowStockCount;
 
         // --- UPDATE LISTS & CHARTS ---
-        updateLists(recentExpenses, lowStockItems);
+        updateLists(recentExpenses, lowStockItems, productMap);
         updateLowStockSummary();
         updateDailyGoal(totalSales);
         calculateValuation();
@@ -248,7 +254,7 @@ function formatCurrency(amount) {
     return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function updateLists(expenses, lowStockItems) {
+function updateLists(expenses, lowStockItems, productMap) {
     // Recent Expenses
     if (recentExpensesList) {
         recentExpensesList.innerHTML = '';
@@ -266,9 +272,25 @@ function updateLists(expenses, lowStockItems) {
         }
     }
     
-    // Top Selling (Placeholder logic - requires complex aggregation or separate collection)
+    // Top Selling Logic (Calculation from productMap)
     if (topProductsList) {
-        topProductsList.innerHTML = '<li style="color: #777;">Data collection in progress...</li>';
+        topProductsList.innerHTML = '';
+        const topProducts = Object.entries(productMap)
+            .sort((a, b) => b[1].qty - a[1].qty) // Sort by quantity
+            .slice(0, 5);
+
+        if (topProducts.length === 0) {
+            topProductsList.innerHTML = '<li>No sales tracked yet.</li>';
+        } else {
+            topProducts.forEach(([name, data]) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${name} <small>(${data.qty} sold)</small></span>
+                    <span style="font-weight: 600; color: #4361ee;">${formatCurrency(data.revenue)}</span>
+                `;
+                topProductsList.appendChild(li);
+            });
+        }
     }
 }
 
@@ -324,7 +346,20 @@ function updateCharts(sales, profit, categoryMap) {
                     backgroundColor: ['#4361ee', '#3f37c9', '#4895ef', '#4cc9f0', '#f72585']
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom', // Legend moved to bottom to prevent overlap
+                        labels: {
+                            boxWidth: 12,
+                            font: { size: 10 }
+                        }
+                    }
+                },
+                cutout: '65%' // Make the hole bigger for a sleek look
+            }
         });
     }
 }
