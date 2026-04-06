@@ -159,7 +159,7 @@ async function generatePnlReport(startDate, endDate) {
         // 1. Process Sales (Revenue & COGS)
         salesSnap.forEach(doc => {
             const sale = doc.data();
-            if (sale.status === 'canceled') return;
+            if (sale.status === 'canceled' || sale.status === 'cancelled') return;
             totalRevenue += sale.total || 0;
             
             if (Array.isArray(sale.items)) {
