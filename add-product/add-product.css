@@ -285,11 +285,25 @@ body {
 }
 
 /* CP, SP, Base Rate ফিল্ড */
-.card-container table .product-cp,
+.card-container table .product-cp {
+    width: 100px;
+    min-width: 100px;
+    text-align: right;
+    background-color: #fff5f5 !important;
+    border-color: #fca5a5 !important;
+}
+
 .card-container table .product-sp {
     width: 100px;
     min-width: 100px;
     text-align: right;
+    background-color: #f0fdf4 !important;
+    border-color: #86efac !important;
+}
+
+.card-container table .product-cp:focus,
+.card-container table .product-sp:focus {
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15), inset 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .card-container table .product-base-rate {

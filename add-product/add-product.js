@@ -710,7 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // বারকোড ইনপুট দিলে অটো-ফিল করার লজিক
+    // বারকোড ইনপুট দিলে অটো-ফিল করার লজিক (শুধু barcode match, color ignore)
     productsTbody.addEventListener('change', async (e) => {
         if (e.target.classList.contains('product-barcode')) {
             const barcode = e.target.value.trim();
@@ -725,15 +725,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (productSnap.exists()) {
                         const data = productSnap.data();
                         
-                        // পুরনো তথ্য দিয়ে ফিল্ডগুলো অটো-ফিল করা
+                        // পুরনো তথ্য দিয়ে ফিল্ডগুলো অটো-ফিল করা (শুধু reference, color manually change করা যাবে)
                         row.querySelector('.product-name').value = data.name || '';
                         row.querySelector('.product-category').value = data.category || '';
                         row.querySelector('.product-cp').value = data.costPrice || 0;
                         row.querySelector('.product-sp').value = data.sellingPrice || 0;
                         
+                        // Extra fields ভরা (ইউজার manually color change করতে পারবে)
+                        if (row.querySelector('.dynamic-input-1')) row.querySelector('.dynamic-input-1').value = data.extraField1 || '';
+                        if (row.querySelector('.dynamic-input-2')) row.querySelector('.dynamic-input-2').value = data.extraField2 || '';
+                        
                         // ইউজারকে বোঝানোর জন্য রো-এর রঙ পরিবর্তন (হালকা সবুজ)
                         row.style.backgroundColor = '#e8f5e9'; 
-                        showStatus(`Product "${data.name}" found! New stock will be added to existing.`, 'success');
+                        showStatus(`Product "${data.name}" found! You can change color/size if needed.`, 'success');
                         
                         // নাম এবং ক্যাটাগরি লক করে দেওয়া যাতে ভুল না হয়
                         row.querySelector('.product-name').readOnly = true;
@@ -1105,11 +1109,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 fullNameToCheck = `${extra1} ${name} ${extra2}`.trim().toUpperCase();
                             }
                             
-                            // টেবিলে একই নাম, CP, এবং extra fields আছে কি না চেক
+                            // টেবিলে একই নাম, CP, এবং extra fields (including color) আছে কি না চেক
                             existingRows.forEach(row => {
                                 const rowName = row.querySelector('.product-name').value.trim().toUpperCase();
                                 const rowExtra1 = row.querySelector('.dynamic-input-1')?.value.trim().toUpperCase() || '';
-                                const rowExtra2 = row.querySelector('.dynamic-input-2')?.value.trim() || '';
+                                const rowExtra2 = row.querySelector('.dynamic-input-2')?.value.trim().toUpperCase() || '';
                                 const rowCP = parseFloat(row.querySelector('.product-cp').value) || 0;
                                 
                                 let rowFullName = rowName;
@@ -1117,8 +1121,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                     rowFullName = `${rowExtra1} ${rowName} ${rowExtra2}`.trim().toUpperCase();
                                 }
                                 
-                                // যদি নাম এবং CP মিলে যায়, তাহলে duplicate
-                                if (rowFullName === fullNameToCheck && Math.abs(rowCP - cp) < 0.01) {
+                                // যদি নাম, CP এবং Color (extraField2) মিলে যায়, তাহলে duplicate
+                                const nameMatch = rowFullName === fullNameToCheck;
+                                const cpMatch = Math.abs(rowCP - cp) < 0.01;
+                                const colorMatch = (currentMode === 'clothing') ? 
+                                    (rowExtra2 === (extra2 || '').trim().toUpperCase()) : true;
+                                
+                                if (nameMatch && cpMatch && colorMatch) {
                                     duplicateRow = row;
                                 }
                             });
@@ -1162,7 +1171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 fullNameForDB = `${extra1} ${name} ${extra2}`.trim().toUpperCase();
                             }
                             
-                            // সব products load করে match খুঁজা
+                            // সব products load করে match খুঁজা (including color for clothing)
                             const allProductsSnap = await getDocs(inventoryRef);
                             let existingProduct = null;
                             
@@ -1170,9 +1179,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const data = doc.data();
                                 const dbName = data.name.trim().toUpperCase();
                                 const dbCP = parseFloat(data.costPrice);
+                                const dbColor = (data.extraField2 || '').trim().toUpperCase();
+                                const currentColor = (extra2 || '').trim().toUpperCase();
                                 
                                 // Name এবং CP match করলে
-                                if (dbName === fullNameForDB.toUpperCase() && Math.abs(dbCP - cp) < 0.01) {
+                                const nameMatch = dbName === fullNameForDB.toUpperCase();
+                                const cpMatch = Math.abs(dbCP - cp) < 0.01;
+                                const colorMatch = (currentMode === 'clothing') ? (dbColor === currentColor) : true;
+                                
+                                if (nameMatch && cpMatch && colorMatch) {
                                     existingProduct = {
                                         id: doc.id,
                                         data: data
@@ -1182,7 +1197,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             if (existingProduct) {
                                 // প্রোডাক্টটি আগে থেকেই আছে!
-                                const barcode = existingProduct.id;
+                                const barcode = existingProduct.data.barcode; // Actual barcode
+                                const docId = existingProduct.id; // Document ID (may include color suffix)
                                 const existingData = existingProduct.data;
 
                                 targetRow.querySelector('.product-name').value = name;
@@ -1209,7 +1225,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (targetRow.querySelector('.product-disc')) targetRow.querySelector('.product-disc').value = disc || '';
                                 targetRow.querySelector('.product-cp').value = cp.toFixed(2);
                                 targetRow.querySelector('.product-sp').value = existingData.sellingPrice || cp;
-                                targetRow.querySelector('.product-barcode').value = barcode;
+                                targetRow.querySelector('.product-barcode').value = barcode; // Use actual barcode, not docId
                                 targetRow.querySelector('.product-stock').value = qty;
                                 
                                 // রো-এর কালার হালকা সবুজ করে দেওয়া
@@ -1386,24 +1402,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const { getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
             const allProductsSnapshot = await getDocs(inventoryRef);
             
-            // Create maps for both barcode and name+cp
+            // Create maps for both barcode and name+cp+color
             const existingByBarcode = new Map(); // barcode -> {data, stock}
-            const existingByNameCP = new Map();   // name+cp -> {barcode, stock}
+            const existingByNameCP = new Map();   // name+cp+color -> {barcode, stock}
             
             allProductsSnapshot.forEach(doc => {
                 const data = doc.data();
-                const barcode = doc.id;
+                const docId = doc.id; // This is barcode or barcode_COLOR
+                const barcode = data.barcode; // Actual barcode field
                 
-                // Map by barcode
-                existingByBarcode.set(barcode, {
+                // Map by document ID (which includes color suffix)
+                existingByBarcode.set(docId, {
                     data: data,
                     stock: data.stock || 0
                 });
                 
-                // Map by name+cp
-                const key = `${data.name.trim().toUpperCase()}_${data.costPrice.toFixed(2)}`;
+                // Also map by barcode alone for lookup
+                if (barcode && barcode !== docId) {
+                    existingByBarcode.set(barcode, {
+                        data: data,
+                        stock: data.stock || 0
+                    });
+                }
+                
+                // Map by name+cp+color (extraField2 is color in clothing mode)
+                const colorKey = data.extraField2 ? `_${data.extraField2.trim().toUpperCase()}` : '';
+                const key = `${data.name.trim().toUpperCase()}_${data.costPrice.toFixed(2)}${colorKey}`;
                 existingByNameCP.set(key, {
                     barcode: barcode,
+                    docId: docId,
                     stock: data.stock || 0,
                     data: data
                 });
@@ -1415,13 +1442,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const processedKeys = new Set();
 
             productsToProcess.forEach(p => {
-                const key = `${p.name.trim().toUpperCase()}_${p.costPrice.toFixed(2)}`;
+                // Include color in key for clothing items
+                const colorKey = p.extraField2 ? `_${p.extraField2.trim().toUpperCase()}` : '';
+                const key = `${p.name.trim().toUpperCase()}_${p.costPrice.toFixed(2)}${colorKey}`;
                 let matched = false;
                 
-                // Priority 1: Check by barcode (if product has barcode)
+                // Priority 1: Check by barcode + color combination (for clothing)
                 if (p.barcode && existingByBarcode.has(p.barcode)) {
-                    if (!processedBarcodes.has(p.barcode)) {
-                        const existing = existingByBarcode.get(p.barcode);
+                    const existing = existingByBarcode.get(p.barcode);
+                    const existingColor = (existing.data.extraField2 || '').trim().toUpperCase();
+                    const currentColor = (p.extraField2 || '').trim().toUpperCase();
+                    
+                    // Check if barcode + color combination matches
+                    const barcodeColorKey = `${p.barcode}_${currentColor}`;
+                    
+                    if (!processedBarcodes.has(barcodeColorKey) && existingColor === currentColor) {
                         groupedProducts.push({
                             ...p,
                             barcode: p.barcode,
@@ -1429,36 +1464,43 @@ document.addEventListener('DOMContentLoaded', () => {
                             isUpdate: true,
                             existingStock: existing.stock
                         });
-                        processedBarcodes.add(p.barcode);
+                        processedBarcodes.add(barcodeColorKey);
                         processedKeys.add(key);
-                    } else {
-                        // Same barcode already processed, add to stock
-                        const existingInGroup = groupedProducts.find(gp => gp.barcode === p.barcode);
+                        matched = true;
+                    } else if (processedBarcodes.has(barcodeColorKey)) {
+                        // Same barcode + color already processed, add to stock
+                        const existingInGroup = groupedProducts.find(gp => 
+                            gp.barcode === p.barcode && 
+                            (gp.extraField2 || '').trim().toUpperCase() === currentColor
+                        );
                         if (existingInGroup) {
                             existingInGroup.stock += p.stock;
                         }
+                        matched = true;
                     }
-                    matched = true;
                 }
                 
-                // Priority 2: Check by name+CP (if no barcode match)
+                // Priority 2: Check by name+CP+color (if no barcode match or different color)
                 if (!matched && existingByNameCP.has(key)) {
                     const existing = existingByNameCP.get(key);
                     if (!processedKeys.has(key)) {
                         groupedProducts.push({
                             ...p,
-                            barcode: existing.barcode, // Use existing barcode
+                            barcode: p.barcode || existing.barcode, // Use provided or existing barcode
+                            docId: existing.docId, // Use existing document ID
                             stock: p.stock,
                             isUpdate: true,
                             existingStock: existing.stock
                         });
                         processedKeys.add(key);
-                        processedBarcodes.add(existing.barcode);
+                        const barcodeColorKey = `${p.barcode || existing.barcode}_${(p.extraField2 || '').trim().toUpperCase()}`;
+                        processedBarcodes.add(barcodeColorKey);
                     } else {
                         // Already processed, add to stock
                         const existingInGroup = groupedProducts.find(gp => 
                             gp.name.trim().toUpperCase() === p.name.trim().toUpperCase() && 
-                            Math.abs(gp.costPrice - p.costPrice) < 0.01
+                            Math.abs(gp.costPrice - p.costPrice) < 0.01 &&
+                            (gp.extraField2 || '').trim().toUpperCase() === (p.extraField2 || '').trim().toUpperCase()
                         );
                         if (existingInGroup) {
                             existingInGroup.stock += p.stock;
@@ -1469,10 +1511,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Priority 3: New product
                 if (!matched) {
-                    // Check if already in current batch
+                    // Check if already in current batch (including color match)
                     const existingInGroup = groupedProducts.find(gp => 
                         gp.name.trim().toUpperCase() === p.name.trim().toUpperCase() && 
                         Math.abs(gp.costPrice - p.costPrice) < 0.01 &&
+                        (gp.extraField2 || '').trim().toUpperCase() === (p.extraField2 || '').trim().toUpperCase() &&
                         !gp.isUpdate
                     );
                     
@@ -1496,32 +1539,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 // এখন productsToProcess এর বদলে groupedProducts ব্যবহার হবে
                 for (const product of groupedProducts) {
                     let finalBarcode;
+                    let docId;
                     
-                    if (product.isUpdate) {
-                        // Existing product - use existing barcode
+                    if (product.isUpdate && product.docId) {
+                        // Existing product - use existing document ID
+                        docId = product.docId;
                         finalBarcode = product.barcode;
                     } else if (product.barcode) {
                         // New product with manual barcode
                         finalBarcode = product.barcode;
+                        // Create unique document ID: barcode + color suffix for clothing
+                        if (product.extraField2) {
+                            const colorSuffix = product.extraField2.trim().toUpperCase().replace(/\s+/g, '_');
+                            docId = `${finalBarcode}_${colorSuffix}`;
+                        } else {
+                            docId = finalBarcode;
+                        }
                     } else {
                         // New product - generate barcode
                         lastProductId++;
                         finalBarcode = String(lastProductId);
+                        // Create unique document ID
+                        if (product.extraField2) {
+                            const colorSuffix = product.extraField2.trim().toUpperCase().replace(/\s+/g, '_');
+                            docId = `${finalBarcode}_${colorSuffix}`;
+                        } else {
+                            docId = finalBarcode;
+                        }
                     }
 
-                    const productRef = doc(db, 'shops', activeShopId, 'inventory', finalBarcode);
+                    const productRef = doc(db, 'shops', activeShopId, 'inventory', docId);
                     const productSnapshot = await transaction.get(productRef);
 
                     processQueue.push({
                         productData: product,
                         ref: productRef,
                         snapshot: productSnapshot,
-                        finalBarcode: finalBarcode
+                        finalBarcode: finalBarcode,
+                        docId: docId
                     });
                 }
 
                 for (const item of processQueue) {
-                    const { productData, ref, snapshot, finalBarcode } = item;
+                    const { productData, ref, snapshot, finalBarcode, docId } = item;
 
                     if (snapshot.exists()) {
                         // Product already exists - update stock
@@ -1575,7 +1635,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             quantity: productData.stock,
                             unitPrice: productData.costPrice,
                             date: Timestamp.now(),
-                            relatedProductId: finalBarcode,
+                            relatedProductId: docId,
                             isRestock: productData.isUpdate || false
                         };
                         transaction.set(expenseRef, expenseData);
