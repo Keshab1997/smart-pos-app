@@ -195,6 +195,10 @@ body {
 .btn-logs { background: #f8f9fa; color: #4b5563; border: 1px solid #e5e7eb; }
 .btn-logs:hover { background: #4b5563; color: white; }
 
+.btn-hide-stockout { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.btn-hide-stockout:hover { background: #c2410c; color: white; }
+.btn-hide-stockout.active { background: #c2410c; color: white; }
+
 .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
 .btn-danger:hover { background: #dc2626; color: white; }
 
@@ -229,47 +233,115 @@ body {
     min-width: 250px;
 }
 
-#category-filter {
-    min-width: 200px;
-    cursor: pointer;
-}
-
-/* Modern Category Select Styling */
-#category-filter {
+/* Custom Category Dropdown */
+.cat-dropdown {
+    position: relative;
     flex: 1;
-    min-width: 180px;
+    min-width: 220px;
+}
+
+.cat-dropdown-btn {
+    width: 100%;
     height: 45px;
-    padding: 0 15px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    background: linear-gradient(135deg, #eef2ff 0%, #f0f9ff 100%);
+    border: 1.5px solid #c7d2fe;
+    border-radius: 12px;
     cursor: pointer;
-    appearance: none; /* ডিফল্ট ব্রাউজার স্টাইল রিমুভ */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: calc(100% - 15px) center;
-    transition: all 0.2s ease;
+    font-size: 13px;
+    font-weight: 600;
+    color: #3730a3;
+    transition: all 0.2s;
+    text-align: left;
 }
 
-#category-filter:hover {
+.cat-dropdown-btn:hover,
+.cat-dropdown.open .cat-dropdown-btn {
     border-color: #4361ee;
-    background-color: #fff;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(67,97,238,0.12);
 }
 
-#category-filter:focus {
-    outline: none;
-    border-color: #4361ee;
-    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+.cat-btn-icon { font-size: 15px; flex-shrink: 0; }
+.cat-btn-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-btn-arrow {
+    font-size: 13px;
+    color: #4361ee;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+.cat-dropdown.open .cat-btn-arrow { transform: rotate(180deg); }
+
+.cat-dropdown-menu {
+    display: none;
+    position: fixed;
+    min-width: 220px;
+    width: max-content;
+    max-width: 340px;
+    max-height: 320px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1.5px solid #e0e7ff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(67,97,238,0.13);
+    z-index: 9999;
+    padding: 6px;
+    scrollbar-width: thin;
 }
 
-/* ড্রপডাউনের ভেতরের অপশনগুলোর জন্য */
-#category-filter option {
-    padding: 10px;
-    background: white;
-    color: #333;
+.cat-dropdown.open .cat-dropdown-menu { display: block; }
+
+.cat-dropdown-menu::-webkit-scrollbar { width: 4px; }
+.cat-dropdown-menu::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 4px; }
+
+.cat-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.cat-option:hover { background: #eef2ff; color: #4361ee; }
+.cat-option.selected { background: #eef2ff; color: #4361ee; font-weight: 700; }
+
+.cat-option.all-option { color: #4361ee; font-weight: 600; border-bottom: 1px solid #e0e7ff; margin-bottom: 4px; padding-bottom: 10px; }
+
+.cat-option.stock-out-option {
+    color: #dc2626;
+    font-weight: 600;
+    background: #fff5f5;
+    border: 1px solid #fee2e2;
+    margin-bottom: 6px;
+}
+.cat-option.stock-out-option:hover { background: #fee2e2; }
+.cat-option.stock-out-option.selected { background: #fee2e2; }
+
+.cat-option-badge {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: #e0e7ff;
+    color: #4361ee;
+    white-space: nowrap;
+}
+.cat-option.stock-out-option .cat-option-badge { background: #fee2e2; color: #dc2626; }
+
+.cat-divider {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 4px 0;
 }
 
 /* Old styles kept for backward compatibility */

@@ -69,6 +69,7 @@ let lastVisible = null;
 let isLoadingMore = false;
 let hasMoreProducts = true;
 let hasEventListenersSetup = false;
+let hideStockOut = false;
 
 // Authentication
 onAuthStateChanged(auth, (user) => {
@@ -218,10 +219,13 @@ async function loadMoreProducts() {
 function updateCategoryStats() {
     const currentCategory = categoryFilter.value;
     const categoryStats = {};
+    let stockOutCount = 0;
     
     allProducts.forEach(product => {
         const cat = product.category;
         const stock = parseInt(product.stock) || 0;
+
+        if (stock === 0) stockOutCount++;
 
         if (cat) {
             if (!categoryStats[cat]) {
@@ -232,17 +236,17 @@ function updateCategoryStats() {
         }
     });
 
-    updateCategoryFilter(categoryStats, currentCategory);
+    updateCategoryFilter(categoryStats, currentCategory, stockOutCount);
 }
 
 function showLoadingState() {
-    inventoryBody.innerHTML = '<tr><td colspan="9" class="loading-cell">⏳ Loading inventory...</td></tr>';
+    inventoryBody.innerHTML = '<tr><td colspan="10" class="loading-cell">⏳ Loading inventory...</td></tr>';
 }
 
 function showLoadingMoreState() {
     const loadMoreRow = document.createElement('tr');
     loadMoreRow.id = 'loading-more-row';
-    loadMoreRow.innerHTML = '<td colspan="9" class="loading-cell">⏳ Loading more products...</td>';
+    loadMoreRow.innerHTML = '<td colspan="10" class="loading-cell">⏳ Loading more products...</td>';
     inventoryBody.appendChild(loadMoreRow);
 }
 
@@ -259,11 +263,10 @@ function applyFiltersAndRender(resetPage = true) {
 
     filteredProducts = allProducts.filter(p => {
         const matchesSearch = !term || (p.name || '').toLowerCase().includes(term) || (p.barcode || '').toLowerCase().includes(term);
-        const matchesCategory = !category || p.category === category;
-        
-        // Stock filter logic: if input is empty show all, if number is entered show products with stock <= that number
         const currentStock = parseInt(p.stock) || 0;
+        const matchesCategory = category === '__STOCK_OUT__' ? currentStock === 0 : (!category || p.category === category);
         const matchesStock = isNaN(stockLimit) || currentStock <= stockLimit;
+        if (hideStockOut && currentStock === 0) return false;
 
         return matchesSearch && matchesCategory && matchesStock;
     });
@@ -277,6 +280,38 @@ function applyFiltersAndRender(resetPage = true) {
     
     renderTable();
     setupPagination();
+    updateCategoryInfoBar();
+}
+
+function updateCategoryInfoBar() {
+    const bar = document.getElementById('category-info-bar');
+    const category = categoryFilter.value;
+    const label = document.getElementById('cat-btn-label');
+
+    if (!category || category === '__STOCK_OUT__') {
+        if (bar) bar.style.display = 'none';
+        if (label && !category) label.textContent = 'All Categories';
+        return;
+    }
+
+    const catProducts = allProducts.filter(p => p.category === category);
+    const totalQty = catProducts.reduce((s, p) => s + (parseInt(p.stock) || 0), 0);
+    const totalCP  = catProducts.reduce((s, p) => s + ((parseFloat(p.costPrice) || 0) * (parseInt(p.stock) || 0)), 0);
+    const totalSP  = catProducts.reduce((s, p) => s + ((parseFloat(p.sellingPrice) || 0) * (parseInt(p.stock) || 0)), 0);
+
+    if (label) label.textContent = `📁 ${category}`;
+
+    if (bar) {
+        bar.style.display = 'flex';
+        bar.innerHTML = `
+            <span>📁 <strong>${category}</strong></span>
+            <span style="color:#6366f1;">|📦 Items: <strong>${catProducts.length}</strong></span>
+            <span style="color:#0369a1;">| 🔢 Total Qty: <strong>${totalQty}</strong></span>
+            <span style="color:#b45309;">| 💰 Total CP: <strong>₹${totalCP.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</strong></span>
+            <span style="color:#15803d;">| 💵 Total SP: <strong>₹${totalSP.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</strong></span>
+            <span style="color:#7c3aed;">| ✨ Profit: <strong>₹${(totalSP - totalCP).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</strong></span>
+        `;
+    }
 }
 
 function renderTable() {
@@ -284,7 +319,7 @@ function renderTable() {
     const paginated = filteredProducts.slice(start, start + ROWS_PER_PAGE);
     
     inventoryBody.innerHTML = paginated.length === 0 
-        ? '<tr><td colspan="9" class="loading-cell">No products found.</td></tr>'
+        ? '<tr><td colspan="10" class="loading-cell">No products found.</td></tr>'
         : paginated.map(p => {
             const stock = parseInt(p.stock) || 0;
             const cp = parseFloat(p.costPrice) || 0;
@@ -319,6 +354,7 @@ function renderTable() {
                 <td class="barcode-cell" data-id="${p.id}" data-barcode="${p.barcode || ''}" title="Click to edit barcode" style="cursor:pointer;">
                     <span class="barcode-display">${p.barcode || '<span style="color:#ccc;">—</span>'}</span>
                 </td>
+                <td style="font-size:11px; color:#666; white-space:nowrap;">${p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : '—'}</td>
                 <td class="action-buttons">
                     <button class="btn btn-sm btn-edit" data-id="${p.id}" title="Edit">Edit</button>
                     <button class="btn btn-sm btn-delete" data-id="${p.id}" title="Delete">Delete</button>
@@ -328,25 +364,65 @@ function renderTable() {
         }).join('');
 }
 
-function updateCategoryFilter(categoryStats, selectedValue) {
+function updateCategoryFilter(categoryStats, selectedValue, stockOutCount = 0) {
+    const menu = document.getElementById('cat-dropdown-menu');
+    const label = document.getElementById('cat-btn-label');
+    if (!menu || !label) return;
+
     const categories = Object.keys(categoryStats).sort();
 
-    const options = [
-        '<option value="">📂 All Categories</option>',
-        ...categories.map(cat => {
+    // Build menu items
+    let html = `<div class="cat-option all-option${!selectedValue ? ' selected' : ''}" data-value="">
+        <span>📂</span><span>All Categories</span>
+        <span class="cat-option-badge">${allProducts.length}</span>
+    </div>`;
+
+    if (stockOutCount > 0) {
+        html += `<div class="cat-option stock-out-option${selectedValue === '__STOCK_OUT__' ? ' selected' : ''}" data-value="__STOCK_OUT__">
+            <span>🚫</span><span>Stock Out</span>
+            <span class="cat-option-badge">${stockOutCount}</span>
+        </div>`;
+    }
+
+    if (categories.length > 0) {
+        html += `<div class="cat-divider"></div>`;
+        html += categories.map(cat => {
             const stats = categoryStats[cat];
-            const isSelected = cat === selectedValue ? 'selected' : '';
-            const label = `${cat} (${stats.types})`; 
-            return `<option value="${cat}" ${isSelected}>${label}</option>`;
-        })
-    ];
-    
-    categoryFilter.innerHTML = options.join('');
-    
-    // Update delete category button visibility immediately after updating filter
+            const sel = cat === selectedValue ? ' selected' : '';
+            return `<div class="cat-option${sel}" data-value="${cat}">
+                <span>📁</span><span>${cat}</span>
+                <span class="cat-option-badge">${stats.types} | ${stats.totalStock} qty</span>
+            </div>`;
+        }).join('');
+    }
+
+    menu.innerHTML = html;
+
+    // Update button label
+    if (!selectedValue) label.textContent = 'All Categories';
+    else if (selectedValue === '__STOCK_OUT__') label.textContent = '🚫 Stock Out';
+    else label.textContent = selectedValue;
+
+    // Sync hidden select
+    categoryFilter.innerHTML = `<option value=""></option>` +
+        (stockOutCount > 0 ? `<option value="__STOCK_OUT__"></option>` : '') +
+        categories.map(c => `<option value="${c}"></option>`).join('');
+    categoryFilter.value = selectedValue || '';
+
+    // Click handlers
+    menu.querySelectorAll('.cat-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            const val = opt.dataset.value;
+            categoryFilter.value = val;
+            categoryFilter.dispatchEvent(new Event('change'));
+            document.getElementById('cat-dropdown').classList.remove('open');
+        });
+    });
+
+    // Delete category button
     const deleteCategoryBtn = document.getElementById('delete-category-btn');
     if (deleteCategoryBtn) {
-        if (selectedValue && selectedValue !== '') {
+        if (selectedValue && selectedValue !== '' && selectedValue !== '__STOCK_OUT__') {
             deleteCategoryBtn.style.display = 'inline-block';
             deleteCategoryBtn.setAttribute('data-category', selectedValue);
         } else {
@@ -442,13 +518,35 @@ function setupEventListeners() {
         });
     }
 
+    // Custom category dropdown toggle
+    const catDropdownBtn = document.getElementById('cat-dropdown-btn');
+    const catDropdown = document.getElementById('cat-dropdown');
+    const catDropdownMenu = document.getElementById('cat-dropdown-menu');
+    if (catDropdownBtn) {
+        catDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = catDropdown.classList.toggle('open');
+            if (isOpen) {
+                const rect = catDropdownBtn.getBoundingClientRect();
+                catDropdownMenu.style.top = (rect.bottom + 6) + 'px';
+                catDropdownMenu.style.left = rect.left + 'px';
+                catDropdownMenu.style.minWidth = rect.width + 'px';
+            }
+        });
+    }
+    document.addEventListener('click', (e) => {
+        if (catDropdown && !catDropdown.contains(e.target)) {
+            catDropdown.classList.remove('open');
+        }
+    });
+
     searchInput.addEventListener('input', () => applyFiltersAndRender(true));
     categoryFilter.addEventListener('change', () => {
         // Show/hide delete category button
         const deleteCategoryBtn = document.getElementById('delete-category-btn');
         if (deleteCategoryBtn) {
             const selectedCategory = categoryFilter.value;
-            if (selectedCategory && selectedCategory !== '') {
+            if (selectedCategory && selectedCategory !== '' && selectedCategory !== '__STOCK_OUT__') {
                 deleteCategoryBtn.style.display = 'inline-block';
                 deleteCategoryBtn.setAttribute('data-category', selectedCategory);
             } else {
@@ -747,8 +845,19 @@ function setupEventListeners() {
             if (e.key === 'Enter')  saveInlineBarcode();
             if (e.key === 'Escape') renderTable();
         });
-        input.addEventListener('blur', saveInlineBarcode);
+        // blur e save — click outside hole save hobe
+        input.addEventListener('blur', () => setTimeout(saveInlineBarcode, 150));
     });
+
+    const hideStockOutBtn = document.getElementById('hide-stockout-btn');
+    if (hideStockOutBtn) {
+        hideStockOutBtn.addEventListener('click', () => {
+            hideStockOut = !hideStockOut;
+            hideStockOutBtn.classList.toggle('active', hideStockOut);
+            hideStockOutBtn.textContent = hideStockOut ? '👁️ Show Stock Out' : '🙈 Hide Stock Out';
+            applyFiltersAndRender(true);
+        });
+    }
 
     // View Logs button event listener
     const viewLogsBtn = document.getElementById('view-logs-btn');

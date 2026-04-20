@@ -264,13 +264,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         let foundProduct = null;
                         querySnapshot.forEach((doc) => {
                             const data = doc.data();
-                            if (data.name && data.name.toLowerCase().includes(searchText)) {
+                            if (data.name && data.name.toLowerCase().startsWith(searchText)) {
                                 foundProduct = { id: doc.id, ...data };
-                                return; // প্রথম ম্যাচ পেলেই থামবে
                             }
                         });
 
-                        if (foundProduct) {
+                        // Only autofill if exact match found (typed text = full product name)
+                        if (foundProduct && foundProduct.name.toLowerCase() === searchText) {
                             // শুধু Name এবং Category অটো-ফিল করা
                             nameInput.value = foundProduct.name;
                             if (categoryInput) categoryInput.value = foundProduct.category || '';
@@ -313,12 +313,92 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Name field auto title-case format on blur
+        if (nameInput) {
+            nameInput.addEventListener('blur', function() {
+                if (!this.readOnly && this.value.trim()) {
+                    this.value = this.value.trim().toLowerCase()
+                        .replace(/\b\w/g, c => c.toUpperCase());
+                }
+            });
+            // Right-click → show browser spell suggestions (force context menu)
+            nameInput.addEventListener('contextmenu', function(e) {
+                // Let browser handle it natively
+                e.stopPropagation();
+            });
+        }
+
         // Category auto uppercase
         if (categoryInput) {
             categoryInput.addEventListener('blur', function() {
                 this.value = this.value.toUpperCase();
             });
         }
+
+        // Dynamic inputs (Size, Color, Brand, Weight etc.) → Title Case
+        row.querySelectorAll('.dynamic-input-1, .dynamic-input-2, .dynamic-input-3, .dynamic-input-4').forEach(inp => {
+            inp.addEventListener('blur', function() {
+                if (this.value.trim()) {
+                    this.value = this.value.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+                }
+            });
+        });
+
+        // Number fields → 2 decimal on blur
+        [baseRateInput, gstInput, discInput, cpInput, spInput].forEach(inp => {
+            if (!inp) return;
+            inp.addEventListener('blur', function() {
+                if (this.value !== '') this.value = parseFloat(this.value || 0).toFixed(2);
+            });
+        });
+
+        // Stock → integer only
+        const stockInput = row.querySelector('.product-stock');
+        if (stockInput) {
+            stockInput.addEventListener('blur', function() {
+                if (this.value !== '') this.value = parseInt(this.value) || 0;
+            });
+        }
+
+        // Barcode → trim whitespace
+        const barcodeInput = row.querySelector('.product-barcode');
+        if (barcodeInput) {
+            barcodeInput.addEventListener('blur', function() {
+                this.value = this.value.trim();
+            });
+        }
+
+        // Enter key → next input focus
+        const allInputs = Array.from(row.querySelectorAll('input:not([type="file"]):not([type="checkbox"])'));
+        allInputs.forEach((input, idx) => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const next = allInputs[idx + 1];
+                    if (next) {
+                        next.focus();
+                    } else {
+                        // Last field e Enter → new row add kore focus
+                        const addBtn = document.getElementById('add-row-btn');
+                        if (addBtn) addBtn.click();
+                        setTimeout(() => {
+                            const newRow = productsTbody.querySelector('tr:last-child');
+                            if (newRow) newRow.querySelector('input')?.focus();
+                        }, 50);
+                    }
+                }
+                // Escape → field clear
+                if (e.key === 'Escape') {
+                    input.value = '';
+                    input.focus();
+                }
+                // Up/Down arrow → +1/-1 for number fields
+                if (input.type === 'number') {
+                    if (e.key === 'ArrowUp') { e.preventDefault(); input.value = (parseFloat(input.value) || 0) + 1; input.dispatchEvent(new Event('input')); }
+                    if (e.key === 'ArrowDown') { e.preventDefault(); input.value = Math.max(0, (parseFloat(input.value) || 0) - 1); input.dispatchEvent(new Event('input')); }
+                }
+            });
+        });
 
         // Image tabs setup
         const imgWrap    = row.querySelector('.img-input-wrap');
@@ -513,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         
         row.innerHTML = `
-            <td data-label="Product Name"><input type="text" class="product-name" placeholder="e.g., Lux Soap" required></td>
+            <td data-label="Product Name"><input type="text" class="product-name" placeholder="e.g., Lux Soap" spellcheck="true" lang="en" autocorrect="on" autocapitalize="words" required></td>
             <td data-label="Category"><input type="text" class="product-category" placeholder="e.g., Cosmetics" list="category-list" required></td>
             <td data-label="${config.head1}"><input type="text" class="dynamic-input-1" placeholder="${config.p1}"></td>
             <td data-label="${config.head2}"><input type="text" class="dynamic-input-2" placeholder="${config.p2}"></td>
@@ -1598,12 +1678,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function stopScanner() {
+        const modal = document.getElementById('scanner-modal');
         if (html5QrCode) {
-            html5QrCode.stop().then(() => {
-                document.getElementById('scanner-modal').classList.add('hidden');
-            }).catch(err => console.log(err));
+            html5QrCode.stop()
+                .catch(() => {})
+                .finally(() => {
+                    modal.classList.add('hidden');
+                    html5QrCode = null;
+                });
         } else {
-            document.getElementById('scanner-modal').classList.add('hidden');
+            modal.classList.add('hidden');
         }
     }
 

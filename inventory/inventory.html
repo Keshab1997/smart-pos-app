@@ -53,13 +53,25 @@
                     <span class="search-icon">🔍</span>
                     <input type="text" id="search-inventory" placeholder="Search name or barcode..." class="form-control">
                 </div>
-                <select id="category-filter" class="form-control"></select>
+                <div class="cat-dropdown" id="cat-dropdown">
+                    <button type="button" class="cat-dropdown-btn" id="cat-dropdown-btn">
+                        <span class="cat-btn-icon">📂</span>
+                        <span class="cat-btn-label" id="cat-btn-label">All Categories</span>
+                        <span class="cat-btn-arrow">▾</span>
+                    </button>
+                    <div class="cat-dropdown-menu" id="cat-dropdown-menu"></div>
+                </div>
+                <!-- hidden select for JS compatibility -->
+                <select id="category-filter" style="display:none;"></select>
                 <button id="delete-category-btn" class="btn btn-danger" style="display: none; padding: 8px 16px; font-size: 14px;">🗑️ Delete Category</button>
                 <div class="stock-filter-wrapper">
                     <span class="filter-label">Stock ≤</span>
                     <input type="number" id="stock-limit-filter" placeholder="5" class="form-control">
                 </div>
             </div>
+
+            <!-- Category Info Bar -->
+            <div id="category-info-bar" style="display:none; background:linear-gradient(135deg,#eef2ff,#f0f9ff); border:1.5px solid #c7d2fe; border-radius:10px; padding:10px 16px; display:none; flex-wrap:wrap; gap:16px; align-items:center; font-size:13px; font-weight:600; color:#3730a3;"></div>
 
             <!-- Bottom Row: Actions -->
             <div class="action-row">
@@ -73,6 +85,7 @@
                 <button id="stocktake-btn" class="btn btn-stocktake">📋 Stock Taking</button>
                 <button id="fullscreen-btn" class="btn btn-fullscreen">⛶ Fullscreen</button>
                 <button id="view-logs-btn" class="btn btn-logs">📜 Logs</button>
+                <button id="hide-stockout-btn" class="btn btn-hide-stockout">🙈 Hide Stock Out</button>
                 <button id="bulk-delete-btn" class="btn btn-danger" style="display:none;">🗑️ Delete (<span id="selected-count">0</span>)</button>
             </div>
         </section>
@@ -92,6 +105,7 @@
                             <th>Selling Price (₹)</th>
                             <th>Stock</th>
                             <th>Barcode</th>
+                            <th>Entry Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
