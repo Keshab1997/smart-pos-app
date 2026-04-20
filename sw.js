@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = 'smart-pos-v11'; // ভার্সন আপডেট করুন
+const CACHE_NAME = 'smart-pos-v12'; // ভার্সন আপডেট করুন
 const ASSETS = [
   '/',
   '/index.html',
