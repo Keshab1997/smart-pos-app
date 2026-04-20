@@ -10,50 +10,71 @@ const statValue = document.getElementById('stat-total-value');
 const tableBody = document.getElementById('inventory-tbody');
 
 // --- 1. Total Stats Dashboard (Auto Load) ---
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        calculateStats(user.uid);
-    }
-});
+// Stats calculation করার জন্য inventory.js থেকে data নেওয়া হবে
+// Firebase read cost বাঁচানোর জন্য আলাদা করে getDocs() call করা হবে না
 
-async function calculateStats(uid) {
-    try {
-        const q = query(collection(db, 'shops', uid, 'inventory'));
-        const snapshot = await getDocs(q);
+// Export calculateStats function so inventory.js can call it
+window.calculateInventoryStats = function() {
+    // inventory.js থেকে allProducts array নেওয়া
+    const allProducts = window.inventoryState?.allProducts || [];
+    
+    if (allProducts.length === 0) {
+        // যদি কোনো product না থাকে, default value দেখানো
+        if(statItems) statItems.innerText = '0 Items (0 Qty)';
+        if(statValue) statValue.innerText = '₹0.00';
         
-        let totalStock = 0;
-        let totalCostValuation = 0;
-        let totalSaleValuation = 0;
-        let totalProducts = snapshot.size;
-
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const stock = parseInt(data.stock) || 0;
-            const cp = parseFloat(data.costPrice) || 0;
-            const sp = parseFloat(data.sellingPrice) || 0;
-            
-            totalStock += stock;
-            totalCostValuation += (stock * cp);
-            totalSaleValuation += (stock * sp);
-        });
-
-        const potentialProfit = totalSaleValuation - totalCostValuation;
-
-        // Update UI
-        if(statItems) statItems.innerText = `${totalProducts} Items (${totalStock} Qty)`;
-        if(statValue) statValue.innerText = `₹${totalCostValuation.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-        
-        // নতুন ফিল্ডগুলো আপডেট
         const statSaleVal = document.getElementById('stat-total-sale-value');
         const statProfit = document.getElementById('stat-potential-profit');
         
-        if(statSaleVal) statSaleVal.innerText = `₹${totalSaleValuation.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-        if(statProfit) statProfit.innerText = `₹${potentialProfit.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-
-    } catch (error) {
-        console.error("Stats Error:", error);
+        if(statSaleVal) statSaleVal.innerText = '₹0.00';
+        if(statProfit) statProfit.innerText = '₹0.00';
+        return;
     }
-}
+    
+    let totalStock = 0;
+    let totalCostValuation = 0;
+    let totalSaleValuation = 0;
+    let totalProducts = allProducts.length;
+
+    allProducts.forEach(product => {
+        const stock = parseInt(product.stock) || 0;
+        const cp = parseFloat(product.costPrice) || 0;
+        const sp = parseFloat(product.sellingPrice) || 0;
+        
+        totalStock += stock;
+        totalCostValuation += (stock * cp);
+        totalSaleValuation += (stock * sp);
+    });
+
+    const potentialProfit = totalSaleValuation - totalCostValuation;
+
+    // Update UI
+    if(statItems) statItems.innerText = `${totalProducts} Items (${totalStock} Qty)`;
+    if(statValue) statValue.innerText = `₹${totalCostValuation.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+    
+    // নতুন ফিল্ডগুলো আপডেট
+    const statSaleVal = document.getElementById('stat-total-sale-value');
+    const statProfit = document.getElementById('stat-potential-profit');
+    
+    if(statSaleVal) statSaleVal.innerText = `₹${totalSaleValuation.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+    if(statProfit) statProfit.innerText = `₹${potentialProfit.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+};
+
+// Initial load এর জন্য একবার call করা
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        // inventory.js এর allProducts load হওয়ার জন্য একটু wait করা
+        const waitForProducts = setInterval(() => {
+            if (window.inventoryState?.allProducts) {
+                clearInterval(waitForProducts);
+                window.calculateInventoryStats();
+            }
+        }, 100);
+        
+        // 5 second পর timeout
+        setTimeout(() => clearInterval(waitForProducts), 5000);
+    }
+});
 
 // --- 2. Export to Excel (CSV) ---
 if (exportBtn) {
@@ -95,7 +116,7 @@ if (exportBtn) {
             document.body.removeChild(link);
 
         } catch (error) {
-            console.error("Export Error:", error);
+            console.error("Excel Export Error:", error);
             alert("Export failed!");
         } finally {
             exportBtn.innerText = "Export Excel";
@@ -191,6 +212,9 @@ if (tableBody) {
         if (!checkbox) return;
         const productId = checkbox.dataset.id;
         
+        // Check if already editing
+        if (cell.querySelector('input')) return;
+        
         // সেল এর ভেতরের মূল সংখ্যাটি বের করা (Margin টেক্সট বাদ দিয়ে)
         const originalText = cell.innerText.split('\n')[0].trim();
         const originalValue = parseFloat(originalText);
@@ -211,13 +235,21 @@ if (tableBody) {
         cell.innerHTML = ''; 
         cell.appendChild(input);
         input.focus();
+        input.select();
 
         const saveChange = async () => {
             const newValue = parseFloat(input.value);
             
             if (isNaN(newValue) || newValue === originalValue) {
-                const searchBox = document.getElementById('search-inventory');
-                if(searchBox) searchBox.dispatchEvent(new Event('input'));
+                // Restore original value without triggering re-render
+                if (cellIndex === 6) {
+                    // For SP, restore with margin
+                    const cp = parseFloat(row.cells[5].innerText) || 0;
+                    const margin = cp > 0 ? (((originalValue - cp) / cp) * 100).toFixed(1) : 0;
+                    cell.innerHTML = `${originalValue.toFixed(2)}<br><small style="color: #28a745; font-weight: bold;">Margin: ${margin}%</small>`;
+                } else {
+                    cell.innerHTML = originalValue;
+                }
                 return;
             }
 
@@ -274,28 +306,51 @@ if (tableBody) {
                 }
                 // ==============================================================
                 
-                cell.innerText = newValue;
+                // Update cell display
+                if (cellIndex === 6) {
+                    // For SP, show with margin
+                    const cp = parseFloat(row.cells[5].innerText) || 0;
+                    const margin = cp > 0 ? (((newValue - cp) / cp) * 100).toFixed(1) : 0;
+                    cell.innerHTML = `${newValue.toFixed(2)}<br><small style="color: #28a745; font-weight: bold;">Margin: ${margin}%</small>`;
+                } else {
+                    cell.innerHTML = newValue;
+                }
+                
                 cell.style.backgroundColor = '#d4edda';
                 setTimeout(() => cell.style.backgroundColor = '', 1000);
                 
-                calculateStats(user.uid);
-
-                setTimeout(() => {
-                    const searchBox = document.getElementById('search-inventory');
-                    if(searchBox) searchBox.dispatchEvent(new Event('input'));
-                }, 500);
+                // Stats update করা (Firebase read ছাড়া)
+                if (window.calculateInventoryStats) {
+                    window.calculateInventoryStats();
+                }
 
             } catch (error) {
                 console.error("Inline Update Error:", error);
                 alert("Update failed!");
-                const searchBox = document.getElementById('search-inventory');
-                if(searchBox) searchBox.dispatchEvent(new Event('input'));
+                // Restore original value
+                if (cellIndex === 6) {
+                    const cp = parseFloat(row.cells[5].innerText) || 0;
+                    const margin = cp > 0 ? (((originalValue - cp) / cp) * 100).toFixed(1) : 0;
+                    cell.innerHTML = `${originalValue.toFixed(2)}<br><small style="color: #28a745; font-weight: bold;">Margin: ${margin}%</small>`;
+                } else {
+                    cell.innerHTML = originalValue;
+                }
             }
         };
 
         input.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
                 input.blur(); 
+            }
+            if (event.key === 'Escape') {
+                // Cancel edit
+                if (cellIndex === 6) {
+                    const cp = parseFloat(row.cells[5].innerText) || 0;
+                    const margin = cp > 0 ? (((originalValue - cp) / cp) * 100).toFixed(1) : 0;
+                    cell.innerHTML = `${originalValue.toFixed(2)}<br><small style="color: #28a745; font-weight: bold;">Margin: ${margin}%</small>`;
+                } else {
+                    cell.innerHTML = originalValue;
+                }
             }
         });
 

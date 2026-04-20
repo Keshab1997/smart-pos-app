@@ -874,3 +874,87 @@ body {
     border-color: #dc2626 !important;
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2) !important;
 }
+
+/* ================================== */
+/* --- Toast Status Notifications --- */
+/* ================================== */
+#status-message-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none; /* যাতে মেসেজগুলোর কারণে নিচের বাটনে ক্লিক করতে সমস্যা না হয় */
+}
+
+.status-message {
+    min-width: 280px;
+    max-width: 400px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 3.5s forwards;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: auto;
+    transition: all 0.3s ease;
+}
+
+/* মেসেজ টাইপ অনুযায়ী কালার */
+.status-message.success {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    border-left: 5px solid #1e8449;
+}
+
+.status-message.error {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    border-left: 5px solid #922b21;
+}
+
+.status-message.info {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border-left: 5px solid #21618c;
+}
+
+/* অ্যানিমেশন */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    #status-message-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    .status-message {
+        min-width: auto;
+        width: 100%;
+    }
+}

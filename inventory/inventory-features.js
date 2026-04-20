@@ -77,6 +77,7 @@ waitForInventory(() => {
             fns.showStatus(`✅ ${product.name} stock updated to ${newStock}`, 'success');
             popup.style.display = 'none';
         } catch (e) {
+            console.error('Quick Stock Update Error:', e);
             fns.showStatus('❌ Update failed', 'error');
         } finally {
             qsSave.textContent = 'Save';
@@ -171,6 +172,7 @@ waitForInventory(() => {
             fns.showStatus(`✅ ${products.length}টি product এর price update হয়েছে!`, 'success');
             bulkModal.style.display = 'none';
         } catch (e) {
+            console.error('Bulk Price Update Error:', e);
             fns.showStatus('❌ Update failed: ' + e.message, 'error');
         } finally {
             bulkApply.textContent = 'Apply to All';
@@ -280,6 +282,7 @@ waitForInventory(() => {
             },
             () => {}
         ).catch(err => {
+            console.error('Scanner Error:', err);
             document.getElementById('scan-search-reader').innerHTML = '<p style="color:red;">Camera চালু করা যাচ্ছে না।</p>';
         });
     }
@@ -415,6 +418,7 @@ waitForInventory(() => {
                     <tbody>${rows}</tbody>
                 </table>`;
         } catch (err) {
+            console.error('History Load Error:', err);
             document.getElementById('hist-content').innerHTML = '<p style="color:red;">Error loading history.</p>';
         }
     }

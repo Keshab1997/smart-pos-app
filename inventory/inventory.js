@@ -247,6 +247,11 @@ function updateCategoryStats() {
     });
 
     updateCategoryFilter(categoryStats, currentCategory, stockOutCount);
+    
+    // Stats dashboard update করা (inventory-extras.js থেকে)
+    if (window.calculateInventoryStats) {
+        window.calculateInventoryStats();
+    }
 }
 
 function showLoadingState() {
@@ -631,11 +636,25 @@ function setupPagination() {
 }
 
 function showStatus(message, type = 'success') {
+    const container = document.getElementById('status-message-container');
+    if (!container) return;
+
     const div = document.createElement('div');
     div.className = `status-message ${type}`;
-    div.textContent = message;
-    statusMessageContainer.appendChild(div);
-    setTimeout(() => div.remove(), 4000);
+    
+    // মেসেজ টাইপ অনুযায়ী আইকন যোগ করা
+    let icon = 'ℹ️';
+    if (type === 'success') icon = '✅';
+    if (type === 'error') icon = '❌';
+
+    div.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    
+    container.appendChild(div);
+    
+    // ৪ সেকেন্ড পর রিমুভ করা
+    setTimeout(() => {
+        div.remove();
+    }, 4000);
 }
 
 function filterCatOptions(term) {
