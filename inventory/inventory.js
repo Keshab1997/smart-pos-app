@@ -49,6 +49,9 @@ const inventoryBody = document.getElementById('inventory-tbody');
 const searchInput = document.getElementById('search-inventory');
 const categoryFilter = document.getElementById('category-filter');
 const stockLimitFilter = document.getElementById('stock-limit-filter');
+const dateFromFilter = document.getElementById('date-from-filter');
+const dateToFilter = document.getElementById('date-to-filter');
+const clearDateFilterBtn = document.getElementById('clear-date-filter');
 const paginationContainer = document.getElementById('pagination-container');
 const editModal = document.getElementById('edit-modal');
 const editForm = document.getElementById('edit-form');
@@ -267,15 +270,50 @@ function applyFiltersAndRender(resetPage = true) {
     const term = searchInput.value.toLowerCase().trim();
     const category = categoryFilter.value;
     const stockLimit = parseInt(stockLimitFilter.value);
+    const dateFrom = dateFromFilter?.value;
+    const dateTo = dateToFilter?.value;
 
     filteredProducts = allProducts.filter(p => {
         const matchesSearch = !term || (p.name || '').toLowerCase().includes(term) || (p.barcode || '').toLowerCase().includes(term);
         const currentStock = parseInt(p.stock) || 0;
         const matchesCategory = category === '__STOCK_OUT__' ? currentStock === 0 : (!category || p.category === category);
         const matchesStock = isNaN(stockLimit) || currentStock <= stockLimit;
+        
+        // Date filter
+        let matchesDate = true;
+        if (dateFrom || dateTo) {
+            let productDate = null;
+            if (p.createdAt) {
+                if (p.createdAt.seconds) {
+                    // Firestore Timestamp
+                    productDate = new Date(p.createdAt.seconds * 1000);
+                } else if (p.createdAt instanceof Date) {
+                    // Plain JS Date object
+                    productDate = p.createdAt;
+                } else if (typeof p.createdAt === 'string') {
+                    productDate = new Date(p.createdAt);
+                }
+            }
+            
+            if (productDate && !isNaN(productDate.getTime())) {
+                const productDateStr = productDate.toISOString().split('T')[0];
+                
+                if (dateFrom && dateTo) {
+                    matchesDate = productDateStr >= dateFrom && productDateStr <= dateTo;
+                } else if (dateFrom) {
+                    matchesDate = productDateStr >= dateFrom;
+                } else if (dateTo) {
+                    matchesDate = productDateStr <= dateTo;
+                }
+            } else {
+                // Products without valid createdAt will be excluded when date filter is active
+                matchesDate = false;
+            }
+        }
+        
         if (hideStockOut && currentStock === 0) return false;
 
-        return matchesSearch && matchesCategory && matchesStock;
+        return matchesSearch && matchesCategory && matchesStock && matchesDate;
     });
     
     // বারকোড অনুযায়ী সিরিয়াল সর্ট
@@ -288,6 +326,7 @@ function applyFiltersAndRender(resetPage = true) {
     renderTable();
     setupPagination();
     updateCategoryInfoBar();
+    updateDateFilterStatus();
 }
 
 function updateCategoryInfoBar() {
@@ -319,6 +358,71 @@ function updateCategoryInfoBar() {
             <span style="color:#7c3aed;">| ✨ Profit: <strong>₹${(totalSP - totalCP).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</strong></span>
         `;
     }
+}
+
+function updateDateFilterStatus() {
+    const dateFrom = dateFromFilter?.value;
+    const dateTo = dateToFilter?.value;
+    
+    if (!clearDateFilterBtn) return;
+    
+    if (!dateFrom && !dateTo) {
+        clearDateFilterBtn.style.display = 'none';
+        return;
+    }
+    
+    clearDateFilterBtn.style.display = 'inline-block';
+    
+    // Update button appearance to show active state
+    if (dateFrom || dateTo) {
+        if (dateFromFilter) {
+            dateFromFilter.style.borderColor = '#3b82f6';
+            dateFromFilter.style.background = '#eff6ff';
+        }
+        if (dateToFilter) {
+            dateToFilter.style.borderColor = '#3b82f6';
+            dateToFilter.style.background = '#eff6ff';
+        }
+    }
+}
+
+function clearDateFilter() {
+    if (dateFromFilter) {
+        dateFromFilter.value = '';
+        dateFromFilter.style.borderColor = '';
+        dateFromFilter.style.background = '';
+    }
+    if (dateToFilter) {
+        dateToFilter.value = '';
+        dateToFilter.style.borderColor = '';
+        dateToFilter.style.background = '';
+    }
+    applyFiltersAndRender(true);
+}
+
+function setQuickDateFilter(type) {
+    const today = new Date();
+    let fromDate, toDate;
+    
+    if (type === 'today') {
+        fromDate = toDate = today.toISOString().split('T')[0];
+    } else if (type === 'week') {
+        // This week (Monday to Sunday)
+        const day = today.getDay();
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+        const monday = new Date(today.setDate(diff));
+        fromDate = monday.toISOString().split('T')[0];
+        toDate = new Date().toISOString().split('T')[0];
+    } else if (type === 'month') {
+        // This month
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        fromDate = firstDay.toISOString().split('T')[0];
+        toDate = new Date().toISOString().split('T')[0];
+    }
+    
+    if (dateFromFilter) dateFromFilter.value = fromDate;
+    if (dateToFilter) dateToFilter.value = toDate;
+    applyFiltersAndRender(true);
 }
 
 function renderTable() {
@@ -376,7 +480,15 @@ function renderTable() {
                 <td class="barcode-cell" data-id="${p.id}" data-barcode="${p.barcode || ''}" title="Click to edit barcode" style="cursor:pointer;">
                     <span class="barcode-display">${p.barcode || '<span style="color:#ccc;">—</span>'}</span>
                 </td>
-                <td style="font-size:11px; color:#666; white-space:nowrap;">${p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : '—'}</td>
+                <td style="font-size:11px; color:#666; white-space:nowrap;">${(() => {
+                let date = null;
+                if (p.createdAt) {
+                    if (p.createdAt.seconds) date = new Date(p.createdAt.seconds * 1000);
+                    else if (p.createdAt instanceof Date) date = p.createdAt;
+                    else if (typeof p.createdAt === 'string') date = new Date(p.createdAt);
+                }
+                return date && !isNaN(date.getTime()) ? date.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : '—';
+            })()}</td>
                 <td class="action-buttons">
                     <button class="btn btn-sm btn-edit" data-id="${p.id}" title="Edit">Edit</button>
                     <button class="btn btn-sm btn-delete" data-id="${p.id}" title="Delete">Delete</button>
@@ -611,6 +723,41 @@ function setupEventListeners() {
         applyFiltersAndRender(true);
     });
     stockLimitFilter.addEventListener('input', () => applyFiltersAndRender(true));
+    
+    // Date filter event listeners
+    if (dateFromFilter) {
+        dateFromFilter.addEventListener('change', () => applyFiltersAndRender(true));
+    }
+    if (dateToFilter) {
+        dateToFilter.addEventListener('change', () => applyFiltersAndRender(true));
+    }
+    if (clearDateFilterBtn) {
+        clearDateFilterBtn.addEventListener('click', clearDateFilter);
+    }
+    
+    // Quick date filter buttons
+    const filterTodayBtn = document.getElementById('filter-today-btn');
+    const filterWeekBtn = document.getElementById('filter-week-btn');
+    const filterMonthBtn = document.getElementById('filter-month-btn');
+    
+    if (filterTodayBtn) {
+        filterTodayBtn.addEventListener('click', () => {
+            setQuickDateFilter('today');
+            showStatus('📅 Showing today\'s products', 'success');
+        });
+    }
+    if (filterWeekBtn) {
+        filterWeekBtn.addEventListener('click', () => {
+            setQuickDateFilter('week');
+            showStatus('📆 Showing this week\'s products', 'success');
+        });
+    }
+    if (filterMonthBtn) {
+        filterMonthBtn.addEventListener('click', () => {
+            setQuickDateFilter('month');
+            showStatus('🗓️ Showing this month\'s products', 'success');
+        });
+    }
     
     // Delete Category Button
     const deleteCategoryBtn = document.getElementById('delete-category-btn');
@@ -1194,7 +1341,7 @@ async function handleEditFormSubmit(e) {
             data.sellingPrice = newSP;
             data.stock = newStock;
             data.imageUrl = data.imageUrl || oldData.imageUrl || null;
-            data.createdAt = oldData.createdAt || new Date();
+            data.createdAt = oldData.createdAt || serverTimestamp();
             await setDoc(newRef, data);
             await deleteDoc(productRef);
             // expenses এ relatedProductId update

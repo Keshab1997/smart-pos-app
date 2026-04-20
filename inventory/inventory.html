@@ -72,6 +72,14 @@
                     <span class="filter-label">Stock ≤</span>
                     <input type="number" id="stock-limit-filter" placeholder="5" class="form-control">
                 </div>
+                <!-- Date Filter -->
+                <div class="date-filter-wrapper" style="display: flex; gap: 8px; align-items: center;">
+                    <span class="filter-label" style="font-size: 13px; font-weight: 600; color: #475569;">📅 Date:</span>
+                    <input type="date" id="date-from-filter" class="form-control" style="width: 140px; padding: 6px 10px; font-size: 13px;" placeholder="From">
+                    <span style="color: #94a3b8; font-weight: 600;">to</span>
+                    <input type="date" id="date-to-filter" class="form-control" style="width: 140px; padding: 6px 10px; font-size: 13px;" placeholder="To">
+                    <button id="clear-date-filter" class="btn" style="padding: 6px 12px; font-size: 13px; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;" title="Clear date filter">✕</button>
+                </div>
             </div>
 
             <!-- Category Info Bar -->
@@ -87,6 +95,10 @@
                 <button id="bulk-price-btn" class="btn btn-bulk">💰 Bulk Price</button>
                 <button id="duplicate-btn" class="btn btn-duplicate">🔍 Duplicates</button>
                 <button id="stocktake-btn" class="btn btn-stocktake">📋 Stock Taking</button>
+                <!-- Quick Date Filters -->
+                <button id="filter-today-btn" class="btn" style="background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd;" title="Show today's products">📅 Today</button>
+                <button id="filter-week-btn" class="btn" style="background: #e0e7ff; color: #4338ca; border: 1px solid #a5b4fc;" title="Show this week's products">📆 This Week</button>
+                <button id="filter-month-btn" class="btn" style="background: #f3e8ff; color: #7c3aed; border: 1px solid #d8b4fe;" title="Show this month's products">🗓️ This Month</button>
                 <button id="fullscreen-btn" class="btn btn-fullscreen">⛶ Fullscreen</button>
                 <button id="view-logs-btn" class="btn btn-logs">📜 Logs</button>
                 <button id="hide-stockout-btn" class="btn btn-hide-stockout">🙈 Hide Stock Out</button>

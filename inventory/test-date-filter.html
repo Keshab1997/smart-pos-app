@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Date Filter Test - Smart POS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1e3a8a;
+            margin-bottom: 20px;
+        }
+        .filter-section {
+            background: #eff6ff;
+            border: 2px solid #3b82f6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        label {
+            font-weight: 600;
+            color: #475569;
+        }
+        input[type="date"] {
+            padding: 8px 12px;
+            border: 2px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        .btn-secondary {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+        .btn-clear {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .product-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .product-info {
+            flex: 1;
+        }
+        .product-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        .product-meta {
+            font-size: 13px;
+            color: #64748b;
+        }
+        .product-date {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .status-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .debug-info {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .debug-info pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Date Filter Test Page</h1>
+        
+        <div class="filter-section">
+            <h3 style="margin-bottom: 15px; color: #1e40af;">📅 Date Filters</h3>
+            
+            <div class="filter-row">
+                <label>From Date:</label>
+                <input type="date" id="dateFrom">
+                
+                <label>To Date:</label>
+                <input type="date" id="dateTo">
+                
+                <button class="btn btn-primary" onclick="applyFilter()">Apply Filter</button>
+                <button class="btn btn-clear" onclick="clearFilter()">Clear</button>
+            </div>
+            
+            <div class="filter-row">
+                <button class="btn btn-secondary" onclick="filterToday()">📅 Today</button>
+                <button class="btn btn-secondary" onclick="filterWeek()">📆 This Week</button>
+                <button class="btn btn-secondary" onclick="filterMonth()">🗓️ This Month</button>
+            </div>
+        </div>
+
+        <div id="status"></div>
+        
+        <div class="results">
+            <h3 style="margin-bottom: 15px; color: #1e293b;">📦 Products (<span id="count">0</span>)</h3>
+            <div id="productList"></div>
+        </div>
+
+        <div class="debug-info">
+            <strong>🐛 Debug Info:</strong>
+            <pre id="debugInfo">Waiting for filter...</pre>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import { db, auth } from '../js/firebase-config.js';
+        import { onAuthStateChanged } from 'firebase/auth';
+        import { collection, getDocs } from 'firebase/firestore';
+
+        let allProducts = [];
+        let activeShopId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                activeShopId = localStorage.getItem('activeShopId');
+                if (!activeShopId) {
+                    showStatus('Please login first', 'error');
+                    return;
+                }
+                await loadProducts();
+            } else {
+                window.location.href = '../index.html';
+            }
+        });
+
+        async function loadProducts() {
+            showStatus('Loading products...', 'info');
+            try {
+                const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
+                const snapshot = await getDocs(inventoryRef);
+                
+                allProducts = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                showStatus(`✅ Loaded ${allProducts.length} products`, 'success');
+                displayProducts(allProducts);
+                updateDebugInfo('All products loaded');
+            } catch (error) {
+                console.error('Load error:', error);
+                showStatus('❌ Failed to load products: ' + error.message, 'error');
+            }
+        }
+
+        window.applyFilter = function() {
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            if (!dateFrom && !dateTo) {
+                showStatus('⚠️ Please select at least one date', 'error');
+                return;
+            }
+
+            const filtered = allProducts.filter(p => {
+                let productDate = null;
+                if (p.createdAt) {
+                    if (p.createdAt.seconds) {
+                        productDate = new Date(p.createdAt.seconds * 1000);
+                    } else if (p.createdAt instanceof Date) {
+                        productDate = p.createdAt;
+                    } else if (typeof p.createdAt === 'string') {
+                        productDate = new Date(p.createdAt);
+                    }
+                }
+                
+                if (!productDate || isNaN(productDate.getTime())) {
+                    return false; // Exclude products without valid date
+                }
+
+                const productDateStr = productDate.toISOString().split('T')[0];
+
+                if (dateFrom && dateTo) {
+                    return productDateStr >= dateFrom && productDateStr <= dateTo;
+                } else if (dateFrom) {
+                    return productDateStr >= dateFrom;
+                } else if (dateTo) {
+                    return productDateStr <= dateTo;
+                }
+                return true;
+            });
+
+            displayProducts(filtered);
+            showStatus(`✅ Found ${filtered.length} products`, 'success');
+            updateDebugInfo(`Filter applied: ${dateFrom || 'any'} to ${dateTo || 'any'}\nResults: ${filtered.length} products`);
+        };
+
+        window.clearFilter = function() {
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            displayProducts(allProducts);
+            showStatus(`✅ Filter cleared. Showing all ${allProducts.length} products`, 'success');
+            updateDebugInfo('Filter cleared');
+        };
+
+        window.filterToday = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateFrom').value = today;
+            document.getElementById('dateTo').value = today;
+            applyFilter();
+        };
+
+        window.filterWeek = function() {
+            const today = new Date();
+            const day = today.getDay();
+            const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+            const monday = new Date(today.setDate(diff));
+            
+            document.getElementById('dateFrom').value = monday.toISOString().split('T')[0];
+            document.getElementById('dateTo').value = new Date().toISOString().split('T')[0];
+            applyFilter();
+        };
+
+        window.filterMonth = function() {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            
+            document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('dateTo').value = new Date().toISOString().split('T')[0];
+            applyFilter();
+        };
+
+        function displayProducts(products) {
+            const list = document.getElementById('productList');
+            const count = document.getElementById('count');
+            
+            count.textContent = products.length;
+
+            if (products.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:40px;">No products found</p>';
+                return;
+            }
+
+            list.innerHTML = products.map(p => {
+                let date = null;
+                if (p.createdAt) {
+                    if (p.createdAt.seconds) date = new Date(p.createdAt.seconds * 1000);
+                    else if (p.createdAt instanceof Date) date = p.createdAt;
+                    else if (typeof p.createdAt === 'string') date = new Date(p.createdAt);
+                }
+                const dateStr = date && !isNaN(date.getTime())
+                    ? date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                    : 'No date';
+
+                return `
+                    <div class="product-card">
+                        <div class="product-info">
+                            <div class="product-name">${p.name || 'N/A'}</div>
+                            <div class="product-meta">
+                                Category: ${p.category || 'N/A'} | 
+                                Barcode: ${p.barcode || 'N/A'} | 
+                                Stock: ${p.stock || 0}
+                            </div>
+                        </div>
+                        <div class="product-date">${dateStr}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status status-' + type;
+            status.style.display = 'block';
+        }
+
+        function updateDebugInfo(info) {
+            const debug = document.getElementById('debugInfo');
+            const timestamp = new Date().toLocaleTimeString();
+            debug.textContent = `[${timestamp}] ${info}\n\nTotal products: ${allProducts.length}\nProducts with date: ${allProducts.filter(p => p.createdAt).length}\nProducts without date: ${allProducts.filter(p => !p.createdAt).length}`;
+        }
+    </script>
+</body>
+</html>
