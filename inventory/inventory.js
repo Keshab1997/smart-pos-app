@@ -405,6 +405,17 @@ function updateCategoryFilter(categoryStats, selectedValue, stockOutCount = 0) {
 
     menu.innerHTML = html;
 
+    // Re-insert search wrap at top (preserved)
+    const searchWrap = document.createElement('div');
+    searchWrap.className = 'cat-search-wrap';
+    searchWrap.innerHTML = '<input type="text" id="cat-search-input" placeholder="\uD83D\uDD0D Search category..." autocomplete="off">';
+    menu.insertBefore(searchWrap, menu.firstChild);
+
+    // Re-attach search event
+    const si = searchWrap.querySelector('input');
+    si.addEventListener('input', (e) => filterCatOptions(e.target.value));
+    si.addEventListener('click', (e) => e.stopPropagation());
+
     // Update button label
     if (!selectedValue) label.textContent = 'All Categories';
     else if (selectedValue === '__STOCK_OUT__') label.textContent = '🚫 Stock Out';
@@ -500,6 +511,23 @@ function showStatus(message, type = 'success') {
     setTimeout(() => div.remove(), 4000);
 }
 
+function filterCatOptions(term) {
+    const menu = document.getElementById('cat-dropdown-menu');
+    if (!menu) return;
+    const opts = menu.querySelectorAll('.cat-option');
+    let visible = 0;
+    opts.forEach(opt => {
+        const match = opt.textContent.toLowerCase().includes(term.toLowerCase());
+        opt.classList.toggle('hidden', !match);
+        if (match) visible++;
+    });
+    let noRes = menu.querySelector('.cat-no-result');
+    if (visible === 0) {
+        if (!noRes) { noRes = document.createElement('div'); noRes.className = 'cat-no-result'; menu.appendChild(noRes); }
+        noRes.textContent = 'No category found';
+    } else if (noRes) noRes.remove();
+}
+
 function setupEventListeners() {
     hasEventListenersSetup = true;
 
@@ -538,6 +566,11 @@ function setupEventListeners() {
                 catDropdownMenu.style.top = (rect.bottom + 6) + 'px';
                 catDropdownMenu.style.left = rect.left + 'px';
                 catDropdownMenu.style.minWidth = rect.width + 'px';
+                // Focus search input
+                setTimeout(() => {
+                    const si = document.getElementById('cat-search-input');
+                    if (si) { si.value = ''; si.focus(); filterCatOptions(''); }
+                }, 50);
             }
         });
     }
@@ -864,6 +897,12 @@ function setupEventListeners() {
             hideStockOutBtn.textContent = hideStockOut ? '👁️ Show Stock Out' : '🙈 Hide Stock Out';
             applyFiltersAndRender(true);
         });
+    }
+
+    const catSearchInput = document.getElementById('cat-search-input');
+    if (catSearchInput) {
+        catSearchInput.addEventListener('input', (e) => filterCatOptions(e.target.value));
+        catSearchInput.addEventListener('click', (e) => e.stopPropagation());
     }
 
     // View Logs button event listener
