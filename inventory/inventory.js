@@ -802,6 +802,25 @@ function setupEventListeners() {
     const editImageInput = document.getElementById('edit-image');
     const editImagePreview = document.getElementById('edit-image-preview');
 
+    // Auto-calculate SP from CP + Margin (only via button click)
+    const btnCalcSP = document.getElementById('btn-calc-sp');
+    const editCP = document.getElementById('edit-cp');
+    const editMargin = document.getElementById('edit-margin');
+    const editSP = document.getElementById('edit-sp');
+    
+    if (btnCalcSP && editCP && editMargin && editSP) {
+        btnCalcSP.addEventListener('click', () => {
+            const cp = parseFloat(editCP.value) || 0;
+            const marginPercent = parseFloat(editMargin.value) || 0;
+            if (cp > 0) {
+                const calculatedSP = cp + (cp * marginPercent / 100);
+                editSP.value = Math.round(calculatedSP * 100) / 100;
+                editSP.style.backgroundColor = '#d4edda';
+                setTimeout(() => { editSP.style.backgroundColor = ''; }, 1000);
+            }
+        });
+    }
+
     // Barcode real-time duplicate check
     const editBarcodeInput = document.getElementById('edit-barcode');
     const barcodeDupMsg    = document.getElementById('barcode-duplicate-msg');
@@ -1220,6 +1239,15 @@ function openEditModal(product) {
         'edit-stock': product.stock,
         'edit-barcode': product.barcode
     }).forEach(([id, value]) => { document.getElementById(id).value = value || ''; });
+    
+    // Calculate and set margin from existing CP/SP
+    const cp = parseFloat(product.costPrice) || 0;
+    const sp = parseFloat(product.sellingPrice) || 0;
+    if (cp > 0 && sp > 0) {
+        const margin = ((sp - cp) / cp) * 100;
+        const marginInput = document.getElementById('edit-margin');
+        if (marginInput) marginInput.value = Math.round(margin * 10) / 10;
+    }
     
     // পুরনো ছবি থাকলে প্রিভিউ দেখানো
     const preview = document.getElementById('edit-image-preview');

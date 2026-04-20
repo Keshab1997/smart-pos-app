@@ -181,11 +181,11 @@ if (tableBody) {
         if (!cell) return;
         const row = cell.parentElement;
         
-        // বর্তমান কলাম ইনডেক্স: 0:Chk, 1:Img, 2:Name, 3:Cat, 4:CP, 5:SP, 6:Stock, 7:Bar, 8:Action
+        // বর্তমান কলাম ইনডেক্স: 0:Chk, 1:Img, 2:Name, 3:Cat, 4:Size/Color, 5:CP, 6:SP, 7:Stock, 8:Bar, 9:Date, 10:Action
         const cellIndex = cell.cellIndex;
         
-        // শুধু Cost Price(4), Selling Price(5), এবং Stock(6) এডিট করতে পারবে
-        if (![4, 5, 6].includes(cellIndex)) return;
+        // শুধু Cost Price(5), Selling Price(6), এবং Stock(7) এডিট করতে পারবে
+        if (![5, 6, 7].includes(cellIndex)) return;
 
         const checkbox = row.querySelector('.product-checkbox');
         if (!checkbox) return;
@@ -196,9 +196,9 @@ if (tableBody) {
         const originalValue = parseFloat(originalText);
         
         let fieldName = '';
-        if (cellIndex === 4) fieldName = 'costPrice';
-        if (cellIndex === 5) fieldName = 'sellingPrice';
-        if (cellIndex === 6) fieldName = 'stock';
+        if (cellIndex === 5) fieldName = 'costPrice';
+        if (cellIndex === 6) fieldName = 'sellingPrice';
+        if (cellIndex === 7) fieldName = 'stock';
 
         const input = document.createElement('input');
         input.type = 'number';

@@ -292,8 +292,13 @@
                         <input type="number" id="edit-cp" class="form-control" required step="0.01">
                     </div>
                     <div class="form-group">
+                        <label for="edit-margin">Margin %:</label>
+                        <input type="number" id="edit-margin" class="form-control" value="10" step="0.1" style="width:70px;">
+                    </div>
+                    <div class="form-group">
                         <label for="edit-sp">Selling Price (₹):</label>
                         <input type="number" id="edit-sp" class="form-control" required step="0.01">
+                        <button type="button" id="btn-calc-sp" style="margin-top:4px; padding:3px 8px; font-size:11px; background:#4361ee; color:white; border:none; border-radius:4px; cursor:pointer;">Auto Calculate SP</button>
                     </div>
                 </div>
                 <div class="form-group">
