@@ -647,13 +647,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showStatus(message, type) {
-        statusMessage.textContent = message;
-        statusMessage.className = `status ${type}`;
-        const time = type === 'error' ? 8000 : 5000;
-        setTimeout(() => {
-            statusMessage.textContent = '';
-            statusMessage.className = 'status';
-        }, time);
+        if (window.toast && typeof window.toast[type] === 'function') {
+            window.toast[type](message);
+        } else {
+            statusMessage.textContent = message;
+            statusMessage.className = `status ${type}`;
+            const time = type === 'error' ? 8000 : 5000;
+            setTimeout(() => {
+                statusMessage.textContent = '';
+                statusMessage.className = 'status';
+            }, time);
+        }
     }
 
     async function uploadImageToImgBB(file) {

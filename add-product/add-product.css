@@ -245,9 +245,9 @@ body {
 .card-container table .product-base-rate,
 .card-container table .product-gst,
 .card-container table .product-disc {
-    width: 60px;
-    min-width: 60px;
-    max-width: 60px;
+    width: 65px;
+    min-width: 65px;
+    max-width: 65px;
     background-color: #fffbf0;
     border-color: #f0d080;
     text-align: center;
@@ -264,6 +264,7 @@ body {
 /* Product Name এবং Category ফিল্ড */
 .card-container table .product-name {
     min-width: 200px;
+    width: 200px;
     font-weight: 600;
     background-color: #f0f4ff;
     border-color: #c5d0f5;
@@ -271,6 +272,7 @@ body {
 
 .card-container table .product-category {
     min-width: 120px;
+    width: 120px;
     font-weight: 600;
     background-color: #f0f4ff;
     border-color: #c5d0f5;
@@ -285,47 +287,47 @@ body {
 /* CP, SP, Base Rate ফিল্ড */
 .card-container table .product-cp,
 .card-container table .product-sp {
-    width: 85px;
-    min-width: 85px;
+    width: 100px;
+    min-width: 100px;
     text-align: right;
 }
 
 .card-container table .product-base-rate {
-    width: 75px;
-    min-width: 75px;
+    width: 85px;
+    min-width: 85px;
 }
 
 /* Barcode ফিল্ড */
 .card-container table .product-barcode {
-    min-width: 110px;
-    width: 110px;
+    min-width: 130px;
+    width: 130px;
 }
 
 /* Stock ফিল্ড */
 .card-container table .product-stock {
-    width: 55px;
-    min-width: 55px;
+    width: 65px;
+    min-width: 65px;
     text-align: center;
 }
 
 /* Dynamic fields (Rack, Remark, Size, Color etc) */
 .card-container table .dynamic-input-1,
 .card-container table .dynamic-input-2 {
-    min-width: 80px;
-    width: 80px;
+    min-width: 90px;
+    width: 90px;
 }
 
 .card-container table .dynamic-input-3,
 .card-container table .dynamic-input-4 {
-    min-width: 75px;
-    width: 75px;
+    min-width: 85px;
+    width: 85px;
 }
 
 /* Image input */
 .card-container table .product-image {
-    width: 90px;
-    min-width: 90px;
-    font-size: 11px;
+    width: 110px;
+    min-width: 110px;
+    font-size: 12px;
 }
 
 .card-container table input:focus,
@@ -1042,23 +1044,25 @@ body {
 
 /* Image input tabs in table rows */
 .img-input-wrap {
-    min-width: 90px;
+    min-width: 110px;
+    width: 110px;
 }
 
 .img-tabs {
     display: flex;
-    gap: 3px;
-    margin-bottom: 5px;
+    gap: 4px;
+    margin-bottom: 6px;
 }
 
 .img-tab-btn {
     flex: 1;
-    padding: 3px;
+    padding: 4px 6px;
     border: 1px solid #ddd;
     background: #f8f9fa;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 11px;
+    font-weight: 600;
     transition: all 0.2s;
 }
 
@@ -1076,13 +1080,14 @@ body {
 }
 
 .row-paste-zone {
-    border: 1.5px dashed #93c5fd;
+    border: 2px dashed #93c5fd;
     border-radius: 6px;
-    padding: 6px;
+    padding: 8px;
     text-align: center;
     background: #f0f9ff;
     cursor: pointer;
     position: relative;
+    min-height: 50px;
 }
 
 .row-paste-zone:focus-within {
