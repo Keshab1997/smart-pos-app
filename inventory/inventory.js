@@ -155,11 +155,18 @@ function setupRealtimeListener() {
     const productsRef = collection(db, 'shops', activeShopId, 'inventory');
     const q = query(productsRef, orderBy("name"));
     
+    let isFirstSnapshot = true;
     unsubscribe = onSnapshot(q, (snapshot) => {
+        // Skip the initial snapshot — data already loaded via getDocs in loadInventory
+        if (isFirstSnapshot) {
+            isFirstSnapshot = false;
+            return;
+        }
         snapshot.docChanges().forEach((change) => {
             const product = { id: change.doc.id, ...change.doc.data() };
             
             if (change.type === 'added') {
+                // Only add if not already in allProducts (new product added after initial load)
                 const exists = allProducts.find(p => p.id === product.id);
                 if (!exists) allProducts.push(product);
             }
