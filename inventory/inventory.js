@@ -345,13 +345,28 @@ function renderTable() {
                 ? `<img src="${p.imageUrl}" class="product-thumb" data-name="${p.name}" data-src="${p.imageUrl}" alt="img">` 
                 : `<span style="font-size:12px; color:#999; display:inline-block; width:40px; text-align:center;">No Img</span>`;
 
+            // Size/Color display (extraField1 = Size, extraField2 = Color)
+            const sizeColorHtml = (() => {
+                const size = p.extraField1 || '';
+                const color = p.extraField2 || '';
+                if (size && color) {
+                    return `<span style="display:inline-block; padding:3px 8px; background:#e0f2fe; border-radius:4px; font-size:12px; font-weight:600; color:#0369a1; margin-right:4px;">${size}</span><span style="display:inline-block; padding:3px 8px; background:#fce7f3; border-radius:4px; font-size:12px; font-weight:600; color:#be185d;">${color}</span>`;
+                } else if (size) {
+                    return `<span style="display:inline-block; padding:3px 8px; background:#e0f2fe; border-radius:4px; font-size:12px; font-weight:600; color:#0369a1;">${size}</span>`;
+                } else if (color) {
+                    return `<span style="display:inline-block; padding:3px 8px; background:#fce7f3; border-radius:4px; font-size:12px; font-weight:600; color:#be185d;">${color}</span>`;
+                } else {
+                    return `<span style="color:#999; font-size:12px;">—</span>`;
+                }
+            })();
+
             return `
             <tr class="${stockClass}">
                 <td><input type="checkbox" class="product-checkbox" data-id="${p.id}"></td>
                 <td style="text-align: center;">${imgHtml}</td>
                 <td>${p.name || 'N/A'}</td>
                 <td>${p.category || 'N/A'}</td>
-                <td style="color: #666; font-style: italic; font-size: 0.85rem;">${p.remark || '-'}</td>
+                <td style="text-align: center;">${sizeColorHtml}</td>
                 <td>${cp.toFixed(2)}</td>
                 <td>
                     ${sp.toFixed(2)}
@@ -647,15 +662,24 @@ function setupEventListeners() {
         editBarcodeInput.addEventListener('input', function() {
             const val       = this.value.trim();
             const currentId = document.getElementById('edit-product-id').value;
+            const currentColor = document.getElementById('edit-color')?.value.trim() || '';
+            
             barcodeDupMsg.style.display = 'none';
             this.classList.remove('input-shake');
 
             if (!val) return;
 
-            const dup = allProducts.find(p => p.id === val && p.id !== currentId);
+            // Generate potential new document ID with color suffix
+            let newDocId = val;
+            if (currentColor) {
+                const colorSuffix = currentColor.toUpperCase().replace(/\s+/g, '_');
+                newDocId = `${val}_${colorSuffix}`;
+            }
+
+            const dup = allProducts.find(p => p.id === newDocId && p.id !== currentId);
             if (dup) {
                 barcodeDupMsg.style.display = 'block';
-                barcodeDupMsg.textContent   = `❌ Duplicate! "${dup.name}" এ ইতিমধ্যে এই barcode আছে`;
+                barcodeDupMsg.textContent   = `❌ Duplicate! "${dup.name}" এ ইতিমধ্যে এই barcode+color আছে`;
                 this.classList.remove('input-shake');
                 void this.offsetWidth; // reflow to restart animation
                 this.classList.add('input-shake');
@@ -665,6 +689,15 @@ function setupEventListeners() {
                 document.getElementById('edit-save-btn').disabled = false;
             }
         });
+        
+        // Also check when color changes
+        const editColorInput = document.getElementById('edit-color');
+        if (editColorInput) {
+            editColorInput.addEventListener('input', function() {
+                // Trigger barcode validation
+                editBarcodeInput.dispatchEvent(new Event('input'));
+            });
+        }
     }
 
     if (editImageInput) {
@@ -820,13 +853,17 @@ function setupEventListeners() {
     editForm.addEventListener('submit', handleEditFormSubmit);
 
     // Barcode inline edit
-    inventoryBody.addEventListener('click', e => {
+    inventoryBody.addEventListener('click', async e => {
         const cell = e.target.closest('.barcode-cell');
         if (!cell || cell.querySelector('input')) return;
 
         const id          = cell.dataset.id;
         const oldBarcode  = cell.dataset.barcode;
         const span        = cell.querySelector('.barcode-display');
+        
+        // Get product data to preserve color/size info
+        const product = allProducts.find(p => p.id === id);
+        if (!product) return;
 
         const input = document.createElement('input');
         input.type  = 'text';
@@ -843,7 +880,11 @@ function setupEventListeners() {
 
         input.addEventListener('input', () => {
             const val = input.value.trim();
-            const dup = allProducts.find(p => p.id === val && p.id !== id);
+            // Check if barcode + color combination already exists
+            const colorSuffix = product.extraField2 ? `_${product.extraField2.trim().toUpperCase().replace(/\s+/g, '_')}` : '';
+            const newDocId = val + colorSuffix;
+            const dup = allProducts.find(p => p.id === newDocId && p.id !== id);
+            
             if (dup) {
                 dupHint.style.display = 'block';
                 dupHint.textContent   = `❌ "${dup.name}" এ আছে`;
@@ -859,24 +900,50 @@ function setupEventListeners() {
 
         async function saveInlineBarcode() {
             const newBarcode = input.value.trim();
-            const dup = allProducts.find(p => p.id === newBarcode && p.id !== id);
+            
+            // Generate new document ID with color suffix if exists
+            const colorSuffix = product.extraField2 ? `_${product.extraField2.trim().toUpperCase().replace(/\s+/g, '_')}` : '';
+            const newDocId = newBarcode + colorSuffix;
+            
+            // Check for duplicate
+            const dup = allProducts.find(p => p.id === newDocId && p.id !== id);
             if (dup) {
                 input.focus();
                 return;
             }
+            
             if (newBarcode === oldBarcode) {
                 renderTable();
                 return;
             }
+            
             try {
-                const product = allProducts.find(p => p.id === id);
-                if (!product) return;
-                const newRef = doc(db, 'shops', activeShopId, 'inventory', newBarcode);
-                await setDoc(newRef, { ...product, barcode: newBarcode, id: undefined, lastUpdated: new Date() });
+                // Create new document with updated barcode but same color suffix
+                const newRef = doc(db, 'shops', activeShopId, 'inventory', newDocId);
+                await setDoc(newRef, { 
+                    ...product, 
+                    barcode: newBarcode, 
+                    id: undefined, 
+                    lastUpdated: new Date() 
+                });
+                
+                // Delete old document
                 await deleteDoc(doc(db, 'shops', activeShopId, 'inventory', id));
+                
+                // Update expenses relatedProductId
+                const expRef = collection(db, 'shops', activeShopId, 'expenses');
+                const expQ = query(expRef, where('relatedProductId', '==', id));
+                const expSnap = await getDocs(expQ);
+                expSnap.forEach(async d => {
+                    await updateDoc(doc(db, 'shops', activeShopId, 'expenses', d.id), { 
+                        relatedProductId: newDocId 
+                    });
+                });
+                
                 showStatus(`✅ Barcode updated: ${oldBarcode} → ${newBarcode}`, 'success');
             } catch (err) {
-                showStatus('❌ Barcode update failed', 'error');
+                console.error('Barcode update error:', err);
+                showStatus('❌ Barcode update failed: ' + err.message, 'error');
                 renderTable();
             }
         }
@@ -999,7 +1066,8 @@ function openEditModal(product) {
         'edit-product-id': product.id, 
         'edit-name': product.name, 
         'edit-category': product.category,
-        'edit-remark': product.remark,
+        'edit-size': product.extraField1 || '',
+        'edit-color': product.extraField2 || '',
         'edit-cp': product.costPrice, 
         'edit-sp': product.sellingPrice, 
         'edit-stock': product.stock,
@@ -1052,17 +1120,25 @@ async function handleEditFormSubmit(e) {
     const imageInput = document.getElementById('edit-image');
     const newName = document.getElementById('edit-name').value.trim();
     const newCategory = document.getElementById('edit-category').value.trim();
-    const newRemark = document.getElementById('edit-remark').value.trim();
+    const newSize = document.getElementById('edit-size').value.trim();
+    const newColor = document.getElementById('edit-color').value.trim();
     const newCP = parseFloat(document.getElementById('edit-cp').value);
     const newSP = parseFloat(document.getElementById('edit-sp').value);
     const newStock = parseInt(document.getElementById('edit-stock').value, 10);
     const newBarcode = document.getElementById('edit-barcode').value.trim();
 
-    // Barcode duplicate check
+    // Barcode duplicate check with color suffix
     if (newBarcode) {
-        const existing = allProducts.find(p => p.id === newBarcode && p.id !== id);
+        // Generate new document ID with color suffix if exists
+        let newDocId = newBarcode;
+        if (newColor) {
+            const colorSuffix = newColor.trim().toUpperCase().replace(/\s+/g, '_');
+            newDocId = `${newBarcode}_${colorSuffix}`;
+        }
+        
+        const existing = allProducts.find(p => p.id === newDocId && p.id !== id);
         if (existing) {
-            showStatus(`❌ Barcode "${newBarcode}" already used by "${existing.name}"`, 'error');
+            showStatus(`❌ Barcode+Color combination "${newBarcode}" + "${newColor}" already used by "${existing.name}"`, 'error');
             return;
         }
     }
@@ -1079,7 +1155,8 @@ async function handleEditFormSubmit(e) {
         const data = {
             name: newName,
             category: newCategory,
-            remark: newRemark,
+            extraField1: newSize,
+            extraField2: newColor,
             costPrice: newCP,
             sellingPrice: newSP,
             stock: newStock,
@@ -1100,11 +1177,19 @@ async function handleEditFormSubmit(e) {
 
         // Barcode change হলে — নতুন doc বানাও, পুরনোটা delete করো
         if (newBarcode && newBarcode !== id) {
-            const newRef = doc(db, 'shops', activeShopId, 'inventory', newBarcode);
+            // Generate new document ID with color suffix if color exists
+            let newDocId = newBarcode;
+            if (newColor) {
+                const colorSuffix = newColor.trim().toUpperCase().replace(/\s+/g, '_');
+                newDocId = `${newBarcode}_${colorSuffix}`;
+            }
+            
+            const newRef = doc(db, 'shops', activeShopId, 'inventory', newDocId);
             data.barcode = newBarcode;
             data.name = newName;
             data.category = newCategory;
-            data.remark = newRemark;
+            data.extraField1 = newSize;
+            data.extraField2 = newColor;
             data.costPrice = newCP;
             data.sellingPrice = newSP;
             data.stock = newStock;
@@ -1117,7 +1202,7 @@ async function handleEditFormSubmit(e) {
             const expQ = query(expRef, where('relatedProductId', '==', id));
             const expSnap = await getDocs(expQ);
             expSnap.forEach(async d => {
-                await updateDoc(doc(db, 'shops', activeShopId, 'expenses', d.id), { relatedProductId: newBarcode });
+                await updateDoc(doc(db, 'shops', activeShopId, 'expenses', d.id), { relatedProductId: newDocId });
             });
         } else {
             await updateDoc(productRef, data);
