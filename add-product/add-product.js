@@ -163,6 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update AI Prompt based on mode
         updateAIPrompt(mode);
 
+        // SKU generator panel - clothing mode e show, otherwise hide
+        const skuPanel = document.getElementById('sku-generator-panel');
+        if (skuPanel) skuPanel.style.display = mode === 'clothing' ? 'block' : 'none';
+
         window.currentActiveMode = mode;
         showStatus(`✅ Table mode changed to ${mode.toUpperCase()}`, 'success');
     }
@@ -360,11 +364,49 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Barcode → trim whitespace
+        // Barcode → trim whitespace + real-time duplicate check + autofill on blur
         const barcodeInput = row.querySelector('.product-barcode');
         if (barcodeInput) {
             barcodeInput.addEventListener('blur', function() {
                 this.value = this.value.trim();
+                barcodeAutoFill(this.value, row);
+            });
+
+            // Duplicate check message element
+            let dupMsg = row.querySelector('.barcode-dup-msg');
+            if (!dupMsg) {
+                dupMsg = document.createElement('div');
+                dupMsg.className = 'barcode-dup-msg';
+                dupMsg.style.cssText = 'display:none; margin-top:4px; padding:6px 10px; background:#fff5f5; border:1px solid #fecaca; border-radius:6px; font-size:12px; color:#dc2626; font-weight:600;';
+                barcodeInput.parentElement.appendChild(dupMsg);
+            }
+
+            let barcodeDebounceTimer;
+            barcodeInput.addEventListener('input', function() {
+                const val = this.value.trim();
+                dupMsg.style.display = 'none';
+                clearTimeout(barcodeDebounceTimer);
+                if (!val || !activeShopId) return;
+
+                // Check other rows instantly (no DB call)
+                const otherRows = Array.from(productsTbody.querySelectorAll('tr')).filter(r => r !== row);
+                const inTableDup = otherRows.find(r => r.querySelector('.product-barcode')?.value.trim() === val);
+                if (inTableDup) {
+                    dupMsg.textContent = `⚠️ Ei table-e arekti row-e ei barcode ache`;
+                    dupMsg.style.display = 'block';
+                    return;
+                }
+
+                // Firestore check with 500ms debounce
+                barcodeDebounceTimer = setTimeout(async () => {
+                    try {
+                        const productSnap = await getDoc(doc(db, 'shops', activeShopId, 'inventory', val));
+                        if (productSnap.exists()) {
+                            dupMsg.textContent = `❌ Duplicate! "${productSnap.data().name}" te already ei barcode ache`;
+                            dupMsg.style.display = 'block';
+                        }
+                    } catch (e) { /* ignore */ }
+                }, 500);
             });
         }
 
@@ -661,8 +703,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function uploadImageToImgBB(file) {
+        // Compress image before upload (max 800px, 0.8 quality)
+        const compressed = await new Promise(resolve => {
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                const MAX = 800;
+                let w = img.width, h = img.height;
+                if (w > MAX || h > MAX) {
+                    if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                    else { w = Math.round(w * MAX / h); h = MAX; }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                URL.revokeObjectURL(url);
+                canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', 0.8);
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+            img.src = url;
+        });
+
         const formData = new FormData();
-        formData.append('image', file);
+        formData.append('image', compressed);
 
         try {
             const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
@@ -710,55 +773,137 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // বারকোড ইনপুট দিলে অটো-ফিল করার লজিক (শুধু barcode match, color ignore)
+    // Barcode autofill function (reusable)
+    async function barcodeAutoFill(barcode, row) {
+        if (!barcode || !activeShopId) return;
+        try {
+            // First try direct doc lookup (barcode = docId)
+            let data = null;
+            const directSnap = await getDoc(doc(db, 'shops', activeShopId, 'inventory', barcode));
+            if (directSnap.exists()) {
+                data = directSnap.data();
+            } else {
+                // Fallback: query by barcode field (clothing mode uses barcode_COLOR as docId)
+                const { getDocs, query: fsQuery, where } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+                const q = fsQuery(collection(db, 'shops', activeShopId, 'inventory'), where('barcode', '==', barcode));
+                const snap = await getDocs(q);
+                if (!snap.empty) data = snap.docs[0].data();
+            }
+
+            if (data) {
+                row.querySelector('.product-name').value = data.name || '';
+                row.querySelector('.product-category').value = data.category || '';
+                row.querySelector('.product-cp').value = data.costPrice || 0;
+                row.querySelector('.product-sp').value = data.sellingPrice || 0;
+                if (row.querySelector('.dynamic-input-1')) row.querySelector('.dynamic-input-1').value = data.extraField1 || '';
+                if (row.querySelector('.dynamic-input-2')) row.querySelector('.dynamic-input-2').value = data.extraField2 || '';
+                row.style.backgroundColor = '#e8f5e9';
+                showStatus(`Product "${data.name}" found! You can change color/size if needed.`, 'success');
+                row.querySelector('.product-name').readOnly = true;
+                row.querySelector('.product-category').readOnly = true;
+            } else {
+                row.style.backgroundColor = '';
+                row.querySelector('.product-name').readOnly = false;
+                row.querySelector('.product-category').readOnly = false;
+            }
+        } catch (error) {
+            console.error("Error fetching product:", error);
+        }
+    }
+
+    // Barcode change event (focus lost or scanner)
     productsTbody.addEventListener('change', async (e) => {
         if (e.target.classList.contains('product-barcode')) {
-            const barcode = e.target.value.trim();
-            const row = e.target.closest('tr');
-            
-            if (barcode && activeShopId) {
-                try {
-                    // ডাটাবেস থেকে প্রোডাক্ট চেক করা
-                    const productRef = doc(db, 'shops', activeShopId, 'inventory', barcode);
-                    const productSnap = await getDoc(productRef);
-
-                    if (productSnap.exists()) {
-                        const data = productSnap.data();
-                        
-                        // পুরনো তথ্য দিয়ে ফিল্ডগুলো অটো-ফিল করা (শুধু reference, color manually change করা যাবে)
-                        row.querySelector('.product-name').value = data.name || '';
-                        row.querySelector('.product-category').value = data.category || '';
-                        row.querySelector('.product-cp').value = data.costPrice || 0;
-                        row.querySelector('.product-sp').value = data.sellingPrice || 0;
-                        
-                        // Extra fields ভরা (ইউজার manually color change করতে পারবে)
-                        if (row.querySelector('.dynamic-input-1')) row.querySelector('.dynamic-input-1').value = data.extraField1 || '';
-                        if (row.querySelector('.dynamic-input-2')) row.querySelector('.dynamic-input-2').value = data.extraField2 || '';
-                        
-                        // ইউজারকে বোঝানোর জন্য রো-এর রঙ পরিবর্তন (হালকা সবুজ)
-                        row.style.backgroundColor = '#e8f5e9'; 
-                        showStatus(`Product "${data.name}" found! You can change color/size if needed.`, 'success');
-                        
-                        // নাম এবং ক্যাটাগরি লক করে দেওয়া যাতে ভুল না হয়
-                        row.querySelector('.product-name').readOnly = true;
-                        row.querySelector('.product-category').readOnly = true;
-                    } else {
-                        // যদি নতুন বারকোড হয়, তবে লক খুলে দেওয়া এবং রঙ রিসেট করা
-                        row.style.backgroundColor = '';
-                        row.querySelector('.product-name').readOnly = false;
-                        row.querySelector('.product-category').readOnly = false;
-                    }
-                } catch (error) {
-                    console.error("Error fetching product:", error);
-                }
-            }
+            await barcodeAutoFill(e.target.value.trim(), e.target.closest('tr'));
         }
     });
 
     addRowBtn.addEventListener('click', () => {
         addProductRow();
-        calculateTotalCP(); // নতুন রো যোগ হলে টোটাল আপডেট
+        calculateTotalCP();
     });
+
+    // --- SKU Variation Generator ---
+    const btnGenerateSKU = document.getElementById('btn-generate-sku');
+    let skuSizeIndex = 0; // track kora hobe kon size er turn
+
+    if (btnGenerateSKU) {
+        btnGenerateSKU.addEventListener('click', () => {
+            const sizesRaw = document.getElementById('sku-sizes').value.trim();
+            const colorsRaw = document.getElementById('sku-colors').value.trim();
+            const qtyEach = parseInt(document.getElementById('sku-qty').value) || 1;
+
+            if (!colorsRaw) { alert('Color er list dite hobe!'); return; }
+
+            const sizes = sizesRaw ? sizesRaw.split(',').map(s => s.trim()).filter(Boolean) : [''];
+            const colors = colorsRaw.split(',').map(c => c.trim()).filter(Boolean);
+
+            // First row theke product info nao
+            const firstRow = productsTbody.querySelector('tr');
+            if (!firstRow || !firstRow.querySelector('.product-name').value.trim()) {
+                alert('Prothome first row e product name, CP, SP fill koro!');
+                return;
+            }
+
+            const baseInfo = {
+                name: firstRow.querySelector('.product-name').value.trim(),
+                category: firstRow.querySelector('.product-category').value.trim(),
+                cp: firstRow.querySelector('.product-cp').value,
+                sp: firstRow.querySelector('.product-sp').value,
+                baseRate: firstRow.querySelector('.product-base-rate')?.value || '',
+                gst: firstRow.querySelector('.product-gst')?.value || '',
+                disc: firstRow.querySelector('.product-disc')?.value || '',
+            };
+
+            if (!baseInfo.cp) { alert('First row e CP fill koro!'); return; }
+
+            // Reset index if sizes changed or all done
+            if (skuSizeIndex >= sizes.length) skuSizeIndex = 0;
+
+            const currentSize = sizes[skuSizeIndex];
+
+            // Add colors for this size
+            colors.forEach(color => {
+                addProductRow();
+                const newRow = productsTbody.querySelector('tr:last-child');
+                newRow.querySelector('.product-name').value = baseInfo.name;
+                newRow.querySelector('.product-category').value = baseInfo.category;
+                if (newRow.querySelector('.product-base-rate')) newRow.querySelector('.product-base-rate').value = baseInfo.baseRate;
+                if (newRow.querySelector('.product-gst')) newRow.querySelector('.product-gst').value = baseInfo.gst;
+                if (newRow.querySelector('.product-disc')) newRow.querySelector('.product-disc').value = baseInfo.disc;
+                newRow.querySelector('.product-cp').value = baseInfo.cp;
+                newRow.querySelector('.product-sp').value = baseInfo.sp;
+                newRow.querySelector('.product-stock').value = qtyEach;
+                newRow.querySelector('.dynamic-input-1').value = currentSize;
+                newRow.querySelector('.dynamic-input-2').value = color;
+                newRow.querySelector('.product-barcode').value = '';
+                newRow.style.backgroundColor = '#fce4ec';
+                setTimeout(() => newRow.style.backgroundColor = '', 1500);
+            });
+
+            skuSizeIndex++;
+
+            // Button label update
+            const nextSize = sizes[skuSizeIndex] || sizes[0];
+            btnGenerateSKU.textContent = skuSizeIndex < sizes.length
+                ? `⚡ Add "${nextSize}" (${colors.length} colors)`
+                : `⚡ Add "${sizes[0]}" again`;
+
+            calculateTotalCP();
+            saveTableToLocal();
+            showStatus(`✅ "${currentSize}" size er ${colors.length}ti color row add hoyeche!`, 'success');
+        });
+
+        // Size/color input change hole button reset koro
+        ['sku-sizes', 'sku-colors'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', () => {
+                skuSizeIndex = 0;
+                const sizesRaw = document.getElementById('sku-sizes').value.trim();
+                const sizes = sizesRaw ? sizesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+                btnGenerateSKU.textContent = sizes.length > 0 ? `⚡ Add "${sizes[0]}" colors` : '⚡ Generate Rows';
+            });
+        });
+    }
 
     // --- Auto-save on input change ---
     productsTbody.addEventListener('input', saveTableToLocal);
@@ -1316,7 +1461,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const saveButton = form.querySelector('button[type="submit"]');
+        const saveButton = form.querySelector('button[type="submit"]') || document.querySelector('button[type="submit"][form="add-products-form"]');
         saveButton.disabled = true;
         saveButton.textContent = 'Uploading Images & Saving...';
         
@@ -1328,11 +1473,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const productsToProcess = [];
-        let allRowsValid = true;
+        const invalidRows = [];
 
         for (const row of rows) {
-            if (!allRowsValid) break;
-
             const name = row.querySelector('.product-name').value.trim();
             if (name) {
                 const category = row.querySelector('.product-category').value.trim();
@@ -1346,7 +1489,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const stock = parseInt(row.querySelector('.product-stock').value, 10);
                 const imageInput = row.querySelector('.product-image');
                 
-                // Grocery mode-এ full name তৈরি: Brand + Name + Weight
                 const currentMode = window.currentActiveMode || 'general';
                 let finalName = name;
                 if (currentMode === 'grocery' && extra1 && extra2) {
@@ -1354,44 +1496,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 if (!category || isNaN(cp) || isNaN(sp) || isNaN(stock) || cp < 0 || sp < 0 || stock < 0) {
-                    allRowsValid = false;
-                } else {
-                    let imageUrl = null;
-                    if (imageInput.files && imageInput.files[0]) {
-                        try {
-                            saveButton.textContent = `Uploading image for ${finalName}...`;
-                            imageUrl = await uploadImageToImgBB(imageInput.files[0]);
-                        } catch (err) {
-                            console.error("Failed to upload image for " + finalName);
-                        }
-                    } else {
-                        const urlInput = row.querySelector('.product-image-url');
-                        if (urlInput && urlInput.value.trim()) {
-                            imageUrl = urlInput.value.trim();
-                        }
-                    }
-
-                    productsToProcess.push({ 
-                        name: finalName, 
-                        category,
-                        extraField1: extra1,
-                        extraField2: extra2,
-                        extraField3: extra3,
-                        extraField4: extra4,
-                        costPrice: cp, 
-                        sellingPrice: sp, 
-                        stock, 
-                        barcode,
-                        imageUrl: imageUrl
-                    });
+                    invalidRows.push(finalName);
+                    continue; // skip this row, process others
                 }
+
+                let imageUrl = null;
+                if (imageInput.files && imageInput.files[0]) {
+                    try {
+                        saveButton.textContent = `Uploading image for ${finalName}...`;
+                        imageUrl = await uploadImageToImgBB(imageInput.files[0]);
+                    } catch (err) {
+                        console.error("Failed to upload image for " + finalName);
+                    }
+                } else {
+                    const urlInput = row.querySelector('.product-image-url');
+                    if (urlInput && urlInput.value.trim()) {
+                        imageUrl = urlInput.value.trim();
+                    }
+                }
+
+                productsToProcess.push({ 
+                    name: finalName, 
+                    category,
+                    extraField1: extra1,
+                    extraField2: extra2,
+                    extraField3: extra3,
+                    extraField4: extra4,
+                    costPrice: cp, 
+                    sellingPrice: sp, 
+                    stock, 
+                    barcode,
+                    imageUrl: imageUrl
+                });
             }
         }
 
-        if (!allRowsValid || productsToProcess.length === 0) {
-            showStatus('Error: Please fill all fields correctly.', 'error');
-            saveButton.disabled = false; saveButton.textContent = 'Save All Products';
-            return;
+        if (invalidRows.length > 0) {
+            showStatus(`⚠️ ${invalidRows.length}ti row skip hoyeche (incomplete): ${invalidRows.slice(0,3).join(', ')}`, 'warning');
         }
         
         saveButton.textContent = 'Saving to Database...';

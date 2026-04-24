@@ -20,8 +20,9 @@
                     <h1>📦 Add New Products</h1>
                     <p>Fill the table below to add multiple products at once.</p>
                 </div>
-                <div class="action-buttons-top">
-                    <button type="button" id="btn-clear-all" class="btn btn-danger-outline">🗑️ Clear All</button>
+                <div class="action-buttons-top" style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
+                    <button type="submit" form="add-products-form" class="btn btn-save-all" style="padding:10px 20px; font-size:14px; white-space:nowrap;">🚀 Save All</button>
+                    <button type="button" id="btn-clear-all" class="btn btn-danger-outline" style="white-space:nowrap;">🗑️ Clear All</button>
                 </div>
             </div>
             
@@ -66,6 +67,29 @@
 
                 <div class="table-footer-actions">
                     <button type="button" id="add-row-btn" class="btn btn-secondary-light">➕ Add More Rows</button>
+                </div>
+
+                <!-- SKU Variation Generator (Clothing Mode Only) -->
+                <div id="sku-generator-panel" style="display:none; margin: 15px 0; background: linear-gradient(135deg, #fce4ec, #f8bbd0); padding: 18px; border-radius: 10px; border: 2px solid #e83e8c;">
+                    <h3 style="margin: 0 0 12px 0; color: #880e4f; font-size: 15px;">👗 SKU Variation Generator — Size × Color theke auto rows banao</h3>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                        <div style="flex:1; min-width:200px;">
+                            <label style="font-size:12px; font-weight:600; color:#880e4f; display:block; margin-bottom:4px;">Sizes (comma diye alag koro)</label>
+                            <input type="text" id="sku-sizes" placeholder="e.g. S, M, L, XL, XXL" style="width:100%; padding:8px; border:1px solid #e83e8c; border-radius:6px; font-size:13px; box-sizing:border-box;">
+                        </div>
+                        <div style="flex:1; min-width:200px;">
+                            <label style="font-size:12px; font-weight:600; color:#880e4f; display:block; margin-bottom:4px;">Colors (comma diye alag koro)</label>
+                            <input type="text" id="sku-colors" placeholder="e.g. Red, Blue, Black, White" style="width:100%; padding:8px; border:1px solid #e83e8c; border-radius:6px; font-size:13px; box-sizing:border-box;">
+                        </div>
+                        <div style="min-width:80px;">
+                            <label style="font-size:12px; font-weight:600; color:#880e4f; display:block; margin-bottom:4px;">Qty each</label>
+                            <input type="number" id="sku-qty" value="1" min="1" style="width:80px; padding:8px; border:1px solid #e83e8c; border-radius:6px; font-size:13px;">
+                        </div>
+                        <button type="button" id="btn-generate-sku" style="padding:9px 18px; background:#e83e8c; color:white; border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px; white-space:nowrap;">
+                            ⚡ Generate Rows
+                        </button>
+                    </div>
+                    <p style="margin:8px 0 0 0; font-size:11px; color:#880e4f; opacity:0.8;">💡 First row er product info (name, CP, SP, category) sob variation e copy hobe. Barcode auto-generate hobe.</p>
                 </div>
 
                 <!-- Total CP Calculator -->

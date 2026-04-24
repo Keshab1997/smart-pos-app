@@ -507,6 +507,13 @@ body {
     font-size: 1.1rem; 
 }
 
+/* Stat skeleton loading */
+@keyframes statPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+}
+.stat-skeleton { animation: statPulse 1.2s ease-in-out infinite; }
+
 /* Product Thumbnail */
 .product-thumb {
     width: 40px; 

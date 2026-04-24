@@ -49,15 +49,22 @@ window.calculateInventoryStats = function() {
     const potentialProfit = totalSaleValuation - totalCostValuation;
 
     // Update UI
-    if(statItems) statItems.innerText = `${totalProducts} Items (${totalStock} Qty)`;
-    if(statValue) statValue.innerText = `₹${totalCostValuation.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+    if(statItems) { statItems.innerText = `${totalProducts} Items (${totalStock} Qty)`; statItems.classList.remove('stat-skeleton'); }
+    if(statValue) { statValue.innerText = `₹${totalCostValuation.toLocaleString('en-IN', {minimumFractionDigits: 2})}`; statValue.classList.remove('stat-skeleton'); }
     
     // নতুন ফিল্ডগুলো আপডেট
     const statSaleVal = document.getElementById('stat-total-sale-value');
     const statProfit = document.getElementById('stat-potential-profit');
     
-    if(statSaleVal) statSaleVal.innerText = `₹${totalSaleValuation.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-    if(statProfit) statProfit.innerText = `₹${potentialProfit.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+    if(statSaleVal) { statSaleVal.innerText = `₹${totalSaleValuation.toLocaleString('en-IN', {minimumFractionDigits: 2})}`; statSaleVal.classList.remove('stat-skeleton'); }
+    if(statProfit) { statProfit.innerText = `₹${potentialProfit.toLocaleString('en-IN', {minimumFractionDigits: 2})}`; statProfit.classList.remove('stat-skeleton'); }
+
+    const lowStockCount = allProducts.filter(p => (parseInt(p.stock) || 0) > 0 && (parseInt(p.stock) || 0) <= 5).length;
+    const statLowStock = document.getElementById('stat-low-stock');
+    if (statLowStock) {
+        statLowStock.textContent = `${lowStockCount} items`;
+        statLowStock.style.color = lowStockCount > 0 ? '#ffd700' : '#00ff88';
+    }
 };
 
 // Initial load এর জন্য একবার call করা

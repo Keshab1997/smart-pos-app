@@ -73,6 +73,7 @@ let isLoadingMore = false;
 let hasMoreProducts = true;
 let hasEventListenersSetup = false;
 let hideStockOut = false;
+let sortField = null, sortAsc = true;
 
 // Authentication
 onAuthStateChanged(auth, (user) => {
@@ -140,6 +141,11 @@ async function loadInventory() {
         lastVisible = snapshot.docs[snapshot.docs.length - 1];
         hasMoreProducts = snapshot.docs.length === FIRESTORE_PAGE_SIZE;
         
+        // If more products exist, load all for accurate stats
+        if (hasMoreProducts) {
+            loadAllForStats();
+        }
+        
         updateCategoryStats();
         applyFiltersAndRender(false);
         
@@ -149,6 +155,20 @@ async function loadInventory() {
     } catch (error) {
         console.error('Error loading inventory:', error);
         showStatus('Failed to load inventory', 'error');
+    }
+}
+
+async function loadAllForStats() {
+    try {
+        const productsRef = collection(db, 'shops', activeShopId, 'inventory');
+        const snapshot = await getDocs(query(productsRef));
+        allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        lastVisible = snapshot.docs[snapshot.docs.length - 1];
+        hasMoreProducts = false;
+        updateCategoryStats();
+        applyFiltersAndRender(false);
+    } catch (e) {
+        console.error('loadAllForStats error:', e);
     }
 }
 
@@ -321,12 +341,25 @@ function applyFiltersAndRender(resetPage = true) {
         return matchesSearch && matchesCategory && matchesStock && matchesDate;
     });
     
-    // বারকোড অনুযায়ী সিরিয়াল সর্ট
-    filteredProducts.sort((a, b) => {
-        const barcodeA = String(a.barcode || "0");
-        const barcodeB = String(b.barcode || "0");
-        return barcodeA.localeCompare(barcodeB, undefined, { numeric: true });
-    });
+    // Sort
+    if (sortField) {
+        filteredProducts.sort((a, b) => {
+            let va = a[sortField], vb = b[sortField];
+            if (sortField === 'name') {
+                va = (va || '').toLowerCase(); vb = (vb || '').toLowerCase();
+                return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+            }
+            va = parseFloat(va) || 0; vb = parseFloat(vb) || 0;
+            return sortAsc ? va - vb : vb - va;
+        });
+    } else {
+        // default: barcode sort
+        filteredProducts.sort((a, b) => {
+            const barcodeA = String(a.barcode || "0");
+            const barcodeB = String(b.barcode || "0");
+            return barcodeA.localeCompare(barcodeB, undefined, { numeric: true });
+        });
+    }
     
     renderTable();
     setupPagination();
@@ -434,73 +467,131 @@ function renderTable() {
     const start = (currentPage - 1) * ROWS_PER_PAGE;
     const paginated = filteredProducts.slice(start, start + ROWS_PER_PAGE);
     
-    inventoryBody.innerHTML = paginated.length === 0 
-        ? '<tr><td colspan="10" class="loading-cell">No products found.</td></tr>'
-        : paginated.map(p => {
-            const stock = parseInt(p.stock) || 0;
-            const cp = parseFloat(p.costPrice) || 0;
-            const sp = parseFloat(p.sellingPrice) || 0;
-            
-            // Profit calculation
-            const profit = sp - cp;
-            const margin = cp > 0 ? ((profit / cp) * 100).toFixed(1) : 0;
+    if (paginated.length === 0) {
+        inventoryBody.innerHTML = '<tr><td colspan="10" class="loading-cell">No products found.</td></tr>';
+        return;
+    }
 
-            // Stock color logic
-            let stockClass = "stock-healthy";
-            if (stock === 0) stockClass = "stock-critical";
-            else if (stock <= 5) stockClass = "stock-low";
+    // Group by name - same naam + same category = same group
+    const groups = {};
+    paginated.forEach(p => {
+        const key = `${(p.name || '').trim().toUpperCase()}__${(p.category || '').trim().toUpperCase()}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(p);
+    });
 
-            const imgHtml = p.imageUrl 
-                ? `<img src="${p.imageUrl}" class="product-thumb" data-name="${p.name}" data-src="${p.imageUrl}" alt="img">` 
+    const rows = [];
+    Object.values(groups).forEach(group => {
+        const isClothing = group.some(p => p.extraField1 || p.extraField2);
+        const isGroup = group.length > 1 && isClothing;
+
+        if (isGroup) {
+            // Parent row - naam + total stock
+            const totalStock = group.reduce((s, p) => s + (parseInt(p.stock) || 0), 0);
+            const firstP = group[0];
+            const imgHtml = firstP.imageUrl
+                ? `<img src="${firstP.imageUrl}" class="product-thumb" data-name="${firstP.name}" data-src="${firstP.imageUrl}" alt="img">`
                 : `<span style="font-size:12px; color:#999; display:inline-block; width:40px; text-align:center;">No Img</span>`;
+            
+            rows.push(`<tr style="background:#f0f4ff; border-left:4px solid #4361ee;">
+                <td><input type="checkbox" class="product-checkbox" data-id="${firstP.id}"></td>
+                <td style="text-align:center;">${imgHtml}</td>
+                <td><strong>${firstP.name || 'N/A'}</strong> <span style="font-size:11px; color:#4361ee; font-weight:600;">(${group.length} variants)</span></td>
+                <td>${firstP.category || 'N/A'}</td>
+                <td style="text-align:center;"><span style="font-size:11px; color:#666;">Size × Color</span></td>
+                <td>—</td>
+                <td>—</td>
+                <td class="stock-cell"><strong style="color:#4361ee;">${totalStock}</strong></td>
+                <td>—</td>
+                <td>—</td>
+                <td></td>
+            </tr>`);
 
-            // Size/Color display (extraField1 = Size, extraField2 = Color)
-            const sizeColorHtml = (() => {
+            // Child rows
+            group.forEach(p => {
+                const stock = parseInt(p.stock) || 0;
+                const cp = parseFloat(p.costPrice) || 0;
+                const sp = parseFloat(p.sellingPrice) || 0;
+                const margin = cp > 0 ? ((sp - cp) / cp * 100).toFixed(1) : 0;
+                let stockClass = stock === 0 ? 'stock-critical' : stock <= 5 ? 'stock-low' : '';
                 const size = p.extraField1 || '';
                 const color = p.extraField2 || '';
-                if (size && color) {
-                    return `<span style="display:inline-block; padding:3px 8px; background:#e0f2fe; border-radius:4px; font-size:12px; font-weight:600; color:#0369a1; margin-right:4px;">${size}</span><span style="display:inline-block; padding:3px 8px; background:#fce7f3; border-radius:4px; font-size:12px; font-weight:600; color:#be185d;">${color}</span>`;
-                } else if (size) {
-                    return `<span style="display:inline-block; padding:3px 8px; background:#e0f2fe; border-radius:4px; font-size:12px; font-weight:600; color:#0369a1;">${size}</span>`;
-                } else if (color) {
-                    return `<span style="display:inline-block; padding:3px 8px; background:#fce7f3; border-radius:4px; font-size:12px; font-weight:600; color:#be185d;">${color}</span>`;
-                } else {
-                    return `<span style="color:#999; font-size:12px;">—</span>`;
-                }
-            })();
+                const sizeColorHtml = [
+                    size ? `<span style="padding:2px 7px; background:#e0f2fe; border-radius:4px; font-size:12px; font-weight:600; color:#0369a1;">${size}</span>` : '',
+                    color ? `<span style="padding:2px 7px; background:#fce7f3; border-radius:4px; font-size:12px; font-weight:600; color:#be185d;">${color}</span>` : ''
+                ].filter(Boolean).join(' ');
 
-            return `
-            <tr class="${stockClass}">
-                <td><input type="checkbox" class="product-checkbox" data-id="${p.id}"></td>
-                <td style="text-align: center;">${imgHtml}</td>
-                <td>${p.name || 'N/A'}</td>
-                <td>${p.category || 'N/A'}</td>
-                <td style="text-align: center;">${sizeColorHtml}</td>
-                <td>${cp.toFixed(2)}</td>
-                <td>
-                    ${sp.toFixed(2)}
-                    <br><small style="color: #28a745; font-weight: bold;">Margin: ${margin}%</small>
-                </td>
-                <td class="stock-cell"><strong>${stock}</strong></td>
-                <td class="barcode-cell" data-id="${p.id}" data-barcode="${p.barcode || ''}" title="Click to edit barcode" style="cursor:pointer;">
-                    <span class="barcode-display">${p.barcode || '<span style="color:#ccc;">—</span>'}</span>
-                </td>
-                <td style="font-size:11px; color:#666; white-space:nowrap;">${(() => {
-                let date = null;
-                if (p.createdAt) {
-                    if (p.createdAt.seconds) date = new Date(p.createdAt.seconds * 1000);
-                    else if (p.createdAt instanceof Date) date = p.createdAt;
-                    else if (typeof p.createdAt === 'string') date = new Date(p.createdAt);
-                }
-                return date && !isNaN(date.getTime()) ? date.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : '—';
-            })()}</td>
-                <td class="action-buttons">
-                    <button class="btn btn-sm btn-edit" data-id="${p.id}" title="Edit">Edit</button>
-                    <button class="btn btn-sm btn-delete" data-id="${p.id}" title="Delete">Delete</button>
-                    <button class="btn btn-sm btn-print" onclick="openPrintPage('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.sellingPrice}')" title="Print Barcode">Print</button>
-                </td>
-            </tr>`;
-        }).join('');
+                rows.push(`<tr class="${stockClass}" style="background:#fafbff;">
+                    <td><input type="checkbox" class="product-checkbox" data-id="${p.id}"></td>
+                    <td style="text-align:center;">${p.imageUrl ? `<img src="${p.imageUrl}" class="product-thumb" data-name="${p.name}" data-src="${p.imageUrl}" alt="img" style="width:32px;height:32px;object-fit:cover;border-radius:4px;">` : ''}</td>
+                    <td style="padding-left:24px; color:#666; font-size:13px;">↳ ${p.name || ''}</td>
+                    <td></td>
+                    <td style="text-align:center;">${sizeColorHtml || '<span style="color:#999;">—</span>'}</td>
+                    <td>${cp.toFixed(2)}</td>
+                    <td>${sp.toFixed(2)}<br><small style="color:#28a745; font-weight:bold;">Margin: ${margin}%</small></td>
+                    <td class="stock-cell"><strong>${stock}</strong></td>
+                    <td class="barcode-cell" data-id="${p.id}" data-barcode="${p.barcode || ''}" title="Click to edit barcode" style="cursor:pointer;">
+                        <span class="barcode-display">${p.barcode || '<span style="color:#ccc;">—</span>'}</span>
+                    </td>
+                    <td></td>
+                    <td class="action-buttons">
+                        <button class="btn btn-sm btn-edit" data-id="${p.id}">Edit</button>
+                        <button class="btn btn-sm btn-delete" data-id="${p.id}">Delete</button>
+                        <button class="btn btn-sm btn-print" onclick="openPrintPage('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.sellingPrice}')">Print</button>
+                    </td>
+                </tr>`);
+            });
+        } else {
+            // Single product - normal row
+            group.forEach(p => {
+                const stock = parseInt(p.stock) || 0;
+                const cp = parseFloat(p.costPrice) || 0;
+                const sp = parseFloat(p.sellingPrice) || 0;
+                const margin = cp > 0 ? ((sp - cp) / cp * 100).toFixed(1) : 0;
+                let stockClass = stock === 0 ? 'stock-critical' : stock <= 5 ? 'stock-low' : 'stock-healthy';
+                const imgHtml = p.imageUrl
+                    ? `<img src="${p.imageUrl}" class="product-thumb" data-name="${p.name}" data-src="${p.imageUrl}" alt="img">`
+                    : `<span style="font-size:12px; color:#999; display:inline-block; width:40px; text-align:center;">No Img</span>`;
+                const size = p.extraField1 || '', color = p.extraField2 || '';
+                const sizeColorHtml = size && color
+                    ? `<span style="padding:3px 8px; background:#e0f2fe; border-radius:4px; font-size:12px; font-weight:600; color:#0369a1; margin-right:4px;">${size}</span><span style="padding:3px 8px; background:#fce7f3; border-radius:4px; font-size:12px; font-weight:600; color:#be185d;">${color}</span>`
+                    : size ? `<span style="padding:3px 8px; background:#e0f2fe; border-radius:4px; font-size:12px; font-weight:600; color:#0369a1;">${size}</span>`
+                    : color ? `<span style="padding:3px 8px; background:#fce7f3; border-radius:4px; font-size:12px; font-weight:600; color:#be185d;">${color}</span>`
+                    : `<span style="color:#999; font-size:12px;">—</span>`;
+                const dateStr = (() => {
+                    let date = null;
+                    if (p.createdAt) {
+                        if (p.createdAt.seconds) date = new Date(p.createdAt.seconds * 1000);
+                        else if (p.createdAt instanceof Date) date = p.createdAt;
+                        else if (typeof p.createdAt === 'string') date = new Date(p.createdAt);
+                    }
+                    return date && !isNaN(date.getTime()) ? date.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : '—';
+                })();
+
+                rows.push(`<tr class="${stockClass}">
+                    <td><input type="checkbox" class="product-checkbox" data-id="${p.id}"></td>
+                    <td style="text-align:center;">${imgHtml}</td>
+                    <td>${p.name || 'N/A'}</td>
+                    <td>${p.category || 'N/A'}</td>
+                    <td style="text-align:center;">${sizeColorHtml}</td>
+                    <td>${cp.toFixed(2)}</td>
+                    <td>${sp.toFixed(2)}<br><small style="color:#28a745; font-weight:bold;">Margin: ${margin}%</small></td>
+                    <td class="stock-cell"><strong>${stock}</strong></td>
+                    <td class="barcode-cell" data-id="${p.id}" data-barcode="${p.barcode || ''}" title="Click to edit barcode" style="cursor:pointer;">
+                        <span class="barcode-display">${p.barcode || '<span style="color:#ccc;">—</span>'}</span>
+                    </td>
+                    <td style="font-size:11px; color:#666; white-space:nowrap;">${dateStr}</td>
+                    <td class="action-buttons">
+                        <button class="btn btn-sm btn-edit" data-id="${p.id}">Edit</button>
+                        <button class="btn btn-sm btn-delete" data-id="${p.id}">Delete</button>
+                        <button class="btn btn-sm btn-print" onclick="openPrintPage('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.sellingPrice}')">Print</button>
+                    </td>
+                </tr>`);
+            });
+        }
+    });
+
+    inventoryBody.innerHTML = rows.join('');
 }
 
 function updateCategoryFilter(categoryStats, selectedValue, stockOutCount = 0) {
@@ -635,6 +726,19 @@ function setupPagination() {
     }
 }
 
+// Custom confirm modal
+function showConfirm(title, msg, onOk) {
+    const modal = document.getElementById('confirm-modal');
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent = msg;
+    modal.style.display = 'flex';
+    const okBtn = document.getElementById('confirm-ok-btn');
+    const cancelBtn = document.getElementById('confirm-cancel-btn');
+    const close = () => { modal.style.display = 'none'; okBtn.replaceWith(okBtn.cloneNode(true)); cancelBtn.replaceWith(cancelBtn.cloneNode(true)); };
+    document.getElementById('confirm-ok-btn').addEventListener('click', () => { close(); onOk(); }, { once: true });
+    document.getElementById('confirm-cancel-btn').addEventListener('click', close, { once: true });
+}
+
 function showStatus(message, type = 'success') {
     const container = document.getElementById('status-message-container');
     if (!container) return;
@@ -676,6 +780,18 @@ function filterCatOptions(term) {
 
 function setupEventListeners() {
     hasEventListenersSetup = true;
+
+    // Column sort
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+            const field = th.dataset.sort;
+            if (sortField === field) { sortAsc = !sortAsc; }
+            else { sortField = field; sortAsc = true; }
+            document.querySelectorAll('.sort-icon').forEach(ic => ic.textContent = '\u2195');
+            th.querySelector('.sort-icon').textContent = sortAsc ? '\u2191' : '\u2193';
+            applyFiltersAndRender(false);
+        });
+    });
 
     // Fullscreen toggle
     const fullscreenBtn = document.getElementById('fullscreen-btn');
@@ -784,28 +900,26 @@ function setupEventListeners() {
         deleteCategoryBtn.addEventListener('click', async () => {
             const category = deleteCategoryBtn.getAttribute('data-category');
             if (!category) return;
-            
             const productsInCategory = allProducts.filter(p => p.category === category);
-            const confirmMsg = `⚠️ Delete entire "${category}" category?\n\nThis will delete ${productsInCategory.length} products permanently.\n\nThis action cannot be undone!`;
-            
-            if (!confirm(confirmMsg)) return;
-            
-            try {
-                deleteCategoryBtn.disabled = true;
-                deleteCategoryBtn.textContent = 'Deleting...';
-                
-                await deleteCategoryWithProducts(category);
-                
-                showStatus(`✅ Category "${category}" and ${productsInCategory.length} products deleted successfully!`, 'success');
-                categoryFilter.value = '';
-                applyFiltersAndRender(true);
-            } catch (error) {
-                console.error('Delete category error:', error);
-                showStatus('❌ Failed to delete category: ' + error.message, 'error');
-            } finally {
-                deleteCategoryBtn.disabled = false;
-                deleteCategoryBtn.textContent = '🗑️ Delete Category';
-            }
+            showConfirm(
+                `Delete "${category}"?`,
+                `This will permanently delete ${productsInCategory.length} product(s). This action cannot be undone!`,
+                async () => {
+                    try {
+                        deleteCategoryBtn.disabled = true;
+                        deleteCategoryBtn.textContent = 'Deleting...';
+                        await deleteCategoryWithProducts(category);
+                        showStatus(`✅ Category "${category}" and ${productsInCategory.length} products deleted!`, 'success');
+                        categoryFilter.value = '';
+                        applyFiltersAndRender(true);
+                    } catch (error) {
+                        showStatus('❌ Failed: ' + error.message, 'error');
+                    } finally {
+                        deleteCategoryBtn.disabled = false;
+                        deleteCategoryBtn.textContent = '🗑️ Delete Category';
+                    }
+                }
+            );
         });
     }
     
@@ -1167,28 +1281,44 @@ function setupEventListeners() {
             logTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading logs...</td></tr>';
 
             try {
-                const q = query(collection(db, 'shops', activeShopId, 'inventory_logs'), orderBy('timestamp', 'desc'), limit(50));
+                const q = query(collection(db, 'shops', activeShopId, 'inventory_logs'), orderBy('timestamp', 'desc'), limit(200));
                 const snap = await getDocs(q);
                 
                 if (snap.empty) {
                     logTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No audit logs found.</td></tr>';
                     return;
                 }
-                
-                logTbody.innerHTML = snap.docs.map(doc => {
-                    const d = doc.data();
-                    const date = d.timestamp ? d.timestamp.toDate().toLocaleString() : 'N/A';
-                    return `
-                        <tr>
+
+                const allLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                function renderLogs() {
+                    const searchTerm = (document.getElementById('log-search')?.value || '').toLowerCase();
+                    const actionFilter = document.getElementById('log-action-filter')?.value || '';
+                    const filtered = allLogs.filter(d =>
+                        (!searchTerm || (d.productName || '').toLowerCase().includes(searchTerm)) &&
+                        (!actionFilter || d.action === actionFilter)
+                    );
+                    if (filtered.length === 0) {
+                        logTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No results found.</td></tr>';
+                        return;
+                    }
+                    logTbody.innerHTML = filtered.map(d => {
+                        const date = d.timestamp ? d.timestamp.toDate().toLocaleString() : 'N/A';
+                        return `<tr>
                             <td><small>${date}</small></td>
                             <td>${d.productName}</td>
-                            <td><span class="badge ${d.action === 'DELETE' ? 'btn-delete' : 'btn-edit'}" style="padding:2px 5px; font-size:10px;">${d.action}</span></td>
+                            <td><span class="badge ${d.action === 'DELETE' || d.action === 'DELETE_CATEGORY' ? 'btn-delete' : 'btn-edit'}" style="padding:2px 5px; font-size:10px;">${d.action}</span></td>
                             <td>${d.oldStock}</td>
                             <td>${d.newStock}</td>
-                            <td><small>${d.userEmail.split('@')[0]}</small></td>
-                        </tr>
-                    `;
-                }).join('');
+                            <td><small>${(d.userEmail || '').split('@')[0]}</small></td>
+                        </tr>`;
+                    }).join('');
+                }
+
+                renderLogs();
+                document.getElementById('log-search').addEventListener('input', renderLogs);
+                document.getElementById('log-action-filter').addEventListener('change', renderLogs);
+
             } catch (e) {
                 console.error('Error loading logs:', e);
                 logTbody.innerHTML = '<tr><td colspan="6" style="color:red;">Error loading logs.</td></tr>';
@@ -1370,7 +1500,8 @@ async function handleEditFormSubmit(e) {
         }
 
         // Barcode change হলে — নতুন doc বানাও, পুরনোটা delete করো
-        if (newBarcode && newBarcode !== id) {
+        // oldData.barcode er sathe compare korbo, id er sathe noy (id = barcode_COLOR)
+        if (newBarcode && newBarcode !== (oldData.barcode || id)) {
             // Generate new document ID with color suffix if color exists
             let newDocId = newBarcode;
             if (newColor) {

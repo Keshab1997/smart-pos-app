@@ -50,8 +50,9 @@ let templates = {
     '100x15_jewelry_horizontal': {
         name: 'Jewelry Tag (100x15mm)', width: 100, height: 15, columns: 1, columnGap: 0,
         items: [
-            { placeholder: 'name', type: 'text', x: 5, y: 3, options: { font: '2', size: 1, rotation: 0 } },
-            { placeholder: 'price', type: 'text', x: 5, y: 8, options: { font: '2', size: 1, prefix: 'Tk. ', rotation: 0 } },
+            { placeholder: 'name', type: 'text', x: 5, y: 1, options: { font: '2', size: 1, rotation: 0 } },
+            { placeholder: 'color', type: 'text', x: 5, y: 6, options: { font: '2', size: 1, prefix: '', rotation: 0 } },
+            { placeholder: 'price', type: 'text', x: 5, y: 10, options: { font: '2', size: 1, prefix: 'Tk. ', rotation: 0 } },
             { placeholder: 'barcode', type: 'barcode', x: 60, y: 2, options: { type: '128', height: 8, human_readable: 0, width: 1, rotation: 0 } }
         ]
     },
@@ -184,8 +185,8 @@ function addNewField() {
             font: '2', 
             size: 1, 
             rotation: 0,
-            prefix: (type === 'custom' || isBarcode || isBarcodeNumber) ? '' : type.charAt(0).toUpperCase() + type.slice(1) + ': ',
-            text: (isBarcode || isBarcodeNumber) ? '' : '000',
+            prefix: (type === 'custom' || isBarcode || isBarcodeNumber || type === 'color' || type === 'size') ? '' : type.charAt(0).toUpperCase() + type.slice(1) + ': ',
+            text: (isBarcode || isBarcodeNumber || type === 'color' || type === 'size') ? '' : '000',
             bold: false,
             height: isBarcode ? 8 : 0,
             width: isBarcode ? 2 : 0
@@ -324,6 +325,36 @@ function updateFoldLine() {
     }
 }
 
+// --- Color Helper Functions ---
+const COLOR_MAP = {
+    'red':'#e53935','lal':'#e53935','লাল':'#e53935',
+    'blue':'#1e88e5','neel':'#1e88e5','নীল':'#1e88e5',
+    'green':'#43a047','sবুজ':'#43a047','সবুজ':'#43a047',
+    'yellow':'#fdd835','holud':'#fdd835','হলুদ':'#fdd835',
+    'black':'#212121','kalo':'#212121','কালো':'#212121',
+    'white':'#f5f5f5','shada':'#f5f5f5','সাদা':'#f5f5f5',
+    'pink':'#e91e63','গোলাপি':'#e91e63',
+    'orange':'#fb8c00','কমলা':'#fb8c00',
+    'purple':'#8e24aa','বেগুনি':'#8e24aa',
+    'grey':'#757575','gray':'#757575','ধূসর':'#757575',
+    'brown':'#6d4c41','বাদামি':'#6d4c41',
+    'maroon':'#880e4f','navy':'#1a237e',
+    'cream':'#fff8e1','beige':'#f5f0e8',
+    'sky':'#29b6f6','skyblue':'#29b6f6',
+    'golden':'#f9a825','gold':'#f9a825','সোনালি':'#f9a825',
+};
+
+function getColorBg(colorStr) {
+    if (!colorStr) return '#eee';
+    const key = colorStr.toLowerCase().trim();
+    return COLOR_MAP[key] || '#607d8b';
+}
+
+function isLightColor(hex) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return (r*299 + g*587 + b*114) / 1000 > 160;
+}
+
 // --- Logic ---
 
 async function fetchProducts() {
@@ -355,11 +386,40 @@ function renderProductList() {
     
     filteredProducts.forEach(product => {
         const li = document.createElement('li');
-        li.style.cssText = "padding:8px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; justify-content:space-between;";
-        li.innerHTML = `<span>${product.name}</span> <span style="color:#888;">${product.barcode || ''}</span>`;
+        li.style.cssText = "padding:8px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; justify-content:space-between; align-items:center;";
         
-        // Click to add to queue
-        li.addEventListener('click', () => addToQueue(product));
+        // Color badge - extra2 = color field for clothing
+        const colorVal = product.extraField2 || product.extra2 || product.color || '';
+        const sizVal = product.extraField1 || product.extra1 || product.size || '';
+        const colorBg = getColorBg(colorVal);
+        const colorBadge = colorVal 
+            ? `<span style="background:${colorBg}; color:${isLightColor(colorBg)?'#333':'#fff'}; padding:1px 6px; border-radius:10px; font-size:10px; font-weight:600; margin-left:4px; border:1px solid rgba(0,0,0,0.15);">${colorVal}</span>` 
+            : '';
+        const sizeBadge = sizVal 
+            ? `<span style="background:#e3f2fd; color:#1565c0; padding:1px 6px; border-radius:10px; font-size:10px; font-weight:600; margin-left:4px;">${sizVal}</span>` 
+            : '';
+        
+        const imgHtml = product.imageUrl 
+            ? `<img src="${product.imageUrl}" style="width:32px; height:32px; object-fit:cover; border-radius:4px; margin-right:6px; flex-shrink:0; border:1px solid #eee;" onerror="this.style.display='none'">` 
+            : `<span style="width:32px; height:32px; background:#f0f0f0; border-radius:4px; margin-right:6px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; font-size:14px;">📦</span>`;
+        
+        li.innerHTML = `
+            ${imgHtml}
+            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${product.name}${sizeBadge}${colorBadge}</span>
+            <span style="color:#888; font-size:11px; flex-shrink:0; margin-left:4px;">${product.barcode || ''}</span>
+            <span style="background:#e8f5e9; color:#2e7d32; font-size:11px; font-weight:700; padding:2px 6px; border-radius:10px; margin-left:6px; flex-shrink:0;" title="Stock">📦${parseInt(product.stock)||0}</span>
+        `;
+        
+        // Click to add to queue, qty = stock
+        li.addEventListener('click', () => {
+            addToQueue(product);
+            const queueItem = printQueue.find(p => p.id === product.id);
+            const stock = parseInt(product.stock) || 0;
+            if (queueItem && stock > 0 && queueItem.printQty === 1) {
+                queueItem.printQty = stock;
+                renderPrintQueue();
+            }
+        });
         
         productListEl.appendChild(li);
     });
@@ -419,9 +479,11 @@ function renderPrintQueue() {
         div.className = `queue-item ${currentPreviewProduct && currentPreviewProduct.id === item.id ? 'active-preview' : ''}`;
         
         const savedIcon = item.customLayout ? '<span title="Custom Layout Saved" style="color:#28a745; margin-right:3px; font-weight:bold;">💾</span>' : '';
+        const colorVal = item.extraField2 || item.extra2 || item.color || '';
+        const colorDot = colorVal ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${getColorBg(colorVal)}; border:1px solid rgba(0,0,0,0.2); margin-left:4px; vertical-align:middle;" title="${colorVal}"></span>` : '';
         
         div.innerHTML = `
-            <div class="q-name" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${savedIcon}${item.name}</div>
+            <div class="q-name" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${savedIcon}${item.name}${colorDot}</div>
             <div class="q-qty"><input type="number" min="1" value="${item.printQty}" class="qty-input"></div>
             <div class="q-act"><button class="btn-remove-queue">×</button></div>
         `;
@@ -619,6 +681,9 @@ function updateItemContent(div, item, product) {
         if (item.placeholder === 'price' && product.sellingPrice) {
             productValue = parseFloat(product.sellingPrice).toFixed(2);
         }
+        // color/size placeholder support
+        if (item.placeholder === 'color') productValue = product.extraField2 || product.extra2 || product.color || '';
+        if (item.placeholder === 'size') productValue = product.extraField1 || product.extra1 || product.size || '';
         value = productValue;
     }
     
@@ -812,6 +877,8 @@ function generateTSPL(product, qty, layout) {
                 if (item.placeholder === 'price' && product.sellingPrice) {
                    productValue = parseFloat(product.sellingPrice).toFixed(2);
                 }
+                if (item.placeholder === 'color') productValue = product.extraField2 || product.extra2 || product.color || '';
+                if (item.placeholder === 'size') productValue = product.extraField1 || product.extra1 || product.size || '';
                 value = (item.options.prefix || '') + productValue;
             }
             
