@@ -472,86 +472,40 @@ function renderTable() {
         return;
     }
 
-    // Group by name - same naam + same category = same group
+    // Group by category - same category = same parent group
     const groups = {};
     paginated.forEach(p => {
-        const key = `${(p.name || '').trim().toUpperCase()}__${(p.category || '').trim().toUpperCase()}`;
+        const key = (p.category || 'UNCATEGORIZED').trim().toUpperCase();
         if (!groups[key]) groups[key] = [];
         groups[key].push(p);
     });
 
     const rows = [];
-    Object.values(groups).forEach(group => {
-        const isClothing = group.some(p => p.extraField1 || p.extraField2);
-        const isGroup = group.length > 1 && isClothing;
-
-        if (isGroup) {
-            // Variant image gallery (up to 4 images)
-            const galleryImages = group.filter(p => p.imageUrl).slice(0, 16);
-            let imgHtml;
-            if (galleryImages.length > 0) {
-                imgHtml = `<div class="variant-gallery-grid">${galleryImages.map(p =>
-                    `<img src="${p.imageUrl}" class="product-thumb gallery-grid-item" data-name="${p.name}" data-src="${p.imageUrl}" alt="img">`
-                ).join('')}${group.length > galleryImages.length ? `<div class="gallery-more-badge">+${group.length - galleryImages.length}</div>` : ''}</div>`;
-            } else {
-                imgHtml = `<span style="font-size:12px; color:#999; display:inline-block; width:40px; text-align:center;">No Img</span>`;
-            }
-
-            const totalStock = group.reduce((s, p) => s + (parseInt(p.stock) || 0), 0);
-            const firstP = group[0];
-
-            rows.push(`<tr style="background:#f0f4ff; border-left:4px solid #4361ee;">
-                <td><input type="checkbox" class="product-checkbox" data-id="${firstP.id}"></td>
-                <td style="text-align:center;">${imgHtml}</td>
-                <td><strong>${firstP.name || 'N/A'}</strong> <span style="font-size:11px; color:#4361ee; font-weight:600;">(${group.length} variants)</span></td>
-                <td>${firstP.category || 'N/A'}</td>
-                <td style="text-align:center;"><span style="font-size:11px; color:#666;">Size × Color</span></td>
-                <td>—</td>
-                <td>—</td>
-                <td class="stock-cell"><strong style="color:#4361ee;">${totalStock}</strong></td>
-                <td>—</td>
-                <td>—</td>
-                <td></td>
-            </tr>`);
-
-            // Child rows
-            group.forEach(p => {
-                const stock = parseInt(p.stock) || 0;
-                const cp = parseFloat(p.costPrice) || 0;
-                const sp = parseFloat(p.sellingPrice) || 0;
-                const margin = cp > 0 ? ((sp - cp) / cp * 100).toFixed(1) : 0;
-                let stockClass = stock === 0 ? 'stock-critical' : stock <= 5 ? 'stock-low' : '';
-                const size = p.extraField1 || '';
-                const color = p.extraField2 || '';
-                const sizeColorHtml = [
-                    size ? `<span style="padding:2px 7px; background:#e0f2fe; border-radius:4px; font-size:12px; font-weight:600; color:#0369a1;">${size}</span>` : '',
-                    color ? `<span style="padding:2px 7px; background:#fce7f3; border-radius:4px; font-size:12px; font-weight:600; color:#be185d;">${color}</span>` : ''
-                ].filter(Boolean).join(' ');
-
-                rows.push(`<tr class="${stockClass}" style="background:#fafbff;">
-                    <td><input type="checkbox" class="product-checkbox" data-id="${p.id}"></td>
-                    <td style="text-align:center;">${p.imageUrl ? `<img src="${p.imageUrl}" class="product-thumb" data-name="${p.name}" data-src="${p.imageUrl}" alt="img" style="width:32px;height:32px;object-fit:cover;border-radius:4px;">` : ''}</td>
-                    <td style="padding-left:24px; color:#666; font-size:13px;">↳ ${p.name || ''}</td>
-                    <td></td>
-                    <td style="text-align:center;">${sizeColorHtml || '<span style="color:#999;">—</span>'}</td>
-                    <td>${cp.toFixed(2)}</td>
-                    <td>${sp.toFixed(2)}<br><small style="color:#28a745; font-weight:bold;">Margin: ${margin}%</small></td>
-                    <td class="stock-cell"><strong>${stock}</strong></td>
-                    <td class="barcode-cell" data-id="${p.id}" data-barcode="${p.barcode || ''}" title="Click to edit barcode" style="cursor:pointer;">
-                        <span class="barcode-display">${p.barcode || '<span style="color:#ccc;">—</span>'}</span>
-                    </td>
-                    <td></td>
-                    <td class="action-buttons">
-                        <button class="btn btn-sm btn-edit" data-id="${p.id}">Edit</button>
-                        <button class="btn btn-sm btn-delete" data-id="${p.id}">Delete</button>
-                        <button class="btn btn-sm btn-print" onclick="openPrintPage('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.sellingPrice}')">Print</button>
-                        <button class="btn btn-sm btn-clone" data-id="${p.id}" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe;">👯 Clone</button>
-                    </td>
-                </tr>`);
-            });
+    Object.entries(groups).forEach(([catKey, group]) => {
+        const totalStock = group.reduce((s, p) => s + (parseInt(p.stock) || 0), 0);
+        const galleryImages = group.filter(p => p.imageUrl).slice(0, 16);
+        let imgHtml;
+        if (galleryImages.length > 0) {
+            imgHtml = `<div class="variant-gallery-grid">${galleryImages.map(p =>
+                `<img src="${p.imageUrl}" class="product-thumb gallery-grid-item" data-name="${p.name}" data-src="${p.imageUrl}" alt="img">`
+            ).join('')}${group.length > galleryImages.length ? `<div class="gallery-more-badge">+${group.length - galleryImages.length}</div>` : ''}</div>`;
         } else {
-            // Single product - normal row
-            group.forEach(p => {
+            imgHtml = `<span style="font-size:12px; color:#999;">No Img</span>`;
+        }
+
+        // Category parent row
+        rows.push(`<tr style="background:#f0f4ff; border-left:4px solid #4361ee; cursor:pointer;" class="cat-parent-row" data-cat="${catKey}">
+            <td><input type="checkbox"></td>
+            <td style="text-align:center;">${imgHtml}</td>
+            <td colspan="2"><strong>📁 ${catKey}</strong> <span style="font-size:11px; color:#4361ee; font-weight:600;">(${group.length} items)</span></td>
+            <td style="text-align:center;"><span style="font-size:11px; color:#666;">—</span></td>
+            <td>—</td><td>—</td>
+            <td class="stock-cell"><strong style="color:#4361ee;">${totalStock}</strong></td>
+            <td>—</td><td>—</td><td></td>
+        </tr>`);
+
+        // Child rows (each product)
+        group.forEach(p => {
                 const stock = parseInt(p.stock) || 0;
                 const cp = parseFloat(p.costPrice) || 0;
                 const sp = parseFloat(p.sellingPrice) || 0;
@@ -597,7 +551,6 @@ function renderTable() {
                     </td>
                 </tr>`);
             });
-        }
     });
 
     inventoryBody.innerHTML = rows.join('');
