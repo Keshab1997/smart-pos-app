@@ -274,11 +274,16 @@
                 <input type="hidden" id="edit-product-id">
                 <div class="form-group">
                     <label for="edit-name">Product Name:</label>
-                    <input type="text" id="edit-name" class="form-control" required>
+                    <input type="text" id="edit-name" class="form-control" required
+                        spellcheck="true" autocorrect="on" autocapitalize="words" autocomplete="off"
+                        style="text-transform: capitalize;">
+                    <small style="color:#64748b; font-size:11px;">✏️ Title Case এ লিখুন — Save করলে auto-format হবে</small>
                 </div>
                 <div class="form-group">
                     <label for="edit-category">Category:</label>
-                    <input type="text" id="edit-category" class="form-control">
+                    <input type="text" id="edit-category" class="form-control"
+                        spellcheck="false" autocapitalize="characters" autocomplete="off"
+                        style="text-transform: uppercase;">
                 </div>
                 <div class="form-group-inline">
                     <div class="form-group">

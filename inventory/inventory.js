@@ -1409,8 +1409,9 @@ async function handleEditFormSubmit(e) {
     const saveBtn = document.getElementById('edit-save-btn');
     const id = document.getElementById('edit-product-id').value;
     const imageInput = document.getElementById('edit-image');
-    const newName = document.getElementById('edit-name').value.trim();
-    const newCategory = document.getElementById('edit-category').value.trim();
+    const newName = document.getElementById('edit-name').value.trim()
+        .toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); // Auto Title Case
+    const newCategory = document.getElementById('edit-category').value.trim().toUpperCase();
     const newSize = document.getElementById('edit-size').value.trim();
     const newColor = document.getElementById('edit-color').value.trim();
     const newCP = parseFloat(document.getElementById('edit-cp').value);
