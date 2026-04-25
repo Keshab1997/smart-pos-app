@@ -965,3 +965,45 @@ body {
         width: 100%;
     }
 }
+
+/* Variant Image Gallery Grid */
+.variant-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    width: 100px;
+    position: relative;
+    padding: 2px;
+}
+.gallery-grid-item {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 4px !important;
+    border: 1px solid #fff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    object-fit: cover;
+    transition: transform 0.2s;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+}
+.gallery-grid-item:hover {
+    transform: scale(1.35);
+    z-index: 10;
+    border-color: #4361ee !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+.gallery-more-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    background: #4361ee;
+    color: white;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 4px;
+    border: 1px solid white;
+    z-index: 5;
+    pointer-events: none;
+}

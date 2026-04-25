@@ -47,6 +47,16 @@ let templates = {
             { placeholder: 'barcode', type: 'barcode', x: 2, y: 15, options: { type: '128', height: 8, human_readable: 0, width: 46 } }
         ]
     },
+    'clothing_pro': {
+        name: 'Clothing Pro (50x25mm)', width: 50, height: 25, columns: 1, columnGap: 0,
+        items: [
+            { placeholder: 'name',  type: 'text',    x: 2, y: 2,  options: { font: '2', size: 1, rotation: 0, bold: true } },
+            { placeholder: 'color', type: 'text',    x: 2, y: 7,  options: { font: '2', size: 1, rotation: 0, prefix: 'Color: ' } },
+            { placeholder: 'size',  type: 'text',    x: 2, y: 11, options: { font: '2', size: 1, rotation: 0, prefix: 'Size: ' } },
+            { placeholder: 'barcode', type: 'barcode', x: 2, y: 14, options: { type: '128', height: 7, human_readable: 1, width: 46, rotation: 0 } },
+            { placeholder: 'price', type: 'text',    x: 35, y: 20, options: { font: '2', size: 1, rotation: 0, prefix: '\u20b9' } }
+        ]
+    },
     '100x15_jewelry_horizontal': {
         name: 'Jewelry Tag (100x15mm)', width: 100, height: 15, columns: 1, columnGap: 0,
         items: [

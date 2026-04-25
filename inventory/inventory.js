@@ -353,11 +353,11 @@ function applyFiltersAndRender(resetPage = true) {
             return sortAsc ? va - vb : vb - va;
         });
     } else {
-        // default: barcode sort
+        // default: category then name sort
         filteredProducts.sort((a, b) => {
-            const barcodeA = String(a.barcode || "0");
-            const barcodeB = String(b.barcode || "0");
-            return barcodeA.localeCompare(barcodeB, undefined, { numeric: true });
+            const catCmp = (a.category || '').localeCompare(b.category || '');
+            if (catCmp !== 0) return catCmp;
+            return (a.name || '').localeCompare(b.name || '');
         });
     }
     
@@ -486,13 +486,20 @@ function renderTable() {
         const isGroup = group.length > 1 && isClothing;
 
         if (isGroup) {
-            // Parent row - naam + total stock
+            // Variant image gallery (up to 4 images)
+            const galleryImages = group.filter(p => p.imageUrl).slice(0, 16);
+            let imgHtml;
+            if (galleryImages.length > 0) {
+                imgHtml = `<div class="variant-gallery-grid">${galleryImages.map(p =>
+                    `<img src="${p.imageUrl}" class="product-thumb gallery-grid-item" data-name="${p.name}" data-src="${p.imageUrl}" alt="img">`
+                ).join('')}${group.length > galleryImages.length ? `<div class="gallery-more-badge">+${group.length - galleryImages.length}</div>` : ''}</div>`;
+            } else {
+                imgHtml = `<span style="font-size:12px; color:#999; display:inline-block; width:40px; text-align:center;">No Img</span>`;
+            }
+
             const totalStock = group.reduce((s, p) => s + (parseInt(p.stock) || 0), 0);
             const firstP = group[0];
-            const imgHtml = firstP.imageUrl
-                ? `<img src="${firstP.imageUrl}" class="product-thumb" data-name="${firstP.name}" data-src="${firstP.imageUrl}" alt="img">`
-                : `<span style="font-size:12px; color:#999; display:inline-block; width:40px; text-align:center;">No Img</span>`;
-            
+
             rows.push(`<tr style="background:#f0f4ff; border-left:4px solid #4361ee;">
                 <td><input type="checkbox" class="product-checkbox" data-id="${firstP.id}"></td>
                 <td style="text-align:center;">${imgHtml}</td>
@@ -538,6 +545,7 @@ function renderTable() {
                         <button class="btn btn-sm btn-edit" data-id="${p.id}">Edit</button>
                         <button class="btn btn-sm btn-delete" data-id="${p.id}">Delete</button>
                         <button class="btn btn-sm btn-print" onclick="openPrintPage('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.sellingPrice}')">Print</button>
+                        <button class="btn btn-sm btn-clone" data-id="${p.id}" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe;">👯 Clone</button>
                     </td>
                 </tr>`);
             });
@@ -585,6 +593,7 @@ function renderTable() {
                         <button class="btn btn-sm btn-edit" data-id="${p.id}">Edit</button>
                         <button class="btn btn-sm btn-delete" data-id="${p.id}">Delete</button>
                         <button class="btn btn-sm btn-print" onclick="openPrintPage('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.sellingPrice}')">Print</button>
+                        <button class="btn btn-sm btn-clone" data-id="${p.id}" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe;">👯 Clone</button>
                     </td>
                 </tr>`);
             });
@@ -1133,7 +1142,11 @@ function setupEventListeners() {
         if (target.matches('.btn-edit')) openEditModal(product);
         else if (target.matches('.btn-delete')) { 
             if (confirm(`Delete "${product.name}"?`)) deleteProduct(product.id); 
-        } 
+        }
+        else if (target.matches('.btn-clone')) {
+            localStorage.setItem('cloned_product', JSON.stringify(product));
+            window.location.href = '../add-product/add-product.html';
+        }
     });
     
     printSelectedBtn.addEventListener('click', () => {

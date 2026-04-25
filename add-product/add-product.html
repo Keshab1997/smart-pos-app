@@ -53,9 +53,9 @@
                                 <th style="min-width:65px">Disc%</th>
                                 <th style="min-width:100px">CP</th>
                                 <th style="min-width:100px">SP</th>
-                                <th style="min-width:130px">Barcode</th>
                                 <th style="min-width:65px">Stock</th>
                                 <th style="min-width:110px">Image</th>
+                                <th style="min-width:130px">Barcode</th>
                                 <th style="min-width:50px">Del</th>
                             </tr>
                         </thead>
@@ -90,6 +90,19 @@
                         </button>
                     </div>
                     <p style="margin:8px 0 0 0; font-size:11px; color:#880e4f; opacity:0.8;">💡 First row er product info (name, CP, SP, category) sob variation e copy hobe. Barcode auto-generate hobe.</p>
+                </div>
+
+                <!-- Bulk Product Generator -->
+                <div id="bulk-generator-panel" style="margin: 15px 0; background: linear-gradient(135deg, #e0f2fe, #bae6fd); padding: 18px; border-radius: 10px; border: 2px solid #0ea5e9;">
+                    <h3 style="margin: 0 0 12px 0; color: #0369a1; font-size: 15px;">🚀 Bulk Product Generator — একই দামের অনেকগুলো আইটেম</h3>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                        <div style="flex:1; min-width:200px;">
+                            <label style="font-size:12px; font-weight:600; color:#0369a1; display:block; margin-bottom:4px;">Number of Items (কয়টি আইটেম হবে?)</label>
+                            <input type="number" id="bulk-qty" value="5" min="1" style="width:100%; padding:8px; border:1px solid #0ea5e9; border-radius:6px; font-size:13px; box-sizing:border-box;">
+                        </div>
+                        <button type="button" id="btn-generate-bulk" style="padding:9px 18px; background:#0ea5e9; color:white; border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px; white-space:nowrap;">⚡ Generate Bulk Rows</button>
+                    </div>
+                    <p style="margin:8px 0 0 0; font-size:11px; color:#0369a1; opacity:0.8;">💡 First row-এর নাম, দাম এবং ক্যাটাগরি কপি হয়ে যাবে। আপনাকে শুধু আলাদা ছবি আপলোড করতে হবে।</p>
                 </div>
 
                 <!-- Total CP Calculator -->

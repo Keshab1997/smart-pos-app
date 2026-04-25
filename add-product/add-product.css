@@ -3,6 +3,21 @@
 /* ============================
    1. CSS ভেরিয়েবল এবং বেসিক সেটআপ
    ============================ */
+html {
+    box-sizing: border-box;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
 :root {
     --primary-color: #007bff;
     --success-color: #28a745;
@@ -19,14 +34,27 @@ body {
     font-family: 'Poppins', sans-serif;
     color: var(--text-color);
     margin: 0;
-    padding-bottom: 50px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#navbar-placeholder {
+    height: 60px; /* Fixed height for navbar */
+    flex: 0 0 auto;
+    width: 100%;
 }
 
 .container {
-    max-width: 98% !important;
-    width: 100%;
-    margin: 0 auto;
-    padding: 10px 20px;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0;
+    padding: 0;
+    flex: 1 0 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 /* ============================
@@ -34,10 +62,17 @@ body {
    ============================ */
 .main-card {
     border: none !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
+    box-shadow: none !important;
     background: #fff !important;
-    padding: 30px !important;
-    border-radius: 15px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    flex: 1 0 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
 }
 
 .header-flex {
@@ -873,7 +908,7 @@ body {
    ============================ */
 @media screen and (min-width: 1200px) {
     .container {
-        max-width: 1400px !important;
+        max-width: none !important;
     }
 
     .main-card {
@@ -1060,6 +1095,10 @@ body {
 .img-input-wrap {
     min-width: 110px;
     width: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .img-tabs {
@@ -1118,9 +1157,7 @@ body {
 }
 
 .row-paste-hint {
-    font-size: 11px;
-    color: #0369a1;
-    font-weight: 600;
+    display: none;
 }
 
 .row-paste-status {

@@ -63,6 +63,70 @@ const playScanSound = () => {
     }
 }; 
 
+// --- Smart Barcode Generator ---
+function generateSmartBarcode(product, lastId) {
+    const catPrefix = (product.category || 'GEN').substring(0, 3).toUpperCase();
+    const colorValue = product.extraField2 || 'MIX';
+    const colorPrefix = colorValue.substring(0, 3).toUpperCase();
+    const sequence = String(lastId).padStart(4, '0');
+    return `${catPrefix}-${colorPrefix}-${sequence}`;
+}
+
+// --- Dominant Color Detector (Canvas-based) ---
+const COLOR_NAMES = [
+    { name: 'Red',     r: 220, g: 50,  b: 50  },
+    { name: 'Orange',  r: 230, g: 120, b: 30  },
+    { name: 'Yellow',  r: 230, g: 210, b: 30  },
+    { name: 'Green',   r: 50,  g: 160, b: 60  },
+    { name: 'Blue',    r: 50,  g: 80,  b: 200 },
+    { name: 'Sky',     r: 80,  g: 170, b: 230 },
+    { name: 'Purple',  r: 130, g: 50,  b: 180 },
+    { name: 'Pink',    r: 220, g: 100, b: 150 },
+    { name: 'Maroon',  r: 130, g: 20,  b: 40  },
+    { name: 'Brown',   r: 130, g: 70,  b: 30  },
+    { name: 'Beige',   r: 220, g: 200, b: 160 },
+    { name: 'Cream',   r: 240, g: 230, b: 200 },
+    { name: 'White',   r: 240, g: 240, b: 240 },
+    { name: 'Black',   r: 30,  g: 30,  b: 30  },
+    { name: 'Grey',    r: 150, g: 150, b: 150 },
+    { name: 'Navy',    r: 20,  g: 30,  b: 100 },
+    { name: 'Golden',  r: 210, g: 170, b: 30  },
+];
+
+function detectDominantColor(dataUrl, inputEl) {
+    const img = new Image();
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = 50; // sample at 50x50 for speed
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, size, size);
+        const data = ctx.getImageData(0, 0, size, size).data;
+
+        let rSum = 0, gSum = 0, bSum = 0, count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+            const a = data[i + 3];
+            if (a < 128) continue; // skip transparent
+            rSum += data[i]; gSum += data[i+1]; bSum += data[i+2];
+            count++;
+        }
+        if (!count) return;
+        const r = rSum / count, g = gSum / count, b = bSum / count;
+
+        // Find nearest color name
+        let best = COLOR_NAMES[0], bestDist = Infinity;
+        COLOR_NAMES.forEach(c => {
+            const d = (c.r-r)**2 + (c.g-g)**2 + (c.b-b)**2;
+            if (d < bestDist) { bestDist = d; best = c; }
+        });
+
+        inputEl.value = best.name;
+        inputEl.style.backgroundColor = '#e0f2fe';
+        setTimeout(() => inputEl.style.backgroundColor = '', 1500);
+    };
+    img.src = dataUrl;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const addRowBtn = document.getElementById('add-row-btn');
     const productsTbody = document.getElementById('products-tbody');
@@ -468,7 +532,14 @@ document.addEventListener('DOMContentLoaded', () => {
             fileInput.addEventListener('change', function() {
                 if (this.files[0]) {
                     const reader = new FileReader();
-                    reader.onload = e => showPreview(e.target.result);
+                    reader.onload = e => {
+                        showPreview(e.target.result);
+                        // Clothing mode-এ color auto-detect
+                        const colorInput = row.querySelector('.dynamic-input-2');
+                        if (colorInput && !colorInput.value && window.currentActiveMode === 'clothing') {
+                            detectDominantColor(e.target.result, colorInput);
+                        }
+                    };
                     reader.readAsDataURL(this.files[0]);
                 }
             });
@@ -500,10 +571,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         const file = item.getAsFile();
                         // instant preview
                         const reader = new FileReader();
-                        reader.onload = ev => showPreview(ev.target.result);
+                        reader.onload = ev => {
+                            showPreview(ev.target.result);
+                            // Clothing mode-এ color auto-detect (paste zone)
+                            const colorInput = row.querySelector('.dynamic-input-2');
+                            if (colorInput && !colorInput.value && window.currentActiveMode === 'clothing') {
+                                detectDominantColor(ev.target.result, colorInput);
+                            }
+                        };
                         reader.readAsDataURL(file);
 
-                        pasteHint.style.display  = 'none';
+                        if (pasteHint) pasteHint.style.display  = 'none';
                         pasteStatus.style.display = 'inline';
                         pasteStatus.textContent   = '\u23f3 Uploading...';
 
@@ -610,6 +688,30 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // লোকাল স্টোরেজ থেকে ডেটা লোড করা
             loadTableFromLocal();
+
+            // Clone data from Inventory (if redirected via Clone button)
+            const clonedData = localStorage.getItem('cloned_product');
+            if (clonedData) {
+                try {
+                    const data = JSON.parse(clonedData);
+                    localStorage.removeItem('cloned_product');
+                    if (productsTbody.children.length === 0) addProductRow();
+                    const row = productsTbody.querySelector('tr:last-child');
+                    row.querySelector('.product-name').value = data.name || '';
+                    row.querySelector('.product-category').value = data.category || '';
+                    row.querySelector('.product-cp').value = data.costPrice || '';
+                    row.querySelector('.product-sp').value = data.sellingPrice || '';
+                    if (row.querySelector('.dynamic-input-1')) row.querySelector('.dynamic-input-1').value = data.extraField1 || '';
+                    if (row.querySelector('.dynamic-input-2')) row.querySelector('.dynamic-input-2').value = data.extraField2 || '';
+                    if (row.querySelector('.product-base-rate')) row.querySelector('.product-base-rate').value = '';
+                    row.style.backgroundColor = '#e0f2fe';
+                    setTimeout(() => row.style.backgroundColor = '', 1500);
+                    showStatus(`👯 Clone: "${data.name}" এর ডেটা কপি হয়েছে!`, 'success');
+                    calculateTotalCP();
+                } catch (e) {
+                    localStorage.removeItem('cloned_product');
+                }
+            }
             
             // যদি কোনো সেভ ডেটা না থাকে তবে একটি খালি রো যোগ করা
             if (productsTbody.children.length === 0) {
@@ -645,12 +747,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <td data-label="Disc%"><input type="number" step="0.01" class="product-disc" placeholder="0" min="0" max="100"></td>
             <td data-label="Cost Price"><input type="number" step="0.01" class="product-cp" placeholder="0.00" required></td>
             <td data-label="Selling Price"><input type="number" step="0.01" class="product-sp" placeholder="0.00" required></td>
-            <td data-label="Barcode">
-                <div class="barcode-wrapper">
-                    <input type="text" class="product-barcode" placeholder="Scan or type">
-                    <button type="button" class="btn-scan-row" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 2px 5px;" title="Scan with Camera">📷</button>
-                </div>
-            </td>
             <td data-label="Initial Stock"><input type="number" class="product-stock" placeholder="0" required></td>
             <td data-label="Image">
                 <div class="img-input-wrap">
@@ -668,11 +764,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="img-tab-content" data-tab="paste" style="display:none;">
                         <div class="row-paste-zone">
                             <div contenteditable="true" class="row-paste-input"></div>
-                            <span class="row-paste-hint">📋 Click হলে Ctrl+V</span>
                             <span class="row-paste-status" style="display:none;"></span>
                         </div>
                     </div>
                     <img class="product-image-preview" src="" style="display:none; width:40px; height:40px; object-fit:cover; border-radius:4px; margin-top:4px; border:1px solid #ddd;">
+                </div>
+            </td>
+            <td data-label="Barcode">
+                <div class="barcode-wrapper">
+                    <input type="text" class="product-barcode" placeholder="Scan or type">
+                    <button type="button" class="btn-scan-row" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 2px 5px;" title="Scan with Camera">📷</button>
                 </div>
             </td>
             <td data-label="Action">
@@ -902,6 +1003,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sizes = sizesRaw ? sizesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
                 btnGenerateSKU.textContent = sizes.length > 0 ? `⚡ Add "${sizes[0]}" colors` : '⚡ Generate Rows';
             });
+        });
+    }
+
+    // --- Bulk Row Generator ---
+    const btnGenerateBulk = document.getElementById('btn-generate-bulk');
+    if (btnGenerateBulk) {
+        btnGenerateBulk.addEventListener('click', () => {
+            const qty = parseInt(document.getElementById('bulk-qty').value) || 0;
+            if (qty <= 0) { alert('সঠিক সংখ্যা লিখুন!'); return; }
+
+            const firstRow = productsTbody.querySelector('tr');
+            if (!firstRow || !firstRow.querySelector('.product-name').value.trim()) {
+                alert('প্রথমে প্রথম রো-তে প্রোডাক্টের নাম এবং দাম লিখুন!');
+                return;
+            }
+
+            const baseInfo = {
+                name: firstRow.querySelector('.product-name').value.trim(),
+                category: firstRow.querySelector('.product-category').value.trim(),
+                cp: firstRow.querySelector('.product-cp').value,
+                sp: firstRow.querySelector('.product-sp').value,
+                baseRate: firstRow.querySelector('.product-base-rate')?.value || '',
+                gst: firstRow.querySelector('.product-gst')?.value || '',
+                disc: firstRow.querySelector('.product-disc')?.value || '',
+            };
+
+            for (let i = 0; i < qty; i++) {
+                addProductRow();
+                const newRow = productsTbody.querySelector('tr:last-child');
+                newRow.querySelector('.product-name').value = baseInfo.name;
+                newRow.querySelector('.product-category').value = baseInfo.category;
+                if (newRow.querySelector('.product-base-rate')) newRow.querySelector('.product-base-rate').value = baseInfo.baseRate;
+                if (newRow.querySelector('.product-gst')) newRow.querySelector('.product-gst').value = baseInfo.gst;
+                if (newRow.querySelector('.product-disc')) newRow.querySelector('.product-disc').value = baseInfo.disc;
+                newRow.querySelector('.product-cp').value = baseInfo.cp;
+                newRow.querySelector('.product-sp').value = baseInfo.sp;
+                newRow.style.backgroundColor = '#e0f2fe';
+                setTimeout(() => newRow.style.backgroundColor = '', 1000);
+            }
+            showStatus(`✅ ${qty}টি রো তৈরি হয়েছে! এবার ছবি আপলোড করুন।`, 'success');
+            calculateTotalCP();
+            saveTableToLocal();
         });
     }
 
@@ -1697,9 +1840,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             docId = finalBarcode;
                         }
                     } else {
-                        // New product - generate barcode
+                        // New product - generate smart barcode
                         lastProductId++;
-                        finalBarcode = String(lastProductId);
+                        finalBarcode = generateSmartBarcode(product, lastProductId);
                         // Create unique document ID
                         if (product.extraField2) {
                             const colorSuffix = product.extraField2.trim().toUpperCase().replace(/\s+/g, '_');
