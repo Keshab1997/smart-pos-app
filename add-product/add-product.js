@@ -23,9 +23,6 @@ const modeConfigs = {
     clothing: {
         head1: "Size", head2: "Color",
         p1: "e.g. XL, 32, M", p2: "e.g. Red, Blue",
-        head3: "Design/Style", head4: "",
-        p3: "e.g. Floral, Stripe, Plain", p4: "",
-        extraColumns: true,
         aiExample: "Brand | Name | Size | Net CP | Qty | Category | MRP | Color"
     },
     jewelry: {
