@@ -1058,6 +1058,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 disc: firstRow.querySelector('.product-disc')?.value || '',
             };
 
+            // Rename first row to #1 as well
+            const firstRowName = firstRow.querySelector('.product-name');
+            if (firstRowName && !firstRowName.value.includes('#')) {
+                firstRowName.value = `${baseInfo.name} #1`;
+            }
+
             // Count existing rows with same base name to continue serial
             const existingSerial = Array.from(productsTbody.querySelectorAll('tr'))
                 .filter(r => r.querySelector('.product-name')?.value.startsWith(baseInfo.name)).length;

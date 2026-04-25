@@ -353,11 +353,12 @@ function applyFiltersAndRender(resetPage = true) {
             return sortAsc ? va - vb : vb - va;
         });
     } else {
-        // default: category then name sort
+        // default: category then name sort (natural sort for numbers)
         filteredProducts.sort((a, b) => {
             const catCmp = (a.category || '').localeCompare(b.category || '');
             if (catCmp !== 0) return catCmp;
-            return (a.name || '').localeCompare(b.name || '');
+            // Natural sort: Cotton Kurti #2 before #10
+            return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
         });
     }
     
