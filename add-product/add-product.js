@@ -23,6 +23,9 @@ const modeConfigs = {
     clothing: {
         head1: "Size", head2: "Color",
         p1: "e.g. XL, 32, M", p2: "e.g. Red, Blue",
+        head3: "Design/Style", head4: "",
+        p3: "e.g. Floral, Stripe, Plain", p4: "",
+        extraColumns: true,
         aiExample: "Brand | Name | Size | Net CP | Qty | Category | MRP | Color"
     },
     jewelry: {
@@ -69,7 +72,10 @@ function generateSmartBarcode(product, lastId) {
     const colorValue = product.extraField2 || 'MIX';
     const colorPrefix = colorValue.substring(0, 3).toUpperCase();
     const sequence = String(lastId).padStart(4, '0');
-    return `${catPrefix}-${colorPrefix}-${sequence}`;
+    // Include design prefix for clothing to ensure unique barcodes per design
+    const designValue = product.extraField3 || '';
+    const designPrefix = designValue ? `-${designValue.substring(0, 3).toUpperCase()}` : '';
+    return `${catPrefix}-${colorPrefix}${designPrefix}-${sequence}`;
 }
 
 // --- Dominant Color Detector (Canvas-based) ---
@@ -97,23 +103,45 @@ function detectDominantColor(dataUrl, inputEl) {
     const img = new Image();
     img.onload = () => {
         const canvas = document.createElement('canvas');
-        const size = 50; // sample at 50x50 for speed
+        const size = 50;
         canvas.width = size; canvas.height = size;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, size, size);
+        // Sample center 50% of image to avoid background/border
+        const cx = img.width * 0.25, cy = img.height * 0.25;
+        const cw = img.width * 0.5, ch = img.height * 0.5;
+        ctx.drawImage(img, cx, cy, cw, ch, 0, 0, size, size);
         const data = ctx.getImageData(0, 0, size, size).data;
 
-        let rSum = 0, gSum = 0, bSum = 0, count = 0;
+        // Collect non-white, non-background pixels
+        const colorBuckets = {};
         for (let i = 0; i < data.length; i += 4) {
             const a = data[i + 3];
-            if (a < 128) continue; // skip transparent
-            rSum += data[i]; gSum += data[i+1]; bSum += data[i+2];
-            count++;
+            if (a < 128) continue;
+            const r = data[i], g = data[i+1], b = data[i+2];
+            // Skip near-white and near-black backgrounds
+            const brightness = (r + g + b) / 3;
+            if (brightness > 230 || brightness < 20) continue;
+            // Quantize to reduce noise
+            const key = `${Math.round(r/32)*32},${Math.round(g/32)*32},${Math.round(b/32)*32}`;
+            colorBuckets[key] = (colorBuckets[key] || 0) + 1;
         }
-        if (!count) return;
-        const r = rSum / count, g = gSum / count, b = bSum / count;
 
-        // Find nearest color name
+        let r = 0, g = 0, b = 0, count = 0;
+        if (Object.keys(colorBuckets).length > 0) {
+            // Use most frequent color bucket
+            const topKey = Object.entries(colorBuckets).sort((a,b) => b[1]-a[1])[0][0];
+            [r, g, b] = topKey.split(',').map(Number);
+            count = 1;
+        } else {
+            // Fallback: average all non-transparent pixels
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i+3] < 128) continue;
+                r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+            }
+            if (!count) return;
+            r /= count; g /= count; b /= count;
+        }
+
         let best = COLOR_NAMES[0], bestDist = Infinity;
         COLOR_NAMES.forEach(c => {
             const d = (c.r-r)**2 + (c.g-g)**2 + (c.b-b)**2;
@@ -964,10 +992,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentSize = sizes[skuSizeIndex];
 
             // Add colors for this size
-            colors.forEach(color => {
+            colors.forEach((color, colorIdx) => {
+                // Count existing rows with same base name for serial
+                const existingSerial = Array.from(productsTbody.querySelectorAll('tr'))
+                    .filter(r => r.querySelector('.product-name')?.value.startsWith(baseInfo.name)).length;
+
                 addProductRow();
                 const newRow = productsTbody.querySelector('tr:last-child');
-                newRow.querySelector('.product-name').value = baseInfo.name;
+                newRow.querySelector('.product-name').value = `${baseInfo.name} #${existingSerial + 1}`;
                 newRow.querySelector('.product-category').value = baseInfo.category;
                 if (newRow.querySelector('.product-base-rate')) newRow.querySelector('.product-base-rate').value = baseInfo.baseRate;
                 if (newRow.querySelector('.product-gst')) newRow.querySelector('.product-gst').value = baseInfo.gst;
@@ -1029,10 +1061,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 disc: firstRow.querySelector('.product-disc')?.value || '',
             };
 
+            // Count existing rows with same base name to continue serial
+            const existingSerial = Array.from(productsTbody.querySelectorAll('tr'))
+                .filter(r => r.querySelector('.product-name')?.value.startsWith(baseInfo.name)).length;
+
             for (let i = 0; i < qty; i++) {
                 addProductRow();
                 const newRow = productsTbody.querySelector('tr:last-child');
-                newRow.querySelector('.product-name').value = baseInfo.name;
+                newRow.querySelector('.product-name').value = `${baseInfo.name} #${existingSerial + i + 1}`;
                 newRow.querySelector('.product-category').value = baseInfo.category;
                 if (newRow.querySelector('.product-base-rate')) newRow.querySelector('.product-base-rate').value = baseInfo.baseRate;
                 if (newRow.querySelector('.product-gst')) newRow.querySelector('.product-gst').value = baseInfo.gst;
