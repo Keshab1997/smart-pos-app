@@ -22,15 +22,16 @@ async function analyzeImageWithAI(dataUrl, row) {
     try {
         // Ensure user is signed in to Puter (they pay for their own AI usage)
         if (!await puter.auth.isSignedIn()) await puter.auth.signIn();
-        const prompt = `Look at this product/clothing image. Identify the dominant color of the product (ignore background, mannequin, model).
-Reply ONLY with the color name from this list: Red, Orange, Yellow, Green, Blue, Sky, Purple, Pink, Maroon, Brown, Beige, Cream, White, Black, Grey, Navy, Golden, Olive, Teal, Coral, Magenta, Lavender, Turquoise, Rust, Mustard.
+        const prompt = `Look at this product/clothing image carefully. Identify the EXACT dominant color of the product fabric/material (ignore background, mannequin, model, shadow, lighting).
+IMPORTANT: Dark green shades should be "Bottle Green" or "Olive", NOT black. Dark blue should be "Navy", NOT black. Only use "Black" if the product is truly black.
+Reply ONLY with the color name from this list: Red, Orange, Yellow, Green, Blue, Sky, Purple, Pink, Maroon, Brown, Beige, Cream, White, Black, Grey, Navy, Golden, Olive, Teal, Coral, Magenta, Lavender, Turquoise, Rust, Mustard, Bottle Green, Dark Green, Wine, Peach.
 Reply in this exact format (2 lines only):
 NAME: <short product name>
-COLOR: <one word from the list above>`;
+COLOR: <one word or two words from the list above>`;
         const res = await puter.ai.chat(prompt, dataUrl, { model: 'gpt-4o-mini' });
         const text = res?.message?.content?.[0]?.text || res?.message?.content || res?.toString() || '';
         const nameMatch  = text.match(/NAME:\s*(.+)/i);
-        const colorMatch = text.match(/COLOR:\s*(\w+)/i);
+        const colorMatch = text.match(/COLOR:\s*(.+)/i);
         if (nameMatch  && nameInput  && !nameInput.value)  nameInput.value  = nameMatch[1].trim();
         if (colorMatch && colorInput && !colorInput.value) colorInput.value = colorMatch[1].trim();
         if (aiBtn) { aiBtn.textContent = '✅'; setTimeout(() => { aiBtn.textContent = '🤖 AI'; aiBtn.disabled = false; }, 2000); }
