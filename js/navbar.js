@@ -16,6 +16,7 @@ const menuItems = [
     { name: 'Barcode Print', link: 'label-printer/index.html', icon: '🖨️', roles: ['owner', 'manager'] },
     { name: 'Staff Manage', link: 'staff-management/index.html', icon: '👥', roles: ['owner'] },
     { name: 'Shop Details', link: 'shop-details/shop-details.html', icon: '🏪', roles: ['owner'] },
+    { name: 'Bank Statement', link: 'bank-statement/index.html', icon: '🏦', roles: ['owner', 'manager'] },
     { name: 'Admin Panel', link: 'admin.html', icon: '⚙️', roles: ['owner'], id: 'nav-item-admin' }
 ];
 
@@ -33,7 +34,8 @@ function getCorrectPath(targetPath) {
         currentPath.includes('/advance-booking/') ||
         currentPath.includes('/staff-management/') ||
         currentPath.includes('/label-printer/') ||
-        currentPath.includes('/cancelled-bills/')) {
+        currentPath.includes('/cancelled-bills/') ||
+        currentPath.includes('/bank-statement/')) {
             
         return '../' + targetPath;
     }
@@ -209,7 +211,8 @@ async function updateNavUserInfo() {
                                         window.location.pathname.includes('/advance-booking/') ||
                                         window.location.pathname.includes('/staff-management/') ||
                                         window.location.pathname.includes('/label-printer/') ||
-                                        window.location.pathname.includes('/cancelled-bills/');
+                                        window.location.pathname.includes('/cancelled-bills/') ||
+                                        window.location.pathname.includes('/bank-statement/');
                     const pathPrefix = isInSubFolder ? '../' : '';
 
                     // নতুন বাটন তৈরি

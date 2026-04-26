@@ -159,6 +159,11 @@
                             <a href="https://aistudio.google.com/" target="_blank" class="btn btn-ai-google">
                                 <img src="https://www.gstatic.com/lamda/images/favicon_v2_16x16.png" alt="" style="width: 16px; height: 16px;"> Open AI Scanner (Gemini)
                             </a>
+                            <label class="btn btn-ai-google" style="cursor:pointer; background:linear-gradient(135deg,#10b981,#059669);">
+                                📷 Scan Bill with AI
+                                <input type="file" id="bill-image-input" accept="image/*" style="display:none;">
+                            </label>
+                            <div id="bill-paste-zone" contenteditable="true" style="min-width:160px; padding:8px 14px; background:#f3e8ff; border:2px dashed #8e44ad; border-radius:6px; font-size:13px; color:#8e44ad; font-weight:600; cursor:text; display:flex; align-items:center; justify-content:center;">📋 Ctrl+V দিয়ে Bill ছবি Paste করুন</div>
                             <button type="button" id="btn-paste-ai" class="btn btn-ai-paste">📋 Paste AI Data</button>
                         </div>
                     </div>
@@ -237,6 +242,9 @@
         </div>
     </div>
     
+    <!-- Puter.js - Free AI -->
+    <script src="https://js.puter.com/v2/"></script>
+
     <!-- JsBarcode লাইব্রেরি -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     

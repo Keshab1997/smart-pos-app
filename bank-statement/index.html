@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bank Statement - Smart POS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Puter.js -->
+    <script src="https://js.puter.com/v2/"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>🏦 Bank Statement Analyzer</h1>
+            <p class="subtitle">Axis Bank XLSX upload করুন — AI category detect করবে</p>
+        </div>
+
+        <!-- Saved Statements -->
+        <section class="card saved-card" id="saved-section" style="display:none">
+            <div class="payee-header">
+                <h3>🗂️ Saved Statements</h3>
+                <button class="btn btn-outline" id="btn-refresh-saved" style="font-size:0.8rem;padding:5px 12px">↺ Refresh</button>
+            </div>
+            <div id="saved-list"><p style="padding:16px;color:#888">লোড হচ্ছে...</p></div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="card upload-card">
+            <div class="upload-area" id="upload-area">
+                <input type="file" id="xlsx-file" accept=".xlsx,.xls" hidden>
+                <div class="upload-icon">📂</div>
+                <p>Axis Bank Statement XLSX ড্র্যাগ করুন বা ক্লিক করুন</p>
+                <button class="btn btn-primary" onclick="document.getElementById('xlsx-file').click()">
+                    📁 File Choose করুন
+                </button>
+            </div>
+            <div id="upload-status" class="upload-status hidden"></div>
+        </section>
+
+        <!-- Filters -->
+        <section class="card filters-card hidden" id="filters-section">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label>Name / Payee</label>
+                    <div class="multi-select" id="ms-payee">
+                        <div class="ms-trigger" id="ms-trigger">All Payees ▾</div>
+                        <div class="ms-dropdown hidden" id="ms-dropdown"></div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>From Date</label>
+                    <input type="date" id="filter-from">
+                </div>
+                <div class="filter-group">
+                    <label>To Date</label>
+                    <input type="date" id="filter-to">
+                </div>
+                <div class="filter-group">
+                    <label>Category</label>
+                    <select id="filter-category">
+                        <option value="">All Categories</option>
+                        <option>Food</option><option>Shopping</option><option>EMI</option>
+                        <option>Salary</option><option>Transfer</option><option>Utility</option>
+                        <option>Medical</option><option>Entertainment</option><option>Other</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Type</label>
+                    <select id="filter-type">
+                        <option value="">All</option>
+                        <option value="debit">Debit</option>
+                        <option value="credit">Credit</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" id="btn-apply-filter">🔍 Filter</button>
+                <button class="btn btn-outline" id="btn-reset-filter">↺ Reset</button>
+            </div>
+        </section>
+
+        <!-- Summary Cards -->
+        <section class="summary-grid hidden" id="summary-section">
+            <div class="summary-card debit-card">
+                <div class="summary-icon">💸</div>
+                <div>
+                    <p class="summary-label">Total Debit</p>
+                    <p class="summary-value" id="total-debit">₹0</p>
+                </div>
+            </div>
+            <div class="summary-card credit-card">
+                <div class="summary-icon">💰</div>
+                <div>
+                    <p class="summary-label">Total Credit</p>
+                    <p class="summary-value" id="total-credit">₹0</p>
+                </div>
+            </div>
+            <div class="summary-card balance-card">
+                <div class="summary-icon">🏦</div>
+                <div>
+                    <p class="summary-label">Transactions</p>
+                    <p class="summary-value" id="total-txn">0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts -->
+        <section class="charts-grid hidden" id="charts-section">
+            <div class="card chart-card">
+                <h3>📊 Monthly Debit</h3>
+                <canvas id="bar-chart"></canvas>
+            </div>
+            <div class="card chart-card">
+                <h3>🥧 Category-wise Spend</h3>
+                <canvas id="pie-chart"></canvas>
+            </div>
+        </section>
+
+        <!-- AI Status -->
+        <div id="ai-status" class="ai-status hidden">
+            <span class="ai-spinner">🤖</span>
+            <span id="ai-status-text">AI category detect করছে...</span>
+        </div>
+
+        <!-- Save to Firebase -->
+        <div class="action-bar hidden" id="action-bar">
+            <button class="btn btn-success" id="btn-save-firebase">
+                ☁️ Firebase-এ Save করুন
+            </button>
+            <button class="btn btn-danger" id="btn-delete-data">
+                🗑️ Data Delete
+            </button>
+            <span id="save-status"></span>
+        </div>
+
+        <!-- Payee Summary -->
+        <section class="card payee-card hidden" id="payee-section">
+            <div class="payee-header">
+                <h3>👥 Payee Summary</h3>
+                <div class="payee-tabs">
+                    <button class="ptab active" data-tab="sent">💸 Sent (Debit)</button>
+                    <button class="ptab" data-tab="received">💰 Received (Credit)</button>
+                </div>
+            </div>
+            <div id="payee-list"></div>
+        </section>
+
+        <!-- Transactions Table -->
+        <section class="card table-card hidden" id="table-section">
+            <div class="table-header">
+                <h3>📋 Transactions (<span id="txn-count">0</span>)</h3>
+            </div>
+            <div class="table-wrapper">
+                <table id="txn-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Particulars</th>
+                            <th>Cheque No</th>
+                            <th>Debit</th>
+                            <th>Credit</th>
+                            <th>Balance</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                    <tbody id="txn-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="script.js"></script>
+    <script type="module" src="../js/navbar.js"></script>
+</body>
+</html>

@@ -11,7 +11,38 @@ import {
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // ImgBB API Configuration
-const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267'; 
+const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267';
+
+// --- Puter.js AI Image Analysis ---
+async function analyzeImageWithAI(dataUrl, row) {
+    const nameInput = row.querySelector('.product-name');
+    const colorInput = row.querySelector('.dynamic-input-2');
+    const categoryInput = row.querySelector('.product-category');
+
+    const aiBtn = row.querySelector('.btn-ai-analyze');
+    if (aiBtn) { aiBtn.textContent = '⏳'; aiBtn.disabled = true; }
+
+    try {
+        const prompt = `Look at this product image. Reply in this exact format (2 lines only):
+NAME: <short product name in English>
+COLOR: <dominant color, one word>`;
+
+        const res = await window.puter.ai.chat(prompt, dataUrl, { model: 'gpt-4o-mini' });
+        const text = res?.message?.content?.[0]?.text || res?.message?.content || res?.toString() || '';
+
+        const nameMatch = text.match(/NAME:\s*(.+)/i);
+        const colorMatch = text.match(/COLOR:\s*(\w+)/i);
+        const catMatch = text.match(/CATEGORY:\s*(.+)/i);
+
+        if (nameMatch && nameInput && !nameInput.value) nameInput.value = nameMatch[1].trim();
+        if (colorMatch && colorInput && !colorInput.value) colorInput.value = colorMatch[1].trim();
+
+        if (aiBtn) { aiBtn.textContent = '✅'; setTimeout(() => { aiBtn.textContent = '🤖 AI'; aiBtn.disabled = false; }, 2000); }
+    } catch (e) {
+        console.error('Puter AI error:', e);
+        if (aiBtn) { aiBtn.textContent = '❌'; setTimeout(() => { aiBtn.textContent = '🤖 AI'; aiBtn.disabled = false; }, 2000); }
+    }
+} 
 
 // --- Mode Configuration ---
 const modeConfigs = {
@@ -570,6 +601,24 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // AI Analyze button
+        const aiAnalyzeBtn = row.querySelector('.btn-ai-analyze');
+        if (aiAnalyzeBtn) {
+            aiAnalyzeBtn.addEventListener('click', () => {
+                const file = fileInput?.files?.[0];
+                const urlVal = row.querySelector('.product-image-url')?.value.trim();
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = e => analyzeImageWithAI(e.target.result, row);
+                    reader.readAsDataURL(file);
+                } else if (urlVal) {
+                    analyzeImageWithAI(urlVal, row);
+                } else {
+                    showStatus('⚠️ আগে একটি ছবি সিলেক্ট করুন।', 'error');
+                }
+            });
+        }
+
         // URL preview
         const urlInput = row.querySelector('.product-image-url');
         if (urlInput) {
@@ -621,6 +670,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             tabContents.forEach(c => c.style.display = c.dataset.tab === 'url' ? 'block' : 'none');
                             urlInput.value = url;
                             pasteStatus.textContent = '\u2705 Done!';
+                            // Auto AI analyze after paste upload
+                            analyzeImageWithAI(url, row);
                         } else {
                             pasteStatus.textContent = '\u274c Failed';
                         }
@@ -782,6 +833,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="img-tab-content" data-tab="file">
                         <input type="file" class="product-image" accept="image/*">
+                        <button type="button" class="btn-ai-analyze" style="margin-top:4px; padding:3px 8px; background:#8e44ad; color:white; border:none; border-radius:4px; font-size:11px; cursor:pointer; width:100%;">🤖 AI</button>
                     </div>
                     <div class="img-tab-content" data-tab="url" style="display:none;">
                         <input type="url" class="product-image-url" placeholder="Image URL">
@@ -1231,6 +1283,84 @@ document.addEventListener('DOMContentLoaded', () => {
                 addProductRow();
                 calculateTotalCP(); // ক্লিয়ার করলে টোটাল রিসেট
                 showStatus('✅ All rows cleared!', 'success');
+            }
+        });
+    }
+
+    // --- Bill Paste Zone (Ctrl+V image) ---
+    const billPasteZone = document.getElementById('bill-paste-zone');
+    if (billPasteZone) {
+        billPasteZone.addEventListener('paste', async (e) => {
+            e.preventDefault();
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    billPasteZone.textContent = '⏳ Scanning...';
+                    billPasteZone.style.pointerEvents = 'none';
+                    try {
+                        const dataUrl = await new Promise(resolve => {
+                            const reader = new FileReader();
+                            reader.onload = ev => resolve(ev.target.result);
+                            reader.readAsDataURL(file);
+                        });
+                        const promptText = document.getElementById('ai-prompt-text').textContent;
+                        const res = await window.puter.ai.chat(promptText, dataUrl, { model: 'gpt-4o' });
+                        const text = res?.message?.content?.[0]?.text || res?.message?.content || res?.toString() || '';
+                        document.getElementById('ai-raw-input').value = text.trim();
+                        document.getElementById('ai-process-status').innerText = '';
+                        document.getElementById('ai-paste-modal').classList.remove('hidden');
+                        showStatus('✅ Bill scan সম্পন্ন!', 'success');
+                    } catch (err) {
+                        showStatus('❌ Scan failed: ' + err.message, 'error');
+                    } finally {
+                        billPasteZone.textContent = '📋 Ctrl+V দিয়ে Bill ছবি Paste করুন';
+                        billPasteZone.style.pointerEvents = '';
+                    }
+                    break;
+                }
+            }
+        });
+    }
+
+    // --- Bill Image Scan with AI (Puter.js) ---
+    const billImageInput = document.getElementById('bill-image-input');
+    if (billImageInput) {
+        billImageInput.addEventListener('change', async function() {
+            const file = this.files[0];
+            if (!file) return;
+            this.value = ''; // reset so same file can be selected again
+
+            const label = this.closest('label');
+            const origText = label.childNodes[0].textContent;
+            label.childNodes[0].textContent = '⏳ Scanning...';
+            label.style.pointerEvents = 'none';
+
+            try {
+                const dataUrl = await new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+
+                const mode = window.currentActiveMode || 'general';
+                const promptText = document.getElementById('ai-prompt-text').textContent;
+
+                const res = await window.puter.ai.chat(promptText, dataUrl, { model: 'gpt-4o' });
+                const text = res?.message?.content?.[0]?.text || res?.message?.content || res?.toString() || '';
+
+                // Open paste modal and fill with AI result
+                document.getElementById('ai-raw-input').value = text.trim();
+                document.getElementById('ai-process-status').innerText = '';
+                document.getElementById('ai-paste-modal').classList.remove('hidden');
+                showStatus('✅ Bill scan সম্পন্ন! Data review করে "Process" করুন।', 'success');
+            } catch (e) {
+                console.error('Bill scan error:', e);
+                showStatus('❌ Bill scan failed: ' + e.message, 'error');
+            } finally {
+                label.childNodes[0].textContent = origText;
+                label.style.pointerEvents = '';
             }
         });
     }
