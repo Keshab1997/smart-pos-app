@@ -13,35 +13,14 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 // ImgBB API Configuration
 const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267';
 
-// --- Puter.js AI Image Analysis ---
-async function analyzeImageWithAI(dataUrl, row) {
-    const nameInput = row.querySelector('.product-name');
+// --- AI Image Analysis: color picker fallback ---
+function analyzeImageWithAI(dataUrl, row) {
     const colorInput = row.querySelector('.dynamic-input-2');
-    const categoryInput = row.querySelector('.product-category');
-
-    const aiBtn = row.querySelector('.btn-ai-analyze');
-    if (aiBtn) { aiBtn.textContent = '⏳'; aiBtn.disabled = true; }
-
-    try {
-        const prompt = `Look at this product image. Reply in this exact format (2 lines only):
-NAME: <short product name in English>
-COLOR: <dominant color, one word>`;
-
-        const res = await window.puter.ai.chat(prompt, dataUrl, { model: 'gpt-4o-mini' });
-        const text = res?.message?.content?.[0]?.text || res?.message?.content || res?.toString() || '';
-
-        const nameMatch = text.match(/NAME:\s*(.+)/i);
-        const colorMatch = text.match(/COLOR:\s*(\w+)/i);
-        const catMatch = text.match(/CATEGORY:\s*(.+)/i);
-
-        if (nameMatch && nameInput && !nameInput.value) nameInput.value = nameMatch[1].trim();
-        if (colorMatch && colorInput && !colorInput.value) colorInput.value = colorMatch[1].trim();
-
-        if (aiBtn) { aiBtn.textContent = '✅'; setTimeout(() => { aiBtn.textContent = '🤖 AI'; aiBtn.disabled = false; }, 2000); }
-    } catch (e) {
-        console.error('Puter AI error:', e);
-        if (aiBtn) { aiBtn.textContent = '❌'; setTimeout(() => { aiBtn.textContent = '🤖 AI'; aiBtn.disabled = false; }, 2000); }
+    const aiBtn      = row.querySelector('.btn-ai-analyze');
+    if (colorInput && !colorInput.value) {
+        detectDominantColor(dataUrl, colorInput);
     }
+    if (aiBtn) { setTimeout(() => { aiBtn.textContent = '🤖 AI'; aiBtn.disabled = false; }, 500); }
 } 
 
 // --- Mode Configuration ---
@@ -601,6 +580,23 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Color picker → nearest color name
+        const colorPicker = row.querySelector('.btn-color-pick');
+        if (colorPicker) {
+            colorPicker.addEventListener('input', function() {
+                const colorInput = row.querySelector('.dynamic-input-2');
+                if (!colorInput) return;
+                const hex = this.value;
+                const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+                let best = COLOR_NAMES[0], bestDist = Infinity;
+                COLOR_NAMES.forEach(c => { const d=(c.r-r)**2+(c.g-g)**2+(c.b-b)**2; if(d<bestDist){bestDist=d;best=c;} });
+                colorInput.value = best.name;
+                colorInput.style.backgroundColor = hex;
+                colorInput.style.color = (r*0.299+g*0.587+b*0.114) > 150 ? '#000' : '#fff';
+                setTimeout(() => { colorInput.style.backgroundColor=''; colorInput.style.color=''; }, 2000);
+            });
+        }
+
         // AI Analyze button
         const aiAnalyzeBtn = row.querySelector('.btn-ai-analyze');
         if (aiAnalyzeBtn) {
@@ -833,7 +829,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="img-tab-content" data-tab="file">
                         <input type="file" class="product-image" accept="image/*">
-                        <button type="button" class="btn-ai-analyze" style="margin-top:4px; padding:3px 8px; background:#8e44ad; color:white; border:none; border-radius:4px; font-size:11px; cursor:pointer; width:100%;">🤖 AI</button>
+                        <div style="display:flex;gap:4px;margin-top:4px;">
+                            <button type="button" class="btn-ai-analyze" style="flex:1;padding:3px 6px;background:#8e44ad;color:white;border:none;border-radius:4px;font-size:11px;cursor:pointer;">🤖 AI</button>
+                            <input type="color" class="btn-color-pick" title="Pick color" style="width:28px;height:24px;padding:1px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:none;">
+                        </div>
                     </div>
                     <div class="img-tab-content" data-tab="url" style="display:none;">
                         <input type="url" class="product-image-url" placeholder="Image URL">
