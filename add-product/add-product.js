@@ -598,6 +598,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Puter account switch button
+        const puterSwitchBtn = row.querySelector('.btn-puter-switch');
+        if (puterSwitchBtn) {
+            puterSwitchBtn.addEventListener('click', async () => {
+                await puter.auth.signOut();
+                await puter.auth.signIn();
+            });
+        }
+
         // Color picker → nearest color name
         const colorPicker = row.querySelector('.btn-color-pick');
         if (colorPicker) {
@@ -849,6 +858,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <input type="file" class="product-image" accept="image/*">
                         <div style="display:flex;gap:4px;margin-top:4px;">
                             <button type="button" class="btn-ai-analyze" style="flex:1;padding:3px 6px;background:#8e44ad;color:white;border:none;border-radius:4px;font-size:11px;cursor:pointer;">🤖 AI</button>
+                            <button type="button" class="btn-puter-switch" title="Switch Puter account" style="padding:3px 6px;background:#e67e22;color:white;border:none;border-radius:4px;font-size:11px;cursor:pointer;">🔄</button>
                             <input type="color" class="btn-color-pick" title="Pick color" style="width:28px;height:24px;padding:1px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:none;">
                         </div>
                     </div>
