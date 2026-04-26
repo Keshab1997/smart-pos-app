@@ -13,14 +13,30 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 // ImgBB API Configuration
 const IMGBB_API_KEY = '13567a95e9fe3a212a8d8d10da9f3267';
 
-// --- AI Image Analysis: color picker fallback ---
-function analyzeImageWithAI(dataUrl, row) {
+// --- Puter.js AI Image Analysis (User-Pays: user covers their own AI cost) ---
+async function analyzeImageWithAI(dataUrl, row) {
+    const nameInput  = row.querySelector('.product-name');
     const colorInput = row.querySelector('.dynamic-input-2');
     const aiBtn      = row.querySelector('.btn-ai-analyze');
-    if (colorInput && !colorInput.value) {
-        detectDominantColor(dataUrl, colorInput);
+    if (aiBtn) { aiBtn.textContent = '⏳'; aiBtn.disabled = true; }
+    try {
+        // Ensure user is signed in to Puter (they pay for their own AI usage)
+        if (!await puter.auth.isSignedIn()) await puter.auth.signIn();
+        const prompt = `Look at this product image. Reply in this exact format (2 lines only):
+NAME: <short product name in English>
+COLOR: <dominant color, one word>`;
+        const res = await puter.ai.chat(prompt, dataUrl, { model: 'gpt-4o-mini' });
+        const text = res?.message?.content?.[0]?.text || res?.message?.content || res?.toString() || '';
+        const nameMatch  = text.match(/NAME:\s*(.+)/i);
+        const colorMatch = text.match(/COLOR:\s*(\w+)/i);
+        if (nameMatch  && nameInput  && !nameInput.value)  nameInput.value  = nameMatch[1].trim();
+        if (colorMatch && colorInput && !colorInput.value) colorInput.value = colorMatch[1].trim();
+        if (aiBtn) { aiBtn.textContent = '✅'; setTimeout(() => { aiBtn.textContent = '🤖 AI'; aiBtn.disabled = false; }, 2000); }
+    } catch(e) {
+        // Fallback to canvas color detection
+        if (colorInput && !colorInput.value) detectDominantColor(dataUrl, colorInput);
+        if (aiBtn) { aiBtn.textContent = '🤖 AI'; aiBtn.disabled = false; }
     }
-    if (aiBtn) { setTimeout(() => { aiBtn.textContent = '🤖 AI'; aiBtn.disabled = false; }, 500); }
 } 
 
 // --- Mode Configuration ---
