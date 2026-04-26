@@ -22,9 +22,11 @@ async function analyzeImageWithAI(dataUrl, row) {
     try {
         // Ensure user is signed in to Puter (they pay for their own AI usage)
         if (!await puter.auth.isSignedIn()) await puter.auth.signIn();
-        const prompt = `Look at this product image. Reply in this exact format (2 lines only):
-NAME: <short product name in English>
-COLOR: <dominant color, one word>`;
+        const prompt = `Look at this product/clothing image. Identify the dominant color of the product (ignore background, mannequin, model).
+Reply ONLY with the color name from this list: Red, Orange, Yellow, Green, Blue, Sky, Purple, Pink, Maroon, Brown, Beige, Cream, White, Black, Grey, Navy, Golden, Olive, Teal, Coral, Magenta, Lavender, Turquoise, Rust, Mustard.
+Reply in this exact format (2 lines only):
+NAME: <short product name>
+COLOR: <one word from the list above>`;
         const res = await puter.ai.chat(prompt, dataUrl, { model: 'gpt-4o-mini' });
         const text = res?.message?.content?.[0]?.text || res?.message?.content || res?.toString() || '';
         const nameMatch  = text.match(/NAME:\s*(.+)/i);
