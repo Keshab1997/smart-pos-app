@@ -1,0 +1,155 @@
+name: Firestore Backup
+
+on:
+  schedule:
+    # প্রতিদিন রাত 2:00 AM UTC (ভারতীয় সময় 7:30 AM)
+    - cron: '0 2 * * *'
+  
+  # Manual trigger option
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Dependencies
+        run: |
+          npm install firebase-admin
+      
+      - name: Create Backup Script
+        run: |
+          cat > backup.js << 'EOF'
+          const admin = require('firebase-admin');
+          const fs = require('fs');
+          const path = require('path');
+
+          // Firebase Admin SDK initialization
+          const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+          });
+
+          const db = admin.firestore();
+
+          async function backupFirestore() {
+            const timestamp = new Date().toISOString().split('T')[0];
+            const backupDir = path.join('backups', timestamp);
+            
+            if (!fs.existsSync(backupDir)) {
+              fs.mkdirSync(backupDir, { recursive: true });
+            }
+
+            console.log('🔄 Starting Firestore backup...');
+
+            try {
+              // Backup shops collection
+              const shopsSnapshot = await db.collection('shops').get();
+              const shopsData = {};
+
+              for (const shopDoc of shopsSnapshot.docs) {
+                const shopId = shopDoc.id;
+                const shopData = shopDoc.data();
+                
+                console.log(`📦 Backing up shop: ${shopId}`);
+                
+                shopsData[shopId] = {
+                  ...shopData,
+                  inventory: {},
+                  expenses: {},
+                  sales: {},
+                  inventory_logs: {}
+                };
+
+                // Backup inventory
+                const inventorySnapshot = await db.collection('shops').doc(shopId).collection('inventory').get();
+                inventorySnapshot.forEach(doc => {
+                  shopsData[shopId].inventory[doc.id] = doc.data();
+                });
+
+                // Backup expenses
+                const expensesSnapshot = await db.collection('shops').doc(shopId).collection('expenses').get();
+                expensesSnapshot.forEach(doc => {
+                  shopsData[shopId].expenses[doc.id] = doc.data();
+                });
+
+                // Backup sales
+                const salesSnapshot = await db.collection('shops').doc(shopId).collection('sales').get();
+                salesSnapshot.forEach(doc => {
+                  shopsData[shopId].sales[doc.id] = doc.data();
+                });
+
+                // Backup inventory logs
+                const logsSnapshot = await db.collection('shops').doc(shopId).collection('inventory_logs').get();
+                logsSnapshot.forEach(doc => {
+                  shopsData[shopId].inventory_logs[doc.id] = doc.data();
+                });
+              }
+
+              // Save to JSON file
+              const backupFile = path.join(backupDir, 'firestore-backup.json');
+              fs.writeFileSync(backupFile, JSON.stringify(shopsData, null, 2));
+
+              // Create summary
+              const summary = {
+                timestamp: new Date().toISOString(),
+                shops: Object.keys(shopsData).length,
+                totalInventory: Object.values(shopsData).reduce((sum, shop) => sum + Object.keys(shop.inventory).length, 0),
+                totalExpenses: Object.values(shopsData).reduce((sum, shop) => sum + Object.keys(shop.expenses).length, 0),
+                totalSales: Object.values(shopsData).reduce((sum, shop) => sum + Object.keys(shop.sales).length, 0),
+                totalLogs: Object.values(shopsData).reduce((sum, shop) => sum + Object.keys(shop.inventory_logs).length, 0)
+              };
+
+              const summaryFile = path.join(backupDir, 'summary.json');
+              fs.writeFileSync(summaryFile, JSON.stringify(summary, null, 2));
+
+              console.log('✅ Backup completed successfully!');
+              console.log(`📊 Summary: ${summary.shops} shops, ${summary.totalInventory} products, ${summary.totalSales} sales`);
+
+              return summary;
+            } catch (error) {
+              console.error('❌ Backup failed:', error);
+              throw error;
+            }
+          }
+
+          backupFirestore()
+            .then(() => process.exit(0))
+            .catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
+          EOF
+      
+      - name: Run Backup
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node backup.js
+      
+      - name: Commit and Push Backup
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "GitHub Actions Bot"
+          git add backups/
+          git diff --staged --quiet || git commit -m "🔄 Automated Firestore backup - $(date +'%Y-%m-%d %H:%M:%S')"
+          git push
+      
+      - name: Cleanup Old Backups (Keep last 30 days)
+        run: |
+          cd backups
+          ls -t | tail -n +31 | xargs -r rm -rf
+          cd ..
+          git add backups/
+          git diff --staged --quiet || git commit -m "🗑️ Cleanup old backups"
+          git push
