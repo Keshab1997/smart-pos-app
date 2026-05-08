@@ -102,6 +102,12 @@ document.addEventListener('DOMContentLoaded', () => {
     propBoldInput.addEventListener('change', e => updateSelectedItemProperty('bold', e.target.checked));
     document.getElementById('prop-rotation').addEventListener('change', e => updateSelectedItemProperty('rotation', e.target.value));
     
+    // Barcode rotation handler
+    const barcodeRotationEl = document.getElementById('prop-barcode-rotation');
+    if (barcodeRotationEl) {
+        barcodeRotationEl.addEventListener('change', e => updateSelectedItemProperty('rotation', e.target.value));
+    }
+    
     // Add event listeners for prefix and manual value
     document.getElementById('prop-prefix').addEventListener('input', e => updateSelectedItemProperty('prefix', e.target.value));
     document.getElementById('prop-manual-val').addEventListener('input', e => updateSelectedItemProperty('text', e.target.value));
@@ -797,19 +803,35 @@ function updateItemContent(div, item, product) {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         div.appendChild(svg);
         try {
+            const barcodeWidth = item.options.width || 2;
+            const barcodeHeight = item.options.height || 10;
+            const rotation = item.options.rotation || 0;
+            
             JsBarcode(svg, product.barcode, {
                 format: "CODE128", 
                 displayValue: false,
-                width: 2,
-                height: Math.max(30, item.options.height * 4),
+                width: barcodeWidth,
+                height: Math.max(30, barcodeHeight * 4),
                 margin: 0
             });
-            Object.assign(div.style, {
-                width: 'auto',
-                height: `${item.options.height * previewScale}px`,
-                overflow: 'visible',
-                opacity: "1"
-            });
+            
+            const calculatedWidth = (product.barcode.length * barcodeWidth * 11 * previewScale) / dotsPerMm;
+            
+            if (rotation === 90 || rotation === 270) {
+                Object.assign(div.style, {
+                    width: `${barcodeHeight * previewScale}px`,
+                    height: `${calculatedWidth}px`,
+                    overflow: 'visible',
+                    opacity: "1"
+                });
+            } else {
+                Object.assign(div.style, {
+                    width: `${calculatedWidth}px`,
+                    height: `${barcodeHeight * previewScale}px`,
+                    overflow: 'visible',
+                    opacity: "1"
+                });
+            }
         } catch (e) { div.innerHTML = '<span style="font-size:8px;">Invalid</span>'; }
     }
 }
@@ -845,7 +867,12 @@ function updatePropertiesPanel(itemData) {
     } 
     else { 
         propWidthInput.value = itemData.options.width || 2; 
-        propHeightInput.value = itemData.options.height || 10; 
+        propHeightInput.value = itemData.options.height || 10;
+        
+        const barcodeRotationEl = document.getElementById('prop-barcode-rotation');
+        if (barcodeRotationEl) {
+            barcodeRotationEl.value = itemData.options.rotation || 0;
+        }
     }
 }
 

@@ -168,9 +168,18 @@
                         
                         <div id="barcode-properties" class="hidden">
                              <div class="form-group-inline">
-                                <div class="form-group"><label>W (mm):</label><input type="number" id="prop-width" class="form-control"></div>
-                                <div class="form-group"><label>H (mm):</label><input type="number" id="prop-height" class="form-control"></div>
+                                <div class="form-group"><label>W (Bar):</label><input type="number" id="prop-width" class="form-control" min="1" max="4" step="1"></div>
+                                <div class="form-group"><label>H (mm):</label><input type="number" id="prop-height" class="form-control" min="5" max="30" step="1"></div>
                             </div>
+                            <div class="form-group">
+                                <label>Rotation:</label>
+                                <select id="prop-barcode-rotation" class="form-control">
+                                    <option value="0">Horizontal →</option>
+                                    <option value="90">Vertical ↑ (90°)</option>
+                                    <option value="270">Vertical ↓ (270°)</option>
+                                </select>
+                            </div>
+                            <small style="font-size:10px; color:#666; display:block; margin-top:-8px;">💡 Tip: Use W=1 for long barcodes or rotate 90° vertically</small>
                         </div>
                         
                         <!-- Save Design to Item Button -->
