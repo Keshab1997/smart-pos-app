@@ -1,0 +1,163 @@
+name: Test Daily Report (Manual Only)
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode (yes/no)'
+        required: false
+        default: 'yes'
+
+jobs:
+  test-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Dependencies
+        run: npm install firebase-admin nodemailer
+      
+      - name: Test Firebase Connection
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          cat > test.js << 'EOF'
+          const admin = require('firebase-admin');
+          
+          try {
+            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+            admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+            const db = admin.firestore();
+            
+            console.log('✅ Firebase connection successful!');
+            
+            db.collection('shops').limit(1).get()
+              .then(snapshot => {
+                console.log(`✅ Found ${snapshot.size} shop(s)`);
+                if (snapshot.size > 0) {
+                  const shop = snapshot.docs[0];
+                  console.log(`   Shop ID: ${shop.id}`);
+                  console.log(`   Shop Name: ${shop.data().shopName || 'N/A'}`);
+                }
+                process.exit(0);
+              })
+              .catch(err => {
+                console.error('❌ Firestore query failed:', err);
+                process.exit(1);
+              });
+          } catch (error) {
+            console.error('❌ Firebase initialization failed:', error);
+            process.exit(1);
+          }
+          EOF
+          
+          node test.js
+      
+      - name: Test Email Configuration
+        env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          REPORT_EMAIL: ${{ secrets.REPORT_EMAIL }}
+        run: |
+          echo "📧 Email Configuration Check:"
+          echo "   EMAIL_USER: ${EMAIL_USER:0:3}***@***"
+          echo "   EMAIL_PASSWORD: ${EMAIL_PASSWORD:0:4}****"
+          echo "   REPORT_EMAIL: ${REPORT_EMAIL:0:3}***@***"
+          
+          if [ -z "$EMAIL_USER" ]; then
+            echo "❌ EMAIL_USER secret not set!"
+            exit 1
+          fi
+          
+          if [ -z "$EMAIL_PASSWORD" ]; then
+            echo "❌ EMAIL_PASSWORD secret not set!"
+            exit 1
+          fi
+          
+          if [ -z "$REPORT_EMAIL" ]; then
+            echo "⚠️  REPORT_EMAIL not set, will use EMAIL_USER"
+          fi
+          
+          echo "✅ All email secrets configured!"
+      
+      - name: Generate Test Report
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          REPORT_EMAIL: ${{ secrets.REPORT_EMAIL }}
+        run: |
+          cat > send-test-email.js << 'EOF'
+          const nodemailer = require('nodemailer');
+          
+          const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASSWORD
+            }
+          });
+          
+          const emailTo = process.env.REPORT_EMAIL || process.env.EMAIL_USER;
+          
+          const testHTML = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+              .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+              h1 { color: #667eea; margin-top: 0; }
+              .success { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; border-radius: 4px; }
+              .info { background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>✅ Test Email Successful!</h1>
+              <div class="success">
+                <strong>Congratulations!</strong><br>
+                Your Daily Sales Report system is configured correctly.
+              </div>
+              <div class="info">
+                <strong>Next Steps:</strong><br>
+                1. Check GitHub Actions logs for details<br>
+                2. The actual daily report will run automatically at 11:00 PM UTC (4:30 AM IST)<br>
+                3. You can also trigger it manually anytime from GitHub Actions tab
+              </div>
+              <p><strong>Test Time:</strong> ${new Date().toLocaleString('en-IN')}</p>
+              <p style="color: #666; font-size: 12px; margin-top: 30px;">
+                This is a test email from Smart POS Daily Report System
+              </p>
+            </div>
+          </body>
+          </html>
+          `;
+          
+          transporter.sendMail({
+            from: `"Smart POS Test" <${process.env.EMAIL_USER}>`,
+            to: emailTo,
+            subject: '✅ Test Email - Daily Sales Report System',
+            html: testHTML
+          })
+          .then(() => {
+            console.log(`✅ Test email sent successfully to: ${emailTo}`);
+            process.exit(0);
+          })
+          .catch(err => {
+            console.error('❌ Email sending failed:', err);
+            process.exit(1);
+          });
+          EOF
+          
+          node send-test-email.js
