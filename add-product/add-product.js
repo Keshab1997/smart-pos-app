@@ -351,9 +351,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const category = categoryInput.value.trim().toUpperCase();
             const currentName = nameInput.value.trim();
             
-            // শুধুমাত্র যদি category থাকে এবং name খালি থাকে বা # চিহ্ন না থাকে
+            // যদি name-এ ইতিমধ্যে # থাকে, তাহলে auto-increment করবে না
             if (!category || !activeShopId) return;
-            if (currentName && currentName.includes('#')) return; // Already has number
+            if (currentName.includes('#')) return; // Already has serial number, don't change
             
             try {
                 const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
@@ -412,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // Category change হলে auto-increment trigger করা
+        // Category change হলে auto-increment trigger করা (শুধুমাত্র যদি name-এ # না থাকে)
         if (categoryInput) {
             // Real-time auto-increment on input (typing)
             categoryInput.addEventListener('input', async function() {
@@ -420,22 +420,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.value = this.value.toUpperCase();
                 this.setSelectionRange(cursorPos, cursorPos);
                 
-                // যদি 2+ অক্ষর টাইপ করা হয়, তাহলে auto-increment দেখানো
-                if (this.value.trim().length >= 2) {
+                // যদি 2+ অক্ষর টাইপ করা হয় এবং name-এ # না থাকে
+                if (this.value.trim().length >= 2 && !nameInput.value.includes('#')) {
                     await autoIncrementName();
                 }
             });
             
-            // Datalist থেকে select করলেও trigger হবে
+            // Datalist থেকে select করলেও trigger হবে (শুধু যদি name-এ # না থাকে)
             categoryInput.addEventListener('change', async function() {
                 this.value = this.value.toUpperCase();
-                await autoIncrementName();
+                if (!nameInput.value.includes('#')) {
+                    await autoIncrementName();
+                }
             });
             
-            // Blur হলেও trigger
+            // Blur হলেও trigger (শুধু যদি name-এ # না থাকে)
             categoryInput.addEventListener('blur', async function() {
                 this.value = this.value.toUpperCase();
-                if (this.value.trim()) {
+                if (this.value.trim() && !nameInput.value.includes('#')) {
                     await autoIncrementName();
                 }
             });
@@ -530,11 +532,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Name field auto title-case format on blur
+        // Name field auto title-case format on blur + # shortcut
         if (nameInput) {
-            nameInput.addEventListener('blur', function() {
-                if (!this.readOnly && this.value.trim()) {
-                    this.value = this.value.trim().toLowerCase()
+            nameInput.addEventListener('blur', async function() {
+                const val = this.value.trim();
+                
+                // যদি শুধু # লেখা হয়, তাহলে auto-increment trigger করা
+                if (val === '#' && categoryInput && categoryInput.value.trim()) {
+                    await autoIncrementName();
+                    return;
+                }
+                
+                if (!this.readOnly && val) {
+                    this.value = val.toLowerCase()
                         .replace(/\b\w/g, c => c.toUpperCase());
                 }
             });
@@ -1226,20 +1236,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 disc: firstRow.querySelector('.product-disc')?.value || '',
             };
 
-            // Rename first row to #1 as well
-            const firstRowName = firstRow.querySelector('.product-name');
-            if (firstRowName && !firstRowName.value.includes('#')) {
-                firstRowName.value = `${baseInfo.name} #1`;
+            // প্রথম row-এর name থেকে serial number বের করা
+            let startSerial = 1;
+            let baseName = baseInfo.name;
+            const serialMatch = baseInfo.name.match(/^(.+?)\s*#(\d+)$/);
+            
+            if (serialMatch) {
+                // যদি ইতিমধ্যে serial থাকে (e.g., "Blouse #5")
+                baseName = serialMatch[1].trim();
+                startSerial = parseInt(serialMatch[2]);
+                // প্রথম row-কে ঠিক রাখা (already has serial)
+            } else {
+                // যদি serial না থাকে, প্রথম row-কে #1 বানানো
+                startSerial = 1;
+                firstRow.querySelector('.product-name').value = `${baseName} #${startSerial}`;
             }
 
-            // Count existing rows with same base name to continue serial
-            const existingSerial = Array.from(productsTbody.querySelectorAll('tr'))
-                .filter(r => r.querySelector('.product-name')?.value.startsWith(baseInfo.name)).length;
-
+            // পরবর্তী rows তৈরি করা (startSerial + 1 থেকে শুরু)
             for (let i = 0; i < qty; i++) {
                 addProductRow();
                 const newRow = productsTbody.querySelector('tr:last-child');
-                newRow.querySelector('.product-name').value = `${baseInfo.name} #${existingSerial + i + 1}`;
+                const nextSerial = startSerial + i + 1;
+                
+                newRow.querySelector('.product-name').value = `${baseName} #${nextSerial}`;
                 newRow.querySelector('.product-category').value = baseInfo.category;
                 if (newRow.querySelector('.product-base-rate')) newRow.querySelector('.product-base-rate').value = baseInfo.baseRate;
                 if (newRow.querySelector('.product-gst')) newRow.querySelector('.product-gst').value = baseInfo.gst;

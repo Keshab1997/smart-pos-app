@@ -105,11 +105,11 @@ function createImageModal() {
 
     const modalHtml = `
         <div id="product-image-modal" class="modal" style="display:none; align-items:center; justify-content:center;">
-            <div class="modal-content" style="text-align:center; max-width: 500px; position:relative;">
-                <span class="close-button" id="close-image-modal" style="position:absolute; right:15px; top:10px; font-size:24px; cursor:pointer;">&times;</span>
-                <h3 id="img-modal-title" style="margin-top:0;">Product Image</h3>
-                <div style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
-                    <img id="img-modal-preview" src="" alt="Product" style="max-width: 100%; max-height: 400px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <div class="modal-content" style="text-align:center; max-width: 90vw; max-height: 90vh; position:relative; padding: 1rem;">
+                <span class="close-button" id="close-image-modal" style="position:absolute; right:15px; top:10px; font-size:28px; cursor:pointer; z-index:10; color:#666; background:white; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">&times;</span>
+                <h3 id="img-modal-title" style="margin-top:0; margin-bottom:1rem; color:#4361ee;">Product Image</h3>
+                <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: calc(90vh - 100px);">
+                    <img id="img-modal-preview" src="" alt="Product" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
                 </div>
             </div>
         </div>
