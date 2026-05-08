@@ -6,8 +6,8 @@ permissions:
 
 on:
   schedule:
-    # প্রতিদিন রাত 2:00 AM UTC (ভারতীয় সময় 7:30 AM)
-    - cron: '0 2 * * *'
+    # প্রতি রবিবার রাত 2:00 AM UTC (ভারতীয় সময় 7:30 AM) - Weekly backup
+    - cron: '0 2 * * 0'
   
   # Manual trigger option
   workflow_dispatch:
@@ -48,6 +48,30 @@ jobs:
 
           const db = admin.firestore();
 
+          // Batch processing to avoid quota limits
+          async function batchGet(collectionRef, batchSize = 100) {
+            const allDocs = [];
+            let lastDoc = null;
+            
+            while (true) {
+              let query = collectionRef.limit(batchSize);
+              if (lastDoc) query = query.startAfter(lastDoc);
+              
+              const snapshot = await query.get();
+              if (snapshot.empty) break;
+              
+              snapshot.forEach(doc => allDocs.push({ id: doc.id, data: doc.data() }));
+              lastDoc = snapshot.docs[snapshot.docs.length - 1];
+              
+              // Add delay to avoid rate limiting
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              if (snapshot.docs.length < batchSize) break;
+            }
+            
+            return allDocs;
+          }
+
           async function backupFirestore() {
             const timestamp = new Date().toISOString().split('T')[0];
             const backupDir = path.join('backups', timestamp);
@@ -56,10 +80,9 @@ jobs:
               fs.mkdirSync(backupDir, { recursive: true });
             }
 
-            console.log('🔄 Starting Firestore backup...');
+            console.log('🔄 Starting Firestore backup with rate limiting...');
 
             try {
-              // Backup shops collection
               const shopsSnapshot = await db.collection('shops').get();
               const shopsData = {};
 
@@ -77,29 +100,46 @@ jobs:
                   inventory_logs: {}
                 };
 
-                // Backup inventory
-                const inventorySnapshot = await db.collection('shops').doc(shopId).collection('inventory').get();
-                inventorySnapshot.forEach(doc => {
-                  shopsData[shopId].inventory[doc.id] = doc.data();
+                // Backup inventory with batching
+                console.log('  📦 Backing up inventory...');
+                const inventoryDocs = await batchGet(
+                  db.collection('shops').doc(shopId).collection('inventory')
+                );
+                inventoryDocs.forEach(doc => {
+                  shopsData[shopId].inventory[doc.id] = doc.data;
                 });
 
-                // Backup expenses
-                const expensesSnapshot = await db.collection('shops').doc(shopId).collection('expenses').get();
-                expensesSnapshot.forEach(doc => {
-                  shopsData[shopId].expenses[doc.id] = doc.data();
+                // Backup expenses with batching
+                console.log('  💰 Backing up expenses...');
+                const expensesDocs = await batchGet(
+                  db.collection('shops').doc(shopId).collection('expenses')
+                );
+                expensesDocs.forEach(doc => {
+                  shopsData[shopId].expenses[doc.id] = doc.data;
                 });
 
-                // Backup sales
-                const salesSnapshot = await db.collection('shops').doc(shopId).collection('sales').get();
-                salesSnapshot.forEach(doc => {
-                  shopsData[shopId].sales[doc.id] = doc.data();
+                // Backup sales with batching
+                console.log('  🛒 Backing up sales...');
+                const salesDocs = await batchGet(
+                  db.collection('shops').doc(shopId).collection('sales')
+                );
+                salesDocs.forEach(doc => {
+                  shopsData[shopId].sales[doc.id] = doc.data;
                 });
 
-                // Backup inventory logs
-                const logsSnapshot = await db.collection('shops').doc(shopId).collection('inventory_logs').get();
+                // Backup inventory logs with batching (last 1000 only)
+                console.log('  📋 Backing up logs (last 1000)...');
+                const logsSnapshot = await db.collection('shops').doc(shopId)
+                  .collection('inventory_logs')
+                  .orderBy('timestamp', 'desc')
+                  .limit(1000)
+                  .get();
                 logsSnapshot.forEach(doc => {
                   shopsData[shopId].inventory_logs[doc.id] = doc.data();
                 });
+                
+                // Delay between shops
+                await new Promise(resolve => setTimeout(resolve, 1000));
               }
 
               // Save to JSON file

@@ -1,14 +1,22 @@
 # 🔄 Automatic Firestore Backup System
 
-এই system প্রতিদিন automatically আপনার Firestore database-এর backup নেয় এবং GitHub-এ save করে।
+এই system automatically আপনার Firestore database-এর backup নেয় এবং GitHub-এ save করে।
 
-## 📋 Features
+## 📋 Two Backup Strategies
 
-- ✅ **Daily Automatic Backup** - প্রতিদিন রাত 2:00 AM UTC (ভারতীয় সময় 7:30 AM)
-- ✅ **Complete Data Export** - Shops, Inventory, Sales, Expenses, Logs
-- ✅ **30 Days Retention** - শেষ 30 দিনের backup রাখা হয়
-- ✅ **Manual Trigger** - যেকোনো সময় manually backup নিতে পারবেন
-- ✅ **JSON Format** - সহজে readable এবং restore করা যায়
+### 1. **Lightweight Backup (Daily)** ⚡ - Recommended
+- ✅ **Daily Automatic** - প্রতিদিন রাত 2:00 AM UTC
+- ✅ **Minimal Quota Usage** - শুধু inventory + last 7 days sales
+- ✅ **Fast & Efficient** - কম data, কম সময়
+- ✅ **14 Days Retention** - শেষ 14 দিনের backup
+- 📁 **Location:** `backups-lite/`
+
+### 2. **Full Backup (Weekly)** 📦
+- ✅ **Weekly Automatic** - প্রতি রবিবার রাত 2:00 AM UTC
+- ✅ **Complete Data** - Inventory, Sales, Expenses, Logs (সব কিছু)
+- ✅ **Rate Limited** - Quota exceed এড়ানোর জন্য batch processing
+- ✅ **30 Days Retention** - শেষ 30 দিনের backup
+- 📁 **Location:** `backups/`
 
 ## 🚀 Setup Instructions
 
@@ -37,19 +45,37 @@
 
 ## 📅 Backup Schedule
 
+### Lightweight Backup (Recommended for Daily Use)
 - **Automatic**: প্রতিদিন রাত 2:00 AM UTC (ভারতীয় সময় 7:30 AM)
+- **Manual**: Actions tab → Lightweight Backup (Daily) → Run workflow
+- **Data**: Inventory + Last 7 days sales only
+- **Quota**: Very low (safe for free tier)
+
+### Full Backup (For Complete Data)
+- **Automatic**: প্রতি রবিবার রাত 2:00 AM UTC (Weekly)
 - **Manual**: Actions tab → Firestore Backup → Run workflow
+- **Data**: Everything (Inventory, Sales, Expenses, Logs)
+- **Quota**: Higher usage (use sparingly)
 
 ## 📂 Backup Structure
 
+### Lightweight Backup (Daily)
+```
+backups-lite/
+├── 2024-01-15/
+│   ├── backup-lite.json         # Inventory + Recent sales only
+│   └── summary.json              # Backup summary
+├── 2024-01-16/
+└── ...
+```
+
+### Full Backup (Weekly)
 ```
 backups/
 ├── 2024-01-15/
 │   ├── firestore-backup.json    # Complete data
 │   └── summary.json              # Backup summary
-├── 2024-01-16/
-│   ├── firestore-backup.json
-│   └── summary.json
+├── 2024-01-22/
 └── ...
 ```
 

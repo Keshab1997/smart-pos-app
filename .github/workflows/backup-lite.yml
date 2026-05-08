@@ -1,0 +1,172 @@
+name: Lightweight Backup (Daily)
+
+# Workflow permissions
+permissions:
+  contents: write
+
+on:
+  schedule:
+    # প্রতিদিন রাত 2:00 AM UTC (ভারতীয় সময় 7:30 AM) - Daily lightweight backup
+    - cron: '0 2 * * *'
+  
+  # Manual trigger option
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Dependencies
+        run: |
+          npm install firebase-admin
+      
+      - name: Create Lightweight Backup Script
+        run: |
+          cat > backup-lite.js << 'EOF'
+          const admin = require('firebase-admin');
+          const fs = require('fs');
+          const path = require('path');
+
+          const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+          });
+
+          const db = admin.firestore();
+
+          async function lightweightBackup() {
+            const timestamp = new Date().toISOString().split('T')[0];
+            const backupDir = path.join('backups-lite', timestamp);
+            
+            if (!fs.existsSync(backupDir)) {
+              fs.mkdirSync(backupDir, { recursive: true });
+            }
+
+            console.log('🔄 Starting lightweight backup (inventory + recent sales only)...');
+
+            try {
+              const shopsSnapshot = await db.collection('shops').get();
+              const backupData = {};
+
+              for (const shopDoc of shopsSnapshot.docs) {
+                const shopId = shopDoc.id;
+                const shopData = shopDoc.data();
+                
+                console.log(`📦 Backing up shop: ${shopId}`);
+                
+                backupData[shopId] = {
+                  shopName: shopData.shopName || '',
+                  inventory: {},
+                  recentSales: {}
+                };
+
+                // Backup only inventory (most important)
+                const inventorySnapshot = await db.collection('shops').doc(shopId)
+                  .collection('inventory')
+                  .get();
+                
+                inventorySnapshot.forEach(doc => {
+                  const data = doc.data();
+                  // Store only essential fields to reduce size
+                  backupData[shopId].inventory[doc.id] = {
+                    name: data.name,
+                    category: data.category,
+                    costPrice: data.costPrice,
+                    sellingPrice: data.sellingPrice,
+                    stock: data.stock,
+                    barcode: data.barcode,
+                    extraField1: data.extraField1,
+                    extraField2: data.extraField2
+                  };
+                });
+
+                // Backup only last 7 days sales
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                
+                const salesSnapshot = await db.collection('shops').doc(shopId)
+                  .collection('sales')
+                  .where('timestamp', '>=', sevenDaysAgo)
+                  .get();
+                
+                salesSnapshot.forEach(doc => {
+                  backupData[shopId].recentSales[doc.id] = doc.data();
+                });
+                
+                console.log(`  ✅ ${Object.keys(backupData[shopId].inventory).length} products, ${Object.keys(backupData[shopId].recentSales).length} recent sales`);
+              }
+
+              // Save to JSON file
+              const backupFile = path.join(backupDir, 'backup-lite.json');
+              fs.writeFileSync(backupFile, JSON.stringify(backupData, null, 2));
+
+              // Create summary
+              const summary = {
+                timestamp: new Date().toISOString(),
+                type: 'lightweight',
+                shops: Object.keys(backupData).length,
+                totalInventory: Object.values(backupData).reduce((sum, shop) => sum + Object.keys(shop.inventory).length, 0),
+                totalRecentSales: Object.values(backupData).reduce((sum, shop) => sum + Object.keys(shop.recentSales).length, 0)
+              };
+
+              const summaryFile = path.join(backupDir, 'summary.json');
+              fs.writeFileSync(summaryFile, JSON.stringify(summary, null, 2));
+
+              console.log('✅ Lightweight backup completed!');
+              console.log(`📊 Summary: ${summary.shops} shops, ${summary.totalInventory} products, ${summary.totalRecentSales} recent sales`);
+
+              return summary;
+            } catch (error) {
+              console.error('❌ Backup failed:', error);
+              throw error;
+            }
+          }
+
+          lightweightBackup()
+            .then(() => process.exit(0))
+            .catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
+          EOF
+      
+      - name: Run Lightweight Backup
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node backup-lite.js
+      
+      - name: Commit and Push Backup
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "GitHub Actions Bot"
+          git add backups-lite/
+          if ! git diff --staged --quiet; then
+            git commit -m "🔄 Daily lightweight backup - $(date +'%Y-%m-%d %H:%M:%S')"
+            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          fi
+      
+      - name: Cleanup Old Backups (Keep last 14 days)
+        run: |
+          if [ -d "backups-lite" ]; then
+            cd backups-lite
+            ls -t | tail -n +15 | xargs -r rm -rf
+            cd ..
+            git add backups-lite/
+            if ! git diff --staged --quiet; then
+              git commit -m "🗑️ Cleanup old lightweight backups"
+              git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+            fi
+          fi
