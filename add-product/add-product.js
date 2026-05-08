@@ -346,6 +346,101 @@ document.addEventListener('DOMContentLoaded', () => {
         const nameInput = row.querySelector('.product-name');
         const marginInput = document.getElementById('default-margin');
 
+        // --- Auto-increment Product Name based on Category ---
+        async function autoIncrementName() {
+            const category = categoryInput.value.trim().toUpperCase();
+            const currentName = nameInput.value.trim();
+            
+            // শুধুমাত্র যদি category থাকে এবং name খালি থাকে বা # চিহ্ন না থাকে
+            if (!category || !activeShopId) return;
+            if (currentName && currentName.includes('#')) return; // Already has number
+            
+            try {
+                const inventoryRef = collection(db, 'shops', activeShopId, 'inventory');
+                const { getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+                const querySnapshot = await getDocs(inventoryRef);
+                
+                // এই category-তে সর্বোচ্চ number খুঁজে বের করা
+                let maxNumber = 0;
+                const categoryLower = category.toLowerCase();
+                
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.category && data.category.toUpperCase() === category && data.name) {
+                        // নাম থেকে #number বের করা (e.g., "Blouse #3" -> 3)
+                        const match = data.name.match(/#(\d+)$/);
+                        if (match) {
+                            const num = parseInt(match[1]);
+                            if (num > maxNumber) maxNumber = num;
+                        }
+                    }
+                });
+                
+                // টেবিলের অন্যান্য rows-ও চেক করা
+                const allRows = productsTbody.querySelectorAll('tr');
+                allRows.forEach(r => {
+                    if (r === row) return; // নিজের row skip
+                    const rCat = r.querySelector('.product-category')?.value.trim().toUpperCase();
+                    const rName = r.querySelector('.product-name')?.value.trim();
+                    if (rCat === category && rName) {
+                        const match = rName.match(/#(\d+)$/);
+                        if (match) {
+                            const num = parseInt(match[1]);
+                            if (num > maxNumber) maxNumber = num;
+                        }
+                    }
+                });
+                
+                // নতুন number = maxNumber + 1
+                const nextNumber = maxNumber + 1;
+                const baseName = currentName || category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+                
+                // যদি name-এ ইতিমধ্যে category name না থাকে, তাহলে যোগ করা
+                if (!currentName || currentName.toLowerCase() === categoryLower) {
+                    nameInput.value = `${category.charAt(0).toUpperCase() + category.slice(1).toLowerCase()} #${nextNumber}`;
+                } else {
+                    // যদি custom name থাকে, তাহলে শুধু number যোগ করা
+                    nameInput.value = `${baseName} #${nextNumber}`;
+                }
+                
+                // Visual feedback
+                nameInput.style.backgroundColor = '#e3f2fd';
+                setTimeout(() => nameInput.style.backgroundColor = '', 1500);
+                
+            } catch (error) {
+                console.error('Auto-increment error:', error);
+            }
+        }
+        
+        // Category change হলে auto-increment trigger করা
+        if (categoryInput) {
+            // Real-time auto-increment on input (typing)
+            categoryInput.addEventListener('input', async function() {
+                const cursorPos = this.selectionStart;
+                this.value = this.value.toUpperCase();
+                this.setSelectionRange(cursorPos, cursorPos);
+                
+                // যদি 2+ অক্ষর টাইপ করা হয়, তাহলে auto-increment দেখানো
+                if (this.value.trim().length >= 2) {
+                    await autoIncrementName();
+                }
+            });
+            
+            // Datalist থেকে select করলেও trigger হবে
+            categoryInput.addEventListener('change', async function() {
+                this.value = this.value.toUpperCase();
+                await autoIncrementName();
+            });
+            
+            // Blur হলেও trigger
+            categoryInput.addEventListener('blur', async function() {
+                this.value = this.value.toUpperCase();
+                if (this.value.trim()) {
+                    await autoIncrementName();
+                }
+            });
+        }
+
         // --- Net CP Auto-Calculate: Base Rate + GST% - Disc% ---
         function recalcNetCP() {
             const base = parseFloat(baseRateInput.value) || 0;
@@ -447,13 +542,6 @@ document.addEventListener('DOMContentLoaded', () => {
             nameInput.addEventListener('contextmenu', function(e) {
                 // Let browser handle it natively
                 e.stopPropagation();
-            });
-        }
-
-        // Category auto uppercase
-        if (categoryInput) {
-            categoryInput.addEventListener('blur', function() {
-                this.value = this.value.toUpperCase();
             });
         }
 
