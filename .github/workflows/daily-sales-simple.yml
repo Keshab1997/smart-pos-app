@@ -1,0 +1,262 @@
+name: Daily Sales Report (Simple)
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    # প্রতিদিন রাত 11:30 PM UTC (ভারতীয় সময় 5:00 AM) - দিনের শেষে report
+    - cron: '30 23 * * *'
+  
+  workflow_dispatch:
+
+jobs:
+  sales-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Dependencies
+        run: npm install firebase-admin nodemailer
+      
+      - name: Generate Sales Report
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          REPORT_EMAIL: ${{ secrets.REPORT_EMAIL }}
+        run: |
+          cat > sales-report.js << 'EOF'
+          const admin = require('firebase-admin');
+          const nodemailer = require('nodemailer');
+
+          const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+          const db = admin.firestore();
+
+          const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASSWORD
+            }
+          });
+
+          async function generateSalesReport() {
+            console.log('📊 Generating daily sales report...');
+
+            try {
+              const shopsSnapshot = await db.collection('shops').limit(1).get();
+              
+              if (shopsSnapshot.empty) {
+                console.log('No shops found');
+                return;
+              }
+
+              const shopDoc = shopsSnapshot.docs[0];
+              const shopId = shopDoc.id;
+              const shopData = shopDoc.data();
+              const shopName = shopData.shopName || 'Your Shop';
+              
+              console.log(`📦 Processing shop: ${shopName}`);
+
+              // Get today's date range
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const tomorrow = new Date(today);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+
+              // Fetch today's sales
+              const salesSnapshot = await db.collection('shops').doc(shopId)
+                .collection('sales')
+                .where('timestamp', '>=', today)
+                .where('timestamp', '<', tomorrow)
+                .get();
+
+              console.log(`   Found ${salesSnapshot.size} sales today`);
+
+              // Calculate sales metrics
+              let totalSales = 0;
+              let cashSales = 0;
+              let cardSales = 0;
+              let upiSales = 0;
+              let totalProfit = 0;
+              const totalTransactions = salesSnapshot.size;
+
+              salesSnapshot.forEach(doc => {
+                const sale = doc.data();
+                const saleTotal = parseFloat(sale.totalAmount) || 0;
+                const paymentMethod = (sale.paymentMethod || 'cash').toLowerCase();
+                
+                totalSales += saleTotal;
+
+                // Payment method breakdown
+                if (paymentMethod === 'cash') {
+                  cashSales += saleTotal;
+                } else if (paymentMethod === 'card') {
+                  cardSales += saleTotal;
+                } else if (paymentMethod === 'upi') {
+                  upiSales += saleTotal;
+                } else {
+                  cashSales += saleTotal; // Default to cash
+                }
+
+                // Calculate profit
+                if (sale.items && Array.isArray(sale.items)) {
+                  sale.items.forEach(item => {
+                    const qty = parseInt(item.quantity) || 0;
+                    const sp = parseFloat(item.sellingPrice) || 0;
+                    const cp = parseFloat(item.costPrice) || 0;
+                    totalProfit += (sp - cp) * qty;
+                  });
+                }
+              });
+
+              // Generate email
+              const profitMargin = totalSales > 0 ? ((totalProfit / totalSales) * 100).toFixed(1) : 0;
+              const avgTransaction = totalTransactions > 0 ? (totalSales / totalTransactions).toFixed(2) : 0;
+
+              const emailHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+    .container { max-width: 700px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+    .header p { margin: 10px 0 0; opacity: 0.95; font-size: 15px; }
+    .content { padding: 35px; }
+    .summary-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; margin-bottom: 25px; text-align: center; }
+    .summary-box h2 { margin: 0 0 5px; font-size: 16px; opacity: 0.9; font-weight: 500; }
+    .summary-box .amount { font-size: 48px; font-weight: bold; margin: 10px 0; }
+    .summary-box .subtext { font-size: 14px; opacity: 0.9; }
+    .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px; }
+    .metric-card { background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea; }
+    .metric-card h3 { margin: 0 0 10px; font-size: 13px; color: #666; text-transform: uppercase; font-weight: 600; }
+    .metric-card .value { font-size: 28px; font-weight: bold; color: #333; }
+    .metric-card .sub { font-size: 13px; color: #999; margin-top: 5px; }
+    .payment-breakdown { background: #fff; border: 2px solid #e9ecef; border-radius: 10px; padding: 20px; margin-bottom: 25px; }
+    .payment-breakdown h3 { margin: 0 0 15px; font-size: 18px; color: #333; }
+    .payment-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    .payment-item:last-child { border-bottom: none; }
+    .payment-label { display: flex; align-items: center; font-size: 15px; color: #555; font-weight: 500; }
+    .payment-icon { width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 18px; }
+    .icon-cash { background: #d4edda; }
+    .icon-card { background: #cfe2ff; }
+    .icon-upi { background: #fff3cd; }
+    .payment-amount { font-size: 20px; font-weight: bold; color: #333; }
+    .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #e9ecef; }
+    .footer p { margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Daily Sales Report</h1>
+      <p>${shopName}</p>
+      <p>${today.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+    </div>
+    
+    <div class="content">
+      <!-- Total Sales Summary -->
+      <div class="summary-box">
+        <h2>💰 Total Sales</h2>
+        <div class="amount">₹${totalSales.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+        <div class="subtext">${totalTransactions} transactions | Avg: ₹${avgTransaction}</div>
+      </div>
+
+      <!-- Payment Method Breakdown -->
+      <div class="payment-breakdown">
+        <h3>💳 Payment Breakdown</h3>
+        
+        <div class="payment-item">
+          <div class="payment-label">
+            <div class="payment-icon icon-cash">💵</div>
+            <span>Cash</span>
+          </div>
+          <div class="payment-amount">₹${cashSales.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+        </div>
+        
+        <div class="payment-item">
+          <div class="payment-label">
+            <div class="payment-icon icon-card">💳</div>
+            <span>Card</span>
+          </div>
+          <div class="payment-amount">₹${cardSales.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+        </div>
+        
+        ${upiSales > 0 ? `
+        <div class="payment-item">
+          <div class="payment-label">
+            <div class="payment-icon icon-upi">📱</div>
+            <span>UPI</span>
+          </div>
+          <div class="payment-amount">₹${upiSales.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+        </div>
+        ` : ''}
+      </div>
+
+      <!-- Additional Metrics -->
+      <div class="metrics">
+        <div class="metric-card">
+          <h3>📈 Profit</h3>
+          <div class="value">₹${totalProfit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+          <div class="sub">${profitMargin}% margin</div>
+        </div>
+        
+        <div class="metric-card">
+          <h3>🛒 Transactions</h3>
+          <div class="value">${totalTransactions}</div>
+          <div class="sub">Avg: ₹${avgTransaction}</div>
+        </div>
+      </div>
+
+    </div>
+    
+    <div class="footer">
+      <p><strong>Smart POS System</strong> - Daily Sales Report</p>
+      <p>Generated at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+    </div>
+  </div>
+</body>
+</html>
+              `;
+
+              const emailTo = process.env.REPORT_EMAIL || shopData.ownerEmail || process.env.EMAIL_USER;
+              
+              await transporter.sendMail({
+                from: `"${shopName} POS" <${process.env.EMAIL_USER}>`,
+                to: emailTo,
+                subject: `📊 Sales Report - ${today.toLocaleDateString('en-IN')} - ₹${totalSales.toFixed(2)}`,
+                html: emailHTML
+              });
+
+              console.log(`✅ Report sent to: ${emailTo}`);
+              console.log(`   Total Sales: ₹${totalSales.toFixed(2)}`);
+              console.log(`   Cash: ₹${cashSales.toFixed(2)} | Card: ₹${cardSales.toFixed(2)} | UPI: ₹${upiSales.toFixed(2)}`);
+              console.log(`   Profit: ₹${totalProfit.toFixed(2)} (${profitMargin}%)`);
+              console.log(`   Transactions: ${totalTransactions}`);
+
+            } catch (error) {
+              console.error('❌ Report generation failed:', error);
+              throw error;
+            }
+          }
+
+          generateSalesReport()
+            .then(() => process.exit(0))
+            .catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
+          EOF
+          
+          node sales-report.js
