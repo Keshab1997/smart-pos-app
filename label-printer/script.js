@@ -392,46 +392,100 @@ function renderProductList() {
     const filteredProducts = allProducts.filter(p => 
         p.name.toLowerCase().includes(filter) || (p.barcode && p.barcode.toLowerCase().includes(filter))
     );
+    
+    // Group by category/group
+    const grouped = {};
+    filteredProducts.forEach(product => {
+        const group = product.category || product.group || 'Other';
+        if (!grouped[group]) grouped[group] = [];
+        grouped[group].push(product);
+    });
+    
     productListEl.innerHTML = '';
     
-    filteredProducts.forEach(product => {
-        const li = document.createElement('li');
-        li.style.cssText = "padding:8px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; justify-content:space-between; align-items:center;";
-        
-        // Color badge - extra2 = color field for clothing
-        const colorVal = product.extraField2 || product.extra2 || product.color || '';
-        const sizVal = product.extraField1 || product.extra1 || product.size || '';
-        const colorBg = getColorBg(colorVal);
-        const colorBadge = colorVal 
-            ? `<span style="background:${colorBg}; color:${isLightColor(colorBg)?'#333':'#fff'}; padding:1px 6px; border-radius:10px; font-size:10px; font-weight:600; margin-left:4px; border:1px solid rgba(0,0,0,0.15);">${colorVal}</span>` 
-            : '';
-        const sizeBadge = sizVal 
-            ? `<span style="background:#e3f2fd; color:#1565c0; padding:1px 6px; border-radius:10px; font-size:10px; font-weight:600; margin-left:4px;">${sizVal}</span>` 
-            : '';
-        
-        const imgHtml = product.imageUrl 
-            ? `<img src="${product.imageUrl}" style="width:32px; height:32px; object-fit:cover; border-radius:4px; margin-right:6px; flex-shrink:0; border:1px solid #eee;" onerror="this.style.display='none'">` 
-            : `<span style="width:32px; height:32px; background:#f0f0f0; border-radius:4px; margin-right:6px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; font-size:14px;">📦</span>`;
-        
-        li.innerHTML = `
-            ${imgHtml}
-            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${product.name}${sizeBadge}${colorBadge}</span>
-            <span style="color:#888; font-size:11px; flex-shrink:0; margin-left:4px;">${product.barcode || ''}</span>
-            <span style="background:#e8f5e9; color:#2e7d32; font-size:11px; font-weight:700; padding:2px 6px; border-radius:10px; margin-left:6px; flex-shrink:0;" title="Stock">📦${parseInt(product.stock)||0}</span>
+    Object.keys(grouped).sort().forEach(groupName => {
+        // Parent Group Header
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'product-group-header';
+        groupHeader.innerHTML = `
+            <span class="group-toggle">▶</span>
+            <strong>${groupName}</strong>
+            <span style="color:#999; font-size:10px; margin-left:auto;">(${grouped[groupName].length})</span>
+            <button class="btn-add-group" title="Add all to queue">+ All</button>
         `;
         
-        // Click to add to queue, qty = stock
-        li.addEventListener('click', () => {
-            addToQueue(product);
-            const queueItem = printQueue.find(p => p.id === product.id);
-            const stock = parseInt(product.stock) || 0;
-            if (queueItem && stock > 0 && queueItem.printQty === 1) {
-                queueItem.printQty = stock;
-                renderPrintQueue();
-            }
+        const groupItems = document.createElement('div');
+        groupItems.className = 'product-group-items collapsed';
+        
+        grouped[groupName].forEach(product => {
+            const li = document.createElement('li');
+            li.style.cssText = "padding:8px 8px 8px 24px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; justify-content:space-between; align-items:center;";
+            
+            const colorVal = product.extraField2 || product.extra2 || product.color || '';
+            const sizVal = product.extraField1 || product.extra1 || product.size || '';
+            const colorBg = getColorBg(colorVal);
+            const colorBadge = colorVal 
+                ? `<span style="background:${colorBg}; color:${isLightColor(colorBg)?'#333':'#fff'}; padding:1px 6px; border-radius:10px; font-size:10px; font-weight:600; margin-left:4px; border:1px solid rgba(0,0,0,0.15);">${colorVal}</span>` 
+                : '';
+            const sizeBadge = sizVal 
+                ? `<span style="background:#e3f2fd; color:#1565c0; padding:1px 6px; border-radius:10px; font-size:10px; font-weight:600; margin-left:4px;">${sizVal}</span>` 
+                : '';
+            
+            const imgHtml = product.imageUrl 
+                ? `<img src="${product.imageUrl}" style="width:32px; height:32px; object-fit:cover; border-radius:4px; margin-right:6px; flex-shrink:0; border:1px solid #eee;" onerror="this.style.display='none'">` 
+                : `<span style="width:32px; height:32px; background:#f0f0f0; border-radius:4px; margin-right:6px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; font-size:14px;">📦</span>`;
+            
+            li.innerHTML = `
+                ${imgHtml}
+                <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${product.name}${sizeBadge}${colorBadge}</span>
+                <span style="color:#888; font-size:11px; flex-shrink:0; margin-left:4px;">${product.barcode || ''}</span>
+                <span style="background:#e8f5e9; color:#2e7d32; font-size:11px; font-weight:700; padding:2px 6px; border-radius:10px; margin-left:6px; flex-shrink:0;" title="Stock">📦${parseInt(product.stock)||0}</span>
+            `;
+            
+            li.addEventListener('click', () => {
+                addToQueue(product);
+                const queueItem = printQueue.find(p => p.id === product.id);
+                const stock = parseInt(product.stock) || 0;
+                if (queueItem && stock > 0 && queueItem.printQty === 1) {
+                    queueItem.printQty = stock;
+                    renderPrintQueue();
+                }
+            });
+            
+            groupItems.appendChild(li);
         });
         
-        productListEl.appendChild(li);
+        // Toggle expand/collapse
+        groupHeader.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-add-group')) return;
+            groupItems.classList.toggle('collapsed');
+            const toggle = groupHeader.querySelector('.group-toggle');
+            toggle.textContent = groupItems.classList.contains('collapsed') ? '▶' : '▼';
+        });
+        
+        // Add all group items to queue
+        const addGroupBtn = groupHeader.querySelector('.btn-add-group');
+        addGroupBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            let addedCount = 0;
+            grouped[groupName].forEach(product => {
+                const existing = printQueue.find(p => p.id === product.id);
+                if (!existing) {
+                    addToQueue(product);
+                    const queueItem = printQueue.find(p => p.id === product.id);
+                    const stock = parseInt(product.stock) || 0;
+                    if (queueItem && stock > 0) {
+                        queueItem.printQty = stock;
+                    }
+                    addedCount++;
+                }
+            });
+            renderPrintQueue();
+            showStatus(`✅ ${addedCount} items from "${groupName}" added to queue`, 'success');
+        });
+        
+        productListEl.appendChild(groupHeader);
+        productListEl.appendChild(groupItems);
     });
 }
 
@@ -658,6 +712,8 @@ function createDraggableItem(item, product, index) {
     interact(div).draggable({
         listeners: {
             move(event) {
+                event.preventDefault();
+                event.stopPropagation();
                 const i = parseInt(event.target.dataset.index);
                 const itemData = currentLabelItems[i];
                 itemData.x += event.dx / previewScale;
@@ -673,7 +729,9 @@ function createDraggableItem(item, product, index) {
                 }
             }
         },
-        modifiers: [interact.modifiers.restrictRect({ restriction: 'parent' })]
+        modifiers: [interact.modifiers.restrictRect({ restriction: 'parent' })],
+        inertia: false,
+        autoScroll: false
     }).on('tap', e => selectItem(parseInt(e.currentTarget.dataset.index)));
     
     return div;

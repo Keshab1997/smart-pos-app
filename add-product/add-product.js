@@ -188,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusMessage = document.getElementById('status-message');
     const barcodePrintArea = document.getElementById('barcode-print-area');
     const barcodesContainer = document.getElementById('barcodes-container');
-    const logoutBtn = document.getElementById('logout-btn');
 
     let activeShopId = null;
 
@@ -337,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Smart Typing Setup for Each Row ---
     function setupSmartTyping(row) {
+        let spManuallyEdited = false;
         const cpInput = row.querySelector('.product-cp');
         const spInput = row.querySelector('.product-sp');
         const baseRateInput = row.querySelector('.product-base-rate');
@@ -1166,9 +1166,6 @@ document.addEventListener('DOMContentLoaded', () => {
             saveTableToLocal();
         });
     }
-
-    // --- Auto-save on input change ---
-    productsTbody.addEventListener('input', saveTableToLocal);
 
     // --- Real-time Total CP Calculator ---
     function calculateTotalCP() {
@@ -2238,12 +2235,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('close-scanner-btn').addEventListener('click', stopScanner);
 
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async (e) => {
+    // Logout via event delegation (navbar loads dynamically)
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('#logout-btn')) {
             e.preventDefault();
             await signOut(auth);
-        });
-    }
+        }
+    });
 
     // Modal overlay click to close
     document.getElementById('scanner-modal').addEventListener('click', (e) => {

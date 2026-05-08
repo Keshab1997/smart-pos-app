@@ -257,9 +257,9 @@
     <script type="importmap">
     {
       "imports": {
-        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
       }
     }
     </script>
@@ -272,7 +272,7 @@
     <!-- লগআউট লজিক হ্যান্ডেল করা -->
     <script type="module">
         import { auth } from '../js/firebase-config.js';
-        import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
         document.addEventListener('trigger-logout', () => {
             signOut(auth).then(() => {
