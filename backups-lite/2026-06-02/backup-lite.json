@@ -1,0 +1,2419 @@
+{
+  "4cKPGgGWiEfTtSGdopcYWnnbx002": {
+    "shopName": "DipaShowroom",
+    "inventory": {},
+    "recentSales": {}
+  },
+  "8KX4faGiyWZ1F1FJ7Oo4kaiDjE42": {
+    "shopName": "KESHAB STORE",
+    "inventory": {
+      "1203_WHITE": {
+        "name": "Dhuti",
+        "category": "BENGALI TRADITIONAL",
+        "costPrice": 5000,
+        "sellingPrice": 12000,
+        "stock": 10,
+        "barcode": "1203",
+        "extraField1": "Xxl",
+        "extraField2": "White"
+      },
+      "1204_RED": {
+        "name": "Dhuti",
+        "category": "BENGALI TRADITIONAL",
+        "costPrice": 5000,
+        "sellingPrice": 12000,
+        "stock": 1,
+        "barcode": "1204",
+        "extraField1": "S",
+        "extraField2": "Red"
+      }
+    },
+    "recentSales": {}
+  },
+  "H9VkWoANPwfZvhee2BC83M8NNZF3": {
+    "shopName": "SOOT BOOT",
+    "inventory": {
+      "1001": {
+        "name": "Sada Kalo",
+        "category": "Sada Kalo Kurta",
+        "costPrice": 1750,
+        "sellingPrice": 4000,
+        "stock": 2,
+        "barcode": "1001"
+      },
+      "1002": {
+        "name": "Sada Kalo",
+        "category": "Sada Kalo Kurta",
+        "costPrice": 1750,
+        "sellingPrice": 5000,
+        "stock": 2,
+        "barcode": "1002"
+      },
+      "1003": {
+        "name": "Sada Kalo",
+        "category": "Sada Kalo Kurta",
+        "costPrice": 1750,
+        "sellingPrice": 6500,
+        "stock": 1,
+        "barcode": "1003"
+      },
+      "1004": {
+        "name": "Sada Kalo",
+        "category": "Sada Kalo Kurta",
+        "costPrice": 1200,
+        "sellingPrice": 6300,
+        "stock": 2,
+        "barcode": "1004"
+      },
+      "1005": {
+        "name": "Sada Kalo",
+        "category": "Sada Kalo Kurta",
+        "costPrice": 2700,
+        "sellingPrice": 6500,
+        "stock": 1,
+        "barcode": "1005"
+      },
+      "1006": {
+        "name": "Satin Embroidery Saree",
+        "category": "Satin Embroidery Saree",
+        "costPrice": 3200,
+        "sellingPrice": 7500,
+        "stock": 4,
+        "barcode": "1006",
+        "extraField1": "",
+        "extraField2": "Yellow"
+      },
+      "1007": {
+        "name": "Satin Embroidery Saree",
+        "category": "Satin Embroidery Saree",
+        "costPrice": 5600,
+        "sellingPrice": 13000,
+        "stock": 1,
+        "barcode": "1007"
+      },
+      "1008": {
+        "name": "Satin Embroidery Saree",
+        "category": "Satin Embroidery Saree",
+        "costPrice": 3900,
+        "sellingPrice": 8500,
+        "stock": 4,
+        "barcode": "1008"
+      },
+      "1009": {
+        "name": "Satin Embroidery Saree",
+        "category": "Satin Embroidery Saree",
+        "costPrice": 3000,
+        "sellingPrice": 7000,
+        "stock": 3,
+        "barcode": "1009",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "1010": {
+        "name": "Satin Embroidery Saree",
+        "category": "Satin Embroidery Saree",
+        "costPrice": 4500,
+        "sellingPrice": 8000,
+        "stock": 1,
+        "barcode": "1010"
+      },
+      "1011": {
+        "name": "Satin Embroidery Saree",
+        "category": "Satin Embroidery Saree",
+        "costPrice": 5000,
+        "sellingPrice": 10000,
+        "stock": 1,
+        "barcode": "1011"
+      },
+      "1012": {
+        "name": "Modern Saree",
+        "category": "Handloom Saree",
+        "costPrice": 800,
+        "sellingPrice": 6500,
+        "stock": 1,
+        "barcode": "1012"
+      },
+      "1013": {
+        "name": "Modern Saree",
+        "category": "Modern Saree",
+        "costPrice": 2000,
+        "sellingPrice": 5500,
+        "stock": 0,
+        "barcode": "1013"
+      },
+      "1014": {
+        "name": "Modern Saree",
+        "category": "Modern Saree",
+        "costPrice": 6300,
+        "sellingPrice": 12000,
+        "stock": 0,
+        "barcode": "1014"
+      },
+      "1015": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 2500,
+        "sellingPrice": 8000,
+        "stock": 0,
+        "barcode": "1015"
+      },
+      "1017": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 2000,
+        "sellingPrice": 5000,
+        "stock": 36,
+        "barcode": "1017"
+      },
+      "1018": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 3000,
+        "sellingPrice": 6000,
+        "stock": 0,
+        "barcode": "1018"
+      },
+      "1019": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 1750,
+        "sellingPrice": 4500,
+        "stock": 2,
+        "barcode": "1019"
+      },
+      "1020": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 2600,
+        "sellingPrice": 6500,
+        "stock": 2,
+        "barcode": "1020"
+      },
+      "1021": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 3000,
+        "sellingPrice": 7000,
+        "stock": 3,
+        "barcode": "1021"
+      },
+      "1022": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 3200,
+        "sellingPrice": 7500,
+        "stock": 1,
+        "barcode": "1022"
+      },
+      "1023": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 3000,
+        "sellingPrice": 7000,
+        "stock": 2,
+        "barcode": "1023"
+      },
+      "1024": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 2500,
+        "sellingPrice": 5500,
+        "stock": 17,
+        "barcode": "1024"
+      },
+      "1025": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 3000,
+        "sellingPrice": 6000,
+        "stock": 33,
+        "barcode": "1025"
+      },
+      "1026": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 2600,
+        "sellingPrice": 6500,
+        "stock": 3,
+        "barcode": "1026"
+      },
+      "1027": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 1780,
+        "sellingPrice": 5000,
+        "stock": 5,
+        "barcode": "1027"
+      },
+      "1028": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 2600,
+        "sellingPrice": 6500,
+        "stock": 3,
+        "barcode": "1028"
+      },
+      "1029": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 3000,
+        "sellingPrice": 6000,
+        "stock": 7,
+        "barcode": "1029"
+      },
+      "1030": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 2000,
+        "sellingPrice": 5000,
+        "stock": 2,
+        "barcode": "1030"
+      },
+      "1031": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 2200,
+        "sellingPrice": 5500,
+        "stock": 5,
+        "barcode": "1031"
+      },
+      "1032": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 3000,
+        "sellingPrice": 7000,
+        "stock": 0,
+        "barcode": "1032"
+      },
+      "1033": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 1500,
+        "sellingPrice": 4000,
+        "stock": 2,
+        "barcode": "1033"
+      },
+      "1034": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 3000,
+        "sellingPrice": 8000,
+        "stock": 1,
+        "barcode": "1034"
+      },
+      "1035": {
+        "name": "Designer Kurta",
+        "category": "Designer Kurta",
+        "costPrice": 3500,
+        "sellingPrice": 12000,
+        "stock": 1,
+        "barcode": "1035"
+      },
+      "1036": {
+        "name": "Designer Kurta",
+        "category": "Designer Kurta",
+        "costPrice": 1500,
+        "sellingPrice": 4000,
+        "stock": 1,
+        "barcode": "1036"
+      },
+      "1037": {
+        "name": "Designer Kurta",
+        "category": "Designer Kurta",
+        "costPrice": 2000,
+        "sellingPrice": 6000,
+        "stock": 1,
+        "barcode": "1037"
+      },
+      "1038": {
+        "name": "Designer Kurta",
+        "category": "Designer Kurta",
+        "costPrice": 2500,
+        "sellingPrice": 7000,
+        "stock": 2,
+        "barcode": "1038"
+      },
+      "1039": {
+        "name": "Designer Kurta",
+        "category": "Designer Kurta",
+        "costPrice": 3500,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "1039"
+      },
+      "1040": {
+        "name": "Designer Kurta",
+        "category": "Designer Kurta",
+        "costPrice": 3000,
+        "sellingPrice": 10000,
+        "stock": 2,
+        "barcode": "1040"
+      },
+      "1041": {
+        "name": "Designer Kurta",
+        "category": "Designer Kurta",
+        "costPrice": 3000,
+        "sellingPrice": 6500,
+        "stock": 1,
+        "barcode": "1041"
+      },
+      "1042": {
+        "name": "Designer Kurta",
+        "category": "Designer Kurta",
+        "costPrice": 4800,
+        "sellingPrice": 9500,
+        "stock": 1,
+        "barcode": "1042"
+      },
+      "1044": {
+        "name": "Cotton Handloom Kurta",
+        "category": "Cotton Handloom Kurta",
+        "costPrice": 2000,
+        "sellingPrice": 4500,
+        "stock": 2,
+        "barcode": "1044"
+      },
+      "1045": {
+        "name": "Cotton Handloom Kurta",
+        "category": "Cotton Handloom Kurta",
+        "costPrice": 3200,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "1045"
+      },
+      "1047": {
+        "name": "Satin Embroidery Saree",
+        "category": "Saree",
+        "costPrice": 3400,
+        "sellingPrice": 9500,
+        "stock": 0,
+        "barcode": "1047"
+      },
+      "1049": {
+        "name": "Satin Embroidery Saree",
+        "category": "Saree",
+        "costPrice": 3800,
+        "sellingPrice": 7500,
+        "stock": 0,
+        "barcode": "1049"
+      },
+      "1050": {
+        "name": "Satin Embroidery Saree",
+        "category": "Saree",
+        "costPrice": 3500,
+        "sellingPrice": 5500,
+        "stock": 0,
+        "barcode": "1050"
+      },
+      "1051": {
+        "name": "Designer Banarasi Saree",
+        "category": "Designer Banarasi Saree",
+        "costPrice": 4400,
+        "sellingPrice": 18500,
+        "stock": 1,
+        "barcode": "1051"
+      },
+      "1052": {
+        "name": "Satin Embroidery Saree",
+        "category": "Satin Embroidery Saree",
+        "costPrice": 2600,
+        "sellingPrice": 4600,
+        "stock": 1,
+        "barcode": "1052"
+      },
+      "1053": {
+        "name": "Cotton Kurta",
+        "category": "Cotton Kurta",
+        "costPrice": 700,
+        "sellingPrice": 2400,
+        "stock": 1,
+        "barcode": "1053"
+      },
+      "1054": {
+        "name": "Rangeela Kurta",
+        "category": "Rangeela Kurta",
+        "costPrice": 2500,
+        "sellingPrice": 5000,
+        "stock": 4,
+        "barcode": "1054"
+      },
+      "1055": {
+        "name": "Rangeela Kurta",
+        "category": "Rangeela Kurta",
+        "costPrice": 1,
+        "sellingPrice": 4500,
+        "stock": 1,
+        "barcode": "1055"
+      },
+      "1056": {
+        "name": "Rangeela Kurta",
+        "category": "Rangeela Kurta",
+        "costPrice": 1,
+        "sellingPrice": 3000,
+        "stock": 1,
+        "barcode": "1056"
+      },
+      "1057": {
+        "name": "Hand embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 3500,
+        "sellingPrice": 7000,
+        "stock": 0,
+        "barcode": "1057"
+      },
+      "1058": {
+        "name": "3 Peice Suit",
+        "category": "Suit",
+        "costPrice": 5600,
+        "sellingPrice": 12000,
+        "stock": 1,
+        "barcode": "1058"
+      },
+      "1059": {
+        "name": "Three Piece Suit",
+        "category": "Suit",
+        "costPrice": 6150,
+        "sellingPrice": 12000,
+        "stock": 0,
+        "barcode": "1059"
+      },
+      "1060": {
+        "name": "Modern Saree",
+        "category": "Saree",
+        "costPrice": 4500,
+        "sellingPrice": 9000,
+        "stock": 0,
+        "barcode": "1060"
+      },
+      "1061": {
+        "name": "Men's Prince Suit",
+        "category": "Suit",
+        "costPrice": 3500,
+        "sellingPrice": 7500,
+        "stock": 0,
+        "barcode": "1061"
+      },
+      "1064": {
+        "name": "Handloom Saree",
+        "category": "Handloom Saree",
+        "costPrice": 3000,
+        "sellingPrice": 7000,
+        "stock": 0,
+        "barcode": "1064"
+      },
+      "1068": {
+        "name": "Chur(0044)",
+        "category": "JEWELLERY",
+        "costPrice": 8100,
+        "sellingPrice": 22000,
+        "stock": 2,
+        "barcode": "1068",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1069": {
+        "name": "Farfor Bala",
+        "category": "JEWELLERY",
+        "costPrice": 4500,
+        "sellingPrice": 12900,
+        "stock": 2,
+        "barcode": "1069",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1070": {
+        "name": "Mayur Puchha(0088)",
+        "category": "JEWELLERY",
+        "costPrice": 20000,
+        "sellingPrice": 24950,
+        "stock": 1,
+        "barcode": "1070",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1071": {
+        "name": "Hati Mukh Bala(0046)",
+        "category": "JEWELLERY",
+        "costPrice": 12400,
+        "sellingPrice": 24900,
+        "stock": 1,
+        "barcode": "1071",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1072": {
+        "name": "Gaja Gamini(0060)",
+        "category": "JEWELLERY",
+        "costPrice": 5000,
+        "sellingPrice": 14900,
+        "stock": 1,
+        "barcode": "1072",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1073": {
+        "name": "Karno Malati(0070)",
+        "category": "JEWELLERY",
+        "costPrice": 15447,
+        "sellingPrice": 39900,
+        "stock": 1,
+        "barcode": "1073",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1074": {
+        "name": "Kan Bala(0034)",
+        "category": "JEWELLERY",
+        "costPrice": 7314,
+        "sellingPrice": 22000,
+        "stock": 1,
+        "barcode": "1074",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1075": {
+        "name": "Earings(3 Mukto 0018)",
+        "category": "JEWELLERY",
+        "costPrice": 3700,
+        "sellingPrice": 8900,
+        "stock": 8,
+        "barcode": "1075",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1076": {
+        "name": "Jal Jhumka(0019)",
+        "category": "JEWELLERY",
+        "costPrice": 4154,
+        "sellingPrice": 12000,
+        "stock": 0,
+        "barcode": "1076",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1077": {
+        "name": "Benuni Nack(0036)",
+        "category": "JEWELLERY",
+        "costPrice": 8169,
+        "sellingPrice": 23900,
+        "stock": 1,
+        "barcode": "1077",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1078": {
+        "name": "Mayur Jhumka",
+        "category": "JEWELLERY",
+        "costPrice": 9000,
+        "sellingPrice": 23900,
+        "stock": 1,
+        "barcode": "1078",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1079": {
+        "name": "Modern Kurta",
+        "category": "Kurta",
+        "costPrice": 3000,
+        "sellingPrice": 7000,
+        "stock": 0,
+        "barcode": "1079"
+      },
+      "1080": {
+        "name": "Bandgala suit set",
+        "category": "Suit",
+        "costPrice": 11500,
+        "sellingPrice": 30000,
+        "stock": 0,
+        "barcode": "1080"
+      },
+      "1081": {
+        "name": "Safari Set",
+        "category": "Safari Set",
+        "costPrice": 3200,
+        "sellingPrice": 7000,
+        "stock": 0,
+        "barcode": "1081"
+      },
+      "1082": {
+        "name": "Punjabi+Dhuti+Chador+Saree+Blouse",
+        "category": "Package",
+        "costPrice": 10850,
+        "sellingPrice": 28000,
+        "stock": 0,
+        "barcode": "1082"
+      },
+      "1084": {
+        "name": "satin embroidery saree",
+        "category": "satin",
+        "costPrice": 9000,
+        "sellingPrice": 9000,
+        "stock": 0,
+        "barcode": "1084"
+      },
+      "1085": {
+        "name": "Boro Golap Rings",
+        "category": "JEWELLERY",
+        "costPrice": 2000,
+        "sellingPrice": 4500,
+        "stock": 1,
+        "barcode": "1085",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1086": {
+        "name": "Chander Dul",
+        "category": "JEWELLERY",
+        "costPrice": 3200,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "1086",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1087": {
+        "name": "Rings",
+        "category": "JEWELLERY",
+        "costPrice": 1500,
+        "sellingPrice": 3500,
+        "stock": 2,
+        "barcode": "1087",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1088": {
+        "name": "Choto Golap Rings",
+        "category": "JEWELLERY",
+        "costPrice": 2000,
+        "sellingPrice": 4500,
+        "stock": 1,
+        "barcode": "1088",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1089": {
+        "name": "Locket Chara Mala",
+        "category": "JEWELLERY",
+        "costPrice": 8169,
+        "sellingPrice": 24000,
+        "stock": 1,
+        "barcode": "1089",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1090": {
+        "name": "Locket Diye Mala",
+        "category": "JEWELLERY",
+        "costPrice": 9000,
+        "sellingPrice": 25000,
+        "stock": 3,
+        "barcode": "1090",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1091": {
+        "name": "Mach Nackless",
+        "category": "JEWELLERY",
+        "costPrice": 13000,
+        "sellingPrice": 35000,
+        "stock": 1,
+        "barcode": "1091",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1092": {
+        "name": "Becha Har",
+        "category": "JEWELLERY",
+        "costPrice": 16000,
+        "sellingPrice": 35000,
+        "stock": 1,
+        "barcode": "1092",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1093": {
+        "name": "Kaner Dul",
+        "category": "JEWELLERY",
+        "costPrice": 5000,
+        "sellingPrice": 15000,
+        "stock": 1,
+        "barcode": "1093",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1094": {
+        "name": "Kan Ful",
+        "category": "JEWELLERY",
+        "costPrice": 2000,
+        "sellingPrice": 4500,
+        "stock": 1,
+        "barcode": "1094",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1095": {
+        "name": "Drop Jumko Nackless",
+        "category": "JEWELLERY",
+        "costPrice": 4000,
+        "sellingPrice": 25000,
+        "stock": 5,
+        "barcode": "1095",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1096": {
+        "name": "Locket+Earings",
+        "category": "JEWELLERY",
+        "costPrice": 6200,
+        "sellingPrice": 18000,
+        "stock": 1,
+        "barcode": "1096",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1097": {
+        "name": "Moyur Konthi Set",
+        "category": "JEWELLERY",
+        "costPrice": 11000,
+        "sellingPrice": 30000,
+        "stock": 1,
+        "barcode": "1097",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1098": {
+        "name": "Jhora Nackless",
+        "category": "JEWELLERY",
+        "costPrice": 9500,
+        "sellingPrice": 27000,
+        "stock": 1,
+        "barcode": "1098",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1099": {
+        "name": "3 Lohor",
+        "category": "JEWELLERY",
+        "costPrice": 25500,
+        "sellingPrice": 30000,
+        "stock": 1,
+        "barcode": "1099",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1100": {
+        "name": "Tikli",
+        "category": "JEWELLERY",
+        "costPrice": 3500,
+        "sellingPrice": 4000,
+        "stock": 1,
+        "barcode": "1100",
+        "extraField1": "",
+        "extraField2": ""
+      },
+      "1101": {
+        "name": "Hand embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 3200,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "1101"
+      },
+      "1102": {
+        "name": "Red Kurta&Johor Coat",
+        "category": "Hand embroider Kurta",
+        "costPrice": 5500,
+        "sellingPrice": 12000,
+        "stock": 1,
+        "barcode": "1102"
+      },
+      "1103": {
+        "name": "Bridal Kurta",
+        "category": "HAND EMBROIDER KURTA",
+        "costPrice": 4500,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "1103",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "1104": {
+        "name": "Red Embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 2500,
+        "sellingPrice": 4500,
+        "stock": 1,
+        "barcode": "1104"
+      },
+      "1105": {
+        "name": "Red Embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 2000,
+        "sellingPrice": 4000,
+        "stock": 1,
+        "barcode": "1105"
+      },
+      "1106": {
+        "name": "Hand embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 2200,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "1106"
+      },
+      "1107": {
+        "name": "Hand embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 2000,
+        "sellingPrice": 6000,
+        "stock": 1,
+        "barcode": "1107"
+      },
+      "1110": {
+        "name": "Moti Kurta",
+        "category": "Cotton Handloom Kurta",
+        "costPrice": 1800,
+        "sellingPrice": 4500,
+        "stock": 3,
+        "barcode": "1110"
+      },
+      "1111": {
+        "name": "Embroidered Kurta",
+        "category": "Cotton Handloom Kurta",
+        "costPrice": 1700,
+        "sellingPrice": 5000,
+        "stock": 3,
+        "barcode": "1111"
+      },
+      "1112": {
+        "name": "Lucknowi Chikankari kurta",
+        "category": "Cotton Handloom Kurta",
+        "costPrice": 2000,
+        "sellingPrice": 6000,
+        "stock": 1,
+        "barcode": "1112"
+      },
+      "1113": {
+        "name": "Printed Kurta",
+        "category": "Cotton Handloom Kurta",
+        "costPrice": 1800,
+        "sellingPrice": 4500,
+        "stock": 1,
+        "barcode": "1113"
+      },
+      "1114": {
+        "name": "Cotton Kurta(Blue)",
+        "category": "Cotton Handloom Kurta",
+        "costPrice": 1000,
+        "sellingPrice": 4000,
+        "stock": 1,
+        "barcode": "1114"
+      },
+      "1115": {
+        "name": "dhuti",
+        "category": "dhuti",
+        "costPrice": 2600,
+        "sellingPrice": 7600,
+        "stock": 0,
+        "barcode": "1115"
+      },
+      "1117": {
+        "name": "kurta dhuti set",
+        "category": "set",
+        "costPrice": 6000,
+        "sellingPrice": 17500,
+        "stock": 0,
+        "barcode": "1117"
+      },
+      "1119": {
+        "name": "handloom",
+        "category": "handloom",
+        "costPrice": 1700,
+        "sellingPrice": 4000,
+        "stock": 1,
+        "barcode": "1119"
+      },
+      "1120": {
+        "name": "Shom er Kapor Punjabi",
+        "category": "Feb",
+        "costPrice": 3800,
+        "sellingPrice": 7500,
+        "stock": 0,
+        "barcode": "1120"
+      },
+      "1121": {
+        "name": "Punjabi",
+        "category": "feb",
+        "costPrice": 3200,
+        "sellingPrice": 9000,
+        "stock": 0,
+        "barcode": "1121"
+      },
+      "1122": {
+        "name": "Punjabi",
+        "category": "feb",
+        "costPrice": 2400,
+        "sellingPrice": 6500,
+        "stock": 0,
+        "barcode": "1122"
+      },
+      "1123": {
+        "name": "Amit Punjabi",
+        "category": "Jan",
+        "costPrice": 1750,
+        "sellingPrice": 4500,
+        "stock": 0,
+        "barcode": "1123"
+      },
+      "1124": {
+        "name": "Anirban Bandgola Sada",
+        "category": "Feb",
+        "costPrice": 6800,
+        "sellingPrice": 15000,
+        "stock": 0,
+        "barcode": "1124"
+      },
+      "1125": {
+        "name": "Malosiya Sada Kalo Saree",
+        "category": "feb",
+        "costPrice": 2000,
+        "sellingPrice": 7500,
+        "stock": 0,
+        "barcode": "1125"
+      },
+      "1126": {
+        "name": "Back Sal(Koshe Kosha)",
+        "category": "Jan",
+        "costPrice": 22390,
+        "sellingPrice": 69100,
+        "stock": 0,
+        "barcode": "1126"
+      },
+      "1127": {
+        "name": "satin embroidery saree",
+        "category": "satin embroidery saree",
+        "costPrice": 4200,
+        "sellingPrice": 9000,
+        "stock": 0,
+        "barcode": "1127"
+      },
+      "1128": {
+        "name": "Saree",
+        "category": "Saree",
+        "costPrice": 2000,
+        "sellingPrice": 4500,
+        "stock": 0,
+        "barcode": "1128"
+      },
+      "1129": {
+        "name": "designer shirt",
+        "category": "designer shirt",
+        "costPrice": 4260,
+        "sellingPrice": 6000,
+        "stock": 0,
+        "barcode": "1129"
+      },
+      "1130": {
+        "name": "Designer Shirt",
+        "category": "Shirt",
+        "costPrice": 4260,
+        "sellingPrice": 6000,
+        "stock": 0,
+        "barcode": "1130"
+      },
+      "1131": {
+        "name": "Satin Embroidery Saree",
+        "category": "Satin Embroidery Saree",
+        "costPrice": 8500,
+        "sellingPrice": 12000,
+        "stock": 0,
+        "barcode": "1131"
+      },
+      "1132": {
+        "name": "Satin Embroidery Saree",
+        "category": "Satin Embroidery Saree",
+        "costPrice": 5000,
+        "sellingPrice": 9000,
+        "stock": 0,
+        "barcode": "1132"
+      },
+      "1135": {
+        "name": "Designer Shirtrt",
+        "category": "Shirt",
+        "costPrice": 3000,
+        "sellingPrice": 1,
+        "stock": 2,
+        "barcode": "1135",
+        "extraField1": "l",
+        "extraField2": "blue"
+      },
+      "1136": {
+        "name": "Embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 3400,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "1136",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "1137": {
+        "name": "Embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 2000,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "1137",
+        "extraField1": "",
+        "extraField2": "Maroon"
+      },
+      "1138": {
+        "name": "Embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 2600,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "1138",
+        "extraField1": "",
+        "extraField2": "peach"
+      },
+      "1139": {
+        "name": "Embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 3000,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "1139",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "1154": {
+        "name": "Satin Modern Saree",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 3200,
+        "sellingPrice": 6500,
+        "stock": 1,
+        "barcode": "1154",
+        "extraField1": "",
+        "extraField2": "Dark green"
+      },
+      "1155": {
+        "name": "Satin Modern Saree",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 3000,
+        "sellingPrice": 7000,
+        "stock": 2,
+        "barcode": "1155",
+        "extraField1": "",
+        "extraField2": "Dusty Pink"
+      },
+      "1160": {
+        "name": "Satin Modern Saree",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 2300,
+        "sellingPrice": 6800,
+        "stock": 1,
+        "barcode": "1160",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "1146_WHITE": {
+        "name": "Embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 3000,
+        "sellingPrice": 8000,
+        "stock": 1,
+        "barcode": "1146",
+        "extraField1": "",
+        "extraField2": "White"
+      },
+      "1147_ORANGE": {
+        "name": "Embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 2200,
+        "sellingPrice": 6000,
+        "stock": 1,
+        "barcode": "1147",
+        "extraField1": "",
+        "extraField2": "Orange"
+      },
+      "1148_ORANGE": {
+        "name": "Embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 3200,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "1148",
+        "extraField1": "",
+        "extraField2": "Orange"
+      },
+      "1149_RED": {
+        "name": "Embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 1780,
+        "sellingPrice": 4500,
+        "stock": 1,
+        "barcode": "1149",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "1150_WHITE": {
+        "name": "Embroider Kurta",
+        "category": "Hand embroider Kurta",
+        "costPrice": 1600,
+        "sellingPrice": 4500,
+        "stock": 1,
+        "barcode": "1150",
+        "extraField1": "",
+        "extraField2": "White"
+      },
+      "1151_BLACK": {
+        "name": "Satin Modern Saree",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 3000,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "1151",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "1152_RED": {
+        "name": "Satin Modern Saree",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 3500,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "1152",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "1153_YELLOW": {
+        "name": "Satin Modern Saree",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 3200,
+        "sellingPrice": 7500,
+        "stock": 1,
+        "barcode": "1153",
+        "extraField1": "",
+        "extraField2": "Yellow"
+      },
+      "1156_YELLOW": {
+        "name": "Satin Modern Saree",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 2500,
+        "sellingPrice": 6500,
+        "stock": 1,
+        "barcode": "1156",
+        "extraField1": "",
+        "extraField2": "Yellow"
+      },
+      "1157_YELLLOW": {
+        "name": "Satin Modern Saree",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 2700,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "1157",
+        "extraField1": "",
+        "extraField2": "Yelllow"
+      },
+      "1158_BLACK": {
+        "name": "Satin Modern Saree",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 4000,
+        "sellingPrice": 12000,
+        "stock": 1,
+        "barcode": "1158",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "1159_GREEN": {
+        "name": "Satin Modern Saree",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 2700,
+        "sellingPrice": 6500,
+        "stock": 1,
+        "barcode": "1159",
+        "extraField1": "",
+        "extraField2": "Green"
+      },
+      "BLO-BEI-1181_BEIGE": {
+        "name": "Blouse #4",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3000,
+        "stock": 1,
+        "barcode": "BLO-BEI-1181",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "BLO-BEI-1186_BEIGE": {
+        "name": "Blouse #9",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3500,
+        "stock": 1,
+        "barcode": "BLO-BEI-1186",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "BLO-BEI-1188_BEIGE": {
+        "name": "Blouse #11",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3000,
+        "stock": 1,
+        "barcode": "BLO-BEI-1188",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "BLO-BEI-1192_BEIGE": {
+        "name": "Blouse #2",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-BEI-1192",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "BLO-BEI-1193_BEIGE": {
+        "name": "Blouse #3",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-BEI-1193",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "BLO-BEI-1197_BEIGE": {
+        "name": "Blouse #7",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-BEI-1197",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "BLO-BEI-1198_BEIGE": {
+        "name": "Blouse #8",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-BEI-1198",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "BLO-BEI-1210_BEIGE": {
+        "name": "Blouse #20",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-BEI-1210",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "BLO-BEI-1211_BEIGE": {
+        "name": "Blouse #21",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-BEI-1211",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "BLO-BEI-1214_BEIGE": {
+        "name": "Blouse #24",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-BEI-1214",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "BLO-BRO-1187_BROWN": {
+        "name": "Blouse #10",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3000,
+        "stock": 1,
+        "barcode": "BLO-BRO-1187",
+        "extraField1": "",
+        "extraField2": "Brown"
+      },
+      "BLO-BRO-1263_BROWN": {
+        "name": "Block Print Saree #2",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-BRO-1263",
+        "extraField1": "",
+        "extraField2": "Brown"
+      },
+      "BLO-BRO-1268_BROWN": {
+        "name": "Block Print Saree #7",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-BRO-1268",
+        "extraField1": "",
+        "extraField2": "Brown"
+      },
+      "BLO-BRO-1272_BROWN": {
+        "name": "Block Print Saree #11",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-BRO-1272",
+        "extraField1": "",
+        "extraField2": "Brown"
+      },
+      "BLO-BRO-1275_BROWN": {
+        "name": "Block Print Saree #14",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-BRO-1275",
+        "extraField1": "",
+        "extraField2": "Brown"
+      },
+      "BLO-CRE-1194_CREAM": {
+        "name": "Blouse #4",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-CRE-1194",
+        "extraField1": "",
+        "extraField2": "Cream"
+      },
+      "BLO-CRE-1212_CREAM": {
+        "name": "Blouse #22",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-CRE-1212",
+        "extraField1": "",
+        "extraField2": "Cream"
+      },
+      "BLO-GOL-1200_GOLDEN": {
+        "name": "Blouse #10",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-GOL-1200",
+        "extraField1": "",
+        "extraField2": "Golden"
+      },
+      "BLO-GOL-1266_GOLDEN": {
+        "name": "Block Print Saree #5",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-GOL-1266",
+        "extraField1": "",
+        "extraField2": "Golden"
+      },
+      "BLO-GRE-1184_GREEN": {
+        "name": "Blouse #7",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3500,
+        "stock": 1,
+        "barcode": "BLO-GRE-1184",
+        "extraField1": "",
+        "extraField2": "Green"
+      },
+      "BLO-GRE-1195_GREY": {
+        "name": "Blouse #5",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-GRE-1195",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "BLO-GRE-1196_GREY": {
+        "name": "Blouse #6",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-GRE-1196",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "BLO-GRE-1199_GREY": {
+        "name": "Blouse #9",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-GRE-1199",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "BLO-GRE-1213_GREY": {
+        "name": "Blouse #23",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-GRE-1213",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "BLO-GRE-1262_GREY": {
+        "name": "Block Print Saree #1",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-GRE-1262",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "BLO-GRE-1265_GREY": {
+        "name": "Block Print Saree #4",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-GRE-1265",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "BLO-GRE-1273_GREY": {
+        "name": "Block Print Saree #12",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-GRE-1273",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "BLO-GRE-1276_GREEN": {
+        "name": "Block Print Saree #15",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-GRE-1276",
+        "extraField1": "",
+        "extraField2": "Green"
+      },
+      "BLO-GRE-1278_GREY": {
+        "name": "Block Print Saree #17",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-GRE-1278",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "BLO-ORA-1178_ORANGE": {
+        "name": "Blouse",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3500,
+        "stock": 1,
+        "barcode": "BLO-ORA-1178",
+        "extraField1": "",
+        "extraField2": "Orange"
+      },
+      "BLO-PIN-1185_PINK": {
+        "name": "Blouse #8",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3500,
+        "stock": 1,
+        "barcode": "BLO-PIN-1185",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "BLO-PIN-1191_PINK": {
+        "name": "Blouse #1",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-PIN-1191",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "BLO-PIN-1204_PINK": {
+        "name": "Blouse #14",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-PIN-1204",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "BLO-PIN-1206_PINK": {
+        "name": "Blouse #16",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-PIN-1206",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "BLO-PIN-1207_PINK": {
+        "name": "Blouse #17",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-PIN-1207",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "BLO-PIN-1208_PINK": {
+        "name": "Blouse #18",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-PIN-1208",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "BLO-PIN-1271_PINK": {
+        "name": "Block Print Saree #10",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-PIN-1271",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "BLO-PIN-1274_PINK": {
+        "name": "Block Print Saree #13",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-PIN-1274",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "BLO-PIN-1277_PINK": {
+        "name": "Block Print Saree #16",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-PIN-1277",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "BLO-PUR-1182_PURPEL": {
+        "name": "Blouse #5",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3500,
+        "stock": 1,
+        "barcode": "BLO-PUR-1182",
+        "extraField1": "",
+        "extraField2": "Purpel"
+      },
+      "BLO-RED-1179_RED": {
+        "name": "Blouse #2",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3800,
+        "stock": 1,
+        "barcode": "BLO-RED-1179",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "BLO-RED-1180_RED": {
+        "name": "Blouse #3",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3800,
+        "stock": 1,
+        "barcode": "BLO-RED-1180",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "BLO-RED-1183_RED": {
+        "name": "Blouse #6",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3500,
+        "stock": 1,
+        "barcode": "BLO-RED-1183",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "BLO-RED-1189_RED": {
+        "name": "Blouse #12",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3500,
+        "stock": 1,
+        "barcode": "BLO-RED-1189",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "BLO-RED-1190_RED": {
+        "name": "Blouse #13",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 3000,
+        "stock": 1,
+        "barcode": "BLO-RED-1190",
+        "extraField1": "",
+        "extraField2": "PINK"
+      },
+      "BLO-RED-1205_RED": {
+        "name": "Blouse #15",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-RED-1205",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "BLO-RED-1209_RED": {
+        "name": "Blouse #19",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-RED-1209",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "BLO-RED-1267_RED": {
+        "name": "Block Print Saree #6",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-RED-1267",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "BLO-RED-1269_RED": {
+        "name": "Block Print Saree #8",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-RED-1269",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "BLO-RED-1270_RED": {
+        "name": "Block Print Saree #9",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-RED-1270",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "BLO-RED-1283_RED": {
+        "name": "Blouse #14",
+        "category": "BLOUSE 2ND ROOM",
+        "costPrice": 1500,
+        "sellingPrice": 4000,
+        "stock": 1,
+        "barcode": "BLO-RED-1283",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "BLO-WHI-1264_WHITE": {
+        "name": "Block Print Saree #3",
+        "category": "BLOCK PRINT SAREE",
+        "costPrice": 1100,
+        "sellingPrice": 2600,
+        "stock": 1,
+        "barcode": "BLO-WHI-1264",
+        "extraField1": "",
+        "extraField2": "White"
+      },
+      "BLO-YEL-1201_YELLOW": {
+        "name": "Blouse #11",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-YEL-1201",
+        "extraField1": "",
+        "extraField2": "Yellow"
+      },
+      "BLO-YEL-1202_YELLOW": {
+        "name": "Blouse #12",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-YEL-1202",
+        "extraField1": "",
+        "extraField2": "Yellow"
+      },
+      "BLO-YEL-1203_YELLOW": {
+        "name": "Blouse #13",
+        "category": "BLOUSE 4TH ROOM",
+        "costPrice": 1850,
+        "sellingPrice": 4800,
+        "stock": 1,
+        "barcode": "BLO-YEL-1203",
+        "extraField1": "",
+        "extraField2": "Yellow"
+      },
+      "HAN-BLA-1285_BLACK": {
+        "name": "Hand Embroider Kurta #2",
+        "category": "HAND EMBROIDER KURTA",
+        "costPrice": 870,
+        "sellingPrice": 2000,
+        "stock": 1,
+        "barcode": "HAN-BLA-1285",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "HAN-MAR-1284_MAROON": {
+        "name": "Hand Embroider Kurta #1",
+        "category": "HAND EMBROIDER KURTA",
+        "costPrice": 1500,
+        "sellingPrice": 3500,
+        "stock": 1,
+        "barcode": "HAN-MAR-1284",
+        "extraField1": "",
+        "extraField2": "Maroon"
+      },
+      "LEA-BLA-1290_BLACK": {
+        "name": "Leather bags #1",
+        "category": "LEATHER BAGS",
+        "costPrice": 1800,
+        "sellingPrice": 5000,
+        "stock": 1,
+        "barcode": "LEA-BLA-1290",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "LEA-BLA-1292_BLACK": {
+        "name": "Leather bags #3",
+        "category": "LEATHER BAGS",
+        "costPrice": 2300,
+        "sellingPrice": 5500,
+        "stock": 1,
+        "barcode": "LEA-BLA-1292",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "LEA-BLA-1293_BLACK": {
+        "name": "Leather bags #4",
+        "category": "LEATHER BAGS",
+        "costPrice": 1800,
+        "sellingPrice": 4000,
+        "stock": 1,
+        "barcode": "LEA-BLA-1293",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "LEA-BRO-1291_BROWN": {
+        "name": "Leather bags #2",
+        "category": "LEATHER BAGS",
+        "costPrice": 2010,
+        "sellingPrice": 5000,
+        "stock": 1,
+        "barcode": "LEA-BRO-1291",
+        "extraField1": "",
+        "extraField2": "Brown"
+      },
+      "MEN-BEI-1242_BEIGE": {
+        "name": "Blazers #28",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 3800,
+        "sellingPrice": 8000,
+        "stock": 1,
+        "barcode": "MEN-BEI-1242",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "MEN-BEI-1246_BEIGE": {
+        "name": "Blazers #32",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 2600,
+        "sellingPrice": 6500,
+        "stock": 1,
+        "barcode": "MEN-BEI-1246",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "MEN-BEI-1247_BEIGE": {
+        "name": "Tunic Kurta #1",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 2500,
+        "sellingPrice": 5500,
+        "stock": 1,
+        "barcode": "MEN-BEI-1247",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "MEN-BEI-1255_BEIGE": {
+        "name": "Blazers #3",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 3600,
+        "sellingPrice": 8000,
+        "stock": 1,
+        "barcode": "MEN-BEI-1255",
+        "extraField1": "",
+        "extraField2": "Beige"
+      },
+      "MEN-BLA-1215_BLACK": {
+        "name": "Blazers #1",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 5750,
+        "sellingPrice": 12000,
+        "stock": 1,
+        "barcode": "MEN-BLA-1215",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLA-1216_BLACK": {
+        "name": "Blazers #2",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 5900,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "MEN-BLA-1216",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLA-1217_BLACK": {
+        "name": "Blazers #3",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 7500,
+        "sellingPrice": 14000,
+        "stock": 1,
+        "barcode": "MEN-BLA-1217",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLA-1218_BLACK": {
+        "name": "Blazers #4",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 3800,
+        "sellingPrice": 8000,
+        "stock": 1,
+        "barcode": "MEN-BLA-1218",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLA-1223_BLACK": {
+        "name": "Blazers #9",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 7800,
+        "sellingPrice": 25000,
+        "stock": 1,
+        "barcode": "MEN-BLA-1223",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLA-1225_BLACK": {
+        "name": "Blazers #11",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 3200,
+        "sellingPrice": 7500,
+        "stock": 1,
+        "barcode": "MEN-BLA-1225",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLA-1228_BLACK": {
+        "name": "Blazers #14",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 7000,
+        "sellingPrice": 17000,
+        "stock": 1,
+        "barcode": "MEN-BLA-1228",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLA-1229_BLACK": {
+        "name": "Blazers #15",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 4400,
+        "sellingPrice": 12000,
+        "stock": 1,
+        "barcode": "MEN-BLA-1229",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLA-1233_BLACK": {
+        "name": "Blazers #19",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 1350,
+        "sellingPrice": 3000,
+        "stock": 1,
+        "barcode": "MEN-BLA-1233",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLA-1244_BLACK": {
+        "name": "Blazers #30",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 3800,
+        "sellingPrice": 7500,
+        "stock": 1,
+        "barcode": "MEN-BLA-1244",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLA-1287_BLACK": {
+        "name": "Blazers #34",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 2200,
+        "sellingPrice": 6000,
+        "stock": 1,
+        "barcode": "MEN-BLA-1287",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLA-1288_BLACK": {
+        "name": "Blazers #35",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 2500,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "MEN-BLA-1288",
+        "extraField1": "",
+        "extraField2": "Black"
+      },
+      "MEN-BLU-1220_BLUE": {
+        "name": "Blazers #6",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 1900,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "MEN-BLU-1220",
+        "extraField1": "",
+        "extraField2": "Blue"
+      },
+      "MEN-BRO-1222_BROWN": {
+        "name": "Blazers #8",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 6100,
+        "sellingPrice": 12000,
+        "stock": 1,
+        "barcode": "MEN-BRO-1222",
+        "extraField1": "",
+        "extraField2": "Brown"
+      },
+      "MEN-BRO-1236_BROWN": {
+        "name": "Blazers #22",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 2700,
+        "sellingPrice": 6000,
+        "stock": 1,
+        "barcode": "MEN-BRO-1236",
+        "extraField1": "",
+        "extraField2": "Brown"
+      },
+      "MEN-CRE-1232_CREAM": {
+        "name": "Blazers #18",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 6100,
+        "sellingPrice": 10000,
+        "stock": 1,
+        "barcode": "MEN-CRE-1232",
+        "extraField1": "",
+        "extraField2": "Cream"
+      },
+      "MEN-CRE-1235_CREAM": {
+        "name": "Blazers #21",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 1100,
+        "sellingPrice": 3000,
+        "stock": 1,
+        "barcode": "MEN-CRE-1235",
+        "extraField1": "",
+        "extraField2": "Cream"
+      },
+      "MEN-CRE-1259_CREAM": {
+        "name": "Shirt",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 1200,
+        "sellingPrice": 1999,
+        "stock": 1,
+        "barcode": "MEN-CRE-1259",
+        "extraField1": "",
+        "extraField2": "Cream"
+      },
+      "MEN-CRE-1260_CREAM": {
+        "name": "Trouser",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 1100,
+        "sellingPrice": 2200,
+        "stock": 1,
+        "barcode": "MEN-CRE-1260",
+        "extraField1": "",
+        "extraField2": "Cream"
+      },
+      "MEN-GOL-1230_GOLDEN": {
+        "name": "Blazers #16",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 4900,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "MEN-GOL-1230",
+        "extraField1": "",
+        "extraField2": "Golden"
+      },
+      "MEN-GOL-1248_GOLDEN": {
+        "name": "Tunic Kurta #2",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 2500,
+        "sellingPrice": 5500,
+        "stock": 1,
+        "barcode": "MEN-GOL-1248",
+        "extraField1": "",
+        "extraField2": "Golden"
+      },
+      "MEN-GRA-1219_GRAY": {
+        "name": "Blazers #5",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 7700,
+        "sellingPrice": 14000,
+        "stock": 1,
+        "barcode": "MEN-GRA-1219",
+        "extraField1": "",
+        "extraField2": "Gray"
+      },
+      "MEN-GRE-1221_GREY": {
+        "name": "Blazers #7",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 6550,
+        "sellingPrice": 12000,
+        "stock": 1,
+        "barcode": "MEN-GRE-1221",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MEN-GRE-1224_GREY": {
+        "name": "Blazers #10",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 3000,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "MEN-GRE-1224",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MEN-GRE-1234_GREY": {
+        "name": "Blazers #20",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 5000,
+        "sellingPrice": 8500,
+        "stock": 1,
+        "barcode": "MEN-GRE-1234",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MEN-GRE-1237_GREEN": {
+        "name": "Blazers #23",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 3800,
+        "sellingPrice": 8000,
+        "stock": 1,
+        "barcode": "MEN-GRE-1237",
+        "extraField1": "",
+        "extraField2": "Green"
+      },
+      "MEN-GRE-1238_GREY": {
+        "name": "Blazers #24",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 4800,
+        "sellingPrice": 8000,
+        "stock": 1,
+        "barcode": "MEN-GRE-1238",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MEN-GRE-1240_GREY": {
+        "name": "Shirts #26",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 700,
+        "sellingPrice": 2000,
+        "stock": 1,
+        "barcode": "MEN-GRE-1240",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MEN-GRE-1241_GREY": {
+        "name": "Blazers #27",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 6200,
+        "sellingPrice": 10000,
+        "stock": 1,
+        "barcode": "MEN-GRE-1241",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MEN-GRE-1245_GREEN": {
+        "name": "Blazers #31",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 1200,
+        "sellingPrice": 2500,
+        "stock": 1,
+        "barcode": "MEN-GRE-1245",
+        "extraField1": "",
+        "extraField2": "Green"
+      },
+      "MEN-GRE-1253_GREY": {
+        "name": "Blazers #1",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 7200,
+        "sellingPrice": 12000,
+        "stock": 1,
+        "barcode": "MEN-GRE-1253",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MEN-GRE-1254_GREY": {
+        "name": "Blazers #2",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 2800,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "MEN-GRE-1254",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MEN-GRE-1256_GREY": {
+        "name": "Blazers #4",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 4000,
+        "sellingPrice": 8000,
+        "stock": 1,
+        "barcode": "MEN-GRE-1256",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MEN-GRE-1261_GREY": {
+        "name": "Modi Coat",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 2400,
+        "sellingPrice": 4000,
+        "stock": 1,
+        "barcode": "MEN-GRE-1261",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MEN-GRE-1286_GREY": {
+        "name": "Blazers #33",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 4700,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "MEN-GRE-1286",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MEN-MAR-1226_MAROON": {
+        "name": "Blazers #12",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 1400,
+        "sellingPrice": 3000,
+        "stock": 1,
+        "barcode": "MEN-MAR-1226",
+        "extraField1": "",
+        "extraField2": "Maroon"
+      },
+      "MEN-MAR-1239_MAROON": {
+        "name": "Blazers #25",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 1900,
+        "sellingPrice": 3200,
+        "stock": 1,
+        "barcode": "MEN-MAR-1239",
+        "extraField1": "",
+        "extraField2": "Maroon"
+      },
+      "MEN-NAV-1227_NAVY": {
+        "name": "Shirts #13",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 1600,
+        "sellingPrice": 3500,
+        "stock": 1,
+        "barcode": "MEN-NAV-1227",
+        "extraField1": "",
+        "extraField2": "Navy"
+      },
+      "MEN-PIN-1289_PINK": {
+        "name": "Blazers #36",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 4800,
+        "sellingPrice": 8000,
+        "stock": 1,
+        "barcode": "MEN-PIN-1289",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "MEN-RED-1243_RED": {
+        "name": "Blazers #29",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 2000,
+        "sellingPrice": 3500,
+        "stock": 1,
+        "barcode": "MEN-RED-1243",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "MEN-RED-1257_RED": {
+        "name": "Blazers #5",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 3800,
+        "sellingPrice": 8000,
+        "stock": 1,
+        "barcode": "MEN-RED-1257",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "MEN-SKY-1231_SKY": {
+        "name": "Blazers #17",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 1600,
+        "sellingPrice": 4000,
+        "stock": 1,
+        "barcode": "MEN-SKY-1231",
+        "extraField1": "",
+        "extraField2": "Sky"
+      },
+      "MEN-WHI-1258_WHITE": {
+        "name": "Trousers",
+        "category": "MEN’S BLAZERS",
+        "costPrice": 3300,
+        "sellingPrice": 6600,
+        "stock": 3,
+        "barcode": "MEN-WHI-1258",
+        "extraField1": "",
+        "extraField2": "White"
+      },
+      "MOD-BLU-1282_BLUE": {
+        "name": "Modern Satin Saree #4",
+        "category": "MODERN SATIN SAREE",
+        "costPrice": 4500,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "MOD-BLU-1282",
+        "extraField1": "",
+        "extraField2": "Blue"
+      },
+      "MOD-GRE-1279_GREY": {
+        "name": "Modern Satin Saree #1",
+        "category": "MODERN SATIN SAREE",
+        "costPrice": 3800,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "MOD-GRE-1279",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "MOD-RED-1280_RED": {
+        "name": "Modern Satin Saree #2",
+        "category": "MODERN SATIN SAREE",
+        "costPrice": 4000,
+        "sellingPrice": 9000,
+        "stock": 1,
+        "barcode": "MOD-RED-1280",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "MOD-RED-1281_RED": {
+        "name": "Modern Satin Saree #3",
+        "category": "MODERN SATIN SAREE",
+        "costPrice": 4500,
+        "sellingPrice": 8500,
+        "stock": 1,
+        "barcode": "MOD-RED-1281",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "QA-122651": {
+        "name": "blue shirt",
+        "category": "General",
+        "costPrice": 450,
+        "sellingPrice": 3000,
+        "stock": 0,
+        "barcode": "QA-122651"
+      },
+      "QA-955114": {
+        "name": "handloom kurta woman",
+        "category": "General",
+        "costPrice": 1700,
+        "sellingPrice": 5000,
+        "stock": 0,
+        "barcode": "QA-955114"
+      },
+      "SAT-GRE-1250_GREY": {
+        "name": "Satin Modern Saree #2",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 6500,
+        "sellingPrice": 14000,
+        "stock": 1,
+        "barcode": "SAT-GRE-1250",
+        "extraField1": "",
+        "extraField2": "Grey"
+      },
+      "SAT-PIN-1249_PINK": {
+        "name": "Satin Modern Saree #1",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 7000,
+        "sellingPrice": 11000,
+        "stock": 1,
+        "barcode": "SAT-PIN-1249",
+        "extraField1": "",
+        "extraField2": "Pink"
+      },
+      "SAT-RED-1294_RED": {
+        "name": "Satin Modern Saree #4",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 3500,
+        "sellingPrice": 9000,
+        "stock": 0,
+        "barcode": "SAT-RED-1294",
+        "extraField1": "",
+        "extraField2": "Red"
+      },
+      "SAT-WHI-1251_WHITE": {
+        "name": "Satin Modern Saree #3",
+        "category": "SATIN MODERN SAREE",
+        "costPrice": 3500,
+        "sellingPrice": 7000,
+        "stock": 1,
+        "barcode": "SAT-WHI-1251",
+        "extraField1": "",
+        "extraField2": "White"
+      }
+    },
+    "recentSales": {}
+  }
+}
